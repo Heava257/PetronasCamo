@@ -99,7 +99,7 @@ exports.getList = async (req, res) => {
     // SQL query to select product details
     const sqlSelect = `
       SELECT 
-        p.id, p.name, p.category_id, p.barcode, p.brand, p.company_name, 
+        p.id, p.name, p.category_id, p.barcode,  p.company_name, 
         p.description, p.qty, p.unit_price, p.discount, p.actual_price, p.status, 
         p.create_by, p.create_at, p.unit, 
         c.name AS category_name,

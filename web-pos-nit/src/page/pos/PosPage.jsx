@@ -64,8 +64,10 @@ function PosPage() {
       const res = await request(`customer/${id}`, "get", param);
       if (res && !res.error) {
         const customers = (res.list || []).map((customer) => ({
-          label: `${customer.name} - ${customer.tel}`,
+          label: `${customer.name}`, // យកតែឈ្មោះអតិថិជន
           value: customer.id,
+          address: customer.address, // យកអាស័យដ្ឋាន
+          tel: customer.tel, // យកលេខទូរស័ព្ទ
         }));
         setState((prev) => ({ ...prev, customers, loading: false }));
       } else {
@@ -86,6 +88,8 @@ function PosPage() {
     total_paid: 0,
     customers: null,
     customer_id: null,
+    customer_address: null,
+    customer_tel: null,
     user_id: null,
     payment_method: null,
     remark: null,
@@ -218,7 +222,9 @@ function PosPage() {
       tax: 10,
       total: 0,
       total_paid: 0,
-      customer_id: null, // Clear selected customer
+      customer_id: null,
+      customer_address: null, // Clear selected customer
+      customer_tel: null, // Clear selected customer
       payment_method: null, // Clear selected payment method
       user_id: null, // Clear selected location/branch
       remark: null, // Clear remark
@@ -404,7 +410,6 @@ function PosPage() {
         </div>
       ),
       dataIndex: "company_name",
-      key: "company_name",
       render: (text) => <span className="pos-row">{text}</span>,
     },
     {
@@ -429,7 +434,7 @@ function PosPage() {
       key: "category_name",
       render: (text) => <span className="pos-row">{text}</span>,
     },
-    
+
     {
       title: (
         <div className="table-header">
@@ -608,7 +613,9 @@ function PosPage() {
                     setObjSummary((prev) => ({
                       ...prev,
                       customer_id: value,
-                      customer_name: option.label,
+                      customer_name: option.label.split(" - ")[0], // យកតែឈ្មោះអតិថិជន
+                      customer_address: option.address, // យកអាស័យដ្ឋាន
+                      customer_tel: option.tel, // យកលេខទូរស័ព្ទ
                     }));
                   }}
                 />

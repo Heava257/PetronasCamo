@@ -23,7 +23,6 @@ import ReportCustomer_Summary from "./page/report/ReportCustomer_Summary";
 import ReportPurchase_Summary from "./page/report/ReportPurchase_Summary";
 import Top_Sales from "./page/top_sale/Top_Sales";
 import Total_DuePage from "./page/total_due/Total_DuePage";
-import AboutHomepage from "./page/about/Aboutpage";
 import ProfilePage from "./page/user/ProfilePage";
 import ExpanseTypePage from "./page/expanse/ExpanseTypePage";
 // import ChatPage from "./component/chat/ChatPage";
@@ -49,7 +48,6 @@ function App() {
             <Route path="/user" element={<UserPage />} />
             <Route path="/product" element={<ProductPage />} />
             <Route path="/role" element={<RolePage />} />
-            {/* <Route path="/chat" element={<ChatPage />} /> */}
             <Route path="/supplier" element={<SupplierPage />} />
             <Route path="/total_due" element={<Total_DuePage />} />
             <Route path="/profile" element={<ProfilePage />} />
@@ -70,7 +68,6 @@ function App() {
           </Route>
 
           <Route element={<MainLayoutAuth />}>
-            <Route path="/about" element={<AboutHomepage />} />
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LogingPage />} />
             <Route path="/register" element={<RegisterPage />} />

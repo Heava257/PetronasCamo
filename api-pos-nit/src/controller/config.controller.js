@@ -117,12 +117,12 @@ exports.getList = async (req, res) => {
     //   { label: "Panasonic", value: "Panasonic", country: "USA" },
     // ];
     const unit = [
-      { label: "Liter", value: "liter" },
-      { label: "Ton", value: "ton" },
+      { label: "L", value: "L" },
+      { label: "T", value: "T" },
     ];
 
     const product = [
-      { label: "ប្រេងឥន្ធនះ", value: "oil" },
+      { label: "ប្រេងឥន្ធនៈ", value: "oil" },
     ];
 
     // const expanse_id = ("SELECT expense_type_id AS FROM expense");

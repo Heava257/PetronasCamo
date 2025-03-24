@@ -3,7 +3,7 @@ import { Form, Button, message, Input, Space } from "antd";
 import { request } from "../../util/helper";
 import { setAcccessToken, setPermission, setProfile } from "../../store/profile.store";
 import { useNavigate } from "react-router-dom";
-import login_p1 from "../../assets/login.png";
+import logo from "../../assets/petronas.png"
 function LoginPage() {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -59,32 +59,50 @@ function LoginPage() {
     }
   };
 
-  const abouthere =()=>{
+  const abouthere = () => {
     navigate("/about")
   }
   return (
     <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        backgroundImage: `url(${login_p1})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center", 
-        backgroundRepeat: "no-repeat",
-      }}
-    >
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100vh",
+      background: "radial-gradient(circle,#08a699,rgba(8,166,153,255) 100%)",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      animation: "gradientAnimation 10s ease infinite", // Optional: Add animation
+    }}
+  >
       <div
         style={{
-          maxWidth: 400,
+          maxWidth: 320,
+          width: "100%",
           margin: "0 auto",
-          padding: 20,
-          backgroundColor: "rgba(255, 255, 255, 0.3)",
+          padding: 30,
+          backgroundColor: "rgba(255, 255, 255, 0.4)", // Increased opacity for better visibility
           borderRadius: "8px",
+          backdropFilter: "blur(10px)",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
         }}
       >
-        <h1 style={{ textAlign: "center", color: "#333" }}>
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          marginBottom: 24
+        }}>
+          <img
+            src={logo}
+            alt="Logo"
+            style={{
+              height: 80,
+              width: "auto",
+            }}
+          />
+        </div>
+        <h1 style={{ textAlign: "center", color: "#333", marginBottom: 24 }}>
           {isRegistering ? "Register" : "Login"}
         </h1>
         <Form layout="vertical" form={form} onFinish={isRegistering ? onRegister : onLogin}>
@@ -97,7 +115,7 @@ function LoginPage() {
                 { type: "email", message: "Please enter a valid email!" },
               ]}
             >
-              <Input placeholder="Email" />
+              <Input placeholder="Email" style={{ borderRadius: "4px" }} />
             </Form.Item>
           )}
           <Form.Item
@@ -105,14 +123,14 @@ function LoginPage() {
             label="Username"
             rules={[{ required: true, message: "Please enter your username!" }]}
           >
-            <Input placeholder="Username" />
+            <Input placeholder="Username" style={{ borderRadius: "4px" }} />
           </Form.Item>
           <Form.Item
             name="password"
             label="Password"
             rules={[{ required: true, message: "Please enter your password!" }]}
           >
-            <Input.Password placeholder="Password" />
+            <Input.Password placeholder="Password" style={{ borderRadius: "4px" }} />
           </Form.Item>
           <Form.Item>
             <Space style={{ width: "100%" }}>
@@ -121,35 +139,19 @@ function LoginPage() {
                 htmlType="submit"
                 block
                 loading={loading}
+                style={{
+                  backgroundColor: "#1890ff",
+                  borderColor: "#1890ff",
+                  borderRadius: "4px",
+                  fontWeight: 500,
+                }}
               >
                 {isRegistering ? "Register" : "Login"}
               </Button>
             </Space>
           </Form.Item>
         </Form>
-        <div style={{ textAlign: "center" }}>
-          {isRegistering ? (
-            <span>
-              Already have an account?{" "}
-              <a
-                onClick={() => setIsRegistering(false)}
-                style={{ color: "#1890ff", cursor: "pointer" }}
-              >
-                Login here
-              </a>
-            </span>
-          ) : (
-            <span>
-          
-              <a
-                onClick={() => abouthere(true)}
-                style={{ color: "#1890ff", cursor: "pointer" ,textAlign:"right" }}
-              >
-               About here 
-              </a>
-            </span>
-          )}
-        </div>
+
       </div>
     </div>
   );

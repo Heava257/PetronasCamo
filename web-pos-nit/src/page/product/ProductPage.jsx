@@ -283,7 +283,7 @@ function ProductPage() {
     }
   };
   const product = [
-    { label: "ប្រេងឥន្ធនះ", value: "oil" },
+    { label: "ប្រេងឥន្ធនៈ", value: "oil" },
   ];
   
   const handleChange = (value) => {

@@ -444,7 +444,7 @@ exports.create = async (req, res) => {
     const { order, order_details = [] } = req.body;
 
     // Validate required fields in the order
-    if (!order.customer_id || !order.total_amount || !order.paid_amount || !order.payment_method) {
+    if (!order.customer_id || !order.total_amount || !order.payment_method) {
       return res.status(400).json({ error: "Missing required fields in order" });
     }
 

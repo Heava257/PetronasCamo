@@ -217,11 +217,11 @@ function ReportExpense_Summary() {
               width: "100%",
               backgroundColor: "#ffffff",
               borderRadius: "12px",
-              overflow: "hidden",
               boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
               padding: "10px",
               boxSizing: "border-box",
             }}
+            
             loading={loading}
             dataSource={state.list}
             columns={[

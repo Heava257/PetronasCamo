@@ -1,3 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Battambang&display=swap');
+
+.pos-row {
+  font-family: "Battambang", sans-serif;
+  font-size: 10px !important;
+  font-weight: bold;
+  color: #000;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+
 .pageHeader {
   display: flex;
   justify-content: space-between;
@@ -40,14 +52,8 @@ td {
   font-weight: bold;
   color: #333; 
 }
-.pos-row {
-  font-family: "Khmer OS Battambang", sans-serif;
-  font-size: 10px !important; /* Ensure it overrides any default styling */
-  font-weight: bold;
-  color: #000000;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-}
+
+
 
 
 .khmer-oil {
@@ -771,3 +777,6 @@ body {
   text-overflow: ellipsis;
   vertical-align: middle;
 }
+
+
+

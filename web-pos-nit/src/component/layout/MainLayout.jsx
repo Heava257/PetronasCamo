@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Breadcrumb, Button, Dropdown, Input, Layout, Menu, Tag, theme } from "antd";
 import { Outlet, useNavigate } from "react-router-dom";
 import "./MainLayout.css";
-import logo from "../../assets/petronas.png";
+import logo from "../../assets/petronas_header.png";
 import ImgUser from "../../assets/profile.png";
 import { Tooltip } from "antd";
 import { MdOutlineMarkEmailUnread } from "react-icons/md";
@@ -54,14 +54,9 @@ const items_menu = [
     icon: <DesktopOutlined />,
     className: "invoices-item khmrt-branch",
   },
-  
   {
     key: "order",
-    label: (
-      <Tooltip title="សេចក្ដីលម្អិតវិក្កយបត្រ">
-        <span className="menu-item-text">សេចក្ដីលម្អិតវិក្កយបត្រ</span>
-      </Tooltip>
-    ),
+    label: "សេចក្ដីលម្អិតវិក្កយបត្រ",
     icon: <FileOutlined />,
     className: "invoices-detail-item khmrt-branch",
   },
@@ -72,14 +67,17 @@ const items_menu = [
     className: "invoices-detail-item khmrt-branch",
   },
   {
-    key: "product",
-    label: (
-      <Tooltip title="ឃ្លាំងស្តុកប្រេងឥន្ធនៈ និង ឧស្ម័នហ្គាស">
-        <span className="menu-item-text">ឃ្លាំងស្តុកប្រេងឥន្ធនៈ និង ឧស្ម័នហ្គាស</span>
-      </Tooltip>
-    ),
-    icon: <FileProtectOutlined />,
-    className: "list-product-item khmrt-branch",
+    label: "ផលិតផល",
+    icon: <ShopOutlined />,
+    className: "product-menu khmrt-branch",
+    children: [
+      {
+        key: "product",
+        label: "ឃ្លាំងបញ្ចូលស្តុកប្រេង/Terminal",
+        icon: <FileProtectOutlined />,
+        className: "list-product-item khmrt-branch",
+      },
+    ],
   },
   {
     key: "category",
@@ -120,11 +118,7 @@ const items_menu = [
       },
       {
         key: "expanse_type",
-        label: (
-          <Tooltip title="ប្រភេទនៃការចំណាយ">
-            <span className="menu-item-text">ប្រភេទនៃការចំណាយ</span>
-          </Tooltip>
-        ),
+        label: "ប្រភេទនៃការចំណាយ",
         icon: <DollarOutlined />,
         className: "expense-item khmrt-branch",
       },
@@ -175,11 +169,7 @@ const items_menu = [
       },
       {
         key: "report_Expense_Summary",
-        label: (
-          <Tooltip title="សង្ខេបការចំណាយ">
-            <span className="menu-item-text">សង្ខេបការចំណាយ</span>
-          </Tooltip>
-        ),
+        label: "សង្ខេបការចំណាយ",
         icon: <DollarOutlined />,
         className: "expense-summary-item khmrt-branch",
       },
@@ -204,6 +194,7 @@ const items_menu = [
     ],
   },
 ];
+
 
 const MainLayout = () => {
   const permision = getPermission();
