@@ -52,7 +52,14 @@ td {
   font-weight: bold;
   color: #333; 
 }
-
+.pos-row {
+  font-family: "Khmer OS Battambang", sans-serif;
+  font-size: 10px !important; /* Ensures it overrides other styles */
+  font-weight: bold;
+  color: #000; /* Shortened hex for black */
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
 
 
 

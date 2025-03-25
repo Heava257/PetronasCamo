@@ -57,14 +57,29 @@ const PrintInvoice = React.forwardRef((props, ref) => {
     cart_list = [],
   } = props;
 
-  const formatNumber = (value) => {
+  const formatNumber = (value, withDollar = false) => {
     const number = parseFloat(value) || 0;
-    return number.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+    const rounded = Math.ceil(number); // Round UP to nearest dollar
+    const formatted = rounded.toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     });
+    return withDollar ? `${formatted}$` : formatted;
   };
 
+  const formatGrandTotal = (value, withDollar = false) => {
+    const number = parseFloat(value) || 0;
+    const rounded = Math.ceil(number); // Round UP to nearest dollar
+    const formatted = rounded.toLocaleString('en-US', {
+      minimumFractionDigits: 2,  // កំណត់ឱ្យមានយ៉ាងហោចណាស់ 2 ខ្ទង់ទសភាគ
+      maximumFractionDigits: 2   // កំណត់ឱ្យមានអតិបរមា 2 ខ្ទង់ទសភាគ
+    });
+    return withDollar ? `${formatted}$` : formatted;
+  };
+  const FormatQTY = (value) => {
+    const number = parseFloat(value) || 0;
+    return number.toLocaleString('en-US');
+  };
   const formatDate = (dateString) => {
     if (!dateString) return "";
     const date = new Date(dateString);
@@ -120,17 +135,42 @@ const PrintInvoice = React.forwardRef((props, ref) => {
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <p className="khmer-text">ឈ្មោះអតិថិជន: {objSummary?.customer_name || "N/A"}</p>
-          <p className="khmer-text mt-1">អាស័យដ្ឋាន: {objSummary?.customer_address || "N/A"}</p>
-          <p className="khmer-text mt-1">លេខទូរស័ព្ទ: {objSummary?.customer_tel || "N/A"}</p>
-          <p className="khmer-text mt-1">គោលដៅ: {objSummary.user_name || "N/A"}</p></div>
-        <div className="text-right">
-          <p className="khmer-text mt-1">លេខវិក្កយប័ត្រ: {objSummary.order_no}
+          {/* Customer Name - Khmer MEF FastHand */}
+          <p className="customer-name-font">
+            ឈ្មោះអតិថិជន: {objSummary?.customer_name || "N/A"}
           </p>
-          <p className="khmer-text mt-1">ថ្ងៃបញ្ជាទិញ: {formatDateClient(objSummary.order_date)}</p>
-          <p className="khmer-text mt-1">ថ្ងៃប្រគល់ទំនិញ: {formatDate(objSummary.order_date)}</p>
-          <p className="khmer-text mt-1">លេខបញ្ជាទិញ: {`#SA-${objSummary.order_no}`}</p>
-          <p className="khmer-text mt-1">លេខបណ្ណបញ្ចេញទំនិញ:...................</p>
+
+          {/* Address - Khmer OS Freehand */}
+          <p className="address-font mt-1">
+            អាស័យដ្ឋាន: {objSummary?.customer_address || "N/A"}
+          </p>
+
+          {/* Other info - Default khmer-text */}
+          <p className="khmer-text mt-1">
+            លេខទូរស័ព្ទ: {objSummary?.customer_tel || "N/A"}
+          </p>
+          <p className="khmer-text mt-1">
+            គោលដៅ: {objSummary.user_name || "N/A"}
+          </p>
+        </div>
+
+        <div className="text-right">
+          {/* Right column - All default khmer-text */}
+          <p className="khmer-text mt-1">
+            លេខវិក្កយប័ត្រ: {objSummary.order_no}
+          </p>
+          <p className="khmer-text mt-1">
+            ថ្ងៃបញ្ជាទិញ: {formatDateClient(objSummary.order_date)}
+          </p>
+          <p className="khmer-text mt-1">
+            ថ្ងៃប្រគល់ទំនិញ: {formatDateClient(objSummary.order_date)}
+          </p>
+          <p className="khmer-text mt-1">
+            លេខបញ្ជាទិញ: {`#SA-${objSummary.order_no}`}
+          </p>
+          <p className="khmer-text mt-1">
+            លេខបណ្ណបញ្ចេញទំនិញ:...................
+          </p>
         </div>
       </div>
       <div className="w-full mb-8 overflow-x-auto">
@@ -164,46 +204,48 @@ const PrintInvoice = React.forwardRef((props, ref) => {
             </tr>
           </thead>
           <tbody className="border border-gray-500">
-            {cart_list.map((item, index) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="border border-gray-500 p-1 text-center khmer-text">
-                  {index + 1}
-                </td>
-                <td className="border border-gray-500 p-1 text-center khmer-text">
-                  {item.category_name}
-                </td>
-                <td className="border border-gray-500 p-1 text-center khmer-text">
-                  {item.cart_qty} <span className="text-sm">{item.unit}</span>
-                </td>
-                <td className="border border-gray-500 p-1 text-right khmer-text">
-                  <div className="w-100 h-100 flex justify-between">
-                    <span>$</span>
-                    <span>{formatUnitPrice(item.unit_price)}</span>
-                  </div>
-                </td>
-                <td className="border border-gray-500 p-1 font-bold khmer-text text-center">
-                  <span>$</span>{" "}
-                  <span>{formatNumber(roundedTotal)}</span>
-                </td>
-              </tr>
-            ))}
+            {cart_list.map((item, index) => {
+              // Calculate individual item total correctly
+              const itemTotal = (item.cart_qty * item.unit_price) / (item.actual_price || 1);
+              const formattedItemTotal = formatGrandTotal(itemTotal);
+
+              return (
+                <tr key={index} className="hover:bg-gray-50 p-1">
+                  <td className="border border-gray-500 p-1 text-center khmer-text">
+                    {index + 1}
+                  </td>
+                  <td className="border border-gray-500 p-4 text-left khmer-text">
+                    {item.category_name}
+                  </td>
+                  <td className="border border-gray-500 p-1  text-center khmer-text">
+                    {FormatQTY(item.cart_qty)} <span className="text-sm">{item.unit}</span>
+                  </td>
+
+                  <td className="border border-gray-500 p-1 text-right khmer-text">
+                    <div className="w-100 h-100 flex justify-between">
+                      <span>$</span>
+                      <span>{formatUnitPrice(item.unit_price)}</span>
+                    </div>
+                  </td>
+                  <td className="border border-gray-500 p-1 text-right font-bold khmer-text">
+                    $ {formattedItemTotal}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {/* Grand Total Row */}
             <tr className="font-bold">
-              <td
-                className="border text-center border-gray-500 p-1 khmer-text"
-                colSpan={2}
-              >
+              <td className="border text-center border-gray-500 p-2 khmer-text" colSpan={2}>
                 {totalInKhmerWords}
               </td>
-              <td
-                className="border border-gray-500 p-1 text-center khmer-text"
-                colSpan={2}
-              >
+              <td className="border border-gray-500 p-1 text-center khmer-text" colSpan={2}>
                 តម្លៃរាយសរុប Grand Total
               </td>
               <td className="border border-gray-500 p-1 text-right khmer-text">
                 <div className="w-100 h-100 flex justify-between">
                   <span>$</span>
-                  <span>{formatNumber(roundedTotal)}</span>
+                  <span>{formatGrandTotal(roundedTotal)}</span>
                 </div>
               </td>
             </tr>
@@ -252,10 +294,12 @@ const PrintInvoice = React.forwardRef((props, ref) => {
         </table>
       </div>
       <div className="text-center khmer-text">
-        <p>ទំនាក់ទំនងផ្នែកទីផ្សារ: 099 82 22 82 / 093 82 22 82</p>
+        <p>ទំនាក់ទំនងផ្នែកទីផ្សារ:{profile?.tel}</p>
       </div>
     </div>
   );
 });
 
 export default PrintInvoice;
+
+
