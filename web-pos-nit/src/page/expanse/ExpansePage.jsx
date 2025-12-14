@@ -11,16 +11,19 @@ import {
     Table,
     DatePicker,
 } from "antd";
-import { request } from "../../util/helper";
+import { isPermission, request } from "../../util/helper";
 import { MdDelete, MdEdit, MdOutlineCreateNewFolder } from "react-icons/md";
 import MainPage from "../../component/layout/MainPage";
 import dayjs from "dayjs";
 import { FiSearch } from "react-icons/fi";
 import { configStore } from "../../store/configStore";
-// import { configStore } from "../../store/configStore";
+import { useTranslation } from "../../locales/TranslationContext";
 function ExpansePage() {
     const [formRef] = Form.useForm();
     const { config } = configStore();
+    const { t } = useTranslation(); 
+    
+    
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [state, setState] = useState({
@@ -28,9 +31,11 @@ function ExpansePage() {
         id: null,
         txtSearch: "",
     });
+
     useEffect(() => {
         getList();
     }, []);
+
     const getList = async () => {
         setLoading(true);
         const param = {
@@ -42,6 +47,7 @@ function ExpansePage() {
             setList(res.list || []);
         }
     };
+
     const onClickEdit = (data) => {
         setState({
             ...state,
@@ -58,11 +64,12 @@ function ExpansePage() {
             expense_date: dayjs(data.expense_date),
         });
     };
+
     const onClickDelete = async (data) => {
         Modal.confirm({
-            title: "លុប",
-            content: "Are you sure to remove?",
-            okText: "យល់ព្រម",
+            title: t("លុប"),
+            content: t("Are you sure to remove?"),
+            okText: t("យល់ព្រម"),
             onOk: async () => {
                 const res = await request(`expense/${data.id}`, "delete");
                 if (res && !res.error) {
@@ -75,6 +82,7 @@ function ExpansePage() {
             },
         });
     };
+
     const onClickAddBtn = () => {
         setState({
             ...state,
@@ -83,6 +91,7 @@ function ExpansePage() {
         });
         formRef.resetFields();
     };
+
     const onCloseModal = () => {
         formRef.resetFields();
         setState({
@@ -91,6 +100,7 @@ function ExpansePage() {
             id: null,
         });
     };
+
     const onFinish = async (values) => {
         const data = {
             id: formRef.getFieldValue("id"),
@@ -103,9 +113,7 @@ function ExpansePage() {
         };
         const method = formRef.getFieldValue("id") ? "put" : "post";
         const url = formRef.getFieldValue("id") ? `expense/${data.id}` : "expense";
-        console.log("Request URL:", url);
-        console.log("Request Method:", method);
-        console.log("Request Payload:", data);
+        
         const res = await request(url, method, data);
         if (res && !res.error) {
             message.success(res.message);
@@ -115,162 +123,145 @@ function ExpansePage() {
             message.error(res?.message || "Failed to save expense.");
         }
     };
+
     return (
         <MainPage loading={loading}>
             <div className="pageHeader">
                 <Space>
-                    <div>Expense Management</div>
+                    <div>{t("Expense Management")}</div>
                     <Input.Search
                         onChange={(e) =>
                             setState((p) => ({ ...p, txtSearch: e.target.value }))
                         }
                         allowClear
                         onSearch={getList}
-                        placeholder="Search"
+                        placeholder={t("Search")}
                     />
                     <Button type="primary" onClick={getList} icon={<FiSearch />}>
-                        Filter
+                        {t("Filter")}
                     </Button>
                 </Space>
-                <Button type="primary" onClick={onClickAddBtn} icon={<MdOutlineCreateNewFolder />}>
-                    NEW
+                <Button 
+                    type="primary" 
+                    onClick={onClickAddBtn} 
+                    icon={<MdOutlineCreateNewFolder />}
+                >
+                    {t("NEW")}
                 </Button>
             </div>
+
             <Modal
                 open={state.visibleModal}
-                title={
-                    <div>
-                        <div className="khmer-text">
-                            {formRef.getFieldValue("id") ? "កែសម្រួលចំណាយ" : "ចំណាយថ្មី"}
-                        </div>
-
-                    </div>
-                }
+                title={t(formRef.getFieldValue("id") ? "កែសម្រួលចំណាយ" : "ចំណាយថ្មី")}
                 footer={null}
                 onCancel={onCloseModal}
-            ><Form layout="vertical" onFinish={onFinish} form={formRef}>
-            {/* Hidden ID Field */}
-            <Form.Item name="id" hidden>
-                <Input />
-            </Form.Item>
-        
-            {/* Expense Type */}
-            <Form.Item
-                name="expense_type_id"
-                label={<div className="khmer-text">ប្រភេទនៃការចំណាយ</div>}
-                rules={[{ required: true, message: "Expense Type is required" }]}
             >
-                <Select options={config.expense_type} placeholder="ជ្រើសរើសប្រភេទចំណាយ" />
-            </Form.Item>
-        
-            {/* Reference Number */}
-            <Form.Item
-                name="ref_no"
-                label={<div className="khmer-text">លេខយោង</div>}
-                rules={[{ required: true, message: "Reference Number is required" }]}
-            >
-                <Input placeholder="បញ្ចូលលេខយោង" />
-            </Form.Item>
-        
-            {/* Name */}
-            <Form.Item
-                name="name"
-                label={<div className="khmer-text">ឈ្មោះ</div>}
-                rules={[{ required: true, message: "Name is required" }]}
-            >
-                <Input placeholder="បញ្ចូលឈ្មោះចំណាយ" />
-            </Form.Item>
-        
-            {/* Amount */}
-            <Form.Item
-                name="amount"
-                label={<div className="khmer-text">ចំនួនទឹកប្រាក់</div>}
-                rules={[{ required: true, message: "Amount is required" }]}
-            >
-                <InputNumber style={{ width: "100%" }} placeholder="បញ្ចូលចំនួន" min={0} />
-            </Form.Item>
-        
-            {/* Remark */}
-            <Form.Item name="remark" label={<div className="khmer-text">ផ្សេងៗ</div>}>
-                <Input.TextArea placeholder="បញ្ចូលព័ត៌មានបន្ថែម" />
-            </Form.Item>
-        
-            {/* Expense Date */}
-            <Form.Item
-                name="expense_date"
-                label={<div className="khmer-text">កាលបរិច្ឆេទចំណាយ</div>}
-                rules={[{ required: true, message: "Expense Date is required" }]}
-            >
-                <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" placeholder="ជ្រើសរើសកាលបរិច្ឆេទ" />
-            </Form.Item>
-        
-            {/* Buttons */}
-            <Space>
-                <Button onClick={onCloseModal}>
-                    <div className="khmer-text">បោះបង់</div>
-                </Button>
-                <Button type="primary" htmlType="submit">
-                    <div className="khmer-text">
-                        {formRef.getFieldValue("id") ? "កែសម្រួល" : "រក្សាទុក"}
-                    </div>
-                </Button>
-            </Space>
-        </Form>
-        
+                <Form layout="vertical" onFinish={onFinish} form={formRef}>
+                    {/* Hidden ID Field */}
+                    <Form.Item name="id" hidden>
+                        <Input />
+                    </Form.Item>
+
+                    {/* Expense Type */}
+                    <Form.Item
+                        name="expense_type_id"
+                        label={t("ប្រភេទនៃការចំណាយ")}
+                        rules={[{ required: true, message: t("Expense Type is required") }]}
+                    >
+                        <Select 
+                            options={config.expense_type} 
+                            placeholder={t("ជ្រើសរើសប្រភេទចំណាយ")} 
+                        />
+                    </Form.Item>
+
+                    {/* Reference Number */}
+                    <Form.Item
+                        name="ref_no"
+                        label={t("លេខយោង")}
+                        rules={[{ required: true, message: t("Reference Number is required") }]}
+                    >
+                        <Input placeholder={t("បញ្ចូលលេខយោង")} />
+                    </Form.Item>
+
+                    {/* Name */}
+                    <Form.Item
+                        name="name"
+                        label={t("ឈ្មោះ")}
+                        rules={[{ required: true, message: t("Name is required") }]}
+                    >
+                        <Input placeholder={t("បញ្ចូលឈ្មោះចំណាយ")} />
+                    </Form.Item>
+
+                    {/* Amount */}
+                    <Form.Item
+                        name="amount"
+                        label={t("ចំនួនទឹកប្រាក់")}
+                        rules={[{ required: true, message: t("Amount is required") }]}
+                    >
+                        <InputNumber 
+                            style={{ width: "100%" }} 
+                            placeholder={t("បញ្ចូលចំនួន")} 
+                            min={0} 
+                        />
+                    </Form.Item>
+
+                    {/* Remark */}
+                    <Form.Item name="remark" label={t("ផ្សេងៗ")}>
+                        <Input.TextArea placeholder={t("បញ្ចូលព័ត៌មានបន្ថែម")} />
+                    </Form.Item>
+
+                    {/* Expense Date */}
+                    <Form.Item
+                        name="expense_date"
+                        label={t("កាលបរិច្ឆេទចំណាយ")}
+                        rules={[{ required: true, message: t("Expense Date is required") }]}
+                    >
+                        <DatePicker 
+                            style={{ width: "100%" }} 
+                            format="YYYY-MM-DD" 
+                            placeholder={t("ជ្រើសរើសកាលបរិច្ឆេទ")} 
+                        />
+                    </Form.Item>
+
+                    {/* Buttons */}
+                    <Space>
+                        <Button onClick={onCloseModal}>
+                            {t("បោះបង់")}
+                        </Button>
+                        <Button type="primary" htmlType="submit">
+                            {t(formRef.getFieldValue("id") ? "កែសម្រួល" : "រក្សាទុក")}
+                        </Button>
+                    </Space>
+                </Form>
             </Modal>
+
             <Table
                 rowClassName={() => "pos-row"}
                 dataSource={list}
                 columns={[
                     {
                         key: "no",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ល.រ</div>
-                                <div className="english-text">No</div>
-                            </div>
-                        ),
+                        title: t("ល.រ"),
                         render: (_, __, index) => index + 1,
                     },
                     {
                         key: "expense_type_name",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ប្រភេទចំណាយ</div>
-                                <div className="english-text">Expense Type</div>
-                            </div>
-                        ),
-                        dataIndex: "expense_type_name", // Corrected field name
+                        title: t("Expense Type"),
+                        dataIndex: "expense_type_name",
                     },
-                    
                     {
                         key: "ref_no",
-                        title: (
-                            <div>
-                                <div className="khmer-text">លេខយោង</div>
-                                <div className="english-text">Reference Number</div>
-                            </div>
-                        ),
+                        title: t("Reference Number"),
                         dataIndex: "ref_no",
                     },
                     {
                         key: "name",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ឈ្មោះ</div>
-                                <div className="english-text">Name</div>
-                            </div>
-                        ),
+                        title: t("Name"),
                         dataIndex: "name",
                     },
                     {
                         key: "amount",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ចំនួនទឹកប្រាក់</div>
-                                <div className="english-text">Amount</div>
-                            </div>
-                        ),
+                        title: t("Amount"),
                         dataIndex: "amount",
                         render: (value) => {
                             const numericValue = parseFloat(value);
@@ -279,47 +270,36 @@ function ExpansePage() {
                     },
                     {
                         key: "remark",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ផ្សេងៗ</div>
-                                <div className="english-text">Remark</div>
-                            </div>
-                        ),
+                        title: t("Remark"),
                         dataIndex: "remark",
                     },
                     {
                         key: "expense_date",
-                        title: (
-                            <div>
-                                <div className="khmer-text">កាលបរិច្ឆេទចំណាយ</div>
-                                <div className="english-text">Expense Date</div>
-                            </div>
-                        ),
-                        dataIndex: "expense_date",
-                        render: (value) => dayjs(value).format("YYYY-MM-DD h:mm A"), // Format date
+                        title: t("Expense Date"),
+                        dataIndex: "create_at",
+                        render: (value) => dayjs(value).format("YYYY-MM-DD h:mm A"),
                     },
                     {
                         key: "action",
-                        title: (
-                            <div>
-                                <div className="khmer-text">សកម្មភាព</div>
-                                <div className="english-text">Action</div>
-                            </div>
-                        ),
+                        title: t("Action"),
                         align: "center",
                         render: (_, record) => (
                             <Space>
-                                <Button
-                                    type="primary"
-                                    icon={<MdEdit />}
-                                    onClick={() => onClickEdit(record)}
-                                />
-                                <Button
-                                    type="primary"
-                                    danger
-                                    icon={<MdDelete />}
-                                    onClick={() => onClickDelete(record)}
-                                />
+                                {isPermission("customer.getone") && (
+                                    <Button
+                                        type="primary"
+                                        icon={<MdEdit />}
+                                        onClick={() => onClickEdit(record)}
+                                    />
+                                )}
+                                {isPermission("customer.getone") && (
+                                    <Button
+                                        type="primary"
+                                        danger
+                                        icon={<MdDelete />}
+                                        onClick={() => onClickDelete(record)}
+                                    />
+                                )}
                             </Space>
                         ),
                     },
@@ -328,4 +308,5 @@ function ExpansePage() {
         </MainPage>
     );
 }
+
 export default ExpansePage;

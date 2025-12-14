@@ -33,7 +33,99 @@ INSERT INTO user_roles (user_id,role_id) VALUES
 
 
 
-INSERT INTO permission	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+INSERT INTO permission_roles (role_id, permission_id) VALUES
+(28,166),
+(28,263),
+(28,266),
+
+
+
+(28,187),
+(28,189),
+(28,190),
+(28,191),
+(28,256),
+(28,259),
+(28,260),
+(28,261),
+(28,182),
+(28,184),
+(28,185),
+(28,186),
+(28,177),
+(28,179),
+(28,180),
+(28,181),
+(28,217),
+(28,219),
+(28,220),
+(28,221);
+
+
+
+INSERT INTO permission_roles (role_id, permission_id) VALUES
+
+(28,255);
+
+(28,222),
+(28,227),
+(28,232),
+(28,242),
+(28,165);
+
+
+(25,174),
+(25,175);
+
+
+
+SELECT * FROM `delivery_note`
+
+ALTER TABLE delivery_date ADD COLUMN 	driver_phone VARCHAR(255);
+
+
+("user.getattendanceDashboard","attendanceDashboard",1,"/attendanceDashboard");
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("about.getlist","about",1,"/about"),
+("about.getone","about",NULL,NULL),
+("about.create","about",NULL,NULL),
+("about.update","about",NULL,NULL),
+("about.remove","about",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("delivery-note.getone","delivery-note",NULL,NULL),
+("delivery-note.create","delivery-note",NULL,NULL),
+("delivery-note.update","delivery-note",NULL,NULL),
+("delivery-note.remove","delivery-note",NULL,NULL);
+
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("payment/history.getlist","payment_history",1,"/payment/history");
+
+
+
+("invoices.getone","invoices",NULL,NULL),
+("invoices.create","invoices",NULL,NULL),
+("invoices.update","invoices",NULL,NULL),
+("invoices.remove","invoices",NULL,NULL);
+
+
+
+
+("delivery-note.getlist","deliverynote",1,"/deliverynote"),
+
+
+
+("finance.getone","finance",NULL,NULL),
+("finance.create","finance",NULL,NULL),
+("finance.update","finance",NULL,NULL),
+("finance.remove","finance",NULL,NULL),
+
+("invoices.getlist","invoices",1,"/invoices"),
 
 ("dashboard.getlist","dashboard",1,"/"),
 ("invoices.getlist","invoices",1,"/invoices"),
@@ -120,16 +212,13 @@ INSERT INTO permission	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
 
---
+(25,256),
+(1,256);
 
---Admin
-(3,46),
-(3,47),
-(3,48),
-(3,49),
-(3,50),
-(3,51),
-(3,52);
+
+(25,184);
+(25,185);
+(25,186);
 
 
 

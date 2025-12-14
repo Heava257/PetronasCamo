@@ -1,0 +1,11 @@
+{
+  "customer_management": "គ្រប់គ្រងអតិថិជន",
+  "name": "ឈ្មោះ",
+  "telephone": "លេខទូរស័ព្ទ",
+  "address": "អាសយដ្ឋាន",
+  "gender": {
+    "male": "ប្រុស",
+    "female": "ស្រី"
+  }
+  
+}

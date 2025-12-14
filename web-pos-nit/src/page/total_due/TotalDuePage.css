@@ -1,0 +1,984 @@
+/* TotalDuePage Styling - Light & Dark Mode */
+
+/* ==========================================
+   LIGHT MODE STYLES (Default)
+   ========================================== */
+
+/* General Styles */
+.khmer-title {
+  font-family: 'Khmer OS', sans-serif;
+  margin: 0;
+  color: #1890ff;
+}
+
+.english-font {
+  font-family: 'Arial', sans-serif;
+}
+
+.khmer-font {
+  font-family: 'Khmer OS', sans-serif;
+}
+
+/* Page Header Styling */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.title-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-icon {
+  font-size: 28px;
+  color: #1890ff;
+}
+
+/* Filter Card Styling */
+.filter-card {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.search-input input {
+  border-radius: 4px;
+}
+
+.search-icon {
+  color: #1890ff;
+}
+
+.calendar-icon {
+  color: #1890ff;
+}
+
+.custom-select .ant-select-selector {
+  border-radius: 4px;
+}
+
+.date-picker {
+  border-radius: 4px;
+}
+
+.status-select .ant-select-selector {
+  border-radius: 4px;
+}
+
+/* Statistics Card Styling */
+.stat-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.total-amount {
+  background: linear-gradient(135deg, #e6f7ff, #ffffff);
+  border-left: 4px solid #96bfe5;
+}
+
+.paid-amount {
+  background: linear-gradient(135deg, #f6ffed, #ffffff);
+  border-left: 4px solid #b8f799;
+}
+
+.due-amount {
+  background: linear-gradient(135deg, #fff2f0, #ffffff);
+  border-left: 4px solid #f5aeb1;
+}
+
+.stat-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Khmer OS', sans-serif;
+  color: #595959;
+}
+
+.stat-icon {
+  font-size: 18px;
+  color: #1890ff;
+}
+
+.statistic-value {
+  font-weight: bold;
+}
+
+/* Table Card Styling */
+.table-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.card-title-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.card-title-icon {
+  font-size: 22px;
+  color: #1890ff;
+}
+
+.card-title {
+  margin: 0;
+  font-family: 'Khmer OS', sans-serif;
+  color: #262626;
+}
+
+.custom-table .ant-table-thead > tr > th {
+  background-color: #f0f7ff;
+  color: #262626;
+  font-weight: bold;
+  padding: 12px 16px;
+}
+
+.table-row:hover {
+  background-color: #f0f7ff !important;
+}
+
+.index-column {
+  text-align: center;
+  font-weight: bold;
+}
+
+.customer-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-name {
+  font-weight: bold;
+  color: #262626;
+}
+
+.customer-phone {
+  color: #8c8c8c;
+}
+
+.address-text {
+  color: #595959;
+}
+
+.invoice-count-tag {
+  font-weight: bold;
+  padding: 2px 10px;
+}
+
+.due-amount-text {
+  color: #cf1322;
+  font-size: 16px;
+}
+
+.view-details-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+  border: none;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.view-details-btn:hover {
+  background: linear-gradient(135deg, #40a9ff, #1890ff);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+/* Customer Drawer Styling */
+.customer-drawer .ant-drawer-header {
+  padding: 16px 24px;
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #e6f7ff;
+}
+
+.drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.drawer-title-icon {
+  font-size: 24px;
+  color: #1890ff;
+}
+
+.drawer-export-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #52c41a, #389e0d);
+  border: none;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.drawer-export-button:hover {
+  background: linear-gradient(135deg, #73d13d, #52c41a);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+}
+
+.customer-card {
+  margin-bottom: 24px;
+}
+
+.customer-descriptions {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.description-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #262626;
+}
+
+.description-icon {
+  color: #1890ff;
+}
+
+.description-value {
+  font-weight: 500;
+  color: #262626;
+}
+
+.amount-tag {
+  font-size: 16px;
+  padding: 4px 12px;
+}
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0;
+}
+
+.divider-icon {
+  color: #1890ff;
+  font-size: 18px;
+}
+
+.divider-text {
+  font-size: 16px;
+  color: #262626;
+}
+
+.customer-stats {
+  margin-bottom: 24px;
+}
+
+.customer-stat-card {
+  border-radius: 6px;
+}
+
+.customer-stat-card.total {
+  border-left: 3px solid #82b9ec;
+}
+
+.customer-stat-card.paid {
+  border-left: 3px solid #a3d689;
+}
+
+.customer-stat-card.due {
+  border-left: 3px solid #e48d92;
+}
+
+.customer-stat-card.purchase {
+  border-left: 3px solid #1890ff;
+}
+
+.customer-stat-card.purchase .ant-statistic-title {
+  color: #1890ff;
+  font-weight: 600;
+}
+
+/* Collapse Panel Styling */
+.orders-collapse {
+  margin-bottom: 24px;
+}
+
+.orders-collapse .ant-collapse-header {
+  background-color: #f9f9f9;
+  border-radius: 6px 6px 0 0 !important;
+  padding: 12px 16px !important;
+}
+
+.orders-collapse .ant-collapse-content-box {
+  padding: 16px !important;
+}
+
+.order-header {
+  width: 100%;
+}
+
+.invoice-number {
+  font-weight: 500;
+  color: #262626;
+}
+
+.order-date {
+  color: #595959;
+}
+
+.due-amount {
+  color: #cf1322;
+  font-weight: 500;
+}
+
+.overdue-tag {
+  padding: 2px 8px;
+  font-weight: bold;
+}
+
+.order-actions {
+  display: flex;
+  align-items: center;
+}
+
+.quantity-tag {
+  font-weight: 500;
+  padding: 2px 8px;
+}
+
+.payment-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+  border: none;
+  border-radius: 4px;
+  transition: all 0.3s;
+}
+
+.payment-button:hover {
+  background: linear-gradient(135deg, #40a9ff, #1890ff);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+}
+
+.order-panel .ant-collapse-content {
+  border-radius: 0 0 6px 6px;
+}
+
+.order-details {
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.order-details .ant-descriptions-item-label {
+  background-color: #f9f9f9;
+  font-weight: 500;
+  font-family: 'Khmer OS', sans-serif;
+}
+
+.debt-type, 
+.quantity-item, 
+.unit-price-item, 
+.total-amount-item, 
+.paid-amount-item, 
+.due-amount-item, 
+.status-item, 
+.products-item,
+.notes-item {
+  padding: 12px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.categories-container {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.categories-label {
+  margin-right: 8px;
+  color: #595959;
+}
+
+.category-tag {
+  border-radius: 4px;
+}
+
+.quantity-value, 
+.unit-price-value, 
+.total-amount-value, 
+.paid-amount-value, 
+.due-amount-value {
+  font-weight: 500;
+}
+
+.due-amount-value {
+  color: #cf1322;
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-text {
+  font-weight: 500;
+}
+
+.due-date-container {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.due-date-label {
+  color: #595959;
+}
+
+.due-date-tag {
+  padding: 2px 8px;
+}
+
+.products-container {
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.product-item {
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-number {
+  min-width: 30px;
+  text-align: center;
+}
+
+.product-details {
+  color: #262626;
+}
+
+.notes-content {
+  color: #595959;
+  font-style: italic;
+}
+
+/* Payment Modal Styling */
+.payment-modal .ant-modal-header {
+  background-color: #f0f7ff;
+  border-bottom: 1px solid #e6f7ff;
+  padding: 16px 24px;
+  border-radius: 8px 8px 0 0;
+}
+
+.payment-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.payment-icon {
+  font-size: 20px;
+  color: #1890ff;
+}
+
+.payment-descriptions {
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.payment-item .ant-descriptions-item-label {
+  background-color: #f9f9f9;
+  width: 30%;
+}
+
+.payment-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Khmer OS', sans-serif;
+}
+
+.payment-value {
+  font-weight: 500;
+}
+
+.payment-due-amount {
+  color: #cf1322;
+  font-size: 16px;
+}
+
+.payment-form {
+  background-color: #f9f9f9;
+  padding: 16px;
+  border-radius: 6px;
+  margin-top: 16px;
+}
+
+.payment-method-label,
+.payment-amount-label,
+.payment-notes-label {
+  font-family: 'Khmer OS', sans-serif;
+  color: #262626;
+  font-weight: 500;
+}
+
+.payment-method-select .ant-select-selector {
+  border-radius: 4px;
+}
+
+.payment-amount-input {
+  border-radius: 4px;
+}
+
+.payment-notes-input {
+  border-radius: 4px;
+  resize: none;
+}
+
+.stat-card.purchase-amount {
+  border-left: 4px solid #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.15);
+  transition: all 0.3s ease;
+}
+
+.stat-card.purchase-amount:hover {
+  box-shadow: 0 4px 16px rgba(24, 144, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.stat-card.purchase-amount .ant-statistic-title {
+  color: #1890ff;
+}
+
+/* ==========================================
+   DARK MODE STYLES
+   ========================================== */
+
+/* Title & Icons */
+.dark .khmer-title {
+  color: #60a5fa !important;
+}
+
+.dark .title-icon {
+  color: #60a5fa !important;
+}
+
+.dark .search-icon {
+  color: #9ca3af !important;
+}
+
+.dark .calendar-icon {
+  color: #9ca3af !important;
+}
+
+/* Page Header */
+.dark .pageHeader {
+  border-bottom: 1px solid #374151 !important;
+}
+
+/* Filter Card */
+.dark .filter-card {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Statistics Cards - Override Light Mode */
+.dark .stat-card {
+  background: rgba(30, 41, 59, 0.95) !important;
+  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .stat-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5) !important;
+  transform: translateY(-5px);
+}
+
+.dark .total-amount,
+.dark .paid-amount,
+.dark .due-amount {
+  background: rgba(30, 41, 59, 0.95) !important;
+}
+
+.dark .total-amount {
+  border-left: 4px solid #10b981 !important;
+}
+
+.dark .paid-amount {
+  border-left: 4px solid #3b82f6 !important;
+}
+
+.dark .due-amount {
+  border-left: 4px solid #ef4444 !important;
+}
+
+.dark .stat-card.purchase-amount {
+  background: rgba(30, 41, 59, 0.95) !important;
+  border-left: 4px solid #3b82f6 !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+}
+
+.dark .stat-card.purchase-amount:hover {
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5) !important;
+}
+
+.dark .stat-card.purchase-amount .ant-statistic-title {
+  color: #60a5fa !important;
+}
+
+.dark .stat-title {
+  color: #9ca3af !important;
+}
+
+.dark .stat-icon {
+  color: #60a5fa !important;
+}
+
+/* Table Card */
+.dark .table-card {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .card-title {
+  color: #f3f4f6 !important;
+}
+
+.dark .card-title-icon {
+  color: #60a5fa !important;
+}
+
+.dark .custom-table .ant-table-thead > tr > th {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .table-row:hover {
+  background-color: rgba(55, 65, 81, 0.5) !important;
+}
+
+.dark .customer-name {
+  color: #f3f4f6 !important;
+}
+
+.dark .customer-phone {
+  color: #9ca3af !important;
+}
+
+.dark .address-text {
+  color: #d1d5db !important;
+}
+
+.dark .due-amount-text {
+  color: #ef4444 !important;
+}
+
+/* Customer Drawer */
+.dark .customer-drawer .ant-drawer-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%) !important;
+  border-bottom: 1px solid #4b5563 !important;
+}
+
+.dark .drawer-title {
+  color: #ffffff !important;
+}
+
+.dark .drawer-title-icon {
+  color: #ffffff !important;
+}
+
+.dark .drawer-export-button {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: #ffffff !important;
+}
+
+.dark .drawer-export-button:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+}
+
+.dark .customer-card {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+}
+
+.dark .customer-descriptions {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark .description-label {
+  color: #f3f4f6 !important;
+}
+
+.dark .description-icon {
+  color: #60a5fa !important;
+}
+
+.dark .description-value {
+  color: #e5e7eb !important;
+}
+
+.dark .section-divider {
+  border-color: #4b5563 !important;
+}
+
+.dark .divider-icon {
+  color: #60a5fa !important;
+}
+
+.dark .divider-text {
+  color: #f3f4f6 !important;
+}
+
+/* Customer Stat Cards */
+.dark .customer-stat-card {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+}
+
+.dark .customer-stat-card.total {
+  border-left: 3px solid #10b981 !important;
+}
+
+.dark .customer-stat-card.paid {
+  border-left: 3px solid #3b82f6 !important;
+}
+
+.dark .customer-stat-card.due {
+  border-left: 3px solid #ef4444 !important;
+}
+
+.dark .customer-stat-card.purchase {
+  border-left: 3px solid #3b82f6 !important;
+}
+
+.dark .customer-stat-card.purchase .ant-statistic-title {
+  color: #60a5fa !important;
+}
+
+/* Collapse Panel */
+.dark .orders-collapse .ant-collapse-header {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .orders-collapse .ant-collapse-content {
+  background-color: #1f2937 !important;
+  border-color: #374151 !important;
+}
+
+.dark .invoice-number {
+  color: #60a5fa !important;
+}
+
+.dark .order-date {
+  color: #9ca3af !important;
+}
+
+.dark .due-amount {
+  color: #ef4444 !important;
+}
+
+.dark .payment-button {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+}
+
+.dark .payment-button:hover {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+}
+
+/* Order Details */
+.dark .order-details {
+  background: transparent !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+}
+
+.dark .order-details .ant-descriptions-item-label {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .order-details .ant-descriptions-item-content {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .debt-type, 
+.dark .quantity-item, 
+.dark .unit-price-item, 
+.dark .total-amount-item, 
+.dark .paid-amount-item, 
+.dark .due-amount-item, 
+.dark .status-item, 
+.dark .products-item,
+.dark .notes-item {
+  border-bottom: 1px solid #374151 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .categories-label {
+  color: #9ca3af !important;
+}
+
+.dark .category-tag {
+  background: #374151 !important;
+  border-color: #4b5563 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .quantity-value, 
+.dark .unit-price-value, 
+.dark .total-amount-value, 
+.dark .paid-amount-value {
+  color: #e5e7eb !important;
+}
+
+.dark .due-amount-value {
+  color: #ef4444 !important;
+}
+
+.dark .status-text {
+  color: #e5e7eb !important;
+}
+
+.dark .due-date-label {
+  color: #9ca3af !important;
+}
+
+.dark .due-date-container {
+  background: rgba(55, 65, 81, 0.3) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+}
+
+.dark .products-container::-webkit-scrollbar-track {
+  background: #1f2937 !important;
+}
+
+.dark .products-container::-webkit-scrollbar-thumb {
+  background: #4b5563 !important;
+}
+
+.dark .product-item {
+  color: #e5e7eb !important;
+}
+
+.dark .product-number {
+  color: #9ca3af !important;
+}
+
+.dark .product-details {
+  color: #e5e7eb !important;
+}
+
+.dark .notes-content {
+  color: #9ca3af !important;
+}
+
+/* Payment Modal */
+.dark .payment-modal .ant-modal-header {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%) !important;
+  border-bottom: 1px solid #4b5563 !important;
+}
+
+.dark .payment-modal-title {
+  color: #ffffff !important;
+}
+
+.dark .payment-icon {
+  color: #ffffff !important;
+}
+
+.dark .payment-descriptions {
+  background: rgba(31, 41, 55, 0.5) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+}
+
+.dark .payment-item .ant-descriptions-item-label {
+  background-color: #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .payment-item .ant-descriptions-item-content {
+  background-color: #1f2937 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .payment-label {
+  color: #f3f4f6 !important;
+}
+
+.dark .payment-value {
+  color: #e5e7eb !important;
+}
+
+.dark .payment-due-amount {
+  color: #ef4444 !important;
+}
+
+.dark .payment-form {
+  background-color: rgba(55, 65, 81, 0.5) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5) !important;
+}
+
+.dark .payment-method-label,
+.dark .payment-amount-label,
+.dark .payment-notes-label {
+  color: #f3f4f6 !important;
+}
+
+/* Responsive Styles */
+@media screen and (max-width: 768px) {
+  .payment-item .ant-descriptions-item-label {
+    width: 40%;
+  }
+  
+  .stat-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media screen and (max-width: 576px) {
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .payment-item .ant-descriptions-item-label {
+    width: 50%;
+  }
+  
+  .customer-card .ant-descriptions-item-label,
+  .customer-card .ant-descriptions-item-content {
+    padding: 12px 8px;
+  }
+}

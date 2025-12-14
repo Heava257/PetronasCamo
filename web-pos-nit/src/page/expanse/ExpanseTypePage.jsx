@@ -5,16 +5,21 @@ import {
   Input,
   message,
   Modal,
-  Select,
   Space,
   Table,
 } from "antd";
-import { request } from "../../util/helper";
-import { MdDelete, MdEdit } from "react-icons/md";
+import { isPermission, request } from "../../util/helper";
+import { MdDelete, MdEdit, MdOutlineCreateNewFolder } from "react-icons/md";
 import MainPage from "../../component/layout/MainPage";
+import { FiSearch } from "react-icons/fi";
+import { useTranslation } from "../../locales/TranslationContext";
 
 function ExpanseTypePage() {
   const [formRef] = Form.useForm();
+  const { t } = useTranslation(); 
+  
+
+  
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState({
@@ -32,11 +37,9 @@ function ExpanseTypePage() {
     const param = {
       txtSearch: state.txtSearch,
     };
-    // Updated endpoint to match backend
-    const res = await request("expanse_type", "get", param);
+    const res = await request("expense_type", "get", param);
     setLoading(false);
     if (res && res.success) {
-      // Updated to use 'data' property instead of 'list'
       setList(res.data || []);
     }
   };
@@ -50,17 +53,16 @@ function ExpanseTypePage() {
     formRef.setFieldsValue({
       id: data.id,
       name: data.name,
-      code: data.code, // Added 'code' field, which is in the backend
+      code: data.code,
     });
   };
 
   const onClickDelete = async (data) => {
     Modal.confirm({
-      title: "Delete",
-      content: "Are you sure to remove?",
-      okText: "Confirm",
+      title: t("Delete"),
+      content: t("Are you sure to remove?"),
+      okText: t("Confirm"),
       onOk: async () => {
-        // Updated endpoint to match backend
         const res = await request(`expense_type/${data.id}`, "delete");
         if (res && res.success) {
           message.success(res.message);
@@ -95,15 +97,14 @@ function ExpanseTypePage() {
     const data = {
       id: formRef.getFieldValue("id"),
       name: values.name,
-      code: values.code, // Changed from description to code
+      code: values.code,
     };
 
-    // Updated endpoint to match backend
     const method = formRef.getFieldValue("id") ? "put" : "post";
-    const endpoint = formRef.getFieldValue("id") 
-      ? `expense_type/${formRef.getFieldValue("id")}` 
+    const endpoint = formRef.getFieldValue("id")
+      ? `expense_type/${formRef.getFieldValue("id")}`
       : "expense_type";
-    
+
     const res = await request(endpoint, method, data);
 
     if (res && res.success) {
@@ -119,27 +120,31 @@ function ExpanseTypePage() {
     <MainPage loading={loading}>
       <div className="pageHeader">
         <Space>
-          <div>Expense Type Management</div>
+          <div>{t("Expense Type Management")}</div>
           <Input.Search
             onChange={(e) =>
               setState((p) => ({ ...p, txtSearch: e.target.value }))
             }
             allowClear
             onSearch={getList}
-            placeholder="Search"
+            placeholder={t("Search")}
           />
-          <Button type="primary" onClick={getList}>
-            Filter
+          <Button type="primary" onClick={getList} icon={<FiSearch />}>
+            {t("Filter")}
           </Button>
         </Space>
-        <Button type="primary" onClick={onClickAddBtn}>
-          NEW
+        <Button 
+          type="primary" 
+          onClick={onClickAddBtn}
+          icon={<MdOutlineCreateNewFolder />}
+        >
+          {t("NEW")}
         </Button>
       </div>
 
       <Modal
         open={state.visibleModal}
-        title={formRef.getFieldValue("id") ? "Edit Expense Type" : "New Expense Type"}
+        title={t(formRef.getFieldValue("id") ? "Edit Expense Type" : "New Expense Type")}
         footer={null}
         onCancel={onCloseModal}
       >
@@ -147,24 +152,29 @@ function ExpanseTypePage() {
           <Form.Item name="id" hidden>
             <Input />
           </Form.Item>
+          
           <Form.Item
             name="name"
-            label="Name"
-            rules={[{ required: true, message: "Name is required" }]}
+            label={t("Name")}
+            rules={[{ required: true, message: t("Name is required") }]}
           >
-            <Input placeholder="Enter Name" />
+            <Input placeholder={t("Enter Name")} />
           </Form.Item>
+          
           <Form.Item
             name="code"
-            label="Code"
-            rules={[{ required: true, message: "Code is required" }]}
+            label={t("Code")}
+            rules={[{ required: true, message: t("Code is required") }]}
           >
-            <Input placeholder="Enter Code" />
+            <Input placeholder={t("Enter Code")} />
           </Form.Item>
+          
           <Space>
-            <Button onClick={onCloseModal}>Cancel</Button>
+            <Button onClick={onCloseModal}>
+              {t("Cancel")}
+            </Button>
             <Button type="primary" htmlType="submit">
-              {formRef.getFieldValue("id") ? "Update" : "Save"}
+              {t(formRef.getFieldValue("id") ? "Update" : "Save")}
             </Button>
           </Space>
         </Form>
@@ -176,36 +186,40 @@ function ExpanseTypePage() {
         columns={[
           {
             key: "no",
-            title: "No",
+            title: t("No"),
             render: (_, __, index) => index + 1,
           },
           {
             key: "name",
-            title: "Name",
+            title: t("Name"),
             dataIndex: "name",
           },
           {
             key: "code",
-            title: "Code",
+            title: t("Code"),
             dataIndex: "code",
           },
           {
             key: "action",
-            title: "Action",
+            title: t("Action"),
             align: "center",
             render: (_, record) => (
               <Space>
-                <Button
-                  type="primary"
-                  icon={<MdEdit />}
-                  onClick={() => onClickEdit(record)}
-                />
-                <Button
-                  type="primary"
-                  danger
-                  icon={<MdDelete />}
-                  onClick={() => onClickDelete(record)}
-                />
+                {isPermission("customer.getone") && (
+                  <Button
+                    type="primary"
+                    icon={<MdEdit />}
+                    onClick={() => onClickEdit(record)}
+                  />
+                )}
+                {isPermission("customer.getone") && (
+                  <Button
+                    type="primary"
+                    danger
+                    icon={<MdDelete />}
+                    onClick={() => onClickDelete(record)}
+                  />
+                )}
               </Space>
             ),
           },

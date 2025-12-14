@@ -1,121 +1,191 @@
+
 import React from "react";
 import logo from "../../assets/petronas_black2.png";
 import "./fonts.css";
 import { getProfile } from "../../store/profile.store";
 import { formatDateClient } from "../../util/helper";
-
-// Function to convert number to Khmer words
+import './printFont.css';
 const numberToKhmerWords = (number) => {
   const units = ["", "មួយ", "ពីរ", "បី", "បួន", "ប្រាំ", "ប្រាំមួយ", "ប្រាំពីរ", "ប្រាំបី", "ប្រាំបួន"];
   const tens = ["", "ដប់", "ម្ភៃ", "សាមសិប", "សែសិប", "ហាសិប", "ហុកសិប", "ចិតសិប", "ប៉ែតសិប", "កៅសិប"];
-  const scales = ["", "ពាន់", "ម៉ឺន", "លាន", "ប៊ីលាន", "ទ្រីលាន"];
+  const scales = ["", "ពាន់", "ម៉ឺន", "លាន", "ដប់លាន", "រយលាន", "ពាន់លាន"];
 
-  if (number === 0) return "សូន្យដុល្លារគត់";
+  const dollarPart = Math.floor(number);
+  const centPart = Math.round((number - dollarPart) * 100);
 
-  let words = "";
-  let scaleIndex = 0;
+  const convertLessThanOneMillion = (num) => {
+    if (num === 0) return "";
+    let str = "";
 
-  while (number > 0) {
-    const remainder = number % 1000;
-    if (remainder !== 0) {
-      let remainderWords = "";
-      if (remainder < 10) {
-        remainderWords = units[remainder];
-      } else if (remainder < 100) {
-        remainderWords = tens[Math.floor(remainder / 10)] + (remainder % 10 !== 0 ? units[remainder % 10] : "");
-      } else {
-        remainderWords = units[Math.floor(remainder / 100)] + "រយ" + (remainder % 100 !== 0 ? numberToKhmerWords(remainder % 100).replace("ដុល្លារគត់", "") : "");
-      }
-      words = remainderWords + scales[scaleIndex] + words;
+    if (num >= 100000) {
+      const hundredThousands = Math.floor(num / 100000);
+      str += units[hundredThousands] + "រយ";
+      num %= 100000;
     }
-    number = Math.floor(number / 1000);
-    scaleIndex++;
+
+    if (num >= 10000) {
+      const tenThousands = Math.floor(num / 10000);
+      str += tens[tenThousands];
+      num %= 10000;
+    }
+
+    if (num >= 1000) {
+      const thousands = Math.floor(num / 1000);
+      str += units[thousands] + "ពាន់";
+      num %= 1000;
+    }
+
+    if (num >= 100) {
+      const hundreds = Math.floor(num / 100);
+      str += units[hundreds] + "រយ";
+      num %= 100;
+    }
+
+    if (num >= 10) {
+      const ten = Math.floor(num / 10);
+      str += tens[ten];
+      num %= 10;
+    }
+
+    if (num > 0) {
+      str += units[num];
+    }
+
+    return str;
+  };
+
+  let dollarWords = "";
+  let remaining = dollarPart;
+
+  if (remaining === 0) {
+    dollarWords = "សូន្យ";
+  } else {
+    const millions = Math.floor(remaining / 1000000);
+    remaining %= 1000000;
+
+    if (millions > 0) {
+      dollarWords += convertLessThanOneMillion(millions) + "លាន";
+    }
+
+    dollarWords += convertLessThanOneMillion(remaining);
   }
 
-  return words.trim() + "ដុល្លារគត់";
+  let centWords = "";
+  if (centPart > 0) {
+    if (centPart < 10) {
+      centWords = units[centPart] + "សេន";
+    } else {
+      const ten = Math.floor(centPart / 10);
+      const unit = centPart % 10;
+      centWords = tens[ten] + (unit !== 0 ? units[unit] : "") + "សេន";
+    }
+  }
+
+  if (dollarPart > 0 && centPart > 0) {
+    return dollarWords.trim() + "ដុល្លារនិង" + centWords;
+  } else if (dollarPart > 0) {
+    return dollarWords.trim() + "ដុល្លារគត់";
+  } else if (centPart > 0) {
+    return centWords;
+  } else {
+    return "សូន្យដុល្លារគត់";
+  }
 };
 
 const PrintInvoice = React.forwardRef((props, ref) => {
   const profile = getProfile();
   const {
-    objSummary = {
-      sub_total: 0,
-      total_qty: 0,
-      save_discount: 0,
-      tax: 0,
-      total: 0,
-      total_paid: 0,
-      customer_id: null,
-      customer_address: null,
-      customer_tel: null,
-      user_id: null,
-      payment_method: null,
-      remark: null,
-      order_no: null,
-      order_date: null,
-    },
+    objSummary = {},
     cart_list = [],
+    selectedLocations = []
   } = props;
+
+  const {
+    sub_total = 0,
+    total_qty = 0,
+    save_discount = 0,
+    tax = 0,
+    total = 0,
+    total_paid = 0,
+    customer_name = "N/A",
+    customer_address = "N/A",
+    customer_tel = "N/A",
+    user_name = "N/A",
+    order_no = "N/A",
+    order_date = new Date(),
+    payment_method = "N/A",
+    remark = "N/A",
+    delivery_date,
+    receive_date
+  } = objSummary;
 
   const formatNumber = (value, withDollar = false) => {
     const number = parseFloat(value) || 0;
-    const rounded = Math.ceil(number); // Round UP to nearest dollar
-    const formatted = rounded.toLocaleString('en-US', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
+    let formatted = number.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
-    return withDollar ? `${formatted}$` : formatted;
+    if (formatted.endsWith('.00')) {
+      formatted = formatted.slice(0, -3);
+    }
+    return withDollar ? `$${formatted}` : formatted;
+  };
+  const formatGrandTotal = (value, withDollar = false) => {
+    return formatNumber(value, withDollar); 
   };
 
-  const formatGrandTotal = (value, withDollar = false) => {
-    const number = parseFloat(value) || 0;
-    const rounded = Math.ceil(number); // Round UP to nearest dollar
-    const formatted = rounded.toLocaleString('en-US', {
-      minimumFractionDigits: 2,  // កំណត់ឱ្យមានយ៉ាងហោចណាស់ 2 ខ្ទង់ទសភាគ
-      maximumFractionDigits: 2   // កំណត់ឱ្យមានអតិបរមា 2 ខ្ទង់ទសភាគ
-    });
-    return withDollar ? `${formatted}$` : formatted;
-  };
   const FormatQTY = (value) => {
     const number = parseFloat(value) || 0;
     return number.toLocaleString('en-US');
   };
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
   const formatUnitPrice = (value) => {
     const number = parseFloat(value) || 0;
-    return Math.floor(number); // Removes decimal part completely
+    return Math.floor(number);
   };
-
-  const calculateTax = () => {
-    const subtotal = parseFloat(objSummary.sub_total) || 0;
-    const taxRate = parseFloat(objSummary.tax) || 0;
-    return (subtotal * taxRate) / 100;
-  };
-
-  // Calculate total amount
   const totalAmount = cart_list.reduce(
-    (sum, item) =>
-      sum +
-      (item.cart_qty * item.unit_price) / (item.actual_price || 1),
+    (sum, item) => sum + (item.cart_qty * item.unit_price) / (item.actual_price || 1),
     0
   );
-
-  // Round total amount UP to the nearest dollar (ceiling instead of regular rounding)
-  const roundedTotal = Math.ceil(totalAmount);
-
-  // Convert rounded total to Khmer words
-  const totalInKhmerWords = numberToKhmerWords(roundedTotal);
+  const displayAmount = totalAmount; // No rounding
+  const displayWords = numberToKhmerWords(displayAmount);
+  const formatPhoneNumber = (phone) => {
+    if (!phone) return "";
+    return phone
+      .split("/")
+      .map((num) => {
+        const digits = num.replace(/\D/g, ""); // Remove any non-digits
+        if (digits.length === 10) {
+          return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+        }
+        return num.trim(); // Return as-is if not 10 digits
+      })
+      .join(" / ");
+  };
+  const locationLabels = selectedLocations.length > 0
+    ? selectedLocations.map(loc => loc.label).join(", ")
+    : objSummary.user_name || "N/A";
+  const FIXED_DISPLAY_ITEMS = 4; // Always show exactly 4 rows
+  const displayItems = [...cart_list];
+  if (displayItems.length < FIXED_DISPLAY_ITEMS) {
+    const emptyRowsToAdd = FIXED_DISPLAY_ITEMS - displayItems.length;
+    for (let i = 0; i < emptyRowsToAdd; i++) {
+      displayItems.push({
+        category_name: "",
+        cart_qty: "",
+        unit_price: "",
+        actual_price: 1
+      });
+    }
+  }
+  if (displayItems.length > FIXED_DISPLAY_ITEMS) {
+    displayItems.length = FIXED_DISPLAY_ITEMS;
+  }
+ const firstDescription = cart_list.length > 0 
+    ? (cart_list.find(item => item.description)?.description || '')
+    : '';
 
   return (
-    <div ref={ref} className="p-8 max-w-4xl mx-auto">
+    <div ref={ref} className="p-8 px-14 max-w-4xl mx-auto battambang-font">
       <div className="flex justify-between items-center">
         <div className="items-center">
           <img
@@ -125,133 +195,134 @@ const PrintInvoice = React.forwardRef((props, ref) => {
           />
         </div>
 
-        <div className="flex flex-col items-center justify-center text-center flex-1">
-          <h2 className="text-2xl font-bold khmer-text">វិក្កយប័ត្រ</h2>
-          <h2 className="text-xl khmer-text">INVOICE</h2>
+        <div className="flex flex-col items-center justify-center text-center flex-1 relative me-16 mt-10">
+          <h2 className="text-2xl text-[15px] moul-regular ">វិក្កយប័ត្រ</h2>
+          <h2 className="text-xl text-[15px]">INVOICE</h2>
         </div>
 
         <div className="w-16 h-16"></div>
       </div>
-
       <div className="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          {/* Customer Name - Khmer MEF FastHand */}
-          <p className="customer-name-font">
-            ឈ្មោះអតិថិជន: {objSummary?.customer_name || "N/A"}
-          </p>
-
-          {/* Address - Khmer OS Freehand */}
-          <p className="address-font mt-1">
-            អាស័យដ្ឋាន: {objSummary?.customer_address || "N/A"}
-          </p>
-
-          {/* Other info - Default khmer-text */}
-          <p className="khmer-text mt-1">
-            លេខទូរស័ព្ទ: {objSummary?.customer_tel || "N/A"}
-          </p>
-          <p className="khmer-text mt-1">
-            គោលដៅ: {objSummary.user_name || "N/A"}
-          </p>
+        <div className="w-full mt-2">
+          <div className="grid gap-y-1">
+            <p className="text-[15px] font-bold text-black">
+              ឈ្មោះអតិថិជន: {objSummary?.customer_name || "N/A"}
+            </p>
+            <p className="text-[15px] font-medium">
+              អាស័យដ្ឋាន: <span className="freehand-regular text-[11px]">{objSummary?.customer_address || "N/A"}</span>
+            </p>
+            <p className="text-[15px] font-medium">លេខទូរស័ព្ទ: {formatPhoneNumber(objSummary?.customer_tel) || "N/A"}</p>
+            <p className="text-[15px] font-medium">
+              គោលដៅ: {selectedLocations.map(loc => loc.label).join(", ")}
+            </p>
+          </div>
         </div>
-
-        <div className="text-right">
-          {/* Right column - All default khmer-text */}
-          <p className="khmer-text mt-1">
-            លេខវិក្កយប័ត្រ: {objSummary.order_no}
-          </p>
-          <p className="khmer-text mt-1">
-            ថ្ងៃបញ្ជាទិញ: {formatDateClient(objSummary.order_date)}
-          </p>
-          <p className="khmer-text mt-1">
-            ថ្ងៃប្រគល់ទំនិញ: {formatDateClient(objSummary.order_date)}
-          </p>
-          <p className="khmer-text mt-1">
-            លេខបញ្ជាទិញ: {`#SA-${objSummary.order_no}`}
-          </p>
-          <p className="khmer-text mt-1">
-            លេខបណ្ណបញ្ចេញទំនិញ:...................
-          </p>
+        <div className="w-full flex justify-end relative ms-4 ">
+          <div className="w-[80%] grid grid-cols-[57%_1%_43%]  gap-y-1 p-2 rounded-lg">
+            <div className="text-start flex flex-col items-start">
+              {firstDescription && (
+                <p className="text-[15px] font-medium">លេខប័ណ្ណ</p>
+              )}
+              <p className="text-[15px] font-medium">ថ្ងៃបញ្ជាទិញ</p>
+              <p className="text-[15px] font-medium">ថ្ងៃប្រគល់ទំនិញ</p>
+              <p className="text-[15px] font-medium">លេខបញ្ជាទិញ</p>
+              <p className="text-[14px] font-medium">លេខបណ្ណបញ្ចេញទំនិញ</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <p className="text-[15px] font-medium">:</p>
+              <p className="text-[15px] font-medium">:</p>
+              <p className="text-[15px] font-medium">:</p>
+              <p className="text-[15px] font-medium">:</p>
+              <p className="text-[15px] font-medium">:</p>
+            </div>
+            <div className="text-start flex flex-col ">
+               {firstDescription && (
+                <p className="text-[15px] font-medium">{firstDescription}</p>
+                
+              )}
+              <p className="text-[15px] font-medium">{formatDateClient(objSummary?.order_date || "N/A")}</p>
+              <p className="text-[15px] font-medium">{formatDateClient(objSummary?.delivery_date)}</p>
+              <p className="text-[15px] font-medium">{objSummary.order_no ? `#SA-${objSummary?.order_no}` : ""}</p>
+              <p className="text-[15px] font-medium">...................</p>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="w-full mb-8 overflow-x-auto">
+      <div className="w-full mb-3 overflow-x-auto">
         <table className="w-full border-collapse border border-gray-500">
           <thead className="border border-gray-500 text-black">
             <tr>
-              <th className="border border-gray-500 p-[2px] min-w-[0px] khmer-text text-center">
+              <th className="border border-gray-500 p-[2px] min-w-[0px] text-[15px] font-semibold text-center">
                 <div className="flex flex-col items-center leading-tight">
-                  <span className="text-xs  khmer-text">ល.រ</span>
-                  <span className="text-[10px]">No</span>
+                  <span className="text-[15px] font-semibold">ល.រ</span>
+                  <span className="text-[12px] text-[#999999]">No</span>
                 </div>
               </th>
+              <th className="border border-gray-500 p-1 w-5/12 text-center text-[15px] font-semibold">
+                <span>បរិយាយមុខទំនិញ</span>
+                <br />
+                <span className="text-[12px] text-[#999999]">Description</span>
+              </th>
+              <th className="border border-gray-500 p-1 w-2/12 text-center text-[15px] font-semibold leading-[20px]">
+                <span>បរិមាណ</span><br />
+                <span className="text-[12px] text-[#999999] leading-[20px]">Quantity(Liters)</span>
+              </th>
 
-
-              <th className="border border-gray-500 p-1 w-5/12 text-center khmer-text">
-                <span>ការពិពណ៌នា</span>
-                <br /> <span>Description</span>
+              <th className="border border-gray-500 p-1 w-2/12 text-center text-[15px] font-semibold">
+                <span>តម្លៃតោន</span>
+                <br />
+                <span className="text-[12px] text-[#999999]">Ton Price</span>
               </th>
-              <th className="border border-gray-500 p-1 w-2/12 text-center khmer-text">
-                <span>បរិមាណ</span>
-                <br /> <span>Quantity(Liters)</span>
-              </th>
-              <th className="border border-gray-500 p-1 w-2/12 text-center khmer-text">
-                <span>តម្លៃរាយ</span>
-                <br /> <span>Unit Price</span>
-              </th>
-              <th className="border border-gray-500 p-1 w-2/12 text-center khmer-text">
+              <th className="border border-gray-500 p-1 w-2/12 text-center text-[15px] font-semibold">
                 <span>តម្លៃសរុប</span>
-                <br /> <span>Amount</span>
+                <br />
+                <span className="text-[12px] text-[#999999]">Amount</span>
               </th>
             </tr>
           </thead>
           <tbody className="border border-gray-500">
-            {cart_list.map((item, index) => {
-              // Calculate individual item total correctly
-              const itemTotal = (item.cart_qty * item.unit_price) / (item.actual_price || 1);
-              const formattedItemTotal = formatGrandTotal(itemTotal);
+            {displayItems.map((item, index) => {
+              const isRealItem = index < cart_list.length;
+              const itemTotal = isRealItem ?
+                (item.cart_qty * item.unit_price) / (item.actual_price || 1) : 0;
+              const formattedItemTotal = isRealItem ? formatNumber(itemTotal) : "";
 
               return (
-                <tr key={index} className="hover:bg-gray-50 p-1">
-                  <td className="border border-gray-500 p-1 text-center khmer-text">
-                    {index + 1}
+                <tr key={index} className="hover:bg-gray-50" style={{ height: "36px" }}>
+                  <td className={`${isRealItem ? 'border' : 'border-l border-r'} border-gray-500 text-center text-[15px] font-medium`}>
+                    {isRealItem ? index + 1 : "\u00A0"}
                   </td>
-                  <td className="border border-gray-500 p-4 text-left khmer-text">
-                    {item.category_name}
+                  <td className={`${isRealItem ? 'border' : 'border-l border-r'} border-gray-500 text-center p-5 text-[15px] font-medium`}>
+                    {isRealItem ? item.category_name : "\u00A0"}
                   </td>
-                  <td className="border border-gray-500 p-1  text-center khmer-text">
-                    {FormatQTY(item.cart_qty)} <span className="text-sm">{item.unit}</span>
+                  <td className={`${isRealItem ? 'border' : 'border-l border-r'} border-gray-500 text-center text-[15px] font-medium`}>
+                    {isRealItem && item.cart_qty ? `${FormatQTY(item.cart_qty)}L` : "\u00A0"}
                   </td>
-
-                  <td className="border border-gray-500 p-1 text-right khmer-text">
-                    <div className="w-100 h-100 flex justify-between">
-                      <span>$</span>
-                      <span>{formatUnitPrice(item.unit_price)}</span>
-                    </div>
+                  <td className={`${isRealItem ? 'border' : 'border-l border-r'} border-gray-500 text-center text-[15px] font-medium`}>
+                    {isRealItem && item.unit_price ? `$ ${FormatQTY(item.unit_price)}` : "\u00A0"}
                   </td>
-                  <td className="border border-gray-500 p-1 text-right font-bold khmer-text">
-                    $ {formattedItemTotal}
+                  <td className={`${isRealItem ? 'border' : 'border-l border-r'} border-gray-500 text-center font-bold text-[15px] font-medium`}>
+                    {isRealItem && formattedItemTotal ? `$ ${formattedItemTotal}` : "\u00A0"}
                   </td>
                 </tr>
               );
             })}
-
-            {/* Grand Total Row */}
             <tr className="font-bold">
-              <td className="border text-center border-gray-500 p-2 khmer-text" colSpan={2}>
-                {totalInKhmerWords}
+              <td className="border text-center border-gray-500 p-1 text-[11px] freehand-regular" colSpan={2}>
+                {displayWords}
               </td>
-              <td className="border border-gray-500 p-1 text-center khmer-text" colSpan={2}>
-                តម្លៃរាយសរុប Grand Total
+              <td className="border border-gray-500 p-1 text-center text-[15px] font-medium" colSpan={2}>
+                សរុប
               </td>
-              <td className="border border-gray-500 p-1 text-right khmer-text">
-                <div className="w-100 h-100 flex justify-between">
-                  <span>$</span>
-                  <span>{formatGrandTotal(roundedTotal)}</span>
+              <td className="border border-gray-500 p-1 text-center text-[15px] font-medium">
+                <div className="w-100 h-100">
+                  <span>$ {formatGrandTotal(displayAmount)}</span>
                 </div>
               </td>
             </tr>
             <tr>
               <td
-                className="border-0 border-gray-500 p-1 text-center khmer-text"
+                className="border-0 border-gray-500 p-1 text-center text-[15px] font-medium"
                 colSpan={5}
               >
                 ទំនិញត្រូវបានទទួលនៅក្នុងលក្ខខណ្ឌល្អ /{" "}
@@ -259,33 +330,27 @@ const PrintInvoice = React.forwardRef((props, ref) => {
               </td>
             </tr>
             <tr>
-              <td
-                className="text-center khmer-text mb-10 pb-0"
-                colSpan={5}
-              >
-                <div className="grid grid-cols-2 text-center khmer-text gap-4">
-                  <div className="mt-4 mb-10">
-                    <p className="font-bold mb-2 khmer-text">អតិថិជន</p>
-                    <p className="khmer-text">Customer:</p>
-                    <p className="mt-32 khmer-text">....................</p>
-                    <p className="mt-2 khmer-text">ហត្ថលេខា</p>
-                    <p className="mt-2 khmer-text">ការបរិច្ឆទ Date:</p>
-
-                    {/* Add space here */}
-                    <div className="mt-8"></div>
-
-                    <p className="mt-2"> ....../....../.....</p>
+              <td className="text-center text-[15px] font-medium pb-0" colSpan={5}>
+                <div className="grid grid-cols-2 text-center text-[15px] font-medium gap-4 mt-2">
+                  <div className="mt-1 mb-6">
+                    <p className="font-bold mb-1">អតិថិជន</p>
+                    <p>Customer:</p>
+                    <p className="mt-20">....................</p>
+                    <p className="mt-1">ហត្ថលេខា</p>
+                    <div className="mt-1">
+                      <p>កាលបរិច្ឆេទ Date:</p>
+                      <p className="mt-2">....../....../.....</p>
+                    </div>
                   </div>
-                  <div className="text-center mt-4 mb-10 khmer-text px-32">
-                    <p className="font-bold mb-2 khmer-text">គណនេយ្យករ</p>
-                    <p className="khmer-text">Accountant:</p>
-                    <p className="mt-32 khmer-text">....................</p>
-                    <p className="mt-2 khmer-text">ហត្ថលេខា</p>
-                    <p className="mt-2 khmer-text">ការបរិច្ឆទ Date:</p>
-                    <div className="mt-8"></div>
-                    <p className="khmer-text mt-2">
-                      {formatDateClient(objSummary.order_date)}
-                    </p>
+                  <div className="mt-1 mb-6">
+                    <p className="font-bold mb-1">គណនេយ្យករ</p>
+                    <p>Accountant:</p>
+                    <p className="mt-20">....................</p>
+                    <p className="mt-1">ហត្ថលេខា</p>
+                    <div className="mt-1">
+                      <p>កាលបរិច្ឆេទ Date:</p>
+                      <p className="mt-2">{formatDateClient(objSummary?.delivery_date)}</p>
+                    </div>
                   </div>
                 </div>
               </td>
@@ -293,13 +358,11 @@ const PrintInvoice = React.forwardRef((props, ref) => {
           </tbody>
         </table>
       </div>
-      <div className="text-center khmer-text">
-        <p>ទំនាក់ទំនងផ្នែកទីផ្សារ:{profile?.tel}</p>
+      <div className="text-center font-medium">
+        <p>ទំនាក់ទំនងផ្នែកទីផ្សារ: {formatPhoneNumber(profile?.tel)} </p>
       </div>
     </div>
   );
 });
 
 export default PrintInvoice;
-
-

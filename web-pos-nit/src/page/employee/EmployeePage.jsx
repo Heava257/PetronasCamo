@@ -16,8 +16,10 @@ import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
 import MainPage from "../../component/layout/MainPage";
 import { FiSearch } from "react-icons/fi";
 import { IoBook } from "react-icons/io5";
+import { useTranslation } from '../../locales/TranslationContext'; 
 
 function EmployeePage() {
+    const { t } = useTranslation(); // ✅ Use translation
     const [formRef] = Form.useForm();
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -40,7 +42,6 @@ function EmployeePage() {
         setLoading(false);
         if (res) {
             setList(res.list);
-            console.log("Updated List:", res.list);
         }
     };
 
@@ -50,11 +51,11 @@ function EmployeePage() {
             visibleModal: true,
             id: data.id,
         });
-    
+
         formRef.setFieldsValue({
             id: data.id,
             name: data.name,
-            gender: data.gender, // Backend already returns "Male" or "Female"
+            gender: data.gender,
             position: data.position,
             salary: data.salary,
             tel: data.tel,
@@ -69,10 +70,10 @@ function EmployeePage() {
 
     const onClickDelete = async (data) => {
         Modal.confirm({
-            title: "Delete",
-            content: "Are you sure you want to remove this employee?",
-            okText: "Yes",
-            cancelText: "No",
+            title: t('delete'),
+            content: t('delete_confirm'),
+            okText: t('yes'),
+            cancelText: t('no_cancel'),
             onOk: async () => {
                 const res = await request("employee", "delete", {
                     id: data.id,
@@ -111,7 +112,7 @@ function EmployeePage() {
         );
 
         if (isEmailExist) {
-            message.error("Email already exists!");
+            message.error(t('email_exists'));
             return;
         }
 
@@ -121,15 +122,14 @@ function EmployeePage() {
         );
 
         if (isTelExist) {
-            message.error("Telephone number already exists!");
+            message.error(t('tel_exists'));
             return;
         }
 
-        // Prepare data for submission
         const data = {
             id: state.id,
             name: values.name,
-            gender: values.gender, // Pass as "Male" or "Female"
+            gender: values.gender,
             position: values.position,
             salary: values.salary,
             tel: values.tel,
@@ -141,7 +141,6 @@ function EmployeePage() {
             status: values.status,
         };
 
-        // Submit data to the backend
         const method = state.id ? "put" : "post";
         const res = await request("employee", method, data);
 
@@ -156,43 +155,30 @@ function EmployeePage() {
 
     const ExportToExcel = () => {
         if (list.length === 0) {
-            message.warning("No data available to export.");
+            message.warning(t('no_data_export'));
             return;
         }
 
-        // Show loading message
-        const hideLoadingMessage = message.loading(
-            <div className="khmer-text">សូមមេត្តារងចាំ...</div>,
-            0
-        );
+        const hideLoadingMessage = message.loading(t('please_wait'), 0);
 
         setTimeout(() => {
             try {
-                // Prepare data for export - no need to convert gender as it already comes as "Male" or "Female"
                 const data = list.map((item) => ({
                     ...item,
                     create_at: formatDateClient(item.create_at),
                 }));
 
-                // Create a worksheet and workbook
                 const ws = XLSX.utils.json_to_sheet(data);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, "Employee");
 
-                // Write the file
                 XLSX.writeFile(wb, "Employee_Data.xlsx");
 
-                // Hide the loading message
                 hideLoadingMessage();
-
-                // Show success message
-                message.success("Export completed successfully!");
+                message.success(t('export_success'));
             } catch (error) {
-                // Hide the loading message in case of error
                 hideLoadingMessage();
-
-                // Show error message
-                message.error("Failed to export data. Please try again.");
+                message.error(t('export_failed'));
                 console.error("Export error:", error);
             }
         }, 2000);
@@ -202,208 +188,129 @@ function EmployeePage() {
         <MainPage loading={loading}>
             <div className="pageHeader">
                 <Space>
-                    <div className="khmer-text">គ្រប់គ្រងបុគ្គលិក</div>
+                    <div>{t('manage_employee')}</div>
                     <Input.Search
                         onChange={(e) =>
                             setState((prev) => ({ ...prev, txtSearch: e.target.value }))
                         }
                         allowClear
                         onSearch={getList}
-                        placeholder="Search by name"
+                        placeholder={t('search_by_name')}
                     />
                     <Button type="primary" onClick={getList} icon={<FiSearch />}>
-                        Filter
+                        {t('filter')}
                     </Button>
                     <Button type="primary" onClick={ExportToExcel} icon={<IoBook />}>
-                        Export to Excel
+                        {t('export_excel')}
                     </Button>
                 </Space>
                 <Button type="primary" onClick={onClickAddBtn} icon={<MdNewLabel />}>
-                    NEW
+                    {t('new')}
                 </Button>
             </div>
             <Modal
                 open={state.visibleModal}
-                title={
-                    <div>
-                        <div className="khmer-text">
-                            {state.id ? "កែសម្រួលបុគ្គលិក" : "បុគ្គលិកថ្មី"}
-                        </div>
-                    </div>
-                }
+                title={state.id ? t('edit_employee') : t('new_employee')}
                 footer={null}
                 onCancel={onCloseModal}
             >
                 <Form layout="vertical" onFinish={onFinish} form={formRef}>
-                    {/* Hidden ID Field */}
                     <Form.Item name="id" hidden>
                         <Input />
                     </Form.Item>
 
-                    {/* Name */}
                     <Form.Item
                         name="name"
-                        label={
-                            <div>
-                                <div className="khmer-text">ឈ្មោះ</div>
-                            </div>
-                        }
-                        rules={[{ required: true, message: "Please input the employee name" }]}
+                        label={t('employee_name')}
+                        rules={[{ required: true, message: t('input_name') }]}
                     >
-                        <Input placeholder="Input employee name" />
+                        <Input placeholder={t('input_name')} />
                     </Form.Item>
 
-                    {/* Gender */}
+
                     <Form.Item
                         name="gender"
-                        label={
-                            <div>
-                                <div className="khmer-text">ភេទ</div>
-                            </div>
-                        }
-                        rules={[{ required: true, message: "Please select gender" }]}
+                        label={t('gender')}
+                        rules={[{ required: true, message: t('select_gender') }]}
                     >
                         <Select
-                            placeholder="Select gender"
+                            placeholder={t('select_gender')}
                             options={[
-                                { label: "Male", value: "Male" },
-                                { label: "Female", value: "Female" },
+                                { label: t('male'), value: 'Male' },
+                                { label: t('female'), value: 'Female' },
                             ]}
                         />
                     </Form.Item>
 
-                    {/* Code */}
-                    <Form.Item
-                        name="code"
-                        label={
-                            <div>
-                                <div className="khmer-text">កូដ</div>
-                            </div>
-                        }
-                    >
-                        <Input placeholder="Input code" />
+
+                    <Form.Item name="code" label={t('code')}>
+                        <Input placeholder={t('code')} />
                     </Form.Item>
 
-                    {/* Position */}
                     <Form.Item
                         name="position"
-                        label={
-                            <div>
-                                <div className="khmer-text">តួនាទី</div>
-                            </div>
-                        }
-                        rules={[{ required: true, message: "Please input the position" }]}
+                        label={t('position')}
+                        rules={[{ required: true, message: t('input_position') }]}
                     >
-                        <Input placeholder="Input position" />
+                        <Input placeholder={t('input_position')} />
                     </Form.Item>
 
-                    {/* Salary */}
                     <Form.Item
                         name="salary"
-                        label={
-                            <div>
-                                <div className="khmer-text">ប្រាក់ខែ</div>
-                            </div>
-                        }
-                        rules={[{ required: true, message: "Please input the salary" }]}
+                        label={t('salary')}
+                        rules={[{ required: true, message: t('input_salary') }]}
                     >
-                        <Input type="number" placeholder="Input salary" />
+                        <Input type="number" placeholder={t('input_salary')} />
                     </Form.Item>
 
-                    {/* Telephone */}
                     <Form.Item
                         name="tel"
-                        label={
-                            <div>
-                                <div className="khmer-text">ទូរស័ព្ទ</div>
-                            </div>
-                        }
-                        rules={[{ required: true, message: "Please input the telephone number" }]}
+                        label={t('telephone')}
+                        rules={[{ required: true, message: t('input_telephone') }]}
                     >
-                        <Input placeholder="Input telephone number" />
+                        <Input placeholder={t('input_telephone')} />
                     </Form.Item>
 
-                    {/* Email */}
                     <Form.Item
                         name="email"
-                        label={
-                            <div>
-                                <div className="khmer-text">អ៊ីមែល</div>
-                            </div>
-                        }
-                        rules={[{ type: "email", message: "Please input a valid email" }]}
+                        label={t('email')}
+                        rules={[{ type: "email", message: t('valid_email') }]}
                     >
-                        <Input placeholder="Input email" />
+                        <Input placeholder={t('email')} />
                     </Form.Item>
 
-                    {/* Address */}
-                    <Form.Item
-                        name="address"
-                        label={
-                            <div>
-                                <div className="khmer-text">អាសយដ្ឋាន</div>
-                            </div>
-                        }
-                    >
-                        <Input.TextArea placeholder="Input address" />
+                    <Form.Item name="address" label={t('address')}>
+                        <Input.TextArea placeholder={t('address')} />
                     </Form.Item>
 
-                    {/* Website */}
-                    <Form.Item
-                        name="website"
-                        label={
-                            <div>
-                                <div className="khmer-text">គេហទំព័រ</div>
-                            </div>
-                        }
-                    >
-                        <Input placeholder="Input website" />
+                    <Form.Item name="website" label={t('website')}>
+                        <Input placeholder={t('website')} />
                     </Form.Item>
 
-                    {/* Note */}
-                    <Form.Item
-                        name="note"
-                        label={
-                            <div>
-                                <div className="khmer-text">កំណត់ចំណាំ</div>
-                            </div>
-                        }
-                    >
-                        <Input.TextArea placeholder="Input notes" />
+                    <Form.Item name="note" label={t('note')}>
+                        <Input.TextArea placeholder={t('note')} />
                     </Form.Item>
 
-                    {/* Status */}
                     <Form.Item
                         name="status"
-                        label={
-                            <div>
-                                <div className="khmer-text">ស្ថានភាព</div>
-                            </div>
-                        }
-                        rules={[{ required: true, message: "Please select status" }]}
+                        label={t('status')}
+                        rules={[{ required: true, message: t('select_status') }]}
                     >
                         <Select
-                            placeholder="Select status"
+                            placeholder={t('select_status')}
                             options={[
-                                { label: "Active", value: 1 },
-                                { label: "Inactive", value: 0 },
+                                { label: t('active'), value: 1 },
+                                { label: t('inactive'), value: 0 },
                             ]}
                         />
                     </Form.Item>
 
-                    {/* Buttons */}
                     <Space>
                         <Button onClick={onCloseModal}>
-                            <div>
-                                <div className="khmer-text">បោះបង់</div>
-                            </div>
+                            {t('cancel')}
                         </Button>
                         <Button type="primary" htmlType="submit">
-                            <div>
-                                <div className="khmer-text">
-                                    {state.id ? "កែសម្រួល" : "រក្សាទុក"}
-                                </div>
-                            </div>
+                            {state.id ? t('edit') : t('save')}
                         </Button>
                     </Space>
                 </Form>
@@ -414,120 +321,73 @@ function EmployeePage() {
                 columns={[
                     {
                         key: "no",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ល.រ</div>
-                                <div className="english-text">No</div>
-                            </div>
-                        ),
+                        title: t('no'),
                         render: (_, __, index) => index + 1,
                     },
                     {
                         key: "name",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ឈ្មោះ</div>
-                                <div className="english-text">Name</div>
-                            </div>
-                        ),
+                        title: t('employee_name'),
                         dataIndex: "name",
                         sorter: (a, b) => a.name.localeCompare(b.name),
                     },
                     {
                         key: "gender",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ភេទ</div>
-                                <div className="english-text">Gender</div>
-                            </div>
-                        ),
-                        dataIndex: "gender", // Backend already returns "Male" or "Female"
+                        title: t('gender'),
+                        dataIndex: "gender",
+                        render: (gender) => {
+                            if (gender === "Male") {
+                                return t('male');
+                            } else if (gender === "Female") {
+                                return t('female');
+                            }
+                            return gender;
+                        },
                     },
                     {
                         key: "position",
-                        title: (
-                            <div>
-                                <div className="khmer-text">តួនាទី</div>
-                                <div className="english-text">Position</div>
-                            </div>
-                        ),
+                        title: t('position'),
                         dataIndex: "position",
                     },
                     {
                         key: "salary",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ប្រាក់ខែ</div>
-                                <div className="english-text">Salary</div>
-                            </div>
-                        ),
+                        title: t('salary'),
                         dataIndex: "salary",
                         render: (value) => `$${value}`,
                     },
                     {
                         key: "tel",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ទូរស័ព្ទ</div>
-                                <div className="english-text">Telephone</div>
-                            </div>
-                        ),
+                        title: t('telephone'),
                         dataIndex: "tel",
                     },
                     {
                         key: "email",
-                        title: (
-                            <div>
-                                <div className="khmer-text">អ៊ីមែល</div>
-                                <div className="english-text">Email</div>
-                            </div>
-                        ),
+                        title: t('email'),
                         dataIndex: "email",
                     },
                     {
                         key: "address",
-                        title: (
-                            <div>
-                                <div className="khmer-text">អាសយដ្ឋាន</div>
-                                <div className="english-text">Address</div>
-                            </div>
-                        ),
+                        title: t('address'),
                         dataIndex: "address",
                     },
                     {
                         key: "status",
-                        title: (
-                            <div>
-                                <div className="khmer-text">ស្ថានភាព</div>
-                                <div className="english-text">Status</div>
-                            </div>
-                        ),
+                        title: t('status'),
                         dataIndex: "status",
                         render: (value) => (
                             <Tag color={value === 1 ? "green" : "red"}>
-                                {value === 1 ? "Active" : "Inactive"}
+                                {value === 1 ? t('active') : t('inactive')}
                             </Tag>
                         ),
                     },
                     {
                         key: "create_at",
-                        title: (
-                            <div>
-                                <div className="khmer-text">កាលបរិច្ឆេទបង្កើត</div>
-                                <div className="english-text">Created Date</div>
-                            </div>
-                        ),
+                        title: t('created_date'),
                         dataIndex: "create_at",
                         render: (value) => formatDateServer(value, "YYYY-MM-DD h:mm A"),
                     },
                     {
                         key: "action",
-                        title: (
-                            <div>
-                                <div className="khmer-text">សកម្មភាព</div>
-                                <div className="english-text">Action</div>
-                            </div>
-                        ),
+                        title: t('action'),
                         align: "center",
                         render: (_, record) => (
                             <Space>

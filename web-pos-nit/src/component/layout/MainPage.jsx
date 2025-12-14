@@ -1,10 +1,12 @@
-import { Button, Result, Spin } from "antd";
-import React from "react";
+import { Button, Result } from "antd";
+import React, { useEffect, useState } from "react";
+import { RingLoader } from "react-spinners";
 import { getServerStatus } from "../../store/server.store";
+
 const info = {
   404: {
     message: "404-Route Not Found",
-    sub: "404-Route Not Found. Please confirm your currect route that request to server",
+    sub: "404-Route Not Found. Please confirm your correct route that request to server",
   },
   403: {
     message: "403-Authorized",
@@ -12,33 +14,171 @@ const info = {
   },
   500: {
     message: "500-Internal Error Server",
-    sub: "Please contact adminestrator",
+    sub: "Please contact administrator",
   },
   error: {
     message: "Can not connect to server",
-    sub: "Please contact adminestrator",
+    sub: "Please contact administrator",
   },
 };
+
 export default function MainPage({ children, loading }) {
-  var server_status = getServerStatus();
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
+  
+  const server_status = getServerStatus();
   const isServerError =
     server_status == "403" ||
     server_status == "500" ||
     server_status == "404" ||
     server_status == "error";
+
+  useEffect(() => {
+    // Listen for dark mode changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'darkMode') {
+        setIsDarkMode(e.newValue === 'true');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check for changes in the same tab
+    const checkDarkMode = () => {
+      const currentDarkMode = localStorage.getItem('darkMode') === 'true';
+      if (currentDarkMode !== isDarkMode) {
+        setIsDarkMode(currentDarkMode);
+      }
+    };
+
+    const interval = setInterval(checkDarkMode, 100);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [isDarkMode]);
+
   if (isServerError) {
     return (
-      <Result
-        status={server_status + ""}
-        title={info[server_status].message}
-        subTitle={info[server_status].sub}
-        extra={<Button type="primary">Back Home</Button>}
-      />
+      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
+        isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
+      }`}>
+        <div className={`max-w-md w-full mx-4 p-8 rounded-lg shadow-lg text-center transition-colors ${
+          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'
+        }`}>
+          <Result
+            status={server_status + ""}
+            title={
+              <h1 className={`text-2xl font-bold mb-4 ${
+                isDarkMode ? 'text-red-400' : 'text-red-600'
+              }`}>
+                {info[server_status].message}
+              </h1>
+            }
+            subTitle={
+              <p className={`text-base mb-6 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-600'
+              }`}>
+                {info[server_status].sub}
+              </p>
+            }
+            extra={
+              <Button 
+                type="primary" 
+                size="large"
+                className={`${
+                  isDarkMode 
+                    ? 'bg-blue-600 hover:bg-blue-700 border-blue-600' 
+                    : 'bg-blue-500 hover:bg-blue-600 border-blue-500'
+                } transition-colors`}
+                onClick={() => window.location.href = '/'}
+              >
+                Back Home
+              </Button>
+            }
+          />
+          
+          {/* Additional error details for development */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className={`mt-6 p-4 rounded-md text-left text-sm ${
+              isDarkMode 
+                ? 'bg-gray-700 border border-gray-600' 
+                : 'bg-gray-100 border border-gray-300'
+            }`}>
+              <h3 className={`font-semibold mb-2 ${
+                isDarkMode ? 'text-yellow-400' : 'text-yellow-600'
+              }`}>
+                Debug Information:
+              </h3>
+              <ul className={`space-y-1 ${
+                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+              }`}>
+                <li><strong>Status Code:</strong> {server_status}</li>
+                <li><strong>Timestamp:</strong> {new Date().toISOString()}</li>
+                <li><strong>User Agent:</strong> {navigator.userAgent.substring(0, 50)}...</li>
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
     );
   }
+
   return (
-    <div>
-      <Spin spinning={loading}>{children}</Spin>
+    <div className={`transition-colors duration-300 ${
+      isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
+    }`}>
+      {loading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="flex flex-col items-center">
+            <RingLoader
+              color={isDarkMode ? '#60a5fa' : '#3b82f6'}
+              loading={loading}
+              size={88}
+            />
+            <span className={`mt-4 text-lg font-medium ${
+              isDarkMode ? 'text-blue-400' : 'text-blue-600'
+            }`}>
+              Loading...
+            </span>
+          </div>
+        </div>
+      )}
+      
+      <div className={`min-h-full transition-colors duration-300 ${
+        loading ? 'opacity-70' : 'opacity-100'
+      }`}>
+        {children}
+      </div>
+
+      <style jsx>{`
+        /* Dark mode styles for Ant Design components */
+        ${isDarkMode ? `
+          :global(.ant-result) {
+            background: transparent !important;
+          }
+          
+          :global(.ant-result .ant-result-icon > .anticon) {
+            color: #ef4444 !important;
+          }
+          
+          :global(.ant-btn-primary) {
+            background: #3b82f6 !important;
+            border-color: #3b82f6 !important;
+          }
+          
+          :global(.ant-btn-primary:hover) {
+            background: #2563eb !important;
+            border-color: #2563eb !important;
+          }
+        ` : ''}
+      `}</style>
     </div>
   );
 }
+
+
+
+

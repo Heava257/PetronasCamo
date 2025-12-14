@@ -1,0 +1,647 @@
+
+/* Product Management Styles */
+
+/* Import Khmer Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Metal&family=Fasthand&display=swap');
+
+/* Global Styles */
+:root {
+  --primary-color: #1890ff;
+  --success-color: #52c41a;
+  --warning-color: #faad14;
+  --error-color: #f5222d;
+  --font-color: #333333;
+  --border-radius: 8px;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --khmer-title-font: 'Metal', cursive;
+  --khmer-text-font: 'Fasthand', cursive;
+}
+
+/* Apply Khmer fonts globally */
+*[class*="-khmer"] {
+  font-family: var(--khmer-text-font);
+}
+
+/* Header Card Styles */
+.product-header-card {
+  margin-bottom: 16px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.product-header-flex {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.product-icon-container {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #e6f7ff;
+  border-radius: 50%;
+}
+
+.product-icon-blue {
+  color: var(--primary-color);
+}
+
+
+
+.product-title-khmer {
+  font-size: 22px;
+  font-weight: bold;
+  margin-bottom: 2px;
+  font-family: var(--khmer-title-font);
+}
+
+.product-title-english {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.product-stats-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.product-stats-icon {
+  color: #8c8c8c;
+}
+
+.product-stats-text {
+  font-size: 13px;
+}
+
+.product-export-btn {
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-add-btn {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-add-btn:hover {
+  background-color: #6adf29;
+  border-color: #6adf29;
+}
+
+/* Filter Card Styles */
+.product-filter-card {
+  margin-bottom: 16px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.product-filter-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.product-search-item {
+  flex: 2;
+  margin-bottom: 0;
+}
+
+.product-search-input {
+  border-radius: var(--border-radius);
+}
+
+.product-category-item,
+.product-brand-item {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.product-filter-btn {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Stats Cards Styles */
+.product-stat-card {
+  height: 100%;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s;
+}
+
+.product-stat-card:hover {
+  transform: translateY(-4px);
+}
+
+.product-card-blue {
+  border-top: 4px solid #1890ff;
+}
+
+.product-card-green {
+  border-top: 4px solid #52c41a;
+}
+
+.product-card-cyan {
+  border-top: 4px solid #13c2c2;
+}
+
+.product-card-amber {
+  border-top: 4px solid #faad14;
+}
+
+.product-card-gray {
+  border-top: 4px solid #8c8c8c;
+}
+
+.product-stat-header {
+  padding: 6px 0;
+}
+
+.product-stat-icon-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-stat-icon-wrapper {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background-color: rgba(24, 144, 255, 0.1);
+}
+
+.product-icon-blue {
+  color: #1890ff;
+  font-size: 20px;
+}
+
+.product-icon-green {
+  color: #52c41a;
+  font-size: 20px;
+}
+
+.product-icon-cyan {
+  color: #13c2c2;
+  font-size: 20px;
+}
+
+.product-icon-amber {
+  color: #faad14;
+  font-size: 20px;
+}
+
+.product-icon-gray {
+  font-size: 20px;
+}
+
+.product-text-blue {
+  color: #1890ff;
+}
+
+.product-text-green {
+  color: #52c41a;
+}
+
+.product-text-cyan {
+  color: #13c2c2;
+}
+
+.product-text-amber {
+  color: #faad14;
+}
+
+
+.product-stat-title {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.product-stat-subtitle {
+  font-size: 12px;
+}
+
+.product-stat-divider {
+  margin: 8px 0;
+}
+
+.product-stat-metrics {
+  display: flex;
+  justify-content: space-between;
+}
+
+.product-stat-label {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.product-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.product-stat-value-highlight {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* Table Styles */
+.product-table-card {
+  border-radius: var(--border-radius);
+  box-shadow: var(--card-shadow);
+}
+
+.product-table {
+  margin-top: 0;
+}
+
+.product-table-row:hover {
+  background-color: #f5f5f5;
+}
+
+.product-table-header {
+  line-height: 1.2;
+}
+
+.product-table-header-khmer {
+  font-weight: bold;
+  margin-bottom: 2px;
+  font-family: var(--khmer-title-font);
+}
+
+.product-table-header-english {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.product-table-text {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-tag {
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
+.product-price-text {
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.product-date-text {
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
+.product-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  padding: 4px;
+  height: 32px;
+  width: 32px;
+}
+
+/* Modal Styles */
+.product-modal {
+  border-radius: var(--border-radius);
+}
+
+.product-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-modal-icon {
+  color: var(--primary-color);
+}
+
+.product-modal-title-khmer {
+  font-weight: bold;
+  margin-bottom: 2px;
+  font-family: var(--khmer-title-font);
+}
+
+.product-modal-title-english {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.product-form {
+  margin-top: 16px;
+}
+
+.product-section-card {
+  margin-bottom: 16px;
+  border-radius: var(--border-radius);
+}
+
+.product-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-section-icon-container {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(24, 144, 255, 0.1);
+  border-radius: 50%;
+}
+
+.product-section-icon {
+  color: var(--primary-color);
+  font-size: 16px;
+}
+
+.product-section-title-khmer {
+  font-weight: bold;
+  margin-bottom: 2px;
+  font-family: var(--khmer-title-font);
+}
+
+.product-section-title-english {
+  font-size: 12px;
+  color: #8c8c8c;
+}
+
+.product-label-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.product-label-khmer {
+  font-weight: bold;
+  margin-bottom: 2px;
+  font-family: var(--khmer-text-font);
+  font-size: 12px;
+}
+
+.product-label-english {
+  font-size: 12px;
+}
+
+.product-select {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.product-datepicker {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.product-input-number {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.product-input {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.product-textarea {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.product-divider {
+  margin: 24px 0;
+}
+
+.product-items-section {
+  margin-top: 24px;
+}
+
+.product-item-card {
+  margin-bottom: 16px;
+  background-color: #f9f9f9;
+  border-radius: var(--border-radius);
+  border: 1px solid #e8e8e8;
+}
+
+.product-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #f0f0f0;
+  border-top-left-radius: var(--border-radius);
+  border-top-right-radius: var(--border-radius);
+}
+
+.product-item-title {
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-item-content {
+  padding: 16px;
+}
+
+.product-item-footer {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 16px 16px;
+}
+
+.product-add-item-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.product-remove-item-btn {
+  margin-left: 8px;
+}
+
+.product-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.product-cancel-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+}
+
+.product-submit-btn:hover {
+  background-color: #6adf29;
+  border-color: #6adf29;
+}
+
+/* Custom Select and Input Focus Styles */
+.ant-select-focused .ant-select-selector,
+.ant-input-number-focused,
+.ant-input-affix-wrapper-focused,
+.ant-input-focused {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2) !important;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .product-filter-form {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .product-search-item,
+  .product-category-item,
+  .product-brand-item {
+    width: 100%;
+  }
+  
+  .product-filter-btn {
+    width: 100%;
+  }
+  
+  .product-stat-metrics {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+/* Additional styles for better Khmer typography */
+.khmer-text {
+  font-family: var(--khmer-text-font);
+  font-weight: bold;
+  margin-bottom: 2px;
+  font-size: 9pt;;
+}
+
+.khmer-title {
+  font-family: var(--khmer-title-font);
+  font-weight: bold;
+}
+
+/* Improve presentation of category cards with Khmer text */
+.product-stat-title {
+  font-weight: bold;
+  font-size: 16px;
+  font-family: var(--khmer-title-font);
+}
+
+/* Enhance text rendering for Khmer fonts */
+*[class*="-khmer"] {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Additional specific styles for categories */
+.category-lpg {
+  color: #faad14;
+}
+
+.category-super {
+  color: #1890ff;
+}
+
+.category-ea {
+  color: #13c2c2;
+}
+
+.category-do {
+  color: #52c41a;
+}
+
+/* Modal Styling */
+.product-modal .ant-modal-content {
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  background-color: #1e293b;
+}
+
+.product-modal .ant-modal-header {
+  background: linear-gradient(135deg, #4e54c8, #8f94fb);
+  border-radius: 12px 12px 0 0;
+  padding: 16px 24px;
+  border-bottom: none;
+}
+
+.product-modal-title {
+  display: flex;
+  align-items: center;
+  color: #ffffff;
+}
+
+.product-modal-icon {
+  margin-right: 12px;
+  color: #ffffff;
+}
+
+.product-modal-title-khmer {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #ffffff;
+}
+
+.product-modal-title-english {
+  font-size: 14px;
+  opacity: 0.9;
+  color: #ffffff;
+}
+
+.product-modal .ant-modal-body {
+  padding: 24px;
+  background-color: #0f172a;
+}
+
+.product-modal .ant-modal-footer {
+  border-top: none;
+  padding: 10px 24px 24px;
+  background-color: #0f172a;
+}

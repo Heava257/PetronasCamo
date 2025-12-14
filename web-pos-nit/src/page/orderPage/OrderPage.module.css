@@ -1,4 +1,212 @@
-/* .Tag_Style{
-    width: 100%;
-    box-shadow: rgb(38, 57, 77) 0px 20px 30px -10px;
-} */
+/* OrderPage.module.css - COMPLETE WITH DARK MODE */
+
+@import url('https://fonts.googleapis.com/css2?family=Battambang&display=swap');
+
+.khmerText {
+  font-family: 'Battambang', sans-serif;
+  font-size: 14px;
+  color: #555;
+}
+
+.englishText {
+  font-weight: bold;
+  font-size: 12px;
+  color: #888;
+}
+
+.tableHeaderGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.customerCell {
+  font-family: 'Battambang', sans-serif;
+  line-height: 1.4;
+}
+
+.customerName {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.customerTel,
+.customerAddress {
+  font-size: 13px;
+  color: #666;
+}
+
+/* ============ SUMMARY CARDS - LIGHT MODE ============ */
+.summaryContainer {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.summaryCard {
+  flex: 1;
+  min-width: 200px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.summaryCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.summaryIcon {
+  font-size: 32px;
+  margin-bottom: 12px;
+  color: #40a9ff;
+  animation: bounce 1s infinite;
+}
+
+.summaryTitle {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.summaryValue {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.summaryPositive {
+  color: #52c41a;
+}
+
+.summaryNegative {
+  color: #f5222d;
+}
+
+.summaryNeutral {
+  color: #1890ff;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ DARK MODE STYLES ============ */
+
+/* Summary Cards - Dark Mode */
+:global(.dark) .summaryCard {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border: 1px solid rgba(75, 85, 99, 0.5);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+:global(.dark) .summaryCard:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  border-color: rgba(96, 165, 250, 0.5);
+}
+
+:global(.dark) .summaryIcon {
+  color: #60a5fa !important;
+}
+
+:global(.dark) .summaryTitle {
+  color: #9ca3af !important;
+}
+
+:global(.dark) .summaryValue {
+  color: #e5e7eb !important;
+}
+
+:global(.dark) .summaryPositive {
+  color: #10b981 !important;
+}
+
+:global(.dark) .summaryNegative {
+  color: #ef4444 !important;
+}
+
+:global(.dark) .summaryNeutral {
+  color: #60a5fa !important;
+}
+
+/* Customer Cell - Dark Mode */
+:global(.dark) .customerCell {
+  color: #e5e7eb !important;
+}
+
+:global(.dark) .customerName {
+  color: #f3f4f6 !important;
+}
+
+:global(.dark) .customerTel,
+:global(.dark) .customerAddress {
+  color: #9ca3af !important;
+}
+
+/* Khmer Text - Dark Mode */
+:global(.dark) .khmerText {
+  color: #e5e7eb !important;
+}
+
+:global(.dark) .englishText {
+  color: #9ca3af !important;
+}
+
+/* Table Content - Dark Mode */
+:global(.dark) .tableContent {
+  background: transparent !important;
+}
+
+/* Table Header Group - Dark Mode */
+:global(.dark) .tableHeaderGroup {
+  color: #f3f4f6 !important;
+}
+
+/* ============ GLOBAL TABLE STYLES - DARK MODE ============ */
+
+/* Table Headers */
+:global(.dark) .table-header,
+:global(.dark) .column-header-product {
+  color: #f3f4f6 !important;
+}
+
+:global(.dark) .khmer-text,
+:global(.dark) .khmer-text1,
+:global(.dark) .khmer-text-product {
+  color: #f3f4f6 !important;
+}
+
+/* Table Cell Text */
+:global(.dark) .custom-cell-text,
+:global(.dark) .english-company-product {
+  color: #e5e7eb !important;
+}
+
+/* Table Rows */
+:global(.dark) .even-row {
+  background: rgba(31, 41, 55, 0.5) !important;
+}
+
+:global(.dark) .odd-row {
+  background: rgba(55, 65, 81, 0.3) !important;
+}
+
+:global(.dark) .checked-row {
+  background: rgba(34, 197, 94, 0.2) !important;
+  border-left: 3px solid #22c55e !important;
+}
+
+:global(.dark) .checked-row:hover {
+  background: rgba(34, 197, 94, 0.3) !important;
+}

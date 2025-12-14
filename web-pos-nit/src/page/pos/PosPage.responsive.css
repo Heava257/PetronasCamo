@@ -1,0 +1,37 @@
+/* សម្រាប់អេក្រង់តូច (ទូរស័ព្ទ) */
+@media only screen and (max-width: 768px) {
+    .responsive-table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .cart-card {
+      margin-top: 16px;
+    }
+    
+    .cart-items-container {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .pageHeader {
+      padding: 8px;
+    }
+    
+    .ant-table-thead > tr > th,
+    .ant-table-tbody > tr > td {
+      padding: 8px !important;
+    }
+  }
+  
+  /* សម្រាប់ទូរស័ព្ទដែលមានអេក្រង់តូចជាង */
+  @media only screen and (max-width: 480px) {
+    .ant-select, .ant-input-search {
+      width: 100% !important;
+      margin-bottom: 8px;
+    }
+    
+    .pageHeader .ant-space-item {
+      width: 100%;
+    }
+  }

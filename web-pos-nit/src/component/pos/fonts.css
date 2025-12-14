@@ -1,3 +1,15 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Battambang&display=swap');
+
+.battambang-font {
+  font-family: 'Battambang', sans-serif;
+}
+.text-base-kh {
+  @apply text-[15px] font-medium;
+}
+
+
+
 @font-face {
     font-family: 'Khmer OS';
     src: url('/fonts/KhmerOS.ttf') format('truetype');
@@ -14,4 +26,15 @@
 
 
 
-  
+  @font-face {
+    font-family: 'Khmer OS';
+    src: url('/fonts/KhmerOS.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+  }
+  body {
+    font-family: 'Khmer OS', sans-serif;
+  }
+  .brand-font {
+    font-family: 'Roboto', sans-serif;
+  }

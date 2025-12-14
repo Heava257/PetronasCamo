@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Battambang:wght@100;300;400;700;900&family=Fasthand&family=Freehand&family=Khmer&family=Metal&family=Moul&family=Siemreap&family=Tinos:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+
+/* Base styles for Khmer text */
+.khmer-text1 {
+  font-family: "Freehand", cursive;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Bold Khmer title style */
+.khmer-title1 {
+ font-family: "Khmer", sans-serif;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* English text style */
+.english-text1 {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* Force Khmer fonts in Ant Design components */
+.ant-select-item-option-content .khmer-title1,
+.ant-select-item-option-content .khmer-text1,
+.ant-form-item-label > label .khmer-title1,
+.ant-form-item-label > label .khmer-text1,
+.ant-modal-title .khmer-title1,
+.ant-modal-title .khmer-text1,
+.ant-btn span.khmer-title1,
+.ant-btn span.khmer-text1 {
+  font-family: 'Noto Sans Khmer', 'Hanuman', system-ui, sans-serif !important;
+}
+
+/* Page header styling */
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 8px 0;
+}
+
+/* Table styling */
+.ant-table-wrapper {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 8px;
+}
+
+/* Row hover effect */
+.ant-table-tbody > tr:hover > td {
+  background-color: #f5f7fa !important;
+}
+
+/* Action buttons spacing */
+.ant-space-item button {
+  margin-right: 4px;
+}
+
+/* Preload Khmer fonts to prevent FOUT */
+body:before {
+  content: '';
+  font-family: 'Noto Sans Khmer', 'Hanuman';
+  opacity: 0;
+  height: 0;
+  width: 0;
+  display: block;
+  visibility: hidden;
+}

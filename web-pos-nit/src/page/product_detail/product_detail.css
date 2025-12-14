@@ -1,0 +1,991 @@
+/* ==========================================
+   PRODUCT DETAIL PAGE - COMPLETE DARK MODE
+   ========================================== */
+
+/* Import Khmer Font */
+@import url('https://fonts.googleapis.com/css2?family=Battambang&display=swap');
+
+/* ================== BASE CONTAINER ================== */
+.dark .product-page-container-product {
+  padding: 16px;
+  min-height: 100vh;
+  overflow-y: auto;
+  background: transparent !important;
+}
+
+.dark .product-card-product {
+  height: auto !important;
+  max-height: none;
+  overflow: visible;
+  background: rgba(30, 41, 59, 0.9) !important;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.dark .product-card-product .ant-card-body {
+  background: transparent !important;
+  padding: 24px;
+}
+
+/* ================== PAGE HEADER ================== */
+.dark .page-header-container-product {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.dark .page-title-product {
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.dark .khmer-title-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #f3f4f6 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.dark .english-text-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 1rem;
+  color: #9ca3af !important;
+  margin-top: 4px;
+}
+
+/* ================== SEARCH & FILTERS ================== */
+.dark .search-input-product {
+  width: 300px;
+  border-radius: 8px;
+}
+
+.dark .search-input-product .ant-input-affix-wrapper {
+  background: #374151 !important;
+  border: 1px solid #4b5563 !important;
+  border-radius: 8px;
+}
+
+.dark .search-input-product input {
+  background: transparent !important;
+  color: #e5e7eb !important;
+  border-radius: 8px;
+}
+
+.dark .search-input-product input::placeholder {
+  color: #6b7280 !important;
+}
+
+/* DatePicker Styling */
+.dark .ant-picker {
+  background: #374151 !important;
+  border: 1px solid #4b5563 !important;
+  border-radius: 8px;
+}
+
+.dark .ant-picker input {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-picker-suffix {
+  color: #9ca3af !important;
+}
+
+/* ================== SUMMARY CARDS ================== */
+.dark .product-card-product .ant-card {
+  background: rgba(31, 41, 55, 0.85) !important;
+  border: 1px solid rgba(51, 65, 85, 0.6) !important;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .product-card-product .ant-card-body {
+  background: transparent !important;
+  color: #e5e7eb !important;
+}
+
+.dark .ant-statistic-title {
+  color: #d1d5db !important;
+  font-weight: 600;
+}
+
+.dark .ant-statistic-content {
+  color: #f3f4f6 !important;
+}
+
+/* Category Summary Cards */
+.dark .product-card-product .ant-card-small {
+  background: rgba(55, 65, 81, 0.8) !important;
+  border: 1px solid rgba(75, 85, 99, 0.6) !important;
+  transition: all 0.3s ease;
+}
+
+.dark .product-card-product .ant-card-small:hover {
+  background: rgba(55, 65, 81, 1) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* ================== TABLE STYLING ================== */
+.dark .ant-table-wrapper {
+  background: transparent !important;
+  border-radius: 12px;
+}
+
+.dark .ant-table {
+  background: transparent !important;
+  color: #e5e7eb !important;
+}
+
+.dark .ant-table-container {
+  background: rgba(31, 41, 55, 0.95) !important;
+  border-radius: 12px;
+}
+
+/* Table Headers */
+.dark .ant-table-thead > tr > th {
+  background: #374151 !important;
+  color: #f3f4f6 !important;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 12px !important;
+  border-bottom: 2px solid #4b5563 !important;
+  border-right: 1px solid #4b5563 !important;
+}
+
+.dark .ant-table-thead > tr > th:last-child {
+  border-right: none !important;
+}
+
+.dark .column-header-product {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dark .khmer-text-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 700;
+  color: #f3f4f6 !important;
+  font-size: 0.9rem;
+}
+
+.dark .khmer-text1 {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 700;
+  color: #f3f4f6 !important;
+}
+
+.dark .english-text-product1 {
+  font-family: 'Battambang', sans-serif;
+  font-size: 0.85rem;
+  color: #9ca3af !important;
+}
+
+/* Table Body */
+.dark .ant-table-tbody {
+  background: transparent !important;
+}
+
+.dark .ant-table-tbody > tr {
+  background: transparent !important;
+  transition: all 0.2s ease;
+}
+
+/* Base alternating row colors for dark mode */
+.dark .ant-table-tbody > tr.even-row > td {
+  background: #1f2937 !important;
+}
+
+.dark .ant-table-tbody > tr.odd-row > td {
+  background: #1f2937 !important;
+}
+
+/* Checked row styling - Yellow/Gold background when checked */
+.dark .ant-table-tbody > tr.checked-row > td {
+  background: rgba(251, 191, 36, 0.2) !important;
+  border-left: 4px solid #f59e0b !important;
+}
+
+/* Hover effects */
+.dark .ant-table-tbody > tr:not(.checked-row):hover > td {
+  background: #374151 !important;
+}
+
+.dark .ant-table-tbody > tr.checked-row:hover > td {
+  background: rgba(251, 191, 36, 0.3) !important;
+  border-left: 4px solid #fbbf24 !important;
+}
+
+.dark .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #374151 !important;
+  border-right: 1px solid #374151 !important;
+  color: #e5e7eb !important;
+  padding: 12px !important;
+}
+
+.dark .ant-table-tbody > tr > td:last-child {
+  border-right: none !important;
+}
+
+/* Table Cell Content */
+.dark .custom-cell-text {
+  color: #e5e7eb !important;
+  font-family: 'Battambang', sans-serif;
+}
+
+.dark .english-company-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 13px;
+  color: #d1d5db !important;
+}
+
+.dark .card-number-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 700;
+  color: #60a5fa !important;
+  font-size: 1rem;
+  background: rgba(59, 130, 246, 0.2) !important;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.dark .price-cell-product,
+.dark .total-price-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 700;
+  color: #34d399 !important;
+  font-size: 14px;
+}
+
+.dark .total-price-cell-product {
+  font-size: 1.1rem;
+  color: #10b981 !important;
+}
+
+.dark .date-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 0.9rem;
+  color: #9ca3af !important;
+}
+
+.dark .user-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-style: italic;
+  color: #d1d5db !important;
+}
+
+/* Status Badges */
+.dark .status-active-product {
+  font-family: 'Battambang', sans-serif;
+  color: #34d399 !important;
+  font-weight: 700;
+}
+
+.dark .status-inactive-product {
+  font-family: 'Battambang', sans-serif;
+  color: #f87171 !important;
+  font-weight: 700;
+}
+
+.dark .ant-badge-status-dot {
+  background: #34d399 !important;
+}
+
+.dark .ant-badge-status-error {
+  background: #ef4444 !important;
+}
+
+/* ================== BUTTONS ================== */
+.dark .ant-btn {
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.dark .ant-btn-default {
+  background: #374151 !important;
+  border: 1px solid #4b5563 !important;
+  color: #e5e7eb !important;
+}
+
+.dark .ant-btn-default:hover {
+  background: #4b5563 !important;
+  border-color: #60a5fa !important;
+  color: #f3f4f6 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark .ant-btn-primary {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.dark .ant-btn-primary:hover {
+  background: #2563eb !important;
+  border-color: #2563eb !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+.dark .ant-btn-danger {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: white !important;
+}
+
+.dark .ant-btn-danger:hover {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5);
+}
+
+/* ================== CHECKBOX ================== */
+.dark .ant-checkbox-wrapper {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-checkbox-inner {
+  background: #374151 !important;
+  border: 2px solid #4b5563 !important;
+  border-radius: 4px;
+}
+
+.dark .ant-checkbox-checked .ant-checkbox-inner {
+  background: #f59e0b !important;
+  border-color: #f59e0b !important;
+}
+
+.dark .ant-checkbox:hover .ant-checkbox-inner {
+  border-color: #fbbf24 !important;
+}
+
+.dark .ant-checkbox-checked::after {
+  border-color: #f59e0b !important;
+}
+
+/* ================== TAGS ================== */
+.dark .ant-tag {
+  border-radius: 6px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border: none;
+}
+
+.dark .ant-tag-blue {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60a5fa !important;
+  border: 1px solid rgba(59, 130, 246, 0.4) !important;
+}
+
+.dark .ant-tag-green {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border: 1px solid rgba(16, 185, 129, 0.4) !important;
+}
+
+.dark .ant-tag-red {
+  background: rgba(239, 68, 68, 0.2) !important;
+  color: #f87171 !important;
+  border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+/* Custom Tag */
+.dark .custom-tag {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60a5fa !important;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+/* ================== EMPTY STATE ================== */
+.dark .ant-empty-description {
+  color: #9ca3af !important;
+}
+
+.dark .ant-table-placeholder {
+  background: #1f2937 !important;
+  color: #9ca3af !important;
+}
+
+.dark .custom-empty-product {
+  padding: 40px 0;
+}
+
+.dark .empty-text-product {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af !important;
+}
+
+/* ================== SCROLLBAR ================== */
+.dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 5px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 5px;
+  border: 2px solid #1f2937;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* ================== SPACE COMPONENT ================== */
+.dark .ant-space {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-space-item {
+  color: #e5e7eb !important;
+}
+
+/* ================== TYPOGRAPHY ================== */
+.dark .ant-typography {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-typography-secondary {
+  color: #9ca3af !important;
+}
+
+.dark .ant-typography.ant-typography-success {
+  color: #34d399 !important;
+}
+
+.dark .ant-typography.ant-typography-warning {
+  color: #fbbf24 !important;
+}
+
+.dark .ant-typography.ant-typography-danger {
+  color: #f87171 !important;
+}
+
+/* ================== LOADING SPINNER ================== */
+.dark .ant-spin-dot-item {
+  background: #60a5fa !important;
+}
+
+.dark .ant-spin-text {
+  color: #e5e7eb !important;
+}
+
+/* ================== DATEPICKER DROPDOWN ================== */
+.dark .ant-picker-panel-container {
+  background: #1f2937 !important;
+  border-radius: 12px;
+}
+
+.dark .ant-picker-panel {
+  background: #1f2937 !important;
+  border: 1px solid #4b5563 !important;
+}
+
+.dark .ant-picker-header {
+  color: #e5e7eb !important;
+  border-bottom: 1px solid #4b5563 !important;
+}
+
+.dark .ant-picker-header button {
+  color: #9ca3af !important;
+}
+
+.dark .ant-picker-header button:hover {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-picker-content th {
+  color: #9ca3af !important;
+}
+
+.dark .ant-picker-cell {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-picker-cell:hover .ant-picker-cell-inner {
+  background: #374151 !important;
+}
+
+.dark .ant-picker-cell-selected .ant-picker-cell-inner {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+}
+
+.dark .ant-picker-cell-today .ant-picker-cell-inner::before {
+  border-color: #60a5fa !important;
+}
+
+/* ================== STATISTIC VALUES ================== */
+.dark .ant-statistic-content-value {
+  color: #f3f4f6 !important;
+}
+
+.dark .ant-statistic-content-prefix {
+  color: #d1d5db !important;
+}
+
+.dark .ant-statistic-content-suffix {
+  color: #d1d5db !important;
+}
+
+/* ================== ROW & COL ================== */
+.dark .ant-row {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-col {
+  color: #e5e7eb !important;
+}
+
+/* ================== DIVIDER ================== */
+.dark .ant-divider {
+  border-color: #4b5563 !important;
+}
+
+.dark .ant-divider-text {
+  color: #e5e7eb !important;
+}
+
+/* ================== RESPONSIVE DESIGN ================== */
+@media (max-width: 768px) {
+  .dark .khmer-title-product {
+    font-size: 1.4rem;
+  }
+
+  .dark .search-input-product {
+    width: 100%;
+  }
+
+  .dark .page-header-container-product {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dark .product-card-product .ant-card-body {
+    padding: 16px;
+  }
+}
+
+/* ================== ANIMATION EFFECTS ================== */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dark .product-card-product {
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.dark .ant-table-tbody > tr {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* ================== TOOLTIP ================== */
+.dark .ant-tooltip-inner {
+  background: #374151 !important;
+  color: #e5e7eb !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.dark .ant-tooltip-arrow-content {
+  background: #374151 !important;
+}
+
+/* ================== BADGE ================== */
+.dark .ant-badge-status-text {
+  color: #e5e7eb !important;
+}
+
+.dark .ant-badge-count {
+  background: #3b82f6 !important;
+  color: white !important;
+}
+
+/* ================== MESSAGE NOTIFICATIONS ================== */
+.dark .ant-message-notice-content {
+  background: #374151 !important;
+  color: #e5e7eb !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.dark .ant-message-success .anticon {
+  color: #10b981 !important;
+}
+
+.dark .ant-message-error .anticon {
+  color: #ef4444 !important;
+}
+
+.dark .ant-message-warning .anticon {
+  color: #f59e0b !important;
+}
+
+.dark .ant-message-info .anticon {
+  color: #3b82f6 !important;
+}
+.ant-table-tbody > tr.checked-row > td {
+  background: linear-gradient(90deg, 
+    rgba(254, 243, 199, 0.6) 0%, 
+    rgba(253, 224, 71, 0.4) 50%, 
+    rgba(254, 243, 199, 0.6) 100%) !important;
+  border-left: 4px solid #f59e0b !important;
+  box-shadow: inset 0 0 20px rgba(251, 191, 36, 0.15);
+  position: relative;
+}
+
+
+/* Make content above the glow effect */
+.ant-table-tbody > tr.checked-row > td > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ================== HOVER EFFECTS (LIGHT MODE) ================== */
+/* Unchecked rows hover - subtle gray */
+.ant-table-tbody > tr:not(.checked-row):hover > td {
+  background: #f5f5f5 !important;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.03);
+  transition: all 0.3s ease;
+}
+
+/* Checked rows hover - enhanced golden highlight */
+.ant-table-tbody > tr.checked-row:hover > td {
+  background: linear-gradient(90deg, 
+    rgba(254, 243, 199, 0.8) 0%, 
+    rgba(253, 224, 71, 0.6) 50%, 
+    rgba(254, 243, 199, 0.8) 100%) !important;
+  border-left: 4px solid #fbbf24 !important;
+  box-shadow: 
+    inset 0 0 25px rgba(251, 191, 36, 0.25),
+    0 0 15px rgba(251, 191, 36, 0.15);
+  transform: translateX(2px);
+  transition: all 0.3s ease;
+}
+
+/* ================== TABLE CELL BORDERS (LIGHT MODE) ================== */
+.ant-table-tbody > tr > td {
+  border-bottom: 1px solid #f0f0f0 !important;
+  border-right: 1px solid #f0f0f0 !important;
+  color: #262626 !important;
+  padding: 12px !important;
+}
+
+.ant-table-tbody > tr > td:last-child {
+  border-right: none !important;
+}
+
+/* Enhance borders for checked rows */
+.ant-table-tbody > tr.checked-row > td {
+  border-bottom: 1px solid rgba(251, 191, 36, 0.3) !important;
+  border-right: 1px solid rgba(251, 191, 36, 0.2) !important;
+}
+
+/* ================== TABLE CELL CONTENT (LIGHT MODE) ================== */
+.custom-cell-text {
+  color: #262626 !important;
+  font-family: 'Battambang', sans-serif;
+}
+
+/* Enhanced text for checked rows */
+.ant-table-tbody > tr.checked-row .custom-cell-text {
+  color: #78350f !important;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(251, 191, 36, 0.1);
+}
+
+.english-company-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 13px;
+  color: #595959 !important;
+}
+
+.ant-table-tbody > tr.checked-row .english-company-product {
+  color: #78350f !important;
+  font-weight: 600;
+}
+
+.card-number-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 700;
+  color: #1890ff !important;
+  font-size: 1rem;
+  background: rgba(24, 144, 255, 0.1) !important;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  border: 1px solid rgba(24, 144, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+/* Enhanced card number for checked rows */
+.ant-table-tbody > tr.checked-row .card-number-product {
+  color: #d97706 !important;
+  background: rgba(251, 191, 36, 0.2) !important;
+  border: 1px solid rgba(251, 191, 36, 0.5);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+  font-weight: 800;
+}
+
+.price-cell-product,
+.total-price-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 700;
+  color: #52c41a !important;
+  font-size: 14px;
+}
+
+/* Enhanced price display for checked rows */
+.ant-table-tbody > tr.checked-row .price-cell-product,
+.ant-table-tbody > tr.checked-row .total-price-cell-product {
+  color: #d97706 !important;
+  font-weight: 800;
+  text-shadow: 0 1px 2px rgba(251, 191, 36, 0.2);
+}
+
+.total-price-cell-product {
+  font-size: 1.1rem;
+}
+
+.date-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 0.9rem;
+  color: #8c8c8c !important;
+}
+
+.ant-table-tbody > tr.checked-row .date-cell-product {
+  color: #92400e !important;
+  font-weight: 600;
+}
+
+.user-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-style: italic;
+  color: #595959 !important;
+}
+
+.ant-table-tbody > tr.checked-row .user-cell-product {
+  color: #78350f !important;
+  font-weight: 600;
+}
+
+/* ================== STATUS BADGES (LIGHT MODE) ================== */
+.status-active-product {
+  font-family: 'Battambang', sans-serif;
+  color: #52c41a !important;
+  font-weight: 700;
+}
+
+.ant-table-tbody > tr.checked-row .status-active-product {
+  color: #d97706 !important;
+  font-weight: 800;
+}
+
+.status-inactive-product {
+  font-family: 'Battambang', sans-serif;
+  color: #ff4d4f !important;
+  font-weight: 700;
+}
+
+.ant-badge-status-dot {
+  background: #52c41a !important;
+}
+
+.ant-table-tbody > tr.checked-row .ant-badge-status-dot {
+  background: #f59e0b !important;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+.ant-badge-status-error {
+  background: #ff4d4f !important;
+}
+
+/* ================== CHECKBOX - LIGHT MODE STYLING ================== */
+.ant-checkbox-wrapper {
+  color: #262626 !important;
+  transition: all 0.3s ease;
+}
+
+/* Unchecked state */
+.ant-checkbox-inner {
+  background: #ffffff !important;
+  border: 2px solid #d9d9d9 !important;
+  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  transition: all 0.3s ease;
+}
+
+/* Checked state - Golden theme for Light Mode */
+.ant-checkbox-checked .ant-checkbox-inner {
+  background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
+  border-color: #f59e0b !important;
+  box-shadow: 
+    0 2px 8px rgba(251, 191, 36, 0.4),
+    inset 0 1px 3px rgba(255, 255, 255, 0.3);
+}
+
+/* Checkmark color - White for better contrast */
+.ant-checkbox-checked .ant-checkbox-inner::after {
+  border-color: #ffffff !important;
+  border-width: 2.5px;
+}
+
+/* Hover state for unchecked */
+.ant-checkbox:hover .ant-checkbox-inner {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+}
+
+/* Hover state for checked */
+.ant-checkbox-checked:hover .ant-checkbox-inner {
+  background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%) !important;
+  box-shadow: 
+    0 2px 12px rgba(251, 191, 36, 0.6),
+    inset 0 1px 3px rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+/* Focus state */
+.ant-checkbox-wrapper:focus-within .ant-checkbox-inner,
+.ant-checkbox:focus .ant-checkbox-inner {
+  border-color: #fbbf24 !important;
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2);
+}
+
+/* Checkbox wrapper in checked rows */
+.ant-table-tbody > tr.checked-row .ant-checkbox-wrapper {
+  filter: brightness(1.05);
+}
+
+/* ================== CHECKBOX RIPPLE EFFECT (LIGHT MODE) ================== */
+@keyframes checkboxRipple {
+  0% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
+  }
+}
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  animation: checkboxRipple 0.6s ease-out;
+}
+
+/* ================== SHIMMER EFFECT (LIGHT MODE) ================== */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Add shimmer effect to checked rows on initial check */
+.ant-table-tbody > tr.checked-row.newly-checked > td::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -1000px;
+  width: 1000px;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(251, 191, 36, 0.4) 50%,
+    transparent 100%
+  );
+  animation: shimmer 1.5s ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ================== TABLE HEADERS (LIGHT MODE) ================== */
+.ant-table-thead > tr > th {
+  background: #fafafa !important;
+  color: #262626 !important;
+  font-weight: 700;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 16px 12px !important;
+  border-bottom: 2px solid #f0f0f0 !important;
+  border-right: 1px solid #f0f0f0 !important;
+}
+
+.ant-table-thead > tr > th:last-child {
+  border-right: none !important;
+}
+
+/* ================== ANIMATION ================== */
+.ant-table-tbody > tr {
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+/* ================== VISUAL INDICATOR FOR COMPLETED ROWS ================== */
+/* Add a completion badge/indicator */
+.ant-table-tbody > tr.checked-row::after {
+  content: '✓';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  font-weight: bold;
+  color: #f59e0b;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ================== RESPONSIVE DESIGN ================== */
+@media (max-width: 768px) {
+  /* Adjust checkbox size for mobile */
+  .ant-checkbox-inner {
+    width: 18px;
+    height: 18px;
+  }
+  
+  /* Hide completion indicator on small screens */
+  .ant-table-tbody > tr.checked-row::after {
+    display: none;
+  }
+}

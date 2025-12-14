@@ -1,7 +1,7 @@
-const { db, isArray, isEmpty, logError } = require("../util/helper");
-
-
-
+const { db, isArray, isEmpty, logError, sendTelegramMessagenewcustomerPays } = require("../util/helper");
+const moment = require('moment');
+const { config } = require("../util/config");
+const axios = require("axios");
 exports.getStockByUser = async (req, res) => {
   try {
     const { txtSearch } = req.query;
@@ -82,19 +82,11 @@ exports.create = async (req, res) => {
 
     if (!userExists || userExists.length === 0) {
       return res.status(400).json({
-        success: false, 
+        success: false,
         message: `User with ID ${user_id} does not exist.`,
       });
     }
 
-    // Similar checks could be added for product_id and category_id if needed
-    // const [productExists] = await db.query("SELECT 1 FROM products WHERE id = :product_id LIMIT 1", { product_id });
-    // if (!productExists  || productExists.length === 0) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: `Product with ID ${product_id} does not exist.`,
-    //   });
-    // }
 
     // Insert into the `user_stock` table
     const sql = `
@@ -106,8 +98,8 @@ exports.create = async (req, res) => {
     `;
 
     const [data] = await db.query(sql, {
-      user_id, 
-      product_name, 
+      user_id,
+      product_name,
       category_id,
       qty: Number(qty),
       barcode: barcode || null,
@@ -116,21 +108,22 @@ exports.create = async (req, res) => {
       price: Number(unit_price) * Number(qty),
       discount: discount || 0,
       status: status || 1,
-   
+
       create_by: req.auth?.name || "System",
       unit: unit || null,
       unit_price: Number(unit_price)
     });
 
+
     res.json({
       success: true,
       data,
-      message: "Insert success!", 
+      message: "Insert success!",
     });
   } catch (error) {
     console.error("Error in user_stock.create:", error.message);
     logError("user_stock.create", error, res);
-    
+
     // More specific error message based on the error code
     let errorMessage = "An error occurred while creating the stock entry.";
     if (error.message && error.message.includes("foreign key constraint fails")) {
@@ -142,19 +135,19 @@ exports.create = async (req, res) => {
         errorMessage = "Invalid category ID. The specified category does not exist.";
       }
     }
-    
+
     res.status(500).json({
       success: false,
       message: errorMessage,
-    }); 
-  }  
+    });
+  }
 };
 
 
 exports.remove = async (req, res) => {
   try {
     const id = req.params.id || req.body.id; // Check both params & body
-    
+
     if (!id) {
       return res.status(400).json({ message: "Stock ID is required!" });
     }
@@ -170,36 +163,36 @@ exports.remove = async (req, res) => {
     logError("stock.remove", error, res);
   }
 };
-  exports.newBarcode = async (req, res) => { 
-    try {
-      var sql =
-        "SELECT " +
-        "CONCAT('P',LPAD((SELECT COALESCE(MAX(id),0) + 1 FROM user_stock), 3, '0')) " +
-        "as barcode";
-      var [data] = await db.query(sql); 
-      res.json({
-        barcode: data[0].barcode,
-      });
-    } catch (error) {
-      logError("barcode.create", error, res);
+exports.newBarcode = async (req, res) => {
+  try {
+    var sql =
+      "SELECT " +
+      "CONCAT('P',LPAD((SELECT COALESCE(MAX(id),0) + 1 FROM user_stock), 3, '0')) " +
+      "as barcode";
+    var [data] = await db.query(sql);
+    res.json({
+      barcode: data[0].barcode,
+    });
+  } catch (error) {
+    logError("barcode.create", error, res);
+  }
+};
+
+isExistBarcode = async (barcode) => {
+  try {
+    var sql = "SELECT COUNT(id) as Total FROM product WHERE barcode=:barcode";
+    var [data] = await db.query(sql, {
+      barcode: barcode,
+    });
+    if (data.length > 0 && data[0].Total > 0) {
+      return true; // ស្ទួន
     }
-  };
-  
-  isExistBarcode = async (barcode) => {
-    try {
-      var sql = "SELECT COUNT(id) as Total FROM product WHERE barcode=:barcode";
-      var [data] = await db.query(sql, {
-        barcode: barcode,
-      });
-      if (data.length > 0 && data[0].Total > 0) {
-        return true; // ស្ទួន
-      }
-      return false; // អត់ស្ទួនទេ
-    } catch (error) {
-      logError("remove.create", error, res);
-    }
-  };
-  
+    return false; // អត់ស្ទួនទេ
+  } catch (error) {
+    logError("remove.create", error, res);
+  }
+};
+
 
 
 exports.getList = async (req, res) => {
@@ -242,133 +235,1314 @@ exports.getList = async (req, res) => {
     logError("user_stock.getList", error, res);
   }
 };
-
-// exports.getList = async (req, res) => {
-//   try {
-//     const user_id = req.current_id; // Assuming this is securely set from authentication middleware
-
-//     if (!user_id) {
-//       return res.status(401).json({ error: "Unauthorized: User ID is required" });
-//     }
-
-//     const [list] = await db.query(
-//       `SELECT 
-//         us.id, 
-//         us.user_id, 
-//         us.create_by,  
-//         us.product_id, 
-//         p.name AS product_name, 
-//         us.qty, 
-//         us.last_updated, 
-//         us.category_id, 
-//         us.brand, 
-//         p.unit_price,
-//         p.discount,
-//         p.unit,
-//         p.barcode,  
-//         c.name AS category_name,
-//         (us.qty * p.unit_price) AS total_price
-//       FROM user_stock us
-//       JOIN product p ON us.product_id = p.id
-//       JOIN category c ON us.category_id = c.id
-//       WHERE us.user_id = ?  -- Use positional placeholder
-//       ORDER BY us.id DESC;`,
-//       [user_id] // Pass parameters as an array
-//     );
-
-//     res.json({
-//       message: "User stock retrieved successfully",
-//       user_id: user_id, // Useful for debugging
-//       list: list,
-//     });
-//   } catch (error) {
-//     logError("user_stock.getList", error, res);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// };
-
 exports.gettotal_due = async (req, res) => {
   try {
-    // Fetch total due per customer
-    const [list] = await db.query(`
+    const { user_id } = req.params;
+    const {
+      search,
+      customer_id,
+      from_date,
+      to_date,
+      show_paid = false
+    } = req.query;
+
+    let sqlQuery = `
+      WITH debt_summary AS (
+        SELECT 
+          MIN(cd.id) AS debt_id,
+          cd.order_id,
+          cd.customer_id,
+          cd.category_id,
+          SUM(cd.total_amount) AS total_amount,
+          SUM(cd.paid_amount) AS paid_amount,
+          SUM(cd.due_amount) AS due_amount,
+          MAX(cd.payment_status) AS payment_status,
+          MAX(cd.due_date) AS due_date,
+          MAX(cd.last_payment_date) AS last_payment_date,
+          -- ✅ យក description ពី customer_debt (ចុងក្រោយបំផុត)
+          (
+            SELECT cd2.description 
+            FROM customer_debt cd2 
+            WHERE cd2.order_id = cd.order_id 
+              AND cd2.customer_id = cd.customer_id
+              AND cd2.category_id = cd.category_id
+              AND cd2.description IS NOT NULL 
+              AND cd2.description != ''
+            ORDER BY cd2.id DESC 
+            LIMIT 1
+          ) AS debt_description,
+          GROUP_CONCAT(DISTINCT cd.notes SEPARATOR ' | ') AS notes,
+          MIN(cd.created_by) AS created_by,
+          MIN(cd.created_at) AS created_at,
+          MAX(cd.updated_at) AS updated_at,
+          SUM(cd.qty) AS quantity, 
+          AVG(cd.actual_price) AS debt_actual_price
+        FROM customer_debt cd
+        JOIN user cu ON cu.group_id = (SELECT group_id FROM user WHERE id = cd.created_by)
+        WHERE cu.id = ?
+        GROUP BY cd.order_id, cd.customer_id, cd.category_id
+      )
       SELECT 
-        o.customer_id, 
+        ds.debt_id,
+        ds.order_id,
+        o.order_no,
+        DATE_FORMAT(o.order_date, '%Y-%m-%d') AS order_date,
+        DATE_FORMAT(o.delivery_date, '%Y-%m-%d') AS delivery_date,
+        ds.customer_id,
         c.name AS customer_name,
-        c.address AS branch_name,
-        c.tel AS tel,
-        u.create_by AS create_by,
-        o.create_at AS order_date,
-        r.name AS province_name,
-        SUM(o.total_amount - o.paid_amount) AS total_due  -- Sum total_due for each customer
-      FROM \`order\` o
-      JOIN customer c ON o.customer_id = c.id
-      JOIN user u ON o.user_id = u.id
-      JOIN role r ON u.role_id = r.id
-      WHERE (o.total_amount - o.paid_amount) > 0
-      GROUP BY o.customer_id  -- Group by customer ID
-      ORDER BY MAX(o.create_at) DESC; -- Order by latest order date
-    `);
+        c.tel,
+        c.address,
+        ds.total_amount,
+        ds.paid_amount,
+        ds.due_amount,
+        ds.payment_status,
+        DATE_FORMAT(ds.due_date, '%Y-%m-%d') AS due_date,
+        DATE_FORMAT(ds.last_payment_date, '%Y-%m-%d') AS last_payment_date,
+        ds.notes,
+        u.username AS created_by,
+        DATE_FORMAT(ds.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
+        DATE_FORMAT(ds.updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at,
+        
+        ds.quantity,
+        ds.category_id,
+        
+        (
+          SELECT od.price
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id AND p.category_id = ds.category_id
+          LIMIT 1
+        ) AS unit_price,
+        
+        ds.debt_actual_price,
+        
+        (
+          SELECT cat.actual_price
+          FROM category cat
+          WHERE cat.id = ds.category_id
+        ) AS category_actual_price,
+        
+        COALESCE(
+          NULLIF(ds.debt_actual_price, 0), 
+          (SELECT cat.actual_price FROM category cat WHERE cat.id = ds.category_id)
+        ) AS effective_actual_price,
+        
+        -- ✅ អាទិភាព: debt_description > product_details.description > order_no
+        COALESCE(
+          NULLIF(ds.debt_description, ''),
+          (
+            SELECT pd.description
+            FROM product_details pd
+            WHERE pd.customer_id = ds.customer_id 
+            AND CAST(pd.category AS UNSIGNED) = ds.category_id
+            AND DATE(pd.created_at) <= DATE(o.order_date)
+            AND pd.description IS NOT NULL
+            AND pd.description != ''
+            ORDER BY pd.created_at DESC
+            LIMIT 1
+          ),
+          o.order_no
+        ) AS product_description,
+        
+        -- ✅ យក description ទាំងអស់ ប៉ុន្តែ DISTINCT
+        (
+          SELECT GROUP_CONCAT(DISTINCT pd.description ORDER BY pd.created_at DESC SEPARATOR ' | ')
+          FROM product_details pd
+          WHERE pd.customer_id = ds.customer_id 
+          AND CAST(pd.category AS UNSIGNED) = ds.category_id
+          AND DATE(pd.created_at) <= DATE(o.order_date)
+          AND pd.description IS NOT NULL
+          AND pd.description != ''
+        ) AS all_product_descriptions,
+        
+        -- ✅ PURCHASE AMOUNT
+        COALESCE(
+          (
+            SELECT SUM(DISTINCT pd.total_price)
+            FROM product_details pd
+            WHERE pd.customer_id = ds.customer_id 
+            AND CAST(pd.category AS UNSIGNED) = ds.category_id
+            AND DATE(pd.created_at) <= DATE(o.order_date)
+          ), 
+          0
+        ) AS purchase_amount,
+        
+        COALESCE(
+          (
+            SELECT SUM(DISTINCT pd.qty)
+            FROM product_details pd
+            WHERE pd.customer_id = ds.customer_id 
+            AND CAST(pd.category AS UNSIGNED) = ds.category_id
+            AND DATE(pd.created_at) <= DATE(o.order_date)
+          ), 
+          0
+        ) AS purchase_qty,
+        
+        COALESCE(
+          (
+            SELECT AVG(DISTINCT pd.unit_price)
+            FROM product_details pd
+            WHERE pd.customer_id = ds.customer_id 
+            AND CAST(pd.category AS UNSIGNED) = ds.category_id
+            AND DATE(pd.created_at) <= DATE(o.order_date)
+          ), 
+          0
+        ) AS avg_purchase_price,
+        
+        -- ✅ យក barcode តែមួយ
+        (
+          SELECT pd.barcode
+          FROM product_details pd
+          WHERE pd.customer_id = ds.customer_id 
+          AND CAST(pd.category AS UNSIGNED) = ds.category_id
+          AND DATE(pd.created_at) <= DATE(o.order_date)
+          AND pd.barcode IS NOT NULL
+          ORDER BY pd.created_at DESC
+          LIMIT 1
+        ) AS product_barcode,
+        
+        -- ✅ យក name តែមួយ
+        (
+          SELECT pd.name
+          FROM product_details pd
+          WHERE pd.customer_id = ds.customer_id 
+          AND CAST(pd.category AS UNSIGNED) = ds.category_id
+          AND DATE(pd.created_at) <= DATE(o.order_date)
+          AND pd.name IS NOT NULL
+          ORDER BY pd.created_at DESC
+          LIMIT 1
+        ) AS product_name,
+        
+        CASE 
+          WHEN ds.due_date IS NOT NULL 
+          AND ds.due_date < CURDATE() 
+          AND ds.payment_status != 'Paid' 
+          THEN DATEDIFF(CURDATE(), ds.due_date)
+          ELSE NULL
+        END AS days_overdue,
+        
+        (
+          SELECT GROUP_CONCAT(
+            CONCAT(
+              p.name, ' (', od.qty, ' ', p.unit, ') - ', 
+              'Price: ', od.price, ' - Discount: ', IFNULL(od.discount, 0), 
+              ' - Total: ', od.total
+            ) SEPARATOR '\n'
+          )
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id
+        ) AS product_details,
+        
+        (
+          SELECT GROUP_CONCAT(DISTINCT cat.name SEPARATOR ', ')
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          JOIN category cat ON p.category_id = cat.id
+          WHERE od.order_id = o.id
+        ) AS categories,
+
+        (
+          SELECT SUM(od.qty)
+          FROM order_detail od
+          WHERE od.order_id = o.id
+        ) AS total_quantity,
+        
+        (
+          SELECT p.unit
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id
+          LIMIT 1
+        ) AS unit,
+        
+        (
+          SELECT cat.name
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          JOIN category cat ON p.category_id = cat.id
+          WHERE od.order_id = o.id AND p.category_id = ds.category_id
+          LIMIT 1
+        ) AS product_category,
+        
+        (
+          SELECT od.discount
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id AND p.category_id = ds.category_id
+          LIMIT 1
+        ) AS discount,
+        
+        (
+          SELECT od.total
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id AND p.category_id = ds.category_id
+          LIMIT 1
+        ) AS item_total
+      FROM 
+        debt_summary ds
+      JOIN 
+        \`order\` o ON ds.order_id = o.id
+      JOIN 
+        customer c ON ds.customer_id = c.id
+      JOIN 
+        user u ON ds.created_by = u.id
+      WHERE 1=1
+    `;
+
+    const queryParams = [req.current_id];
+    const conditions = [];
+
+    if (show_paid !== 'true' && show_paid !== true) {
+      conditions.push(`ds.due_amount > 0`);
+    }
+
+    if (from_date) {
+      conditions.push(`o.order_date >= ?`);
+      queryParams.push(from_date);
+    }
+
+    if (to_date) {
+      conditions.push(`o.order_date <= ?`);
+      queryParams.push(to_date);
+    }
+
+    if (customer_id) {
+      conditions.push(`ds.customer_id = ?`);
+      queryParams.push(customer_id);
+    }
+
+    if (search && search.trim() !== '') {
+      const searchTerm = `%${search.trim()}%`;
+      conditions.push(`(
+        c.name LIKE ? OR 
+        c.tel LIKE ? OR 
+        o.order_no LIKE ? OR
+        ds.debt_description LIKE ? OR
+        EXISTS (
+          SELECT 1 FROM product_details pd
+          WHERE pd.customer_id = ds.customer_id 
+          AND CAST(pd.category AS UNSIGNED) = ds.category_id
+          AND (
+            pd.name LIKE ? OR
+            pd.description LIKE ? OR
+            pd.barcode LIKE ?
+          )
+        )
+      )`);
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (conditions.length > 0) {
+      sqlQuery += ' AND ' + conditions.join(' AND ');
+    }
+
+    sqlQuery += ' ORDER BY ds.payment_status ASC, ds.due_date ASC, o.order_date DESC';
+
+    const [list] = await db.query(sqlQuery, queryParams);
+
+    const formattedList = list.map(item => {
+      const purchaseAmount = parseFloat(item.purchase_amount) || 0;
+      const totalAmount = parseFloat(item.total_amount) || 0;
+      const profit = totalAmount - purchaseAmount;
+      const profitMargin = totalAmount > 0 ? ((profit / totalAmount) * 100).toFixed(2) : 0;
+
+      return {
+        ...item,
+        branch_name: item.address,
+        debt_type: item.product_category,
+        product_details: item.product_details ? item.product_details.split('\n') : [],
+        categories: item.categories ? item.categories.split(', ') : [],
+        purchase_amount: purchaseAmount,
+        purchase_qty: parseFloat(item.purchase_qty) || 0,
+        avg_purchase_price: parseFloat(item.avg_purchase_price) || 0,
+        profit: profit,
+        profit_margin: profitMargin
+      };
+    });
 
     res.json({
-      i_know_you_are_id: req.current_id || null,
-      list: list, // List contains unique customers with total due amount
+      list: formattedList
     });
   } catch (error) {
-    logError("user_stock.getList", error, res);
+    console.error('❌ Error in gettotal_due:', error);
+    logError("order.gettotaldue", error, res);
+  }
+};
+exports.gettotal_due_detail = async (req, res) => {
+  try {
+    const { order_id } = req.params;
+
+    if (!order_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order ID is required'
+      });
+    }
+
+    // Get all debt records for this order
+    let sqlQuery = `
+      SELECT 
+        cd.id AS debt_id,
+        cd.order_id,
+        o.order_no,
+        DATE_FORMAT(o.order_date, '%Y-%m-%d') AS order_date,
+        DATE_FORMAT(o.delivery_date, '%Y-%m-%d') AS delivery_date,
+        c.id AS customer_id,
+        c.name AS customer_name,
+        c.tel,
+        c.address,
+        cd.category_id,
+        cd.qty AS quantity,
+        cd.total_amount,
+        cd.paid_amount,
+        cd.due_amount,
+        cd.payment_status,
+        DATE_FORMAT(cd.due_date, '%Y-%m-%d') AS due_date,
+        DATE_FORMAT(cd.last_payment_date, '%Y-%m-%d') AS last_payment_date,
+        cd.notes,
+        
+        -- Get unit_price from order_detail
+        (
+          SELECT od.price
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id AND p.category_id = cd.category_id
+          LIMIT 1
+        ) AS unit_price,
+        
+        -- Get actual_price from category
+        (
+          SELECT cat.actual_price
+          FROM category cat
+          WHERE cat.id = cd.category_id
+        ) AS actual_price,
+        
+        -- Get category name
+        (
+          SELECT cat.name
+          FROM category cat
+          WHERE cat.id = cd.category_id
+        ) AS category_name,
+        
+        cd.actual_price AS debt_actual_price
+      FROM 
+        customer_debt cd
+      JOIN 
+        \`order\` o ON cd.order_id = o.id
+      JOIN 
+        customer c ON cd.customer_id = c.id
+      WHERE 
+        cd.order_id = ?
+      ORDER BY 
+        cd.category_id ASC
+    `;
+
+    const [debts] = await db.query(sqlQuery, [order_id]);
+
+    if (!debts || debts.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No debt records found for this order'
+      });
+    }
+
+    // Format the response with product details
+    const productDetails = debts.map(debt => ({
+      debt_id: debt.debt_id,
+      category_id: debt.category_id,
+      category_name: debt.category_name,
+      quantity: parseFloat(debt.quantity) || 0,
+      unit_price: parseFloat(debt.unit_price) || 0,
+      actual_price: parseFloat(debt.actual_price) || 1,
+      effective_actual_price: parseFloat(debt.debt_actual_price) > 0
+        ? parseFloat(debt.debt_actual_price)
+        : parseFloat(debt.actual_price) || 1,
+      total_amount: parseFloat(debt.total_amount) || 0,
+      paid_amount: parseFloat(debt.paid_amount) || 0,
+      due_amount: parseFloat(debt.due_amount) || 0
+    }));
+
+    // Calculate totals
+    const totalAmount = productDetails.reduce((sum, item) => sum + item.total_amount, 0);
+    const totalPaid = productDetails.reduce((sum, item) => sum + item.paid_amount, 0);
+    const totalDue = productDetails.reduce((sum, item) => sum + item.due_amount, 0);
+
+    // Get first record for order-level info
+    const firstDebt = debts[0];
+
+    res.json({
+      success: true,
+      order_id: order_id,
+      order_no: firstDebt.order_no,
+      order_date: firstDebt.order_date,
+      delivery_date: firstDebt.delivery_date,
+      customer_id: firstDebt.customer_id,
+      customer_name: firstDebt.customer_name,
+      tel: firstDebt.tel,
+      address: firstDebt.address,
+      payment_status: firstDebt.payment_status,
+      due_date: firstDebt.due_date,
+      last_payment_date: firstDebt.last_payment_date,
+      notes: firstDebt.notes,
+      product_details: productDetails,
+      total_amount: totalAmount,
+      paid_amount: totalPaid,
+      due_amount: totalDue
+    });
+
+  } catch (error) {
+    logError("order.gettotal_due_detail", error, res);
+  }
+};
+
+exports.getPaymentHistory = async (req, res) => {
+  try {
+    const { order_id } = req.params;
+
+    if (!order_id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Order ID is required'
+      });
+    }
+
+    // Get all payment records for this order
+    const sqlQuery = `
+      SELECT 
+        ph.id AS payment_id,
+        ph.order_id,
+        ph.debt_id,
+        cd.total_amount,
+        cd.paid_amount AS total_paid,
+        cd.due_amount AS current_due,
+        ph.amount AS payment_amount,
+        ph.payment_method,
+        ph.bank,
+        DATE_FORMAT(ph.payment_date, '%Y-%m-%d') AS payment_date,
+        ph.notes,
+        DATE_FORMAT(ph.created_at, '%Y-%m-%d %H:%i:%s') AS created_at
+      FROM 
+        payment_history ph
+      JOIN 
+        customer_debt cd ON ph.debt_id = cd.id
+      WHERE 
+        ph.order_id = ?
+      ORDER BY 
+        ph.payment_date DESC, ph.created_at DESC
+    `;
+
+    const [payments] = await db.query(sqlQuery, [order_id]);
+
+    // Get current debt status
+    const debtQuery = `
+      SELECT 
+        SUM(cd.total_amount) AS total_owed,
+        SUM(cd.paid_amount) AS total_paid,
+        SUM(cd.due_amount) AS total_due
+      FROM 
+        customer_debt cd
+      WHERE 
+        cd.order_id = ?
+    `;
+
+    const [debtStatus] = await db.query(debtQuery, [order_id]);
+
+    res.json({
+      success: true,
+      order_id: order_id,
+      payments: payments || [],
+      debt_summary: debtStatus[0] || {
+        total_owed: 0,
+        total_paid: 0,
+        total_due: 0
+      }
+    });
+
+  } catch (error) {
+    logError("order.getPaymentHistory", error, res);
+  }
+};
+
+exports.updatePaymentHistory = async (req, res) => {
+  try {
+    const { payment_id } = req.params;
+    const { amount, payment_method, bank, payment_date, notes } = req.body;
+
+    if (!payment_id || !amount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment ID and amount are required'
+      });
+    }
+
+    // Get old payment record
+    const [oldPayment] = await db.query(
+      'SELECT * FROM payment_history WHERE id = ?',
+      [payment_id]
+    );
+
+    if (!oldPayment || oldPayment.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Payment not found'
+      });
+    }
+
+    const oldAmount = parseFloat(oldPayment[0].amount);
+    const newAmount = parseFloat(amount);
+    const difference = newAmount - oldAmount; // If positive = more paid, if negative = refund
+
+    // Get debt record
+    const [debt] = await db.query(
+      'SELECT * FROM customer_debt WHERE id = ?',
+      [oldPayment[0].debt_id]
+    );
+
+    if (!debt || debt.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Debt record not found'
+      });
+    }
+
+    const currentDebt = debt[0];
+    const newPaidAmount = parseFloat(currentDebt.paid_amount) + difference;
+    const newDueAmount = Math.max(0, parseFloat(currentDebt.total_amount) - newPaidAmount);
+    const newPaymentStatus = newDueAmount <= 0.01 ? 'Paid' : (newPaidAmount > 0 ? 'Partial' : 'Pending');
+
+    // Update payment history record
+    await db.query(
+      `UPDATE payment_history 
+       SET amount = ?, payment_method = ?, bank = ?, payment_date = ?, notes = ?
+       WHERE id = ?`,
+      [newAmount, payment_method || oldPayment[0].payment_method,
+        bank || oldPayment[0].bank, payment_date || oldPayment[0].payment_date,
+        notes || oldPayment[0].notes, payment_id]
+    );
+
+    // Update customer_debt record
+    await db.query(
+      `UPDATE customer_debt 
+       SET paid_amount = ?, due_amount = ?, payment_status = ?, last_payment_date = ?
+       WHERE id = ?`,
+      [newPaidAmount, newDueAmount, newPaymentStatus, payment_date || new Date().toISOString().split('T')[0], oldPayment[0].debt_id]
+    );
+
+    res.json({
+      success: true,
+      message: 'Payment updated successfully',
+      payment: {
+        payment_id: payment_id,
+        old_amount: oldAmount,
+        new_amount: newAmount,
+        difference: difference
+      },
+      debt_updated: {
+        paid_amount: newPaidAmount,
+        due_amount: newDueAmount,
+        payment_status: newPaymentStatus
+      }
+    });
+
+  } catch (error) {
+    logError("order.updatePaymentHistory", error, res);
   }
 };
 
 
-
-
-
-
-
-
-
-
-exports.updateTotalDue = async (req, res) => {
+exports.updateCustomerDebt = async (req, res) => {
+  const connection = await db.getConnection();
   try {
-    console.log("Request body:", req.body); // Log the request body for debugging
-    
-    const { id, paid_amount } = req.body;
+    await connection.beginTransaction();
 
-    // Better validation with specific error messages
-    if (id === undefined || id === null) {
-      return res.status(400).json({ error: "Missing required field: id" });
-    }
-    
-    if (paid_amount === undefined || paid_amount === null) {
-      return res.status(400).json({ error: "Missing required field: paid_amount" });
-    }
-    
-    // Convert paid_amount to number to ensure it's a valid number
-    const paidAmountNum = Number(paid_amount);
-    if (isNaN(paidAmountNum)) {
-      return res.status(400).json({ error: "paid_amount must be a valid number" });
+    const { order_id } = req.params;
+    const {
+      customer_id,
+      amount,
+      payment_method,
+      bank,
+      payment_date,
+      user_id,
+      notes,
+      qty,
+      unit_price,
+      actual_price,
+      description, // ✅ យក description ពី request
+    } = req.body;
+
+    if (!order_id || !customer_id || !amount || !user_id) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        error: "Missing required fields: order_id, customer_id, amount, user_id",
+      });
     }
 
-    // Construct the SQL query to update the paid_amount
-    const sql = `
-      UPDATE \`order\`
-      SET paid_amount = :paid_amount
-      WHERE id = :id;
-    `;
+    const paymentAmount = parseFloat(amount);
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        error: "Payment amount must be a valid number greater than 0",
+      });
+    }
 
-    // Execute the update query
-    const [result] = await db.query(sql, { 
-      id, 
-      paid_amount: paidAmountNum 
+    const [debtRows] = await connection.query(
+      `SELECT id, qty, unit_price, actual_price, total_amount, paid_amount, due_amount 
+       FROM customer_debt 
+       WHERE order_id = ? AND customer_id = ?
+       ORDER BY id ASC`,
+      [order_id, customer_id]
+    );
+
+    if (!debtRows.length) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, error: "No debts found for this order" });
+    }
+
+    let totalDue = 0;
+    debtRows.forEach(row => {
+      totalDue += parseFloat(row.due_amount || 0);
     });
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Order not found with ID: " + id });
+    if (paymentAmount - totalDue > 0.01) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        error: `Payment amount ($${paymentAmount}) exceeds total due ($${totalDue.toFixed(2)})`
+      });
     }
 
-    res.json({ success: true, message: "Payment updated successfully" });
+    const [customerRows] = await connection.query(
+      `SELECT name, tel, address FROM customer WHERE id = ?`,
+      [customer_id]
+    );
+    const [userRows] = await connection.query(
+      `SELECT name FROM user WHERE id = ?`,
+      [user_id]
+    );
+
+    const customerInfo = customerRows[0];
+    const userInfo = userRows[0];
+
+    if (!customerInfo || !userInfo) {
+      await connection.rollback();
+      return res.status(404).json({
+        success: false,
+        error: "Customer or user not found",
+      });
+    }
+
+    const customerName = customerInfo?.name || `ID: ${customer_id}`;
+    const customerPhone = customerInfo?.tel || 'N/A';
+    const customerAddress = customerInfo?.address || 'N/A';
+    const userName = userInfo?.name || `ID: ${user_id}`;
+
+    // ✅ ប្រើ description ពី request ជាមុនសិន បើគ្មានទើបយកពី database
+    let productDescription = description;
+    
+    if (!productDescription) {
+      // Fallback: យកពី product_details
+      const [productDetailsRows] = await connection.query(
+        `SELECT pd.description
+         FROM product_details pd
+         JOIN customer_debt cd ON cd.customer_id = pd.customer_id 
+           AND CAST(pd.category AS UNSIGNED) = cd.category_id
+         WHERE cd.order_id = ?
+         ORDER BY pd.created_at DESC
+         LIMIT 1`,
+        [order_id]
+      );
+      
+      productDescription = productDetailsRows[0]?.description || `Order-${order_id}`;
+    }
+
+    const slipFiles = req.files?.["upload_image_optional"] || [];
+    const slipPaths = slipFiles.map((file) => file.filename);
+
+    // ✅ Insert payment ជាមួយ description ត្រឹមត្រូវ
+    const [paymentResult] = await connection.query(
+      `INSERT INTO payments (
+        order_id, customer_id, amount, payment_method, bank, 
+        payment_date, user_id, notes, description, slips, 
+        created_by, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+      [
+        order_id,
+        customer_id,
+        paymentAmount,
+        payment_method || "cash",
+        bank || null,
+        payment_date || new Date().toISOString().split("T")[0],
+        user_id,
+        notes || "",
+        productDescription, // ✅ ប្រើ description ត្រឹមត្រូវ
+        JSON.stringify(slipPaths),
+        user_id,
+      ]
+    );
+
+    // ✅ Update customer_debt records
+    let remainingPayment = paymentAmount;
+    const updatedDebts = [];
+    let qtyApplied = false;
+
+    for (const debt of debtRows) {
+      if (remainingPayment <= 0) break;
+
+      const currentDue = parseFloat(debt.due_amount || 0);
+      if (currentDue <= 0) continue;
+
+      const paymentForThisDebt = Math.min(remainingPayment, currentDue);
+
+      let newQty = parseFloat(debt.qty || 0);
+      let newUnitPrice = parseFloat(debt.unit_price || 0);
+      let newActualPrice = parseFloat(debt.actual_price || 1);
+      let newTotalAmount = parseFloat(debt.total_amount || 0);
+
+      if (
+        !qtyApplied &&
+        qty !== undefined &&
+        unit_price !== undefined &&
+        actual_price !== undefined &&
+        currentDue > 0
+      ) {
+        newQty = parseFloat(qty);
+        newUnitPrice = parseFloat(unit_price);
+        newActualPrice = parseFloat(actual_price);
+        newTotalAmount = ((newQty * newUnitPrice) / newActualPrice);
+        qtyApplied = true;
+      }
+
+      const newPaidAmount = parseFloat(debt.paid_amount || 0) + paymentForThisDebt;
+      const newDueAmount = newTotalAmount - newPaidAmount;
+
+      await connection.query(
+        `UPDATE customer_debt 
+         SET qty = ?, 
+             unit_price = ?, 
+             actual_price = ?, 
+             total_amount = ?, 
+             paid_amount = ?, 
+             last_payment_date = ?, 
+             updated_at = NOW()
+         WHERE id = ?`,
+        [
+          newQty,
+          newUnitPrice,
+          newActualPrice,
+          newTotalAmount.toFixed(2),
+          newPaidAmount.toFixed(2),
+          payment_date || new Date().toISOString().split("T")[0],
+          debt.id,
+        ]
+      );
+
+      if (newDueAmount <= 0.01) {
+        await connection.query(
+          `UPDATE customer_debt SET due_date = NULL WHERE id = ?`,
+          [debt.id]
+        );
+      }
+
+      updatedDebts.push({
+        id: debt.id,
+        payment_applied: paymentForThisDebt,
+        new_paid_amount: newPaidAmount,
+        new_due_amount: newDueAmount,
+        payment_status: newDueAmount <= 0.01 ? 'Paid' : newPaidAmount > 0 ? 'Partial' : 'Unpaid'
+      });
+
+      remainingPayment -= paymentForThisDebt;
+    }
+
+    await connection.commit();
+
+    const totalNewPaid = updatedDebts.reduce((sum, debt) => sum + debt.new_paid_amount, 0);
+    const totalNewDue = updatedDebts.reduce((sum, debt) => sum + debt.new_due_amount, 0);
+
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr || new Date());
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
+    let alertMessage = `✅ <b>New Payment Received</b>
+📅 <b>Date:</b> ${formatDate(payment_date)}
+`;
+
+    if (productDescription) {
+      alertMessage += `📝 <b>Invoice Number:</b> <i>${productDescription}</i>
+`;
+    }
+
+    alertMessage += `👤 <b>Customer:</b> ${customerName}
+📞 <b>Phone:</b> ${customerPhone}
+📍 <b>Address:</b> ${customerAddress}
+💲 <b>Amount:</b> $${Number(paymentAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+💳 <b>Method:</b> ${payment_method}
+🏦 <b>Bank:</b> ${bank || 'N/A'}
+<i>Processed by: ${userName}</i>
+    `;
+
+    const imageUrls = slipPaths.map(f => config.image_path + f);
+    await sendTelegramMessagenewcustomerPays(alertMessage, imageUrls);
+
+    res.json({
+      success: true,
+      message: "Payment recorded and debt updated successfully.",
+      data: {
+        payment_id: paymentResult.insertId,
+        order_id: order_id,
+        customer_name: customerInfo.name,
+        payment_amount: paymentAmount,
+        total_new_paid_amount: totalNewPaid.toFixed(2),
+        total_new_due_amount: totalNewDue.toFixed(2),
+        payment_date: payment_date || new Date().toISOString().split("T")[0],
+        slip_images: imageUrls,
+        updated_debts: updatedDebts,
+        description: productDescription, // ✅ Return correct description
+      },
+    });
+
   } catch (error) {
-    console.error("Error in updateTotalDue:", error);
-    logError("user_stock.updateTotalDue", error, res);
-    return res.status(500).json({ error: "Server error processing payment update" });
+    await connection.rollback();
+    console.error("Error in updateCustomerDebt:", error);
+    logError("Error in updateCustomerDebt:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "An error occurred while processing the payment. Please try again.",
+    });
+  } finally {
+    connection.release();
+  }
+};
+
+exports.updateDebt = async (req, res) => {
+  try {
+    const { debt_id } = req.params;
+    const {
+      total_amount,
+      paid_amount,
+      due_date,
+      last_payment_date,
+      delivery_date,
+      order_date,
+      notes,
+      unit_price,
+      qty,
+      category_id,
+      actual_price,
+      category_actual_price,
+      update_price_type,
+      sync_to_payment = true // ✅ NEW: Flag to sync changes to payment
+    } = req.body;
+
+    if (!debt_id) {
+      return res.status(400).json({ error: "Debt ID is required" });
+    }
+
+    const checkQuery = `
+      SELECT cd.id, cd.customer_id, cd.order_id, cd.category_id, cd.total_amount, cd.paid_amount, cd.actual_price
+      FROM customer_debt cd
+      JOIN user u ON cd.created_by = u.id
+      JOIN user cu ON cu.group_id = u.group_id
+      WHERE cd.id = ? AND cu.id = ?
+    `;
+    const [existingDebt] = await db.query(checkQuery, [debt_id, req.current_id]);
+
+    if (existingDebt.length === 0) {
+      return res.status(404).json({
+        error: "Debt record not found or you don't have permission to update it"
+      });
+    }
+
+    const updateFields = [];
+    const updateParams = [];
+
+    let currentTotalAmount = existingDebt[0].total_amount;
+    let currentPaidAmount = existingDebt[0].paid_amount;
+
+    if (total_amount !== undefined) {
+      updateFields.push('total_amount = ?');
+      updateParams.push(total_amount);
+      currentTotalAmount = total_amount;
+    }
+
+    if (paid_amount !== undefined) {
+      updateFields.push('paid_amount = ?');
+      updateParams.push(paid_amount);
+      currentPaidAmount = paid_amount;
+    }
+
+    if (due_date !== undefined) {
+      updateFields.push('due_date = ?');
+      updateParams.push(due_date);
+    }
+
+    if (last_payment_date !== undefined) {
+      updateFields.push('last_payment_date = ?');
+      updateParams.push(last_payment_date);
+    }
+
+    if (notes !== undefined) {
+      updateFields.push('notes = ?');
+      updateParams.push(notes);
+    }
+
+    if (category_id !== undefined) {
+      updateFields.push('category_id = ?');
+      updateParams.push(category_id);
+    }
+
+    if (qty !== undefined) {
+      updateFields.push('qty = ?');
+      updateParams.push(qty);
+    }
+
+    if (actual_price !== undefined) {
+      updateFields.push('actual_price = ?');
+      updateParams.push(actual_price);
+    }
+
+    // Update customer_debt
+    if (updateFields.length > 0) {
+      updateFields.push('updated_at = NOW()');
+      updateParams.push(debt_id);
+
+      const updateQuery = `
+        UPDATE customer_debt 
+        SET ${updateFields.join(', ')} 
+        WHERE id = ?
+      `;
+      await db.query(updateQuery, updateParams);
+    }
+
+    // ✅ NEW: Sync changes to payments table if sync_to_payment is true
+    if (sync_to_payment) {
+      const paymentUpdateFields = [];
+      const paymentUpdateParams = [];
+
+      // Sync paid_amount to payment amount
+      if (paid_amount !== undefined) {
+        paymentUpdateFields.push('amount = ?');
+        paymentUpdateParams.push(paid_amount);
+      }
+
+      // Sync notes
+      if (notes !== undefined) {
+        paymentUpdateFields.push('notes = ?');
+        paymentUpdateParams.push(notes);
+      }
+
+      // Always update the updated_at timestamp
+      paymentUpdateFields.push('updated_at = NOW()');
+
+      if (paymentUpdateFields.length > 1) { // More than just updated_at
+        paymentUpdateParams.push(existingDebt[0].order_id);
+
+        const syncPaymentQuery = `
+          UPDATE payments 
+          SET ${paymentUpdateFields.join(', ')} 
+          WHERE order_id = ?
+          LIMIT 1
+        `;
+        await db.query(syncPaymentQuery, paymentUpdateParams);
+      }
+    }
+
+    // Update category table if requested
+    if (category_actual_price !== undefined && (update_price_type === 'category' || update_price_type === 'both')) {
+      const targetCategoryId = category_id || existingDebt[0].category_id;
+
+      const updateCategoryQuery = `
+        UPDATE category 
+        SET actual_price = ?
+        WHERE id = ?
+      `;
+      await db.query(updateCategoryQuery, [category_actual_price, targetCategoryId]);
+    }
+
+    // Update order table dates
+    if (delivery_date !== undefined || order_date !== undefined) {
+      const orderUpdateFields = [];
+      const orderUpdateParams = [];
+
+      if (delivery_date !== undefined) {
+        orderUpdateFields.push('delivery_date = ?');
+        orderUpdateParams.push(delivery_date);
+      }
+
+      if (order_date !== undefined) {
+        orderUpdateFields.push('order_date = ?');
+        orderUpdateParams.push(order_date);
+      }
+
+      if (orderUpdateFields.length > 0) {
+        orderUpdateParams.push(existingDebt[0].order_id);
+
+        const updateOrderQuery = `
+          UPDATE \`order\` 
+          SET ${orderUpdateFields.join(', ')} 
+          WHERE id = ?
+        `;
+        await db.query(updateOrderQuery, orderUpdateParams);
+      }
+    }
+
+    // Update unit_price for specific category and qty in product_details
+    if (unit_price !== undefined || qty !== undefined) {
+      const targetCategoryId = category_id || existingDebt[0].category_id;
+
+      const getOrderDetailQuery = `
+        SELECT od.id as order_detail_id, p.id as product_id, pd.id as product_detail_id
+        FROM customer_debt cd
+        JOIN \`order\` o ON cd.order_id = o.id
+        JOIN order_detail od ON o.id = od.order_id
+        JOIN product p ON od.product_id = p.id
+        LEFT JOIN product_details pd ON p.id = pd.product_id
+        WHERE cd.id = ? AND p.category_id = ?
+        LIMIT 1
+      `;
+      const [orderDetailResult] = await db.query(getOrderDetailQuery, [debt_id, targetCategoryId]);
+
+      if (orderDetailResult.length > 0) {
+        const { order_detail_id, product_detail_id } = orderDetailResult[0];
+
+        if (unit_price !== undefined) {
+          const updateOrderDetailQuery = `
+            UPDATE order_detail 
+            SET price = ?, total = price * qty
+            WHERE id = ?
+          `;
+          await db.query(updateOrderDetailQuery, [unit_price, order_detail_id]);
+        }
+
+        if (qty !== undefined && product_detail_id) {
+          const updateProductDetailsQuery = `
+            UPDATE product_details 
+            SET qty = ?
+            WHERE id = ?
+          `;
+          await db.query(updateProductDetailsQuery, [qty, product_detail_id]);
+        }
+      } else {
+        return res.status(400).json({
+          error: `No product found for category ID: ${targetCategoryId} in this order`
+        });
+      }
+    }
+
+    // Return updated record with all details
+    const selectQuery = `
+      SELECT 
+        cd.*,
+        c.name AS customer_name,
+        o.order_no,
+        od.price AS unit_price,
+        p.name AS product_name,
+        p.barcode AS product_barcode,
+        pd.qty AS product_qty,
+        cat.name AS category_name,
+        cd.actual_price AS debt_actual_price,
+        cat.actual_price AS category_actual_price,
+        COALESCE(
+          NULLIF(cd.actual_price, 0), 
+          cat.actual_price
+        ) AS effective_actual_price,
+        DATE_FORMAT(cd.due_date, '%Y-%m-%d') AS formatted_due_date,
+        DATE_FORMAT(cd.last_payment_date, '%Y-%m-%d') AS formatted_last_payment_date,
+        DATE_FORMAT(cd.created_at, '%Y-%m-%d %H:%i:%s') AS formatted_created_at,
+        DATE_FORMAT(cd.updated_at, '%Y-%m-%d %H:%i:%s') AS formatted_updated_at,
+        DATE_FORMAT(o.delivery_date, '%Y-%m-%d') AS formatted_delivery_date,
+        DATE_FORMAT(o.order_date, '%Y-%m-%d') AS formatted_order_date,
+        CASE 
+          WHEN cd.due_date IS NOT NULL AND cd.due_date < CURDATE() AND cd.payment_status != 'Paid' 
+          THEN DATEDIFF(CURDATE(), cd.due_date)
+          ELSE NULL
+        END AS days_overdue,
+        CASE 
+          WHEN COALESCE(NULLIF(cd.actual_price, 0), cat.actual_price) > 0 
+          THEN (od.price * cd.qty) / COALESCE(NULLIF(cd.actual_price, 0), cat.actual_price)
+          ELSE 0
+        END AS calculated_amount_using_effective_price
+      FROM customer_debt cd
+      JOIN customer c ON cd.customer_id = c.id
+      JOIN \`order\` o ON cd.order_id = o.id
+      LEFT JOIN order_detail od ON o.id = od.order_id
+      LEFT JOIN product p ON od.product_id = p.id AND p.category_id = cd.category_id
+      LEFT JOIN product_details pd ON p.id = pd.product_id
+      LEFT JOIN category cat ON cd.category_id = cat.id
+      WHERE cd.id = ?
+      LIMIT 1
+    `;
+    const [updatedRecord] = await db.query(selectQuery, [debt_id]);
+
+    const updateSummary = {
+      debt_fields_updated: [],
+      category_updated: false,
+      order_updated: delivery_date !== undefined || order_date !== undefined,
+      product_details_updated: unit_price !== undefined || qty !== undefined,
+      payment_synced: sync_to_payment && (paid_amount !== undefined || notes !== undefined) // ✅ NEW: Track if payment was synced
+    };
+
+    if (total_amount !== undefined) updateSummary.debt_fields_updated.push('total_amount');
+    if (paid_amount !== undefined) updateSummary.debt_fields_updated.push('paid_amount');
+    if (actual_price !== undefined) updateSummary.debt_fields_updated.push('actual_price');
+    if (qty !== undefined) updateSummary.debt_fields_updated.push('qty');
+    if (category_actual_price !== undefined) updateSummary.category_updated = true;
+
+    res.json({
+      message: "Debt record updated successfully",
+      data: updatedRecord[0],
+      update_summary: updateSummary
+    });
+
+  } catch (error) {
+    logError("stockUser.updateDebt", error, res);
+  }
+};
+
+
+exports.deleteDebt = async (req, res) => {
+  const connection = await db.getConnection();
+
+  try {
+    const { debt_id } = req.params;
+
+    if (!debt_id) {
+      return res.status(400).json({ error: "Debt ID is required" });
+    }
+
+    await connection.beginTransaction();
+
+    // ✅ Step 1: Get debt record
+    const checkQuery = `
+      SELECT 
+        cd.id, 
+        cd.customer_id, 
+        cd.order_id,
+        cd.payment_status,
+        c.name AS customer_name,
+        o.order_no,
+        o.delivery_date
+      FROM customer_debt cd
+      JOIN customer c ON cd.customer_id = c.id
+      JOIN \`order\` o ON cd.order_id = o.id
+      JOIN user u ON cd.created_by = u.id
+      JOIN user cu ON cu.group_id = u.group_id
+      WHERE cd.id = ? AND cu.id = ?
+    `;
+
+    const [existingDebt] = await connection.query(checkQuery, [debt_id, req.current_id]);
+
+    if (existingDebt.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ error: "Debt record not found or permission denied" });
+    }
+
+    const debtRecord = existingDebt[0];
+    const orderId = debtRecord.order_id;
+
+    // ✅ Step 2: Delete payment slip files
+    const [payments] = await connection.query(`SELECT slips FROM payments WHERE order_id = ?`, [orderId]);
+
+    if (payments && payments.length > 0) {
+      for (const payment of payments) {
+        try {
+          const slipList = JSON.parse(payment.slips || "[]");
+          for (const slip of slipList) {
+            const filePath = path.join(__dirname, "..", "uploads", slip);
+            if (fs.existsSync(filePath)) {
+              fs.unlinkSync(filePath);
+            }
+          }
+        } catch (parseError) {
+          console.error("Error parsing slips:", parseError);
+        }
+      }
+    }
+
+    // ✅ Step 3: Get product_ids from order_detail
+    const [orderProducts] = await connection.query(
+      `SELECT product_id FROM order_detail WHERE order_id = ?`,
+      [orderId]
+    );
+
+    // ✅ Step 4: Delete product_details (BEFORE deleting order_detail!)
+    let productDetailsDeleted = 0;
+    if (orderProducts.length > 0) {
+      const productIds = orderProducts.map(p => p.product_id);
+      const [deleteProductDetailsResult] = await connection.query(
+        `DELETE FROM product_details 
+         WHERE customer_id = ? AND product_id IN (?)`,
+        [debtRecord.customer_id, productIds]
+      );
+      productDetailsDeleted = deleteProductDetailsResult.affectedRows;
+    }
+
+    // ✅ Step 5: Delete payments
+    const [deletePaymentsResult] = await connection.query(
+      `DELETE FROM payments WHERE order_id = ?`, 
+      [orderId]
+    );
+
+    // ✅ Step 6: Delete order_detail
+    const [deleteOrderDetailResult] = await connection.query(
+      `DELETE FROM order_detail WHERE order_id = ?`, 
+      [orderId]
+    );
+
+    // ✅ Step 7: Delete customer_debt
+    const [deleteDebtResult] = await connection.query(
+      `DELETE FROM customer_debt WHERE order_id = ?`, 
+      [orderId]
+    );
+
+    // ✅ Step 8: Delete order
+    const [deleteOrderResult] = await connection.query(
+      `DELETE FROM \`order\` WHERE id = ?`, 
+      [orderId]
+    );
+
+    // ✅ Step 9: Verify deletion
+    const [orderCheck] = await connection.query(`SELECT id FROM \`order\` WHERE id = ?`, [orderId]);
+    if (orderCheck.length > 0) {
+      throw new Error("Order still exists after deletion attempt");
+    }
+
+    await connection.commit();
+
+    res.json({
+      message: "All related records deleted successfully",
+      deleted_record: {
+        id: debtRecord.id,
+        customer_name: debtRecord.customer_name,
+        order_no: debtRecord.order_no,
+        payment_status: debtRecord.payment_status,
+        order_id: orderId
+      },
+      debug_info: {
+        product_details_deleted: productDetailsDeleted,
+        payments_deleted: deletePaymentsResult.affectedRows,
+        order_details_deleted: deleteOrderDetailResult.affectedRows,
+        debts_deleted: deleteDebtResult.affectedRows,
+        orders_deleted: deleteOrderResult.affectedRows
+      }
+    });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error("Delete debt error:", error);
+    res.status(500).json({
+      error: "Server error while deleting debt and related records",
+      details: error.message
+    });
+  } finally {
+    connection.release();
   }
 };

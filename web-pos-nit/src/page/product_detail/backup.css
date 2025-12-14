@@ -1,0 +1,211 @@
+@import url('https://fonts.googleapis.com/css2?family=Battambang&display=swap');
+
+.product-page-container-product {
+  padding: 16px;
+  min-height: 100vh; /* or auto */
+  overflow-y: auto;
+}
+
+.product-card-product {
+  height: auto !important;
+  max-height: none;
+  overflow: visible;
+}
+
+/* Page Header */
+.page-header-container-product {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.page-title-product {
+  margin: 0 !important;
+  display: flex;
+  flex-direction: column;
+  color: #1a3353;
+}
+
+.khmer-title-product {
+  font-family: 'Bokor', cursive;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.english-text-product {
+  font-family: 'Merriweather', serif;
+  font-size: 1rem;
+  color: #7f8c8d;
+  margin-top: 4px;
+}
+
+.search-input-product {
+  width: 300px;
+  border-radius: 8px;
+}
+
+.search-input-product input {
+  border-radius: 8px;
+}
+
+/* Table */
+.column-header-product {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 1rem;
+}
+
+.khmer-text-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+}
+
+.english-text-product1 {
+  font-family: 'Battambang', sans-serif;
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+.price-cell-product, .total-price-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: 600;
+  color: #16a085;
+}
+
+.total-price-cell-product {
+  font-size: 1.05rem;
+  color: #27ae60;
+}
+
+.status-active-product {
+  font-family: 'Battambang', sans-serif;
+  color: #27ae60;
+  font-weight: 600;
+}
+
+.status-inactive-product {
+  font-family: 'Battambang', sans-serif;
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.date-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 0.9rem;
+  color: #7f8c8d;
+}
+
+.user-cell-product {
+  font-family: 'Battambang', sans-serif;
+  font-style: italic;
+  color: #34495e;
+}
+
+/* Card Number Styling */
+.card-number-product {
+  font-family: 'Battambang', sans-serif;
+  font-weight: bold;
+  color: #1890ff;
+  font-size: 1rem;
+  background: #e6f7ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* Table Row Hover */
+.table-row-product:hover {
+  background-color: #f0f7ff !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Empty State */
+.empty-text-product {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Fasthand', cursive;
+}
+
+.english-company-product {
+  font-family: 'Battambang', sans-serif;
+  font-size: 12px; /* Adjust size as needed */
+  color: #34495e;   /* Optional: change text color */
+}
+
+.custom-empty-product {
+  padding: 40px 0;
+}
+
+/* Pagination */
+.custom-pagination-product {
+  margin-top: 16px;
+}
+
+.row-light {
+  background-color: #f9f9f9;
+}
+
+.row-dark {
+  background-color: #dce8ee;
+}
+
+.ant-table-row:hover {
+  background-color: #d6f5ff !important;
+}
+
+.tag-black-text {
+  color: black !important;
+}
+
+.custom-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #ffffff; /* blue background */
+  color: black;              /* black text */
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* Base alternating row colors */
+.ant-table-tbody > tr.even-row > td {
+  background-color: #ffffff; /* White for even rows */
+}
+
+.ant-table-tbody > tr.odd-row > td {
+  background-color: #99e4a0; /* Light green for odd rows */
+}
+
+/* Checked row styling - Yellow background when checked */
+.ant-table-tbody > tr.checked-row > td {
+  background-color: #f8e961 !important; /* Light yellow background for checked rows */
+  border-left: 4px solid #c7c7c7 !important; /* Orange left border indicator */
+}
+
+/* Normal alternating row colors for unchecked rows */
+.ant-table-tbody > tr.even-row:not(.checked-row) > td {
+  background-color: #ffffff !important; /* White for even rows */
+}
+
+.ant-table-tbody > tr.odd-row:not(.checked-row) > td {
+  background-color: #ffffff !important; /* Light green for odd rows */
+}
+
+/* Hover effects */
+.ant-table-tbody > tr:not(.checked-row):hover > td {
+  background-color: #e6f7ff !important; /* Light blue on hover for unchecked rows */
+}
+
+.ant-table-tbody > tr.checked-row:hover > td {
+  background-color: #fff566 !important; /* Brighter yellow on hover for checked rows */
+  border-left: 4px solid #faad14 !important; /* Keep orange border */
+}

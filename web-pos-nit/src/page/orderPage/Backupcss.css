@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Battambang&display=swap');
+
+.khmerText {
+  font-family: 'Battambang', sans-serif;
+  font-size: 14px;
+  color: #555;
+}
+
+.englishText {
+  font-weight: bold;
+  font-size: 12px;
+  color: #888;
+}
+
+.tableHeaderGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.customerCell {
+  font-family: 'Battambang', sans-serif;
+  line-height: 1.4;
+}
+
+.customerName {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.customerTel,
+.customerAddress {
+  font-size: 13px;
+  color: #666;
+}
+
+.summaryContainer {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  
+  .summaryCard {
+    flex: 1;
+    min-width: 200px;
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .summaryTitle {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  
+  .summaryValue {
+    font-size: 24px;
+    font-weight: bold;
+  }
+  
+  .summaryPositive {
+    color: #52c41a;
+  }
+  
+  .summaryNegative {
+    color: #f5222d;
+  }
+  
+  .summaryNeutral {
+    color: #1890ff;
+  }
+  .summaryCard {
+  flex: 1;
+  min-width: 200px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.summaryCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.summaryIcon {
+  font-size: 30px;
+  margin-bottom: 10px;
+  color: #40a9ff;
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}

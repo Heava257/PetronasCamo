@@ -3,3 +3,4 @@ INSERT INTO employee (firstname, lastname, card_id, dob, gender, tel, email, bas
 ('Jane', 'Smith', 'C123457', '1990-02-20 00:00:00', 0, '098-765-4321', 'jane.smith@example.com', 2800.75, 'Sales Rep', '456 Maple Ave', 'admin'),
 ('Emily', 'Johnson', 'C123458', '1992-12-05 00:00:00', 0, '111-222-3333', 'emily.j@example.com', 2700.00, 'HR', '789 Oak Lane', 'admin');
 -- Continue with more records...
+ 

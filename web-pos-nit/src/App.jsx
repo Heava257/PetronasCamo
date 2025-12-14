@@ -25,6 +25,17 @@ import Top_Sales from "./page/top_sale/Top_Sales";
 import Total_DuePage from "./page/total_due/Total_DuePage";
 import ProfilePage from "./page/user/ProfilePage";
 import ExpanseTypePage from "./page/expanse/ExpanseTypePage";
+import FinancePage from "./page/finances/FinancesPage";
+import PaymentHistoryPage from "./page/his_payment/PaymentHistoryPage";
+import ProductDetailPage from "./page/product_detail/Product_DetailPage";
+import DeliveryNotePage from "./page/delivery/DeliveryNotePage";
+import AttendanceDashboard from "./page/Attendance/AttendanceDashboard";
+import FakeInvoicePage from "./page/fake_invoice/Fake_Invoices";
+import { AutoLogoutProvider } from "./context/AutoLogoutContext";
+import AboutHomepage from "./page/about/Aboutpage";
+import { TranslationProvider } from './locales/TranslationContext.jsx';
+import { DarkModeProvider } from "./component/DarkModeContext.jsx";
+import OAuthCallback from "./page/OAuthCallback.jsx";
 // import ChatPage from "./component/chat/ChatPage";
 
 
@@ -35,23 +46,34 @@ function App() {
     </MainLayoutAuth>
   );
   return (
+
+    <TranslationProvider>
    
       <BrowserRouter>
+        <AutoLogoutProvider timeoutDuration={1*60*1000}> {/* ✅ Wrap your Routes here */}
+          <DarkModeProvider>
         <Routes >
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/employee" element={<EmployeePage />} />
+            <Route path="/finance" element={<FinancePage />} />
             <Route path="/customer" element={<CustomerPage />} />
             <Route path="/invoices" element={<PosPage />} />
             <Route path="/category" element={<CategoryPage />} />
             <Route path="/order" element={<OrderPage />} />
             <Route path="/user" element={<UserPage />} />
             <Route path="/product" element={<ProductPage />} />
+            <Route path="/product_detail" element={<ProductDetailPage />} />
             <Route path="/role" element={<RolePage />} />
             <Route path="/supplier" element={<SupplierPage />} />
             <Route path="/total_due" element={<Total_DuePage />} />
             <Route path="/profile" element={<ProfilePage />} />
-
+            <Route path="/deliverynote" element={<DeliveryNotePage />} />
+            <Route path="/payment/history" element={<PaymentHistoryPage />} />
+            <Route path="/attendance" element={<AttendanceDashboard/>} />
+            <Route path="/fakeinvoices" element={<FakeInvoicePage/>} />
+            <Route path="/oauth-callback" element={<OAuthCallback />} />
+            
 
             <Route path="/expanse" element={<ExpansePage />} />
             <Route path="/expanse_type" element={<ExpanseTypePage />} />
@@ -70,10 +92,16 @@ function App() {
           <Route element={<MainLayoutAuth />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LogingPage />} />
+            <Route path="/about" element={<AboutHomepage />} />
+
             <Route path="/register" element={<RegisterPage />} />
           </Route>
         </Routes>
+        </DarkModeProvider>
+           </AutoLogoutProvider>
       </BrowserRouter>
+    </TranslationProvider>
+
    
   );
 }

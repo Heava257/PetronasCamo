@@ -1,70 +1,456 @@
-.profilePage {
+/* Base styles with improved background gradient */
+.profileContainer {
   padding: 24px;
-  background-color: #f0f2f5;
   min-height: 100vh;
+  background: linear-gradient(135deg, #527bb8 0%, #e4eff9 100%);
+  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
 }
 
+/* Dark mode background for profile container */
+[data-theme='dark'] .profileContainer,
+.dark .profileContainer,
+:root[data-theme='dark'] .profileContainer {
+  background: linear-gradient(135deg, #141414 0%, #1a1a1a 100%) !important;
+}
+
+/* Khmer font styling */
+.khmerFont {
+  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
+}
+
+/* Card styling with improved shadow and subtle border */
 .profileCard {
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
   max-width: 800px;
   margin: 0 auto;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(230, 235, 240, 0.8);
+  overflow: hidden;
 }
 
-.imageUploadContainer {
-  text-align: center;
-  margin-bottom: 24px;
+/* Dark mode for profile card */
+[data-theme='dark'] .profileCard,
+.dark .profileCard,
+:root[data-theme='dark'] .profileCard {
+  background-color: #1f1f1f !important;
+  border: 1px solid #303030 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
 }
 
-.uploadLabel {
-  font-size: 16px;
-  font-weight: 500;
-  color: #333;
+.profileCard :global(.ant-card-head) {
+  background: linear-gradient(to right, #f8fafc, #eef5ff);
+  border-bottom: 1px solid rgba(230, 235, 240, 0.8);
+  padding: 16px 24px;
 }
 
-.uploadComponent .ant-upload.ant-upload-select-picture-card {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background-color: #f0f2f5;
-  border: 2px dashed #ccc;
+/* Dark mode for card header */
+[data-theme='dark'] .profileCard :global(.ant-card-head),
+.dark .profileCard :global(.ant-card-head),
+:root[data-theme='dark'] .profileCard :global(.ant-card-head) {
+  background: linear-gradient(to right, #262626, #2a2a2a) !important;
+  border-bottom: 1px solid #303030 !important;
 }
 
-.uploadPlaceholder {
+.profileCard :global(.ant-card-head-title) {
+  font-size: 18px;
+  font-weight: 600;
+  color: #3f4e65;
+}
+
+/* Dark mode for card title */
+[data-theme='dark'] .profileCard :global(.ant-card-head-title),
+.dark .profileCard :global(.ant-card-head-title),
+:root[data-theme='dark'] .profileCard :global(.ant-card-head-title) {
+  color: #e8eaed !important;
+}
+
+.profileCard :global(.ant-card-body) {
+  padding: 30px;
+}
+
+/* Dark mode for card body */
+[data-theme='dark'] .profileCard :global(.ant-card-body),
+.dark .profileCard :global(.ant-card-body),
+:root[data-theme='dark'] .profileCard :global(.ant-card-body) {
+  background-color: #1f1f1f !important;
+}
+
+/* Improved back button */
+.backButton {
+  margin-bottom: 16px;
+  color: #4d6bb3;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(77, 107, 179, 0.1);
+  background-color: rgba(77, 107, 179, 0.05);
+  transition: all 0.2s ease;
+}
+
+/* Dark mode for back button */
+[data-theme='dark'] .backButton,
+.dark .backButton,
+:root[data-theme='dark'] .backButton {
+  color: #7293da !important;
+  border: 1px solid rgba(114, 147, 218, 0.2) !important;
+  background-color: rgba(114, 147, 218, 0.1) !important;
+}
+
+.backButton:hover {
+  background-color: rgba(77, 107, 179, 0.1);
+  color: #365197;
+  transform: translateX(-3px);
+}
+
+/* Dark mode for back button hover */
+[data-theme='dark'] .backButton:hover,
+.dark .backButton:hover,
+:root[data-theme='dark'] .backButton:hover {
+  background-color: rgba(114, 147, 218, 0.2) !important;
+  color: #8da4d8 !important;
+}
+
+.backButton .anticon {
+  font-size: 16px;
+}
+
+/* Upload component with improved aesthetics */
+.profileUpload :global(.ant-upload.ant-upload-select-picture-card) {
+  width: 140px !important;
+  height: 140px !important;
+  border-radius: 50% !important;
+  overflow: hidden;
+  border: 2px dashed #d0ddf7;
+  background-color: #f7faff;
+  transition: all 0.3s ease;
+}
+
+/* Dark mode for upload */
+[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
+.dark .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
+:root[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card) {
+  border: 2px dashed #434343 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover) {
+  border-color: #7293da;
+  background-color: #f0f6ff;
+}
+
+/* Dark mode for upload hover */
+[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover),
+.dark .profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover),
+:root[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover) {
+  border-color: #7293da !important;
+  background-color: rgba(114, 147, 218, 0.1) !important;
+}
+
+.profileUpload :global(.ant-upload-list-picture-card-container) {
+  width: 140px !important;
+  height: 140px !important;
+}
+
+.profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item) {
+  padding: 0;
+  border-radius: 50% !important;
+  border: 2px solid #e1e9f8;
+  overflow: hidden;
+}
+
+/* Dark mode for upload list item */
+[data-theme='dark'] .profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item),
+.dark .profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item),
+:root[data-theme='dark'] .profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item) {
+  border: 2px solid #434343 !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .uploadIcon {
-  font-size: 40px;
-  color: #aaa;
+  font-size: 36px;
+  color: #8da4d8;
+}
+
+/* Dark mode for upload icon */
+[data-theme='dark'] .uploadIcon,
+.dark .uploadIcon,
+:root[data-theme='dark'] .uploadIcon {
+  color: #7293da !important;
 }
 
 .uploadText {
   margin-top: 8px;
-  color: #666;
-}
-
-.profileForm {
-  padding: 16px;
-}
-
-.inputField {
-  width: 100%;
-  border-radius: 4px;
-}
-
-.saveButton {
-  width: 100%;
-  background-color: #1890ff;
-  border-color: #1890ff;
-  border-radius: 4px;
+  color: #5375bc;
   font-weight: 500;
 }
 
+/* Dark mode for upload text */
+[data-theme='dark'] .uploadText,
+.dark .uploadText,
+:root[data-theme='dark'] .uploadText {
+  color: #8da4d8 !important;
+}
+
+/* Form styling with improved spacing and colors */
+.profileForm :global(.ant-form-item) {
+  margin-bottom: 24px;
+}
+
+.profileForm :global(.ant-form-item-label > label) {
+  font-weight: 600;
+  color: #3f4e65;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+/* Dark mode for form labels */
+[data-theme='dark'] .profileForm :global(.ant-form-item-label > label),
+.dark .profileForm :global(.ant-form-item-label > label),
+:root[data-theme='dark'] .profileForm :global(.ant-form-item-label > label) {
+  color: #e8eaed !important;
+}
+
+.profileForm :global(.ant-input),
+.profileForm :global(.ant-input-password) {
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid #d9e2f0;
+  transition: all 0.25s ease;
+}
+
+/* Dark mode for inputs */
+[data-theme='dark'] .profileForm :global(.ant-input),
+.dark .profileForm :global(.ant-input),
+:root[data-theme='dark'] .profileForm :global(.ant-input) {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid #434343 !important;
+  color: #e8eaed !important;
+}
+
+[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper),
+.dark .profileForm :global(.ant-input-affix-wrapper),
+:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper) {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid #434343 !important;
+}
+
+[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper input),
+.dark .profileForm :global(.ant-input-affix-wrapper input),
+:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper input) {
+  background-color: transparent !important;
+  color: #e8eaed !important;
+}
+
+.profileForm :global(.ant-input:hover),
+.profileForm :global(.ant-input-password:hover) {
+  border-color: #7293da;
+}
+
+/* Dark mode for input hover */
+[data-theme='dark'] .profileForm :global(.ant-input:hover),
+.dark .profileForm :global(.ant-input:hover),
+:root[data-theme='dark'] .profileForm :global(.ant-input:hover),
+[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper:hover),
+.dark .profileForm :global(.ant-input-affix-wrapper:hover),
+:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper:hover) {
+  border-color: #7293da !important;
+}
+
+.profileForm :global(.ant-input:focus),
+.profileForm :global(.ant-input-affix-wrapper-focused) {
+  border-color: #4d6bb3;
+  box-shadow: 0 0 0 2px rgba(77, 107, 179, 0.1);
+}
+
+/* Dark mode for input focus */
+[data-theme='dark'] .profileForm :global(.ant-input:focus),
+.dark .profileForm :global(.ant-input:focus),
+:root[data-theme='dark'] .profileForm :global(.ant-input:focus),
+[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper-focused),
+.dark .profileForm :global(.ant-input-affix-wrapper-focused),
+:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper-focused) {
+  border-color: #7293da !important;
+  box-shadow: 0 0 0 2px rgba(114, 147, 218, 0.2) !important;
+}
+
+.profileForm :global(.ant-input-affix-wrapper) {
+  padding: 0;
+  border-radius: 10px;
+}
+
+.profileForm :global(.ant-input-affix-wrapper input) {
+  padding: 12px 16px;
+}
+
+/* Beautiful gradient button styling */
+.saveButton {
+  width: 100%;
+  height: 46px;
+  font-weight: 600;
+  font-size: 16px;
+  background: linear-gradient(135deg, #4d6bb3 0%, #5481cc 100%);
+  border: none;
+  border-radius: 10px;
+  transition: all 0.3s;
+  margin-top: 10px;
+}
+
 .saveButton:hover {
-  background-color: #40a9ff;
-  border-color: #40a9ff;
+  background: linear-gradient(135deg, #3e5b9e 0%, #4273c0 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 14px rgba(77, 107, 179, 0.2);
+}
+
+.saveButton:active {
+  transform: translateY(0);
+}
+
+.saveButton:disabled {
+  background: linear-gradient(135deg, #a8b4d0 0%, #b8c5dc 100%);
+  color: #f0f2f5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Dark mode for disabled button */
+[data-theme='dark'] .saveButton:disabled,
+.dark .saveButton:disabled,
+:root[data-theme='dark'] .saveButton:disabled {
+  background: linear-gradient(135deg, #3a3a3a 0%, #454545 100%) !important;
+  color: #8c8c8c !important;
+}
+
+/* Preview image in modal */
+.previewImage {
+  width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Message styling with improved visuals */
+.khmerMessage {
+  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
+  font-size: 14px;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.khmerMessageSuccess {
+  background-color: #f2faf6;
+  border: 1px solid #c9edd8;
+  color: #389e0d;
+  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.khmerMessageError {
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  color: #cf1322;
+  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* Improved Modal styles */
+:global(.ant-modal-content) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Dark mode for modal */
+[data-theme='dark'] :global(.ant-modal-content),
+.dark :global(.ant-modal-content),
+:root[data-theme='dark'] :global(.ant-modal-content) {
+  background-color: #1f1f1f !important;
+}
+
+:global(.ant-modal-header) {
+  background: linear-gradient(to right, #f8fafc, #eef5ff);
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(230, 235, 240, 0.8);
+}
+
+/* Dark mode for modal header */
+[data-theme='dark'] :global(.ant-modal-header),
+.dark :global(.ant-modal-header),
+:root[data-theme='dark'] :global(.ant-modal-header) {
+  background: linear-gradient(to right, #262626, #2a2a2a) !important;
+  border-bottom: 1px solid #303030 !important;
+}
+
+:global(.ant-modal-title) {
+  font-weight: 600;
+  color: #3f4e65;
+}
+
+/* Dark mode for modal title */
+[data-theme='dark'] :global(.ant-modal-title),
+.dark :global(.ant-modal-title),
+:root[data-theme='dark'] :global(.ant-modal-title) {
+  color: #e8eaed !important;
+}
+
+:global(.ant-modal-close) {
+  color: #4d6bb3;
+}
+
+/* Dark mode for modal close button */
+[data-theme='dark'] :global(.ant-modal-close),
+.dark :global(.ant-modal-close),
+:root[data-theme='dark'] :global(.ant-modal-close) {
+  color: #8da4d8 !important;
+}
+
+:global(.ant-modal-footer) {
+  border-top: 1px solid rgba(230, 235, 240, 0.8);
+}
+
+/* Dark mode for modal footer */
+[data-theme='dark'] :global(.ant-modal-footer),
+.dark :global(.ant-modal-footer),
+:root[data-theme='dark'] :global(.ant-modal-footer) {
+  border-top: 1px solid #303030 !important;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .profileContainer {
+    padding: 16px;
+  }
+  
+  .profileCard {
+    border-radius: 12px;
+  }
+  
+  .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
+  .profileUpload :global(.ant-upload-list-picture-card-container) {
+    width: 120px !important;
+    height: 120px !important;
+  }
+  
+  .saveButton {
+    height: 44px;
+  }
+  
+  .profileCard :global(.ant-card-body) {
+    padding: 20px;
+  }
+}
+
+/* For extra small screens */
+@media (max-width: 480px) {
+  .profileContainer {
+    padding: 10px;
+  }
+  
+  .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
+  .profileUpload :global(.ant-upload-list-picture-card-container) {
+    width: 100px !important;
+    height: 100px !important;
+  }
 }

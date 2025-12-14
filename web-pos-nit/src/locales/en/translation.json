@@ -1,0 +1,10 @@
+{
+  "customer_management": "Customer Management",
+  "name": "Name",
+  "telephone": "Telephone",
+  "address": "Address",
+  "gender": {
+    "male": "Male",
+    "female": "Female"
+  }
+}

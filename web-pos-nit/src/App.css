@@ -1,4 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Battambang&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fasthand&family=Freehand&family=Moul&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bokor&family=Fasthand&family=Taprom&display=swap');
 
 .pos-row {
   font-family: "Battambang", sans-serif;
@@ -784,6 +786,62 @@ body {
   text-overflow: ellipsis;
   vertical-align: middle;
 }
+
+
+
+
+
+/* Category.css - Use this instead of Category.module.css */
+/* For Khmer titles (Page Header) */
+.khmer-title1 {
+  font-family: 'Bokor', 'Noto Sans Khmer', sans-serif;
+  font-size: 15px;
+  font-weight: bold;
+}
+
+/* For Khmer texts inside row (Data content) */
+.khmer-text1 {
+  font-family: 'Fasthand', 'Noto Sans Khmer', sans-serif;
+  font-size: 14px;
+}
+
+/* For Khmer texts inside table columns (Column headers) */
+.khmer-column1 {
+  font-family: 'Taprom', 'Noto Sans Khmer', sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* For English texts (optional if you still need it) */
+.english-text1 {
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+.ant-picker-input > input::placeholder {
+  color: #888 !important; /* Or a more visible color */
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

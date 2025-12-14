@@ -19,6 +19,7 @@ import { request } from "../../util/helper";
 import { MdAdd, MdDelete, MdEdit } from "react-icons/md";
 import MainPage from "../../component/layout/MainPage";
 import { configStore } from "../../store/configStore";
+import './product.css'
 const getBase64 = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();

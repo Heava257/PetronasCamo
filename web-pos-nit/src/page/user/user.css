@@ -1,0 +1,891 @@
+/* Profile Column Enhanced Styles */
+
+/* Header Wrapper */
+.profile-header-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+/* Profile Cell Container */
+.user-profile-cell-enhanced {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 0;
+}
+
+/* Profile Image Wrapper with Animations */
+.profile-image-wrapper {
+  position: relative;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.profile-image-wrapper:hover {
+  transform: scale(1.05);
+}
+
+/* Profile Image Styles */
+.profile-image {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.profile-image:hover {
+  box-shadow: 0 6px 20px rgba(77, 107, 179, 0.4) !important;
+  transform: scale(1.02);
+}
+
+/* Dark mode for profile image border */
+[data-theme='dark'] .profile-image,
+.dark .profile-image,
+:root[data-theme='dark'] .profile-image {
+  border: 3px solid #2a2a2a !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme='dark'] .profile-image:hover,
+.dark .profile-image:hover,
+:root[data-theme='dark'] .profile-image:hover {
+  box-shadow: 0 6px 20px rgba(114, 147, 218, 0.5) !important;
+}
+
+/* Avatar Wrapper */
+.avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Default Avatar Styles */
+.default-avatar {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.default-avatar:hover {
+  background-color: #3e5b9e !important;
+  box-shadow: 0 6px 20px rgba(77, 107, 179, 0.4) !important;
+  transform: scale(1.02);
+}
+
+/* Dark mode for default avatar */
+[data-theme='dark'] .default-avatar,
+.dark .default-avatar,
+:root[data-theme='dark'] .default-avatar {
+  background-color: #4d6bb3 !important;
+  border: 3px solid #2a2a2a !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+}
+
+[data-theme='dark'] .default-avatar:hover,
+.dark .default-avatar:hover,
+:root[data-theme='dark'] .default-avatar:hover {
+  background-color: #5481cc !important;
+  box-shadow: 0 6px 20px rgba(114, 147, 218, 0.5) !important;
+}
+
+/* Preview Mask Styling */
+.preview-mask {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 500;
+}
+
+/* User Code Badge Enhanced */
+.user-code-badge-enhanced {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  animation: badgeFadeIn 0.4s ease;
+}
+
+@keyframes badgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* User ID Tag */
+.user-id-tag {
+  backdrop-filter: blur(8px);
+  background: linear-gradient(135deg, #1890ff 0%, #aab5c1 100%) !important;
+  border: -6px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.user-id-tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(24, 144, 255, 0.4) !important;
+}
+
+/* Dark mode for user ID tag */
+[data-theme='dark'] .user-id-tag,
+.dark .user-id-tag,
+:root[data-theme='dark'] .user-id-tag {
+  background: linear-gradient(135deg, #177ddc 0%, #0958d9 100%) !important;
+  border: 1px solid rgba(114, 147, 218, 0.3);
+}
+
+[data-theme='dark'] .user-id-tag:hover,
+.dark .user-id-tag:hover,
+:root[data-theme='dark'] .user-id-tag:hover {
+  box-shadow: 0 4px 8px rgba(114, 147, 218, 0.5) !important;
+}
+
+/* Online Indicator */
+.online-indicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 16px;
+  height: 16px;
+  background: #52c41a;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.5);
+}
+
+/* Dark mode for online indicator border */
+[data-theme='dark'] .online-indicator,
+.dark .online-indicator,
+:root[data-theme='dark'] .online-indicator {
+  border: 2px solid #2a2a2a;
+}
+
+/* Pulse Animation for Online Indicator */
+.pulse-dot {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: #52c41a;
+  border-radius: 50%;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.5);
+  }
+}
+
+/* Image Preview Modal Enhancements */
+[data-theme='dark'] .ant-image-preview-img,
+.dark .ant-image-preview-img,
+:root[data-theme='dark'] .ant-image-preview-img {
+  border-radius: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .user-profile-cell-enhanced {
+    padding: 8px 0;
+  }
+  
+  .profile-image,
+  .default-avatar {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .default-avatar .anticon {
+    font-size: 28px !important;
+  }
+  
+  .user-id-tag {
+    font-size: 10px !important;
+    padding: 1px 6px !important;
+  }
+  
+  .online-indicator {
+    width: 14px;
+    height: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-image,
+  .default-avatar {
+    width: 50px !important;
+    height: 50px !important;
+  }
+  
+  .default-avatar .anticon {
+    font-size: 24px !important;
+  }
+  
+  .user-id-tag {
+    font-size: 9px !important;
+  }
+  
+  .online-indicator {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* Smooth transitions for theme switching */
+.profile-image,
+.default-avatar,
+.user-id-tag,
+.online-indicator {
+  transition: all 0.3s ease;
+}
+
+
+/* ==================== USER PAGE DARK MODE ==================== */
+
+/* Main Background */
+.dark .background {
+  background-color: #0f172a;
+}
+
+/* ==================== MODAL DARK MODE ==================== */
+
+/* Modal Container */
+.dark .ant-modal-content {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+/* Modal Header */
+.dark .ant-modal-header {
+  background-color: #0f172a !important;
+  border-bottom-color: #334155 !important;
+}
+
+.dark .ant-modal-title {
+  color: #f1f5f9 !important;
+}
+
+/* Modal Close Button */
+.dark .ant-modal-close {
+  color: #94a3b8 !important;
+}
+
+.dark .ant-modal-close:hover {
+  color: #cbd5e1 !important;
+}
+
+/* Modal Body */
+.dark .ant-modal-body {
+  background-color: #1e293b !important;
+}
+
+/* ==================== FORM ELEMENTS ==================== */
+
+/* Form Labels */
+.dark .ant-form-item-label > label {
+  color: #cbd5e1 !important;
+}
+
+.dark .khmer-text {
+  color: #cbd5e1 !important;
+}
+
+/* Input Fields */
+.dark .ant-input,
+.dark .ant-input-password {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-input::placeholder {
+  color: #64748b !important;
+}
+
+.dark .ant-input:hover,
+.dark .ant-input:focus {
+  border-color: #3b82f6 !important;
+  background-color: #0f172a !important;
+}
+
+.dark .ant-input-focused {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Password Input */
+.dark .ant-input-password .ant-input {
+  background-color: transparent !important;
+}
+
+.dark .ant-input-password-icon {
+  color: #94a3b8 !important;
+}
+
+/* Select Dropdown */
+.dark .ant-select-selector {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-select-selection-item {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-select-selection-placeholder {
+  color: #64748b !important;
+}
+
+.dark .ant-select-arrow {
+  color: #94a3b8 !important;
+}
+
+.dark .ant-select-selector:hover {
+  border-color: #475569 !important;
+}
+
+.dark .ant-select-focused .ant-select-selector {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* Select Dropdown Menu */
+.dark .ant-select-dropdown {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+.dark .ant-select-item {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-select-item-option-selected {
+  background-color: #334155 !important;
+}
+
+.dark .ant-select-item:hover {
+  background-color: #334155 !important;
+}
+
+/* ==================== UPLOAD COMPONENT ==================== */
+
+.dark .ant-upload-wrapper {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-upload.ant-upload-select {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.dark .ant-upload.ant-upload-select:hover {
+  border-color: #3b82f6 !important;
+}
+
+.dark .ant-upload-list-picture-card-container {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.dark .ant-upload-list-item {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+/* ==================== BUTTONS ==================== */
+
+.dark .ant-btn {
+  background-color: #1e293b !important;
+  color: #cbd5e1 !important;
+  border-color: #334155 !important;
+}
+
+.dark .ant-btn:hover {
+  background-color: #334155 !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+
+.dark .ant-btn-primary {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.dark .ant-btn-primary:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+.dark .ant-btn-dangerous {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
+}
+
+.dark .ant-btn-dangerous:hover {
+  background-color: #dc2626 !important;
+  border-color: #dc2626 !important;
+}
+
+/* ==================== TABLE DARK MODE ==================== */
+
+/* Table Container */
+.dark .ant-table {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-table-wrapper {
+  background-color: #1e293b !important;
+}
+
+/* Table Header */
+.dark .ant-table-thead > tr > th {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-bottom-color: #334155 !important;
+}
+
+.dark .user-table-header-main {
+  color: #f1f5f9 !important;
+}
+
+/* Table Body */
+.dark .ant-table-tbody > tr > td {
+  background-color: #1e293b !important;
+  border-bottom-color: #334155 !important;
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-table-tbody > tr:hover > td {
+  background-color: #334155 !important;
+}
+
+.dark .pos-row {
+  background-color: #1e293b !important;
+}
+
+.dark .pos-row:hover {
+  background-color: #334155 !important;
+}
+
+/* User Name Cell */
+.dark .user-name-main {
+  color: #f1f5f9 !important;
+}
+
+.dark .user-name-details {
+  color: #94a3b8 !important;
+}
+
+.dark .user-type-separator {
+  color: #64748b !important;
+}
+
+/* User Address */
+.dark .user-address-text {
+  color: #cbd5e1 !important;
+}
+
+/* Create Info */
+.dark .user-create-info {
+  color: #cbd5e1 !important;
+}
+
+.dark .user-create-name {
+  color: #f1f5f9 !important;
+}
+
+.dark .user-create-date {
+  color: #94a3b8 !important;
+}
+
+/* ==================== TAGS ==================== */
+
+.dark .ant-tag {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: #60a5fa !important;
+}
+
+.dark .user-id-tag {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  color: #60a5fa !important;
+}
+
+.dark .user-detail-tag {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+  color: #c084fc !important;
+}
+
+/* Status Tags */
+.dark .ant-tag.user-status-tag {
+  font-weight: 600 !important;
+}
+
+.dark .ant-tag-green {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+  color: #10b981 !important;
+}
+
+.dark .ant-tag-red {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #ef4444 !important;
+}
+
+.dark .ant-tag-purple {
+  background-color: rgba(168, 85, 247, 0.15) !important;
+  border-color: rgba(168, 85, 247, 0.3) !important;
+  color: #c084fc !important;
+}
+
+.dark .ant-tag-blue {
+  background-color: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  color: #60a5fa !important;
+}
+
+/* ==================== AVATAR & PROFILE ==================== */
+
+.dark .default-avatar {
+  background-color: #3b82f6 !important;
+  border-color: #334155 !important;
+}
+
+.dark .profile-image {
+  border-color: #334155 !important;
+}
+
+.dark .user-code-badge-enhanced {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+}
+
+/* Online Indicator */
+.dark .online-indicator {
+  background-color: #10b981 !important;
+}
+
+.dark .pulse-dot {
+  background-color: #10b981 !important;
+}
+
+/* ==================== TOOLTIPS ==================== */
+
+.dark .ant-tooltip-inner {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-tooltip-arrow-content {
+  background-color: #0f172a !important;
+}
+
+.dark .user-tooltip-content {
+  color: #f1f5f9 !important;
+}
+
+.dark .user-tooltip-name {
+  color: #f1f5f9 !important;
+}
+
+.dark .user-tooltip-details {
+  color: #94a3b8 !important;
+}
+
+/* ==================== SEARCH INPUT ==================== */
+
+.dark .ant-input-search input {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-input-search-button {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.dark .ant-input-search-button:hover {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* ==================== IMAGE PREVIEW ==================== */
+
+.dark .ant-image-preview-mask {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark .ant-image-preview-operations {
+  background-color: rgba(15, 23, 42, 0.9) !important;
+}
+
+.dark .preview-mask {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  color: white !important;
+}
+
+/* ==================== FORM VALIDATION ==================== */
+
+.dark .ant-form-item-explain-error {
+  color: #f87171 !important;
+}
+
+.dark .ant-form-item-has-error .ant-input,
+.dark .ant-form-item-has-error .ant-select-selector {
+  border-color: #ef4444 !important;
+}
+
+.dark .ant-form-item-has-error .ant-input:focus,
+.dark .ant-form-item-has-error .ant-select-focused .ant-select-selector {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* ==================== SCROLLBAR ==================== */
+
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* ==================== EMPTY STATE ==================== */
+
+.dark .ant-empty-description {
+  color: #94a3b8 !important;
+}
+
+/* ==================== SPACE COMPONENT ==================== */
+
+.dark .ant-space {
+  color: #cbd5e1 !important;
+}
+
+/* ==================== CONFIRMATION MODAL ==================== */
+
+.dark .ant-modal-confirm-body .ant-modal-confirm-title {
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-modal-confirm-body .ant-modal-confirm-content {
+  color: #cbd5e1 !important;
+}
+
+.dark .ant-modal-confirm .ant-modal-content {
+  background-color: #1e293b !important;
+}
+
+.dark .ant-modal-confirm .ant-modal-body {
+  background-color: #1e293b !important;
+}
+
+/* ==================== BUTTON GROUPS ==================== */
+
+.dark .user-btn-text {
+  color: white !important;
+}
+
+/* ==================== DIVIDERS ==================== */
+
+.dark .ant-divider {
+  border-color: #334155 !important;
+}
+
+/* ==================== ROW HOVER EFFECTS ==================== */
+
+.dark .ant-table-tbody > tr.ant-table-row:hover > td {
+  background-color: #334155 !important;
+}
+
+/* ==================== TRANSITIONS ==================== */
+
+.dark * {
+  transition: background-color 0.2s ease, 
+              border-color 0.2s ease, 
+              color 0.2s ease;
+}
+/* ==================== FORM LABELS - DARK MODE FIX ==================== */
+
+/* All form item labels */
+.dark .ant-form-item-label > label,
+[data-theme='dark'] .ant-form-item-label > label,
+:root[data-theme='dark'] .ant-form-item-label > label {
+  color: #cbd5e1 !important;
+}
+
+/* Khmer text labels */
+.dark .khmer-text,
+[data-theme='dark'] .khmer-text,
+:root[data-theme='dark'] .khmer-text {
+  color: #cbd5e1 !important;
+}
+
+/* Required asterisk */
+.dark .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before,
+[data-theme='dark'] .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before,
+:root[data-theme='dark'] .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+  color: #ef4444 !important;
+}
+
+/* Label in different states */
+.dark .ant-form-item-label > label,
+[data-theme='dark'] .ant-form-item-label > label,
+:root[data-theme='dark'] .ant-form-item-label > label {
+  color: #e2e8f0 !important;
+  font-weight: 500;
+}
+
+/* Ensure label text inside spans are visible */
+.dark .ant-form-item-label span,
+[data-theme='dark'] .ant-form-item-label span,
+:root[data-theme='dark'] .ant-form-item-label span {
+  color: #e2e8f0 !important;
+}
+
+/* Upload label text */
+.dark .ant-upload-text,
+[data-theme='dark'] .ant-upload-text,
+:root[data-theme='dark'] .ant-upload-text {
+  color: #94a3b8 !important;
+}
+
+/* Form item labels with extra text */
+.dark .ant-form-item-label > label > span,
+[data-theme='dark'] .ant-form-item-label > label > span,
+:root[data-theme='dark'] .ant-form-item-label > label > span {
+  color: #e2e8f0 !important;
+}
+
+/* Additional label styling for better visibility */
+.dark .ant-form-item,
+[data-theme='dark'] .ant-form-item,
+:root[data-theme='dark'] .ant-form-item {
+  color: #e2e8f0 !important;
+}
+
+/* Modal title for consistency */
+.dark .ant-modal-title,
+[data-theme='dark'] .ant-modal-title,
+:root[data-theme='dark'] .ant-modal-title {
+  color: #f1f5f9 !important;
+  font-weight: 600;
+}
+
+/* ==================== INPUT FIELDS - ENHANCED DARK MODE ==================== */
+
+.dark .ant-input,
+.dark .ant-input-password,
+[data-theme='dark'] .ant-input,
+[data-theme='dark'] .ant-input-password,
+:root[data-theme='dark'] .ant-input,
+:root[data-theme='dark'] .ant-input-password {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-input::placeholder,
+.dark .ant-input-password input::placeholder,
+[data-theme='dark'] .ant-input::placeholder,
+[data-theme='dark'] .ant-input-password input::placeholder,
+:root[data-theme='dark'] .ant-input::placeholder,
+:root[data-theme='dark'] .ant-input-password input::placeholder {
+  color: #64748b !important;
+}
+
+/* ==================== SELECT DROPDOWN - ENHANCED ==================== */
+
+.dark .ant-select-selector,
+[data-theme='dark'] .ant-select-selector,
+:root[data-theme='dark'] .ant-select-selector {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-select-selection-placeholder,
+[data-theme='dark'] .ant-select-selection-placeholder,
+:root[data-theme='dark'] .ant-select-selection-placeholder {
+  color: #64748b !important;
+}
+
+.dark .ant-select-arrow,
+[data-theme='dark'] .ant-select-arrow,
+:root[data-theme='dark'] .ant-select-arrow {
+  color: #94a3b8 !important;
+}
+
+/* ==================== MODAL - ENHANCED ==================== */
+
+.dark .ant-modal-content,
+[data-theme='dark'] .ant-modal-content,
+:root[data-theme='dark'] .ant-modal-content {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+.dark .ant-modal-header,
+[data-theme='dark'] .ant-modal-header,
+:root[data-theme='dark'] .ant-modal-header {
+  background-color: #0f172a !important;
+  border-bottom-color: #334155 !important;
+}
+
+.dark .ant-modal-body,
+[data-theme='dark'] .ant-modal-body,
+:root[data-theme='dark'] .ant-modal-body {
+  background-color: #1e293b !important;
+}
+
+/* ==================== UPLOAD COMPONENT ==================== */
+
+.dark .ant-upload.ant-upload-select,
+[data-theme='dark'] .ant-upload.ant-upload-select,
+:root[data-theme='dark'] .ant-upload.ant-upload-select {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+.dark .ant-upload-text,
+[data-theme='dark'] .ant-upload-text,
+:root[data-theme='dark'] .ant-upload-text {
+  color: #94a3b8 !important;
+}
+
+/* Upload icon color */
+.dark .ant-upload .anticon,
+[data-theme='dark'] .ant-upload .anticon,
+:root[data-theme='dark'] .ant-upload .anticon {
+  color: #64748b !important;
+}
