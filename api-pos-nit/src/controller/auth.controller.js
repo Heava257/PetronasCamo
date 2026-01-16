@@ -1101,6 +1101,8 @@ exports.logout = async (req, res) => {
   }
 };
 
+// PASTE THIS AT THE TOP OF auth.controller.js login function
+// Replace the existing login function with this safer version
 
 exports.login = async (req, res) => {
   try {
@@ -1127,7 +1129,7 @@ exports.login = async (req, res) => {
 
     let [data] = await db.query(sql, { username: username });
 
-    // ⚠️ USERNAME DOESN'T EXIST
+    // Username doesn't exist
     if (data.length == 0) {
       return res.status(401).json({
         error: {
@@ -1140,23 +1142,8 @@ exports.login = async (req, res) => {
     let dbPass = data[0].password;
     let isCorrectPass = bcrypt.compareSync(password, dbPass);
 
-    // ⚠️ WRONG PASSWORD
+    // Wrong password
     if (!isCorrectPass) {
-      try {
-        await exports.logLoginActivity({
-          user_id: data[0].id,
-          username: data[0].username,
-          ip_address: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown',
-          user_agent: req.get('User-Agent') || 'Unknown',
-          device_info: JSON.stringify({}),
-          location_info: JSON.stringify({}),
-          login_time: new Date(),
-          status: 'failed'
-        });
-      } catch (logError) {
-        console.error("Failed to log failed attempt:", logError);
-      }
-
       return res.status(401).json({
         error: {
           password: "Password incorrect!",
@@ -1165,23 +1152,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    // ✅ CHECK IF ACCOUNT IS ACTIVE
+    // Check if account is active
     if (data[0].is_active === 0 || data[0].is_active === false) {
-      try {
-        await exports.logLoginActivity({
-          user_id: data[0].id,
-          username: data[0].username,
-          ip_address: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown',
-          user_agent: req.get('User-Agent') || 'Unknown',
-          device_info: JSON.stringify({}),
-          location_info: JSON.stringify({}),
-          login_time: new Date(),
-          status: 'blocked - account deactivated'
-        });
-      } catch (logError) {
-        console.error("Failed to log blocked attempt:", logError);
-      }
-
       return res.status(403).json({
         error: {
           message: "Account has been deactivated. Please contact administrator.",
@@ -1190,20 +1162,24 @@ exports.login = async (req, res) => {
       });
     }
 
-    // ✅ UPDATE USER STATUS
-    await db.query(`
-      UPDATE user 
-      SET is_online = 1, 
-          last_activity = NOW(), 
-          online_status = 'online',
-          last_login = NOW()
-      WHERE id = ?
-    `, [data[0].id]);
+    // Update user status (optional - don't fail if it doesn't work)
+    try {
+      await db.query(`
+        UPDATE user 
+        SET is_online = 1, 
+            last_activity = NOW(), 
+            online_status = 'online',
+            last_login = NOW()
+        WHERE id = ?
+      `, [data[0].id]);
+    } catch (updateErr) {
+      console.warn('⚠️ Failed to update user status:', updateErr.message);
+    }
 
-    // ✅ GET PERMISSIONS (for response only, NOT for token)
+    // Get permissions
     const permissions = await getPermissionByUser(data[0].id);
 
-    // ✅✅✅ GENERATE MINIMAL TOKENS ✅✅✅
+    // Generate tokens
     const accessToken = await getAccessToken(
       data[0].id,
       data[0].role_id,
@@ -1212,133 +1188,58 @@ exports.login = async (req, res) => {
 
     const refreshToken = await getRefreshToken({ user_id: data[0].id });
 
-    // Store refresh token
-    await storeRefreshToken(data[0].id, refreshToken);
-
-    // Enhanced login information
-    const loginTime = new Date().toLocaleString('en-US', {
-      timeZone: 'Asia/Phnom_Penh',
-      dateStyle: 'full',
-      timeStyle: 'long'
-    });
-
-    const userAgent = req.get('User-Agent') || 'Unknown';
-    const clientIP = req.ip ||
-      req.headers['x-forwarded-for']?.split(',')[0] ||
-      'Unknown';
-
-    const deviceInfo = parseUserAgent(userAgent);
-    const locationInfo = await getLocationFromIP(clientIP);
-
-    // Telegram alert
-    const alertMessage = `
-🔐 <b>ការជូនដំណឹងចូលប្រើប្រាស់ថ្មី / New Login Alert</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-👤 <b>អ្នកប្រើប្រាស់ / User:</b> ${data[0].name || 'N/A'}
-🆔 <b>Username:</b> ${data[0].username}
-📧 <b>Email:</b> ${data[0].email || 'N/A'}
-🎭 <b>តួនាទី / Role:</b> ${data[0].role_name}
-🏢 <b>សាខា / Branch:</b> ${data[0].branch_name || 'N/A'}
-
-⏰ <b>ពេលវេលា / Login Time:</b> ${loginTime}
-🌐 <b>IP Address:</b> <code>${clientIP}</code>
-💻 <b>Device:</b> ${deviceInfo.platform} - ${deviceInfo.browser}
-    `;
-
-    sendTelegramMessagenewLogin(alertMessage).catch(err => {
-      console.error("Failed to send Telegram alert:", err.message);
-    });
+    // Store refresh token (optional)
     try {
-      await createSystemNotification({
-        notification_type: 'login_alert',
-        title: `🔐 Login Alert: ${data[0].name}`,
-        message: `New login detected\n\nUser: ${data[0].name}\nUsername: ${data[0].username}\nRole: ${data[0].role_name}\nBranch: ${data[0].branch_name || 'N/A'}\n\nLogin Time: ${loginTime}\nIP Address: ${clientIP}\nDevice: ${deviceInfo.platform}\nBrowser: ${deviceInfo.browser}`,
-        data: {
-          login_info: {
-            user_id: null,              // ✅ IMPORTANT
-            group_id: null,
-            username: data[0].username,
-            name: data[0].name,
-            email: data[0].email,
-            role_name: data[0].role_name,
-            branch_name: data[0].branch_name,
-            login_time: loginTime,
-            ip_address: clientIP,
-            device: deviceInfo.platform,
-            browser: deviceInfo.browser,
-            user_agent: userAgent,
-            location: locationInfo,
-            priority: 'high',
-            severity: 'info',
-
-          }
-        },
-        order_id: null,
-        order_no: null,
-        customer_id: null,
-        customer_name: data[0].name,
-        customer_address: null,
-        customer_tel: data[0].tel,
-        total_amount: null,
-        total_liters: null,
-        card_number: null,
-        user_id: data[0].id,
-        created_by: data[0].username,
-        branch_name: data[0].branch_name,
-        group_id: data[0].group_id,
-        priority: 'normal',
-        severity: 'info',
-        icon: '🔐',
-        color: 'blue',
-        action_url: `/users/${data[0].id}`
-      });
-
-    } catch (sysNotifError) {
-      console.error('❌ Failed to create login system notification:', sysNotifError);
+      await storeRefreshToken(data[0].id, refreshToken);
+    } catch (tokenErr) {
+      console.warn('⚠️ Failed to store refresh token:', tokenErr.message);
     }
+
+    // Try to log activity (optional - don't block login)
+    const clientIP = req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown';
+    const userAgent = req.get('User-Agent') || 'Unknown';
+    
+    // All logging is optional
     try {
       await exports.logLoginActivity({
         user_id: data[0].id,
         username: data[0].username,
         ip_address: clientIP,
         user_agent: userAgent,
-        device_info: JSON.stringify(deviceInfo),
-        location_info: JSON.stringify(locationInfo),
+        device_info: JSON.stringify({}),
+        location_info: JSON.stringify({}),
         login_time: new Date(),
         status: 'success'
       });
-    } catch (logError) {
-      console.error("Failed to log successful login:", logError);
+    } catch (logErr) {
+      console.warn('⚠️ Failed to log activity:', logErr.message);
     }
 
-    // ✅ Clean response - remove password
+    // Clean response
     delete data[0].password;
 
-    // ✅✅✅ RETURN MINIMAL TOKEN + FULL DATA ✅✅✅
+    // Return success
     return res.status(200).json({
       message: "Login success",
       message_kh: "ចូលប្រើប្រាស់បានជោគជ័យ",
-      profile: data[0],           // Full profile in response
-      permission: permissions,     // Full permissions in response
-      access_token: accessToken,   // ✅ MINIMAL token
-      refresh_token: refreshToken, // ✅ MINIMAL token
+      profile: data[0],
+      permission: permissions,
+      access_token: accessToken,
+      refresh_token: refreshToken,
       login_details: {
-        login_time: loginTime,
-        ip_address: clientIP,
-        device: deviceInfo.platform,
-        browser: deviceInfo.browser
+        login_time: new Date().toLocaleString(),
+        ip_address: clientIP
       }
     });
 
   } catch (error) {
-    console.error("Login error:", error);
-    logError("auth.login", error, res);
-
+    console.error("❌ Login error:", error);
+    
     return res.status(500).json({
       error: {
         message: "Internal server error",
-        message_kh: "មានបញ្ហាកើតឡើង សូមព្យាយាមម្តងទៀត"
+        message_kh: "មានបញ្ហាកើតឡើង សូមព្យាយាមម្តងទៀត",
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       }
     });
   }
