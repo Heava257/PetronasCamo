@@ -3,26 +3,24 @@ const isLocalhost =
   window.location.hostname === "127.0.0.1";
 
 export const Config = {
-  // CRITICAL: Use direct HTTPS URL in production (NOT relative path)
+  // ALWAYS use HTTPS in production
   base_url: isLocalhost 
-    ? (import.meta.env.VITE_API_URL || "http://localhost:8000/api/")
-    : (import.meta.env.VITE_API_URL || "https://petronas-api.onrender.com/api"),
+    ? "http://localhost:8000/api/"
+    : "https://petronas-api.onrender.com/api",
   
-  version: import.meta.env.VITE_VERSION || "1.0",
+  version: "1.0",
   token: "",
   
+  // ALWAYS use HTTPS for images in production
   image_path: isLocalhost 
-    ? (import.meta.env.VITE_IMAGE_PATH || "http://localhost:8000/api/public/")
-    : (import.meta.env.VITE_IMAGE_PATH || "https://petronas-api.onrender.com/api/public/"),
+    ? "http://localhost:8000/api/public/"
+    : "https://petronas-api.onrender.com/api/public/",
   
   getFullImagePath: (imagePart) => `${Config.image_path}${imagePart}`,
 };
 
-// Debug logging
-if (isLocalhost) {
-  console.log('🔧 Config loaded:', {
-    base_url: Config.base_url,
-    image_path: Config.image_path,
-    environment: isLocalhost ? 'localhost' : 'production'
-  });
-}
+// Debug
+console.log('🔧 API Config:', {
+  base_url: Config.base_url,
+  environment: isLocalhost ? 'localhost' : 'production'
+});
