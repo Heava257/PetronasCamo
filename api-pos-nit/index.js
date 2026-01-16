@@ -20,7 +20,8 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://petronas-camo-git-main-chivas-projects-e8c5c304.vercel.app'
+    'https://petronas-camo-git-main-chivas-projects-e8c5c304.vercel.app',
+    'https://petronas-api.onrender.com'
   ],
   credentials: true
 }));
@@ -33,6 +34,15 @@ app.use('/api', rateLimitMonitoring(100, 60000));
 app.use(trackUserActivity);
 
 app.use(postResponseAnalyzer);
+
+app.get('/', (req, res) => {
+  res.json({
+    name: "Petronas POS API",
+    version: "1.0",
+    status: "OK",
+    docs: "/health"
+  });
+});
 
 
 require("./src/route/category.route")(app);
@@ -116,7 +126,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 1000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
