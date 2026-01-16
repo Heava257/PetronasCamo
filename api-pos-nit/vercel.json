@@ -1,9 +1,8 @@
 {
-  "version": 2,
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/index.js"
+      "source": "/api/(.*)",
+      "destination": "http://194.31.53.183:8000/api/$1"
     }
   ]
 }

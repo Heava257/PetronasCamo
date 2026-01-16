@@ -7,6 +7,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
+
 const { trackUserActivity } = require('./src/middleware/activity_tracker.middleware');
 const {
   checkIPBlacklist,
@@ -19,22 +20,11 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
-    'http://localhost:3001',
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:3000'
+    'https://petronas-camo-git-main-chivas-projects-e8c5c304.vercel.app'
   ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'X-Requested-With',
-    'Accept',
-    'Origin'
-  ],
-  exposedHeaders: ['Content-Length', 'X-Request-Id'],
-  maxAge: 86400
+  credentials: true
 }));
+
 app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
@@ -126,8 +116,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-const PORT = process.env.PORT || 8080;
-
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
-  console.log(`📍 URL: http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
