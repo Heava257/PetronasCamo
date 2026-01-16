@@ -62,9 +62,12 @@ export default function MainPage({ children, loading }) {
 
   if (isServerError) {
     return (
-      <div className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
-        isDarkMode ? 'bg-gray-900' : 'bg-gray-50'
-      }`}>
+      <div 
+        data-theme={isDarkMode ? 'dark' : 'light'}
+        className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
+          isDarkMode ? 'bg-gray-900 dark' : 'bg-gray-50 light'
+        }`}
+      >
         <div className={`max-w-md w-full mx-4 p-8 rounded-lg shadow-lg text-center transition-colors ${
           isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'
         }`}>
@@ -127,9 +130,12 @@ export default function MainPage({ children, loading }) {
   }
 
   return (
-    <div className={`transition-colors duration-300 ${
-      isDarkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'
-    }`}>
+    <div 
+      data-theme={isDarkMode ? 'dark' : 'light'} 
+      className={`transition-colors duration-300 ${
+        isDarkMode ? 'bg-gray-900 text-white dark' : 'bg-white text-gray-900 light'
+      }`}
+    >
       {loading && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="flex flex-col items-center">
@@ -177,8 +183,4 @@ export default function MainPage({ children, loading }) {
       `}</style>
     </div>
   );
-}
-
-
-
-
+}           

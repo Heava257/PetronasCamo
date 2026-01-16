@@ -1,0 +1,717 @@
+/* ========================================
+   HOMEPAGE DASHBOARD - DARK/LIGHT MODE SUPPORT
+======================================== */
+
+/* ========================================
+   CSS VARIABLES - DARK MODE (DEFAULT)
+======================================== */
+.dashboard-container {
+  min-height: 100vh;
+  padding: 1rem 1.5rem;
+  font-family: 'Khmer OS', 'Khmer OS System', 'Inter', sans-serif;
+  --bg-primary: #0a1929;
+  --bg-secondary: #1e293b;
+  --card-bg: #1e293b;
+  --card-hover: #1a2332;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --primary-color: #3b82f6;
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+}
+
+/* ========================================
+   LIGHT MODE VARIABLES
+======================================== */
+.dashboard-container.light {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --card-bg: #ffffff;
+  --card-hover: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+}
+
+.dashboard-container {
+  background: var(--bg-primary);
+}
+
+/* ========================================
+   HEADER CARD
+======================================== */
+.dashboard-header-card {
+  margin-bottom: 1.5rem;
+  background: var(--card-bg) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-header-card .ant-card-body {
+  padding: 16px;
+}
+
+.header-title-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-icon-wrapper {
+  padding: 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-icon {
+  font-size: 24px;
+  color: white;
+}
+
+.header-title {
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.header-subtitle {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* Date Picker */
+.dashboard-date-picker {
+  width: 100%;
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dashboard-date-picker input {
+  background: var(--card-bg);
+  color: var(--text-primary);
+}
+
+/* Buttons */
+.filter-button {
+  width: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  border-radius: 8px;
+  height: 32px;
+}
+
+.refresh-button {
+  width: 100%;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  height: 32px;
+}
+
+/* Filter Info Banner */
+.filter-info-banner {
+  margin-top: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.1);
+  border-left: 3px solid var(--primary-color);
+}
+
+.filter-info-text {
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.admin-badge {
+  margin-left: 8px;
+  background: var(--warning-color);
+  font-size: 10px;
+}
+
+/* ========================================
+   LOADING STATE
+======================================== */
+.loading-container {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  margin-top: 16px;
+  font-family: 'Khmer OS', sans-serif;
+}
+
+/* ========================================
+   METRICS CARDS - EQUAL HEIGHT & CLICKABLE
+======================================== */
+.metrics-row {
+  margin-bottom: 1.5rem;
+}
+
+.metric-card {
+  height: 100%;
+  min-height: 180px;
+  /* ← EQUAL HEIGHT! */
+  background: var(--card-bg) !important;
+  border: none !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  /* ← CLICKABLE! */
+}
+
+.metric-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.metric-card .ant-card-body {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.metric-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  flex: 1;
+}
+
+.metric-card-content {
+  flex: 1;
+}
+
+.metric-label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  display: block;
+}
+
+.metric-value {
+  color: var(--text-primary) !important;
+  margin: 8px 0 0 0 !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
+}
+
+.metric-icon-wrapper {
+  padding: 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metric-card-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.metric-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.metric-detail-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.metric-detail-value {
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* ========================================
+   WELCOME ROW
+======================================== */
+.welcome-row {
+  margin-bottom: 1.5rem;
+}
+
+/* Welcome Card */
+.welcome-card {
+  background: var(--card-bg) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  position: relative;
+  min-height: 260px;
+  height: 100%;
+}
+
+.welcome-card .ant-card-body {
+  padding: 32px;
+}
+
+.welcome-bg-gradient {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 60%;
+  height: 100%;
+  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+}
+
+.welcome-content {
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-greeting {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.welcome-name {
+  color: var(--text-primary) !important;
+  margin: 8px 0 16px 0 !important;
+  font-size: 32px !important;
+  font-weight: 700 !important;
+}
+
+.welcome-message {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.welcome-stats {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.welcome-stat-label {
+  color: var(--text-secondary);
+  font-size: 11px;
+  display: block;
+}
+
+.welcome-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
+.welcome-stat-value.primary {
+  color: var(--primary-color);
+}
+
+.welcome-stat-value.success {
+  color: var(--success-color);
+}
+
+/* ========================================
+   GAUGE CARDS - EQUAL HEIGHT
+======================================== */
+.gauge-card {
+  background: var(--card-bg) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  height: 100%;
+  min-height: 260px;
+  /* ← EQUAL HEIGHT! */
+}
+
+.gauge-card .ant-card-body {
+  padding: 24px;
+}
+
+.gauge-title {
+  color: var(--text-primary) !important;
+  margin-bottom: 8px !important;
+}
+
+.gauge-subtitle {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.gauge-chart-container {
+  position: relative;
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-value-overlay {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.gauge-percentage {
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  font-size: 40px !important;
+  font-weight: 700 !important;
+}
+
+.gauge-score {
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+  font-size: 36px !important;
+  font-weight: 700 !important;
+}
+
+.gauge-score-divider {
+  color: var(--text-secondary);
+  font-size: 11px;
+  display: block;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.gauge-info {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.gauge-info-text {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+/* ========================================
+   CHARTS ROW
+======================================== */
+.charts-row {
+  margin-bottom: 1.5rem;
+}
+
+.chart-card {
+  background: var(--card-bg) !important;
+  border: none !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+}
+
+.chart-card .ant-card-body {
+  padding: 24px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-title {
+  color: var(--text-primary) !important;
+  margin: 0 !important;
+}
+
+.chart-subtitle {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.chart-badge {
+  background: var(--primary-color);
+}
+
+.chart-badge.success {
+  background: var(--success-color);
+}
+
+/* Chart Elements */
+.chart-grid {
+  stroke: var(--border-color);
+  opacity: 0.3;
+}
+
+.chart-axis {
+  fill: var(--text-secondary);
+  font-size: 11px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.empty-state .ant-empty-description {
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+======================================== */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+
+  .header-title {
+    font-size: 1.25rem;
+  }
+
+  .metric-card {
+    min-height: 160px;
+  }
+
+  .gauge-card {
+    min-height: 240px;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .dashboard-container {
+    padding: 0.75rem;
+  }
+
+  .dashboard-header-card .ant-card-body {
+    padding: 12px;
+  }
+
+  .header-title {
+    font-size: 1.125rem;
+  }
+
+  .metric-card {
+    min-height: 140px;
+  }
+
+  .metric-value {
+    font-size: 24px !important;
+  }
+
+  .welcome-card .ant-card-body {
+    padding: 20px;
+  }
+
+  .welcome-name {
+    font-size: 24px !important;
+  }
+
+  .gauge-card {
+    min-height: 220px;
+  }
+
+  .gauge-percentage {
+    font-size: 32px !important;
+  }
+
+  .gauge-score {
+    font-size: 28px !important;
+  }
+
+  .chart-card .ant-card-body {
+    padding: 16px;
+  }
+}
+
+/* ========================================
+   ANT DESIGN OVERRIDES
+======================================== */
+
+/* Date Picker Dropdown */
+.ant-picker-dropdown {
+  background: var(--card-bg);
+}
+
+.ant-picker-panel {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.ant-picker-header,
+.ant-picker-content th,
+.ant-picker-cell {
+  color: var(--text-primary);
+}
+
+.ant-picker-cell-in-view {
+  color: var(--text-primary);
+}
+
+.ant-picker-cell-disabled {
+  color: var(--text-secondary);
+}
+
+/* Spin */
+.ant-spin {
+  color: var(--primary-color);
+}
+
+/* Badge */
+.ant-badge-count {
+  background: var(--primary-color);
+  box-shadow: 0 0 0 1px var(--card-bg);
+}
+
+/* Tooltip */
+.ant-tooltip-inner {
+  background: var(--card-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.ant-tooltip-arrow-content {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+/* ========================================
+   ANIMATIONS
+======================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.metric-card,
+.welcome-card,
+.gauge-card,
+.chart-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* ========================================
+   PRINT STYLES
+======================================== */
+/* ========================================
+   PRINT STYLES
+======================================== */
+@media print {
+
+  /* Hide sidebar and headers from MainLayout */
+  .hierarchical-sidebar,
+  .clean-dark-header,
+  .trigger-button,
+  .header-right,
+  .ant-layout-sider,
+  .sidebar-header,
+  .sidebar-footer {
+    display: none !important;
+  }
+
+  /* Hide header card content but keep title if needed, or hide generic header stuff */
+  .dashboard-header-card .header-icon-wrapper,
+  .dashboard-header-card .header-subtitle,
+  .print-button,
+  .filter-button,
+  .refresh-button,
+  .ant-picker,
+  .ant-btn {
+    display: none !important;
+  }
+
+  /* Reset layout margins/padding to use full page */
+  .ant-layout {
+    margin-left: 0 !important;
+    padding: 0 !important;
+  }
+
+  .dashboard-container {
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .content-wrapper {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Adjust cards for print */
+  .metric-card,
+  .chart-card,
+  .welcome-card,
+  .gauge-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    break-inside: avoid;
+    margin-bottom: 20px !important;
+  }
+
+  /* Ensure text is black for printing */
+  .metric-label,
+  .metric-value,
+  .metric-detail-row,
+  .chart-title,
+  .welcome-name,
+  .welcome-message {
+    color: #000 !important;
+  }
+
+  /* Hide scrollbars */
+  body {
+    overflow: visible !important;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY
+======================================== */
+.metric-card:focus-visible,
+.filter-button:focus-visible,
+.refresh-button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* ========================================
+   DARK MODE SPECIFIC ADJUSTMENTS
+======================================== */
+.dashboard-container.dark .ant-card {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-container.dark .metric-card:hover {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* ========================================
+   LIGHT MODE SPECIFIC ADJUSTMENTS
+======================================== */
+.dashboard-container.light .ant-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.dashboard-container.light .metric-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-container.light .filter-info-banner {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.dashboard-container.light .welcome-stats {
+  background: rgba(59, 130, 246, 0.05);
+}

@@ -12,7 +12,7 @@ const LanguageSwitcher = () => {
         {/* Khmer Button */}
         <button
           onClick={() => changeLanguage('km')}
-          className={`relative px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-400 overflow-hidden ${
+          className={`relative px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-400 overflow-hidden ${
             language === 'km'
               ? 'text-white'
               : 'text-white/80 dark:text-gray-200 hover:text-white'
@@ -39,24 +39,25 @@ const LanguageSwitcher = () => {
           }`}></span>
           
           {/* Text with icon */}
-          <span className="relative flex items-center space-x-1.5 z-10">
-            <span className="text-base">🇰🇭</span>
-            <span className="tracking-wide">ខ្មែរ</span>
+          <span className="relative flex items-center space-x-1 sm:space-x-1.5 z-10">
+            <span className="text-sm sm:text-base">🇰🇭</span>
+            <span className="tracking-wide hidden xs:inline">ខ្មែរ</span>
+            <span className="tracking-wide xs:hidden">KM</span>
           </span>
           
           {/* Active indicator dot */}
           {language === 'km' && (
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full shadow-lg animate-ping-slow"></span>
+            <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-green-400 rounded-full shadow-lg animate-ping-slow"></span>
           )}
         </button>
 
         {/* Divider */}
-        <div className="h-6 w-px bg-white/30 dark:bg-white/20"></div>
+        <div className="h-4 sm:h-6 w-px bg-white/30 dark:bg-white/20"></div>
 
         {/* English Button */}
         <button
           onClick={() => changeLanguage('en')}
-          className={`relative px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-400 overflow-hidden ${
+          className={`relative px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-400 overflow-hidden ${
             language === 'en'
               ? 'text-white'
               : 'text-white/80 dark:text-gray-200 hover:text-white'
@@ -83,14 +84,14 @@ const LanguageSwitcher = () => {
           }`}></span>
           
           {/* Text with icon */}
-          <span className="relative flex items-center space-x-1.5 z-10">
-            <span className="text-base">🇬🇧</span>
+          <span className="relative flex items-center space-x-1 sm:space-x-1.5 z-10">
+            <span className="text-sm sm:text-base">🇬🇧</span>
             <span className="tracking-wide">EN</span>
           </span>
           
           {/* Active indicator dot */}
           {language === 'en' && (
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-400 rounded-full shadow-lg animate-ping-slow"></span>
+            <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-green-400 rounded-full shadow-lg animate-ping-slow"></span>
           )}
         </button>
       </div>
@@ -158,6 +159,24 @@ const LanguageSwitcher = () => {
         /* Add box-shadow glow on active */
         button:active span:first-child {
           box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+          .animate-shimmer {
+            animation: shimmer 3s infinite;
+          }
+          
+          .animate-gradient {
+            animation: gradient 4s ease infinite;
+          }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 400px) {
+          button {
+            min-width: 2.5rem;
+          }
         }
       `}</style>
     </div>

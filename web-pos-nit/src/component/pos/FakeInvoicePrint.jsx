@@ -1,6 +1,6 @@
 
 import React from "react";
-import logo from "../../assets/petronas_black2.png";
+import logo from "../../assets/PETRONAS_CAMBODIA_LOGO-2.png";
 import "./fonts.css";
 import { getProfile } from "../../store/profile.store";
 import { formatDateClient } from "../../util/helper";
@@ -145,16 +145,16 @@ const FakeInvoicePrint = React.forwardRef((props, ref) => {
 
 
   const formatUnitPrice = (price) => {
-  if (!price) return '0';
-  const num = parseFloat(price);
-  if (isNaN(num)) return '0';
-  
-  // Format to 4 decimal places, then remove trailing zeros
-  return num.toFixed(4).replace(/\.?0+$/, '');
-};
+    if (!price) return '0';
+    const num = parseFloat(price);
+    if (isNaN(num)) return '0';
+
+    // Format to 4 decimal places, then remove trailing zeros
+    return num.toFixed(4).replace(/\.?0+$/, '');
+  };
 
 
-  
+
 
   const FormatQTY = (value) => {
     const number = parseFloat(value) || 0;
@@ -202,7 +202,7 @@ const FakeInvoicePrint = React.forwardRef((props, ref) => {
     const emptyRowsToAdd = FIXED_DISPLAY_ITEMS - displayItems.length;
     for (let i = 0; i < emptyRowsToAdd; i++) {
       displayItems.push({
-        category_name: "",
+        product_name: "",
         cart_qty: "",
         unit_price: "",
         actual_price: 1
@@ -247,7 +247,7 @@ const FakeInvoicePrint = React.forwardRef((props, ref) => {
             </p>
             <p className="text-[15px] font-medium">លេខទូរស័ព្ទ: {formatPhoneNumber(objSummary?.customer_tel) || "N/A"}</p>
             <p className="text-[15px] font-medium">
-             គោលដៅ: <span className="text-[15px]">{objSummary?.destination || "N/A"}</span>
+              គោលដៅ: <span className="text-[15px]">{objSummary?.destination || "N/A"}</span>
             </p>
           </div>
         </div>
@@ -332,7 +332,7 @@ const FakeInvoicePrint = React.forwardRef((props, ref) => {
                     {isRealItem ? index + 1 : "\u00A0"}
                   </td>
                   <td className={`${isRealItem ? 'border' : 'border-l border-r'} border-gray-500 text-center p-5 text-[15px] font-medium`}>
-                    {isRealItem ? item.category_name : "\u00A0"}
+                    {isRealItem ? item.product_name : "\u00A0"}
                   </td>
                   <td className={`${isRealItem ? 'border' : 'border-l border-r'} border-gray-500 text-center text-[15px] font-medium`}>
                     {isRealItem && item.cart_qty ? `${FormatQTY(item.cart_qty)}L` : "\u00A0"}

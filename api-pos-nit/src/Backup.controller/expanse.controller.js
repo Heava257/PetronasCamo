@@ -164,7 +164,6 @@ exports.update = async (req, res) => {
       });
     }
    
-    console.log("Request Payload:", req.body); // Log the payload for debugging
     const sql = `
   UPDATE expense 
   SET 

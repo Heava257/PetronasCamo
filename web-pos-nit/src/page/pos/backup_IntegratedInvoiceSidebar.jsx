@@ -242,7 +242,6 @@ const IntegratedInvoiceSidebar = ({
 
     // ✅ Fixed: Use cart_qty consistently and pass correct id with better error handling
     const updateQuantity = (itemId, change) => {
-        console.log('updateQuantity called:', { itemId, change }); // Debug log
 
         if (!itemId) {
             console.error('No itemId provided to updateQuantity');
@@ -256,18 +255,15 @@ const IntegratedInvoiceSidebar = ({
         }
 
         const newQty = Math.max(0, (item.cart_qty || 0) + change);
-        console.log('Updating quantity:', { itemId, oldQty: item.cart_qty, newQty }); // Debug log
 
         try {
             handleQuantityChange(newQty, itemId);  // ✅ Pass correct parameters
-            console.log('Quantity updated successfully');
         } catch (error) {
             console.error('Error updating quantity:', error);
         }
     };
 
     const updatePrice = (itemId, newPrice) => {
-        console.log('updatePrice called:', { itemId, newPrice }); // Debug log
 
         // Validate itemId exists
         if (!itemId) {
@@ -290,7 +286,6 @@ const IntegratedInvoiceSidebar = ({
 
         try {
             handlePriceChange(newPrice, itemId); // ✅ Pass correct parameters
-            console.log('Price updated successfully:', { itemId, newPrice });
         } catch (error) {
             console.error('Error updating price:', error);
         }
@@ -307,7 +302,6 @@ const IntegratedInvoiceSidebar = ({
             () => {
                 try {
                     handleClearCart();
-                    console.log('Cart cleared successfully');
                 } catch (error) {
                     console.error('Error clearing cart:', error);
                     // You could show another alert here for the error
@@ -340,7 +334,6 @@ const IntegratedInvoiceSidebar = ({
                         ...prev,
                         cart_list: newCartList
                     }));
-                    console.log(`Item ${itemId} removed successfully`);
                 } catch (error) {
                     console.error('Error removing item:', error);
                     showAlert(

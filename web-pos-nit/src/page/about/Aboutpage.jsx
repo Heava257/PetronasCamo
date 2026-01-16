@@ -73,7 +73,6 @@ const AboutHomepage = () => {
 
   const clicklogin = () => {
     navigate("/login");
-    console.log("Navigate to login");
   };
 
   return (

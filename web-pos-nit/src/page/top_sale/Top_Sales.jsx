@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { Button, Image, Space, Table, Tag, Typography, Card, Row, Col, Statistic, message } from "antd";
 import { request } from "../../util/helper";
 import { MdRefresh, MdFileDownload, MdPrint, MdTrendingUp } from "react-icons/md";
@@ -10,6 +11,7 @@ import html2canvas from "html2canvas";
 const { Title, Text } = Typography;
 
 function Top_Sales() {
+  const { t } = useTranslation();
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const printRef = useRef(null);
@@ -40,88 +42,89 @@ function Top_Sales() {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    
+
     // Header background
     doc.setFillColor(24, 144, 255);
     doc.rect(0, 0, pageWidth, 45, 'F');
-    
+
     // Title
     doc.setFontSize(28);
     doc.setTextColor(255, 255, 255);
     doc.setFont(undefined, 'bold');
-    doc.text("TOP SALES REPORT", pageWidth / 2, 22, { align: 'center' });
-    
+    doc.text(t('report.top_sales_pdf_title'), pageWidth / 2, 22, { align: 'center' });
+
     // Date
     doc.setFontSize(11);
     doc.setFont(undefined, 'normal');
-    doc.text(`Generated: ${new Date().toLocaleString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    doc.text(`${t('report.generated')}: ${new Date().toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     })}`, pageWidth / 2, 35, { align: 'center' });
-    
+
     // Statistics Section
     let yPos = 55;
     doc.setFillColor(240, 242, 245);
     doc.roundedRect(15, yPos, pageWidth - 30, 32, 3, 3, 'F');
-    
+
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
     doc.setFont(undefined, 'bold');
-    
+
     // Stats positioning
     const col1X = 25;
     const col2X = pageWidth / 2;
     const col3X = pageWidth - 55;
-    
+
+
     // Total Sales
-    doc.text('Total Sales', col1X, yPos + 10);
+    doc.text(t('report.total_amount'), col1X, yPos + 10);
     doc.setFontSize(14);
     doc.setTextColor(24, 144, 255);
     doc.text(`$${totalSales.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, col1X, yPos + 22);
-    
+
     // Top Product
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    doc.text('Top Product', col2X, yPos + 10);
+    doc.text(t('report.top_product'), col2X, yPos + 10);
     doc.setFontSize(12);
     const topProdName = topProduct ? topProduct.product_name.substring(0, 20) : 'N/A';
     doc.text(topProdName, col2X, yPos + 22);
-    
+
     // Total Products
     doc.setFontSize(10);
-    doc.text('Products', col3X, yPos + 10);
+    doc.text(t('report.total_products'), col3X, yPos + 10);
     doc.setFontSize(14);
     doc.setTextColor(24, 144, 255);
     doc.text(list.length.toString(), col3X, yPos + 22);
-    
+
     // Table
     yPos = 97;
     const margin = 15;
     const tableWidth = pageWidth - (margin * 2);
     const colWidths = [18, 60, 50, 42];
     const rowHeight = 14;
-    
+
     // Table header
     doc.setFillColor(52, 152, 219);
     doc.roundedRect(margin, yPos, tableWidth, rowHeight, 2, 2, 'F');
-    
+
     doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
     doc.setFont(undefined, 'bold');
-    
-    const headers = ['#', 'Product Name', 'Category', 'Sales Amount'];
+
+    const headers = [t('report.rank'), t('report.product_name'), t('report.category'), t('report.sales_amount')];
     let xPos = margin + 5;
-    
+
     headers.forEach((header, i) => {
       doc.text(header, xPos, yPos + 9);
       xPos += colWidths[i];
     });
-    
+
     yPos += rowHeight;
-    
+
     // Table rows
     doc.setFont(undefined, 'normal');
     list.forEach((item, index) => {
@@ -129,18 +132,18 @@ function Top_Sales() {
         doc.addPage();
         yPos = 20;
       }
-      
+
       // Row background
       if (index % 2 === 0) {
         doc.setFillColor(249, 250, 251);
         doc.rect(margin, yPos, tableWidth, rowHeight, 'F');
       }
-      
+
       doc.setTextColor(30, 30, 30);
       doc.setFontSize(9);
-      
+
       xPos = margin + 5;
-      
+
       // Rank with trophy for top 3
       doc.setFont(undefined, 'bold');
       if (index < 3) {
@@ -151,44 +154,44 @@ function Top_Sales() {
       }
       doc.setFont(undefined, 'normal');
       xPos += colWidths[0];
-      
+
       // Product name
-      const productName = item.product_name.length > 30 
-        ? item.product_name.substring(0, 30) + '...' 
+      const productName = item.product_name.length > 30
+        ? item.product_name.substring(0, 30) + '...'
         : item.product_name;
       doc.text(productName, xPos, yPos + 10);
       xPos += colWidths[1];
-      
+
       // Category - clean display
       const categoryName = item.category_name || 'N/A';
       const cleanCategory = categoryName.replace(/[^\w\s]/gi, '').trim();
       doc.text(cleanCategory.substring(0, 20), xPos, yPos + 10);
       xPos += colWidths[2];
-      
+
       // Amount
-      const amount = `$${Number(item.total_sale_amount).toLocaleString(undefined, { 
-        minimumFractionDigits: 2, 
-        maximumFractionDigits: 2 
+      const amount = `$${Number(item.total_sale_amount).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
       })}`;
       doc.setFont(undefined, 'bold');
       doc.setTextColor(34, 139, 34);
       doc.text(amount, xPos, yPos + 10);
       doc.setTextColor(30, 30, 30);
       doc.setFont(undefined, 'normal');
-      
+
       yPos += rowHeight;
-      
+
       // Separator
       doc.setDrawColor(230, 230, 230);
       doc.line(margin, yPos, pageWidth - margin, yPos);
     });
-    
+
     // Footer
     const footerY = pageHeight - 12;
     doc.setFontSize(9);
     doc.setTextColor(150, 150, 150);
     doc.text('© Top Sales System - Confidential Report', pageWidth / 2, footerY, { align: 'center' });
-    
+
     doc.save(`Top_Sales_Report_${new Date().toISOString().split('T')[0]}.pdf`);
     message.success('PDF downloaded successfully!');
   };
@@ -198,7 +201,7 @@ function Top_Sales() {
     try {
       setLoading(true);
       message.info('Preparing document for printing...');
-      
+
       const printContent = printRef.current;
       if (!printContent) {
         message.error('Print content not found');
@@ -211,7 +214,7 @@ function Top_Sales() {
       printWindow.document.write(`
         <html>
           <head>
-            <title>Top Sales Report - ${new Date().toLocaleDateString()}</title>
+            <title>${t('report.top_sales_pdf_title')} - ${new Date().toLocaleDateString()}</title>
             <style>
               body {
                 font-family: Arial, sans-serif;
@@ -303,30 +306,30 @@ function Top_Sales() {
           </head>
           <body>
             <div class="print-header">
-              <h1>🏆 TOP SALES REPORT</h1>
-              <p>Generated: ${new Date().toLocaleString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric', 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}</p>
+              <h1>🏆 ${t('report.top_sales_pdf_title')}</h1>
+              <p>${t('report.generated')}: ${new Date().toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}</p>
             </div>
 
             <div class="stats-container">
               <div class="stat-item">
-                <div class="stat-label">Total Sales</div>
-                <div class="stat-value">$${totalSales.toLocaleString(undefined, { 
-                  minimumFractionDigits: 2, 
-                  maximumFractionDigits: 2 
-                })}</div>
+                <div class="stat-label">${t('report.total_amount')}</div>
+                <div class="stat-value">$${totalSales.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })}</div>
               </div>
               <div class="stat-item">
-                <div class="stat-label">Top Product</div>
+                <div class="stat-label">${t('report.top_product')}</div>
                 <div class="stat-value">${topProduct ? topProduct.product_name : 'N/A'}</div>
               </div>
               <div class="stat-item">
-                <div class="stat-label">Total Products</div>
+                <div class="stat-label">${t('report.total_products')}</div>
                 <div class="stat-value">${list.length}</div>
               </div>
             </div>
@@ -334,29 +337,29 @@ function Top_Sales() {
             <table>
               <thead>
                 <tr>
-                  <th style="width: 60px;">Rank</th>
-                  <th>Product Name</th>
-                  <th style="width: 180px;">Category</th>
-                  <th style="width: 150px;">Sales Amount</th>
+                  <th style="width: 60px;">${t('report.rank')}</th>
+                  <th>${t('report.product_name')}</th>
+                  <th style="width: 180px;">${t('report.category')}</th>
+                  <th style="width: 150px;">${t('report.sales_amount')}</th>
                 </tr>
               </thead>
               <tbody>
                 ${list.map((item, index) => {
-                  const trophies = ['🥇', '🥈', '🥉'];
-                  const rankDisplay = index < 3 ? trophies[index] : (index + 1);
-                  const cleanCategory = (item.category_name || 'N/A').replace(/[^\w\s]/gi, '').trim();
-                  return `
+        const trophies = ['🥇', '🥈', '🥉'];
+        const rankDisplay = index < 3 ? trophies[index] : (index + 1);
+        const cleanCategory = (item.category_name || 'N/A').replace(/[^\w\s]/gi, '').trim();
+        return `
                     <tr>
                       <td class="rank-cell">${rankDisplay}</td>
                       <td><strong>${item.product_name}</strong></td>
                       <td>${cleanCategory}</td>
                       <td class="amount-cell">$${Number(item.total_sale_amount).toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                      })}</td>
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        })}</td>
                     </tr>
                   `;
-                }).join('')}
+      }).join('')}
               </tbody>
             </table>
 
@@ -368,7 +371,7 @@ function Top_Sales() {
       `);
 
       printWindow.document.close();
-      
+
       // Wait for content to load
       setTimeout(() => {
         printWindow.focus();
@@ -388,15 +391,15 @@ function Top_Sales() {
   const columns = [
     {
       key: "rank",
-      title: "Rank",
+      title: t('report.rank'),
       render: (item, data, index) => (
         <div style={{ textAlign: 'center' }}>
           {index < 3 ? (
-            <TrophyOutlined 
-              style={{ 
-                fontSize: '24px', 
-                color: index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : '#cd7f32' 
-              }} 
+            <TrophyOutlined
+              style={{
+                fontSize: '24px',
+                color: index === 0 ? '#ffd700' : index === 1 ? '#c0c0c0' : '#cd7f32'
+              }}
             />
           ) : (
             <span style={{ fontWeight: 'bold', fontSize: '18px', color: '#8c8c8c' }}>
@@ -410,13 +413,13 @@ function Top_Sales() {
     },
     {
       key: "image",
-      title: "Image",
+      title: t('report.product_image'),
       dataIndex: "product_image",
       render: (value) =>
         value ? (
           <Image
             src={config?.image_path + value}
-            fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Crect width='70' height='70' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3ENo Image%3C/text%3E%3C/svg%3E"
+            fallback="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70'%3E%3Crect width='70' height='70' fill='%23f5f5f5'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dy='.3em' fill='%23999' font-size='12'%3E${t('report.no_image')}%3C/text%3E%3C/svg%3E"
             style={{
               width: 70,
               height: 70,
@@ -451,7 +454,7 @@ function Top_Sales() {
     },
     {
       key: "name",
-      title: "Product Information",
+      title: t('report.product_info'),
       dataIndex: "product_name",
       render: (text, record) => {
         // Clean category name - remove special characters
@@ -462,7 +465,7 @@ function Top_Sales() {
               {text}
             </div>
             <Tag color="blue" style={{ fontSize: '13px', fontWeight: '500' }}>
-              {cleanCategory || 'Uncategorized'}
+              {cleanCategory || t('report.uncategorized')}
             </Tag>
           </div>
         );
@@ -470,23 +473,23 @@ function Top_Sales() {
     },
     {
       key: "total_sale_amount",
-      title: "Sales Performance",
+      title: t('report.sales_performance'),
       dataIndex: "total_sale_amount",
       render: (value, record, index) => (
         <div style={{ textAlign: 'center' }}>
-          <div style={{ 
-            fontSize: '20px', 
-            fontWeight: 'bold', 
+          <div style={{
+            fontSize: '20px',
+            fontWeight: 'bold',
             color: '#52c41a',
             marginBottom: '4px'
           }}>
-            ${Number(value).toLocaleString(undefined, { 
-              minimumFractionDigits: 2, 
-              maximumFractionDigits: 2 
+            ${Number(value).toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
             })}
           </div>
-          <div style={{ 
-            fontSize: '12px', 
+          <div style={{
+            fontSize: '12px',
             color: '#8c8c8c',
             display: 'flex',
             alignItems: 'center',
@@ -494,7 +497,7 @@ function Top_Sales() {
             gap: '4px'
           }}>
             <MdTrendingUp style={{ color: '#52c41a' }} />
-            Top {index + 1} Product
+            {t('report.top_rank_product', { rank: index + 1 })}
           </div>
         </div>
       ),
@@ -510,16 +513,16 @@ function Top_Sales() {
         {/* Statistics Cards */}
         <Row gutter={[16, 16]} style={{ marginBottom: '24px' }}>
           <Col xs={24} sm={8}>
-            <Card 
+            <Card
               bordered={false}
-              style={{ 
+              style={{
                 borderRadius: '16px',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)'
               }}
             >
               <Statistic
-                title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>Total Sales</span>}
+                title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>{t('report.total_amount')}</span>}
                 value={totalSales}
                 precision={2}
                 prefix={<DollarOutlined style={{ color: '#fff' }} />}
@@ -528,16 +531,16 @@ function Top_Sales() {
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card 
+            <Card
               bordered={false}
-              style={{ 
+              style={{
                 borderRadius: '16px',
                 background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                 boxShadow: '0 8px 24px rgba(240, 147, 251, 0.3)'
               }}
             >
               <Statistic
-                title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>Top Product</span>}
+                title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>{t('report.top_product')}</span>}
                 value={topProduct ? topProduct.product_name : 'N/A'}
                 valueStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '18px' }}
                 prefix={<TrophyOutlined style={{ color: '#ffd700' }} />}
@@ -545,16 +548,16 @@ function Top_Sales() {
             </Card>
           </Col>
           <Col xs={24} sm={8}>
-            <Card 
+            <Card
               bordered={false}
-              style={{ 
+              style={{
                 borderRadius: '16px',
                 background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                 boxShadow: '0 8px 24px rgba(79, 172, 254, 0.3)'
               }}
             >
               <Statistic
-                title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>Total Products</span>}
+                title={<span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>{t('report.total_products')}</span>}
                 value={list.length}
                 valueStyle={{ color: '#fff', fontWeight: 'bold', fontSize: '28px' }}
                 prefix={<ShoppingOutlined style={{ color: '#fff' }} />}
@@ -564,16 +567,16 @@ function Top_Sales() {
         </Row>
 
         {/* Main Table Card */}
-        <Card 
+        <Card
           bordered={false}
-          style={{ 
+          style={{
             borderRadius: '20px',
             boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
             overflow: 'hidden'
           }}
         >
           {/* Header */}
-          <div style={{ 
+          <div style={{
             padding: '24px 24px 16px',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
             marginBottom: '24px',
@@ -581,19 +584,19 @@ function Top_Sales() {
           }}>
             <Row justify="space-between" align="middle">
               <Col>
-                <Title 
-                  level={2} 
-                  style={{ 
-                    margin: 0, 
+                <Title
+                  level={2}
+                  style={{
+                    margin: 0,
                     color: '#fff',
                     fontSize: '28px',
                     fontWeight: 'bold'
                   }}
                 >
-                  🏆 Top Sales Performance
+                  🏆 {t('report.top_sales_report')}
                 </Title>
                 <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: '14px' }}>
-                  Best selling products overview
+                  {t('report.top_sales_subtitle')}
                 </Text>
               </Col>
               <Col>
@@ -602,7 +605,7 @@ function Top_Sales() {
                     icon={<MdFileDownload size={18} />}
                     onClick={handleDownloadPDF}
                     size="large"
-                    style={{ 
+                    style={{
                       backgroundColor: '#722ed1',
                       borderColor: '#722ed1',
                       color: '#fff',
@@ -614,13 +617,13 @@ function Top_Sales() {
                       gap: '8px'
                     }}
                   >
-                    Download PDF
+                    {t('report.download_pdf')}
                   </Button>
                   <Button
                     icon={<MdPrint size={18} />}
                     onClick={handlePrint}
                     size="large"
-                    style={{ 
+                    style={{
                       backgroundColor: '#1890ff',
                       borderColor: '#1890ff',
                       color: '#fff',
@@ -632,14 +635,14 @@ function Top_Sales() {
                       gap: '8px'
                     }}
                   >
-                    Print
+                    {t('report.print')}
                   </Button>
                   <Button
                     icon={<MdRefresh size={18} />}
                     onClick={refreshList}
                     size="large"
                     loading={loading}
-                    style={{ 
+                    style={{
                       backgroundColor: '#52c41a',
                       borderColor: '#52c41a',
                       color: '#fff',
@@ -651,7 +654,7 @@ function Top_Sales() {
                       gap: '8px'
                     }}
                   >
-                    Refresh
+                    {t('report.refresh')}
                   </Button>
                 </Space>
               </Col>
@@ -669,12 +672,12 @@ function Top_Sales() {
               pageSizeOptions: ['5', '10', '20', '50'],
               showTotal: (total, range) => (
                 <span style={{ fontWeight: '500', color: '#595959' }}>
-                  Showing {range[0]}-{range[1]} of {total} products
+                  {t('report.showing_range', { start: range[0], end: range[1], total: total })}
                 </span>
               ),
               style: { marginTop: '16px' }
             }}
-            rowClassName={(record, index) => 
+            rowClassName={(record, index) =>
               index % 2 === 0 ? 'table-row-light' : 'table-row-dark'
             }
           />

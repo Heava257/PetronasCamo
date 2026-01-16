@@ -40,7 +40,6 @@ function EmployeePage() {
         setLoading(false);
         if (res) {
             setList(res.list);
-            console.log("Updated List:", res.list);
         }
     };
 

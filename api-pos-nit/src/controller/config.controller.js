@@ -1,34 +1,82 @@
 const { db, isArray, isEmpty, logError } = require("../util/helper");
-
 exports.getList = async (req, res) => {
   try {
-    // const userId = req.user.id;
     const user_id = req.auth.id;
 
-// Replace the existing category query in your getList function with this:
+    const [currentUser] = await db.query(`
+      SELECT 
+        u.id,
+        u.branch_name,
+        u.group_id,
+        u.role_id,
+        r.code AS role_code,
+        r.name AS role_name
+      FROM user u
+      INNER JOIN role r ON u.role_id = r.id
+      WHERE u.id = :user_id
+    `, { user_id });
 
-const [category] = await db.query(`
-  SELECT 
-    c.id AS value, 
-    c.name AS label, 
-    c.description,
-    c.actual_price  
-  FROM category c
-  INNER JOIN user u ON c.user_id = u.id
-  WHERE u.group_id = (SELECT group_id FROM user WHERE id = :user_id)
-  ORDER BY c.name ASC
-`, { user_id });
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found"
+      });
+    }
 
-// បណ្តោះអាសន្ន
-const groupOptions = [
-  { label: "Admin Group", value: 1 },
-  { label: "User Group", value: 2 },
-  { label: "Manager Group", value: 3 }
-];
+    const userRoleId = currentUser[0].role_id;
+    const userBranch = currentUser[0].branch_name;
+
+    // ✅✅✅ BUILD BRANCH FILTER ✅✅✅
+    let branchFilter = '';
+    if (userRoleId !== 29) {
+      if (!userBranch) {
+        return res.status(403).json({
+          error: true,
+          message: "Your account is not assigned to a branch"
+        });
+      }
+      branchFilter = `AND creator.branch_name = '${userBranch}'`;
+    }
+
+    // ✅ Category with group filter
+    const [category] = await db.query(`
+      SELECT 
+        c.id AS value, 
+        c.name AS label, 
+        c.description,
+        c.actual_price  
+      FROM category c
+      INNER JOIN user u ON c.user_id = u.id
+      WHERE u.group_id = (SELECT group_id FROM user WHERE id = :user_id)
+      ORDER BY c.name ASC
+    `, { user_id });
+
+    // ✅ Expense Type with branch filter
+    let expenseTypeQuery;
+    if (userRoleId === 29) {
+      // Super Admin - see all expense types
+      expenseTypeQuery = `
+        SELECT id AS value, name AS label 
+        FROM expense_type 
+        ORDER BY name ASC
+      `;
+    } else {
+      // Regular users - see only expense types from their branch
+      expenseTypeQuery = `
+        SELECT DISTINCT et.id AS value, et.name AS label 
+        FROM expense_type et
+        INNER JOIN user creator ON et.user_id = creator.id
+        WHERE creator.branch_name = '${userBranch}'
+        ORDER BY et.name ASC
+      `;
+    }
+
+    const [expense_type] = await db.query(expenseTypeQuery);
 
     const [expense] = await db.query(
-      "select id as value, name as label from expense"
+      "SELECT id as value, name as label FROM expense"
     );
+
     const [user] = await db.query(
       `SELECT 
           id AS value, 
@@ -36,49 +84,31 @@ const groupOptions = [
        FROM user`
     );
 
-    const userId = req.auth.id; // Changed from req.user.id
-
     const [customers_with_due] = await db.query(`
-  SELECT 
-    c.id AS value,
-    c.name AS label,
-    SUM(o.total_amount - o.paid_amount) AS total_due,
-    o.user_id
-  FROM \`order\` o
-  JOIN customer c ON o.customer_id = c.id
-  WHERE (o.total_amount - o.paid_amount) > 0
-    AND o.user_id = ?
-  GROUP BY c.id, c.name, o.user_id
-  ORDER BY c.name ASC
-`, [userId]);
+      SELECT 
+        c.id AS value,
+        c.name AS label,
+        SUM(o.total_amount - o.paid_amount) AS total_due,
+        o.user_id
+      FROM \`order\` o
+      JOIN customer c ON o.customer_id = c.id
+      WHERE (o.total_amount - o.paid_amount) > 0
+        AND o.user_id = ?
+      GROUP BY c.id, c.name, o.user_id
+      ORDER BY c.name ASC
+    `, [user_id]);
 
+    const [role] = await db.query("SELECT id, name, code FROM role");
+    const [supplier] = await db.query("SELECT id, name, code FROM supplier");
 
-
-    const [role] = await db.query("select id,name,code from role");
-    const [supplier] = await db.query("select id,name,code from supplier");
-    // const [expense] = await db.query("select id, name from expense");
     const purchase_status = [
-      {
-        lebel: "Pending",
-        value: "Pending",
-      },
-      {
-        lebel: "Approved",
-        value: "Approved",
-      },
-      {
-        lebel: "Shiped",
-        value: "Shiped",
-      },
-      {
-        lebel: "Received",
-        value: "Received",
-      },
-      {
-        lebel: "Issues",
-        value: "Issues",
-      },
+      { label: "Pending", value: "Pending" },
+      { label: "Approved", value: "Approved" },
+      { label: "Shiped", value: "Shiped" },
+      { label: "Received", value: "Received" },
+      { label: "Issues", value: "Issues" },
     ];
+
     const company_name = [
       { label: "Petronas Cambodia", value: "petronas-cambodia", country: "Cambodia" },
       { label: "KAMPUCHEA TELA LIMITED", value: "kampuchea-tela-ltd", country: "Cambodia" },
@@ -97,17 +127,11 @@ const groupOptions = [
       { label: "PETRONAS CAMBODIA CO., LTD", value: "petronas-cambodia-ltd", country: "Cambodia" }
     ];
 
-    // const [expense_type] = await db.query("SELECT * FROM expense_type");
-
-    const [expense_type] = await db.query(
-      "select id as value, name as label from expense_type"
-    );
-
     const brand = [
-
       { label: "Petronas Cambodia", value: "petronas-cambodia", country: "Cambodia" },
       { label: "Petronas Malaysia", value: "petronas-malaysia", country: "Malaysia" }
     ];
+
     const branch_name = [
       { label: "ទីស្នាក់ការកណ្តាល", value: "ទីស្នាក់ការកណ្តាល" },
       { label: "Phnom Penh - ភ្នំពេញ", value: "Phnom Penh" },
@@ -131,7 +155,6 @@ const groupOptions = [
       { label: "Tboung Khmum - ត្បូងខ្មុំ", value: "Tboung Khmum" },
       { label: "Pailin - ប៉ៃលិន", value: "Pailin" },
       { label: "Banteay Meanchey - បន្ទាយមានជ័យ", value: "Banteay Meanchey" },
-      // Removed duplicate Koh Kong entry
     ];
 
     const branch_select_loc = [
@@ -168,8 +191,26 @@ const groupOptions = [
       { label: "T", value: "T" },
     ];
 
-    const product = [
-      { label: "ប្រេងឥន្ធនៈ", value: "oil" },
+    // ✅ Products with group filter
+    const [product] = await db.query(`
+      SELECT 
+        p.id AS value, 
+        p.name AS label, 
+        p.category_id,
+        p.unit_price,
+        p.actual_price,
+        c.name AS category_name
+      FROM product p
+      LEFT JOIN category c ON p.category_id = c.id
+      INNER JOIN user u ON p.user_id = u.id
+      WHERE u.group_id = (SELECT group_id FROM user WHERE id = :user_id)
+      ORDER BY p.name ASC
+    `, { user_id });
+
+    const groupOptions = [
+      { label: "Admin Group", value: 1 },
+      { label: "User Group", value: 2 },
+      { label: "Manager Group", value: 3 }
     ];
 
     res.json({
@@ -178,9 +219,8 @@ const groupOptions = [
       supplier,
       purchase_status,
       brand,
-      expense_type,
-      // customer,
       expense,
+      expense_type,  // ✅ Include expense_type
       unit,
       company_name,
       user,
@@ -189,10 +229,14 @@ const groupOptions = [
       customers_with_due,
       branch_select_loc,
       groupOptions
-      // expanse_id
-      // customer_name
     });
   } catch (error) {
+    console.error('❌ Config error:', error);
     logError("config.getList", error, res);
+
+    return res.status(500).json({
+      error: true,
+      message: "Failed to load configuration"
+    });
   }
-}; 
+};

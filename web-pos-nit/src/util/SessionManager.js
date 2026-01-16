@@ -26,7 +26,6 @@ class SessionManager {
       return;
     }
 
-    console.log('🔐 Initializing session...');
     this.sessionToken = sessionToken;
     this.isActive = true;
     this.missedHeartbeats = 0;
@@ -40,7 +39,6 @@ class SessionManager {
     // Setup event listeners
     this.setupEventListeners();
     
-    console.log('✅ Session initialized successfully');
   }
 
   /**
@@ -58,7 +56,6 @@ class SessionManager {
       document.addEventListener(event, this.handleUserActivity.bind(this), { passive: true });
     });
 
-    console.log('👂 Event listeners setup complete');
   }
 
   /**
@@ -66,7 +63,6 @@ class SessionManager {
    */
   handleUserActivity() {
     if (!this.heartbeatInterval && this.isActive) {
-      console.log('🔄 User activity detected, restarting heartbeat...');
       this.startHeartbeat();
     }
   }
@@ -80,7 +76,6 @@ class SessionManager {
       clearInterval(this.heartbeatInterval);
     }
 
-    console.log('💓 Starting heartbeat (every 2 minutes)...');
     
     // Send heartbeat immediately
     this.sendHeartbeat();
@@ -117,7 +112,6 @@ class SessionManager {
       if (response.ok) {
         const data = await response.json();
         this.missedHeartbeats = 0; // Reset counter on success
-        console.log('💓 Heartbeat sent:', new Date().toLocaleTimeString(), data);
       } else {
         this.missedHeartbeats++;
         console.error('❌ Heartbeat failed:', response.status, `(${this.missedHeartbeats}/${this.maxMissedHeartbeats})`);
@@ -147,7 +141,6 @@ class SessionManager {
    */
   stopHeartbeat() {
     if (this.heartbeatInterval) {
-      console.log('🛑 Stopping heartbeat...');
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
     }
@@ -157,7 +150,6 @@ class SessionManager {
    * Handle tab/window close event
    */
   handleBeforeUnload(e) {
-    console.log('👋 Window closing, logging out...');
     
     // Use sendBeacon for reliable logout during page unload
     const accessToken = localStorage.getItem('access_token');
@@ -185,15 +177,12 @@ class SessionManager {
    */
   handleVisibilityChange() {
     if (document.hidden) {
-      console.log('📴 Tab hidden - heartbeat continues in background');
       // Keep heartbeat running even when tab is hidden
       // This ensures user stays "online" while browsing other tabs
     } else {
-      console.log('📱 Tab visible again - checking heartbeat status');
       
       // When tab becomes visible, ensure heartbeat is running
       if (!this.heartbeatInterval && this.isActive) {
-        console.log('🔄 Restarting heartbeat after tab focus');
         this.startHeartbeat();
       }
     }
@@ -203,7 +192,6 @@ class SessionManager {
    * Logout user and cleanup session
    */
   async logout() {
-    console.log('🚪 Logging out...');
     
     try {
       const accessToken = localStorage.getItem('access_token');
@@ -237,7 +225,6 @@ class SessionManager {
    * Cleanup session data and stop all activities
    */
   cleanup() {
-    console.log('🧹 Cleaning up session...');
     
     // Stop heartbeat
     this.stopHeartbeat();
@@ -262,14 +249,12 @@ class SessionManager {
     window.removeEventListener('beforeunload', this.handleBeforeUnload);
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     
-    console.log('✅ Session cleanup complete');
   }
 
   /**
    * Destroy session manager completely
    */
   destroy() {
-    console.log('💥 Destroying session manager...');
     this.cleanup();
   }
 
@@ -301,7 +286,6 @@ class SessionManager {
    * Manually trigger a heartbeat (for testing)
    */
   forceHeartbeat() {
-    console.log('🔧 Forcing heartbeat...');
     this.sendHeartbeat();
   }
 }

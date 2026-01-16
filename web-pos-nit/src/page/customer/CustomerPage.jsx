@@ -13,13 +13,15 @@ import {
   Tag,
   DatePicker,
   Checkbox,
-  Tooltip
+  Tooltip,
 } from "antd";
 import { CiSearch } from "react-icons/ci";
-import { MdOutlineCreateNewFolder, MdSecurity } from "react-icons/md";
+import { MdOutlineCreateNewFolder, MdSecurity, MdDelete, MdEdit, MdFullscreen, MdFullscreenExit, MdLocationOn } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
-import { MdDelete, MdEdit } from "react-icons/md";
 import { LuUserRoundSearch } from "react-icons/lu";
+import { FiPhone, FiMail } from "react-icons/fi";
+import { AiOutlineZoomIn, AiOutlineZoomOut } from "react-icons/ai";
+import { TbZoomReset } from "react-icons/tb";
 import { formatDateClient, isPermission, request } from "../../util/helper";
 import MainPage from "../../component/layout/MainPage";
 import { getProfile } from "../../store/profile.store";
@@ -27,10 +29,11 @@ import { configStore } from "../../store/configStore";
 import { useTranslation } from "../../locales/TranslationContext";
 import dayjs from "dayjs";
 import "./customer.css"
+import CustomerLocationsModal from "../delivery/CustomerLocationsModal";
 
 function CustomerPage() {
   const { config } = configStore();
-  const { t } = useTranslation(); // Add this
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [assignForm] = Form.useForm();
   const [list, setList] = useState([]);
@@ -38,6 +41,15 @@ function CustomerPage() {
   const [permissionsLoaded, setPermissionsLoaded] = useState(false);
   const [profile, setProfile] = useState(null);
   const [deletePermissionModalVisible, setDeletePermissionModalVisible] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [tableContainerRef, setTableContainerRef] = useState(null);
+   const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem("customer_font_size");
+    return saved ? parseInt(saved) : 100;
+  });
 
   const [filteredList, setFilteredList] = useState([]);
   const [blockedUserIds, setBlockedUserIds] = useState(() => {
@@ -60,6 +72,14 @@ function CustomerPage() {
     visibleAssignModal: false,
     customerTypeFilter: null,
   });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const profileData = getProfile();
@@ -131,15 +151,70 @@ function CustomerPage() {
       const res = await request(`customer/my-group`, "get", param);
       setLoading(false);
       if (res?.success) {
-        setList(res.list || []);
+        // Sort by ID ascending (smallest to largest)
+        const sortedList = (res.list || []).sort((a, b) => a.id - b.id);
+        setList(sortedList);
       } else {
-        message.error(res?.message || t("បរាជ័យក្នុងការទាញយកបញ្ជីអតិថិជន"));
+        message.error(res?.message || t("Failed to fetch customer list"));
       }
     } catch (error) {
       setLoading(false);
       console.error("Error fetching customer list:", error);
-      message.error(t("បរាជ័យក្នុងការទាញយកបញ្ជីអតិថិជន"));
+      message.error(t("Failed to fetch customer list"));
     }
+  };
+
+  const toggleFullscreen = () => {
+    if (!tableContainerRef) return;
+    
+    if (!document.fullscreenElement) {
+      tableContainerRef.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+      }).catch((err) => {
+        console.error('Fullscreen error:', err);
+        message.error(t("Cannot enter fullscreen"));
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+        });
+      }
+    }
+  };
+
+  // Handle fullscreen change events
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Handle font size changes
+  useEffect(() => {
+    document.documentElement.style.setProperty('--customer-font-scale', `${fontSize}%`);
+    localStorage.setItem("customer_font_size", fontSize.toString());
+  }, [fontSize]);
+
+  const increaseFontSize = () => {
+    if (fontSize < 150) {
+      setFontSize(prev => Math.min(prev + 10, 150));
+    }
+  };
+
+  const decreaseFontSize = () => {
+    if (fontSize > 70) {
+      setFontSize(prev => Math.max(prev - 10, 70));
+    }
+  };
+
+  const resetFontSize = () => {
+    setFontSize(100);
   };
 
   const onClickAddBtn = () => {
@@ -186,8 +261,8 @@ function CustomerPage() {
       return;
     }
     Modal.confirm({
-      title: t("លុបអតិថិជន"),
-      content: t("តើអ្នកពិតជាចង់លុបអតិថិជននេះមែនទេ?"),
+      title: t("Delete Customer"),
+      content: t("Are you sure you want to delete this customer?"),
       onOk: async () => {
         try {
           const res = await request(`customer/${record.id}`, "delete");
@@ -195,7 +270,7 @@ function CustomerPage() {
             message.success(res.message);
             getList();
           } else {
-            message.error(res.message || t("អតិថិជននេះកំពុងប្រើប្រាស់និងមិនអាចលុបបានទេ!"));
+            message.error(res.message || t("Customer is in use and cannot be deleted!"));
           }
         } catch (error) {
           console.error("Delete Error:", error);
@@ -226,11 +301,11 @@ function CustomerPage() {
       } else {
         const res = await request("customer", "post", values);
         if (res && res.success && !res.error) {
-          message.success(t("អតិថិជនត្រូវបានបង្កើតដោយជោគជ័យ!"));
+          message.success(t("Customer created successfully!"));
           setState((prev) => ({ ...prev, visibleModal: false }));
           getList();
         } else {
-          message.error(res?.message || t("លេខទូរស័ព្ទនេះមានរួចហើយ។ សូមប្រើលេខផ្សេង។"));
+          message.error(res?.message || t("Phone number already exists"));
         }
       }
     } catch (error) {
@@ -267,7 +342,7 @@ function CustomerPage() {
       });
 
       if (res && res.success) {
-        message.success(t("អតិថិជនត្រូវបានកំណត់ដោយជោគជ័យ!"));
+        message.success(t("Customer assigned successfully!"));
         setState((prev) => ({ ...prev, visibleAssignModal: false }));
         assignForm.resetFields();
         getList();
@@ -289,28 +364,236 @@ function CustomerPage() {
     isPermission("customer.create") &&
     !blockedPermissions.create.includes(profile?.id);
 
-  // Table columns definition
+  // Function to detect phone carrier and return appropriate icon/color
+  const getPhoneCarrierInfo = (phoneNumber) => {
+    if (!phoneNumber) return { icon: null, color: '#666', carrier: '', bgColor: '#F5F5F5' };
+    
+    const phone = phoneNumber.toString().replace(/\s+/g, '');
+    
+    // Smart Axiata
+    if (phone.match(/^(010|015|016|069|070|081|085|086|087|093|096|098)/)) {
+      return { 
+        logo: 'https://goldzonemedia.com.kh/wp-content/uploads/2023/05/346613115_4921066671351995_2477302429196727443_n-900x550.jpg',
+        color: '#00A651', 
+        carrier: 'Smart',
+        bgColor: '#E6F7EE'
+      };
+    }
+    // Cellcard
+    if (phone.match(/^(011|012|014|017|061|076|077|078|079|089|092)/)) {
+      return { 
+        logo: 'https://www.khmertimeskh.com/wp-content/uploads/2021/06/cellcard-002.jpg',
+        color: '#0066CC', 
+        carrier: 'Cellcard',
+        bgColor: '#E6F2FF'
+      };
+    }
+    // Metfone
+    if (phone.match(/^(031|060|066|067|068|071|088|090|097)/)) {
+      return { 
+        logo: 'https://b2b-cambodia.com/storage/uploads/articles/large/eCD1qa1PSRIqYhK5wLbXbRMDOVnpzNDlaN5QUgdP.png',
+        color: '#E30613', 
+        carrier: 'Metfone',
+        bgColor: '#FFE6E8'
+      };
+    }
+    // Seatel
+    if (phone.match(/^(018|084|095)/)) {
+      return { 
+        logo: 'https://www.khmertimeskh.com/wp-content/uploads/2018/09/41474040_1968319579910358_3351402894199881728_n.jpg',
+        color: '#FF6B00', 
+        carrier: 'Seatel',
+        bgColor: '#FFF0E6'
+      };
+    }
+    // CooTel
+    if (phone.match(/^(038|099)/)) {
+      return { 
+        logo: 'https://kbcambodia.com/wp-content/uploads/2016/12/CooTel-Cambodia-1.png',
+        color: '#9933CC', 
+        carrier: 'CooTel',
+        bgColor: '#F2E6F7'
+      };
+    }
+    
+    return { 
+      logo: null,
+      color: '#666', 
+      carrier: 'Other',
+      bgColor: '#F5F5F5'
+    };
+  };
+
+  // Calculate gender statistics
+  const getGenderStats = () => {
+    const total = filteredList.length;
+    const male = filteredList.filter(c => c.gender === 'Male').length;
+    const female = filteredList.filter(c => c.gender === 'Female').length;
+    const other = total - male - female;
+    
+    return { total, male, female, other };
+  };
+
+  // Mobile Card View Component
+  const MobileCustomerCard = ({ record, index }) => (
+    <div className="bg-white rounded-lg shadow-md p-4 mb-4 border border-gray-200">
+      <div className="flex justify-between items-start mb-3">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs font-semibold text-gray-500">#{record.id}</span>
+            <Tag color={record.type === "special" ? "blue" : "green"} className="text-xs">
+              {record.type === "special" ? t("special") : t("regular")}
+            </Tag>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+            {record.name || t("គ្មាន")}
+          </h3>
+          <p className="text-sm text-gray-600">
+            {record.gender || t("គ្មាន")}
+          </p>
+        </div>
+        <Space>
+          {permissionsLoaded && isPermission("customer.update") && (
+            <Button
+              type="primary"
+              icon={<MdEdit />}
+              onClick={() => onClickEdit(record)}
+              size="small"
+              className="bg-blue-500 hover:bg-blue-600"
+            />
+          )}
+          {permissionsLoaded &&
+            isPermission("customer.update") &&
+            !blockedPermissions.delete.includes(profile?.id) && (
+              <Button
+                type="primary"
+                danger
+                icon={<MdDelete />}
+                onClick={() => onClickDelete(record)}
+                size="small"
+              />
+            )}
+        </Space>
+      </div>
+      
+      <div className="space-y-2 border-t border-gray-200 pt-3">
+        <div className="flex items-start">
+          <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("email")}:</span>
+          {record.email ? (
+            <a 
+              href={`mailto:${record.email}`}
+              className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <FiMail className="text-xs flex-shrink-0" />
+              <span className="break-all">{record.email}</span>
+            </a>
+          ) : (
+            <span className="text-sm text-gray-900">-</span>
+          )}
+        </div>
+        <div className="flex items-start">
+          <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("ទូរស័ព្ទ")}:</span>
+          {record.tel ? (
+            <a 
+              href={`tel:${record.tel}`}
+              className="text-sm hover:opacity-80 flex items-center gap-1 transition-all"
+              onClick={(e) => e.stopPropagation()}
+              style={{ 
+                backgroundColor: getPhoneCarrierInfo(record.tel).bgColor,
+                padding: '4px 8px',
+                borderRadius: '6px',
+                display: 'inline-flex',
+                border: `1px solid ${getPhoneCarrierInfo(record.tel).color}30`
+              }}
+            >
+              {getPhoneCarrierInfo(record.tel).logo ? (
+                <img 
+                  src={getPhoneCarrierInfo(record.tel).logo} 
+                  alt={getPhoneCarrierInfo(record.tel).carrier}
+                  style={{ width: '16px', height: '16px', objectFit: 'contain' }}
+                />
+              ) : (
+                <span style={{ fontSize: '16px' }}>📞</span>
+              )}
+              <span style={{ color: getPhoneCarrierInfo(record.tel).color, fontWeight: '600' }}>
+                {record.tel}
+              </span>
+            </a>
+          ) : (
+            <span className="text-sm text-gray-900">-</span>
+          )}
+        </div>
+        <div className="flex items-start">
+          <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("address")}:</span>
+          <span className="text-sm text-gray-900 line-clamp-2">{record.address || t("no")}</span>
+        </div>
+        {record.id_card_number && (
+          <div className="flex items-start">
+            <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("id_card_number")}:</span>
+            <span className="text-sm text-gray-900">{record.id_card_number}</span>
+          </div>
+        )}
+        {record.spouse_name && (
+          <div className="flex items-start">
+            <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("spouse_name")}:</span>
+            <span className="text-sm text-gray-900">{record.spouse_name}</span>
+          </div>
+        )}
+        {record.guarantor_name && (
+          <div className="flex items-start">
+            <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("ឈ្មោះអ្នកធានា")}:</span>
+            <span className="text-sm text-gray-900">{record.guarantor_name}</span>
+          </div>
+        )}
+        <div className="flex items-start">
+          <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("create_by")}:</span>
+          <div className="flex-1">
+            <div className="text-sm text-gray-900">{record.create_by || t("គ្មាន")}</div>
+            <div className="text-xs text-gray-500">
+              {record.create_at ? dayjs(record.create_at).format("DD-MM-YYYY h:mm A") : "-"}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const columns = [
     {
-      key: "no",
+      key: "index",
       title: (
         <div>
-          <div className="khmer-text">{t("ល.រ")}</div>
+          <div className="khmer-text">{t("NO")}</div>
         </div>
       ),
+      width: 70,
+      fixed: 'left',
       render: (_, __, index) => index + 1,
-      width: 60,
+    },
+    {
+      key: "id",
+      title: (
+        <div>
+          <div className="khmer-text">{t("customer_id")}</div>
+        </div>
+      ),
+      dataIndex: "id",
+      width: 80,
+      fixed: 'left',
+      hidden:true
+      
     },
     {
       key: "name",
       title: (
         <div>
-          <div className="customer-table-header-main">{t("ឈ្មោះ")}</div>
+          <div className="customer-table-header-main">{t("name")}</div>
         </div>
       ),
       dataIndex: "name",
-      sorter: (a, b) => a.name.localeCompare(b.name),
-      width: 280,
+      width: 250,
+      fixed: 'left',
       render: (text, record) => (
         <Tooltip
           title={
@@ -319,7 +602,7 @@ function CustomerPage() {
                 {text || t("គ្មាន")}
               </div>
               <div className="customer-tooltip-details">
-                {record.gender || t("គ្មាន")} • {record.type === "special" ? t("អតិថិជនពិសេស") : t("អតិថិជនធម្មតា")}
+                {record.gender || t("គ្មាន")} • {record.type === "special" ? t("Special Customer") : t("Regular Customer")}
               </div>
             </div>
           }
@@ -347,14 +630,80 @@ function CustomerPage() {
       ),
     },
     {
+      key: "email",
+      title: (
+        <div>
+          <div className="customer-table-header-main">{t("email")}</div>
+        </div>
+      ),
+      dataIndex: "email",
+      width: 220,
+      render: (email) => email ? (
+        <a 
+          href={`mailto:${email}`}
+          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FiMail className="text-sm flex-shrink-0" />
+          <span className="truncate">{email}</span>
+        </a>
+      ) : "-",
+    },
+    {
       key: "tel",
       title: (
         <div>
-          <div className="customer-table-header-main">{t("ទូរស័ព្ទ")}</div>
+          <div className="customer-table-header-main">{t("telephone")}</div>
         </div>
       ),
       dataIndex: "tel",
-      width: 140,
+      width: 180,
+      render: (tel) => {
+        const carrierInfo = getPhoneCarrierInfo(tel);
+        return tel ? (
+          <a 
+            href={`tel:${tel}`}
+            className="flex items-center gap-2 transition-all hover:opacity-80"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: carrierInfo.bgColor,
+              padding: '6px 10px',
+              borderRadius: '8px',
+              display: 'inline-flex',
+              border: `1px solid ${carrierInfo.color}30`
+            }}
+          >
+            {carrierInfo.logo ? (
+              <img 
+                src={carrierInfo.logo} 
+                alt={carrierInfo.carrier}
+                style={{ width: '20px', height: '20px', objectFit: 'contain' }}
+              />
+            ) : (
+              <span style={{ fontSize: '18px' }}>📞</span>
+            )}
+            <div className="flex flex-col">
+              <span style={{ 
+                color: carrierInfo.color, 
+                fontWeight: '600',
+                fontSize: '13px'
+              }}>
+                {tel}
+              </span>
+              <span style={{ 
+                fontSize: '9px', 
+                color: carrierInfo.color,
+                opacity: 0.7,
+                fontWeight: '500',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px'
+              }}>
+                {carrierInfo.carrier}
+              </span>
+            </div>
+          </a>
+        ) : "-";
+      }
     },
     {
       key: "address",
@@ -377,7 +726,7 @@ function CustomerPage() {
       key: "id_card_number",
       title: (
         <div>
-          <div className="customer-table-header-main">{t("លេខអត្តសញ្ញាណបណ្ណ")}</div>
+          <div className="customer-table-header-main">{t("id_card_number")}</div>
         </div>
       ),
       dataIndex: "id_card_number",
@@ -387,7 +736,7 @@ function CustomerPage() {
       key: "spouse_name",
       title: (
         <div>
-          <div className="customer-table-header-main">{t("ឈ្មោះប្តី/ប្រពន្ធ")}</div>
+          <div className="customer-table-header-main">{t("spouse_name")}</div>
         </div>
       ),
       dataIndex: "spouse_name",
@@ -397,7 +746,7 @@ function CustomerPage() {
       key: "guarantor_name",
       title: (
         <div>
-          <div className="customer-table-header-main">{t("ឈ្មោះអ្នកធានា")}</div>
+          <div className="customer-table-header-main">{t("guarantor_name")}</div>
         </div>
       ),
       dataIndex: "guarantor_name",
@@ -427,8 +776,7 @@ function CustomerPage() {
       key: "action",
       title: (
         <div>
-          <div className="customer-table-header-main">{t("ACTION")}</div>
-          <div className="customer-table-header-sub">{t("ACTION")}</div>
+          <div className="customer-table-header-main">{t("action")}</div>
         </div>
       ),
       align: "center",
@@ -436,6 +784,19 @@ function CustomerPage() {
       fixed: "right",
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title={t("manage_locations") || "គ្រប់គ្រងទីតាំង"}>
+            <Button
+              type="default"
+              icon={<MdLocationOn />}
+              onClick={() => {
+                setSelectedCustomer(record);
+                setLocationModalVisible(true);
+              }}
+              size="small"
+              style={{ color: '#1890ff' }}
+            />
+          </Tooltip>
+
           {permissionsLoaded && isPermission("customer.update") && (
             <Button
               type="primary"
@@ -464,44 +825,44 @@ function CustomerPage() {
 
   const renderCustomerForm = () => (
     <Form form={form} layout="vertical">
-      <Row gutter={16}>
-        <Col span={12}>
+      <Row gutter={[16, 8]}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("ឈ្មោះ")}</span>}
+            label={<span className="customer-form-label">{t("name")}</span>}
             name="name"
-            rules={[{ required: true, message: t("តម្រូវឱ្យមានឈ្មោះ") }]}
+            rules={[{ required: true, message: t("Name is required") }]}
           >
             <Input />
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("ភេទ")}</span>}
+            label={<span className="customer-form-label">{t("gender")}</span>}
             name="gender"
-            rules={[{ required: true, message: t("តម្រូវឱ្យមានភេទ") }]}
+            rules={[{ required: true, message: t("Gender is required") }]}
           >
-            <Select placeholder={t("ជ្រើសរើសភេទ")}>
-              <Select.Option value="Male">{t("ប្រុស")}</Select.Option>
-              <Select.Option value="Female">{t("ស្រី")}</Select.Option>
-              <Select.Option value="Other">{t("ផ្សេងៗ")}</Select.Option>
+            <Select placeholder={t("pls_select_gender")}>
+              <Select.Option value="Male">{t("male")}</Select.Option>
+              <Select.Option value="Female">{t("female")}</Select.Option>
+              <Select.Option value="Other">{t("other")}</Select.Option>
             </Select>
           </Form.Item>
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
+      <Row gutter={[16, 8]}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("អ៊ីមែល")}</span>}
+            label={<span className="customer-form-label">{t("email")}</span>}
             name="email"
             rules={[{ required: true, message: t("តម្រូវឱ្យមានអ៊ីមែល") }]}
           >
             <Input />
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("ទូរស័ព្ទ")}</span>}
+            label={<span className="customer-form-label">{t("telephone")}</span>}
             name="tel"
             rules={phoneValidationRules}
           >
@@ -510,18 +871,18 @@ function CustomerPage() {
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
+      <Row gutter={[16, 8]}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("លេខអត្តសញ្ញាណបណ្ណ")}</span>}
+            label={<span className="customer-form-label">{t("id_card_number")}</span>}
             name="id_card_number"
           >
             <Input />
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("កាលបរិច្ឆេទផុតកំណត់អត្តសញ្ញាណបណ្ណ")}</span>}
+            label={<span className="customer-form-label">{t("id_card_expiry")}</span>}
             name="id_card_expiry"
           >
             <DatePicker style={{ width: '100%' }} />
@@ -529,10 +890,10 @@ function CustomerPage() {
         </Col>
       </Row>
 
-      <Row gutter={16}>
+      <Row gutter={[16, 8]}>
         <Col span={24}>
           <Form.Item
-            label={<span className="customer-form-label">{t("អាសយដ្ឋាន")}</span>}
+            label={<span className="customer-form-label">{t("address")}</span>}
             name="address"
           >
             <Input.TextArea rows={3} />
@@ -540,18 +901,18 @@ function CustomerPage() {
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
+      <Row gutter={[16, 8]}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("ឈ្មោះប្តី/ប្រពន្ធ")}</span>}
+            label={<span className="customer-form-label">{t("spouse_name")}</span>}
             name="spouse_name"
           >
             <Input />
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("លេខទូរស័ព្ទប្តី/ប្រពន្ធ")}</span>}
+            label={<span className="customer-form-label">{t("spouse_tel")}</span>}
             name="spouse_tel"
           >
             <Input />
@@ -559,18 +920,18 @@ function CustomerPage() {
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
+      <Row gutter={[16, 8]}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("ឈ្មោះអ្នកធានា")}</span>}
+            label={<span className="customer-form-label">{t("guarantor_name")}</span>}
             name="guarantor_name"
           >
             <Input />
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("លេខទូរស័ព្ទអ្នកធានា")}</span>}
+            label={<span className="customer-form-label">{t("guarantor_tel")}</span>}
             name="guarantor_tel"
           >
             <Input />
@@ -578,35 +939,35 @@ function CustomerPage() {
         </Col>
       </Row>
 
-      <Row gutter={16}>
-        <Col span={12}>
+      <Row gutter={[16, 8]}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("ស្ថានភាព")}</span>}
+            label={<span className="customer-form-label">{t("action")}</span>}
             name="status"
             initialValue={1}
           >
             <Select>
               <Select.Option value={1}>
-                <span className="customer-btn-text">{t("សកម្ម (Active)")}</span>
+                <span className="customer-btn-text">{t("Active")}</span>
               </Select.Option>
               <Select.Option value={0}>
-                <span className="customer-btn-text">{t("អសកម្ម (Inactive)")}</span>
+                <span className="customer-btn-text">{t("Inactive")}</span>
               </Select.Option>
             </Select>
           </Form.Item>
         </Col>
-        <Col span={12}>
+        <Col xs={24} sm={12}>
           <Form.Item
-            label={<span className="customer-form-label">{t("ប្រភេទអតិថិជន")}</span>}
+            label={<span className="customer-form-label">{t("customer_type")}</span>}
             name="type"
             rules={[{ required: true, message: t("តម្រូវឱ្យមានប្រភេទអតិថិជន") }]}
           >
             <Select>
               <Select.Option value="regular">
-                <span className="customer-btn-text">{t("អតិថិជនធម្មតា (Regular)")}</span>
+                <span className="customer-btn-text">{t("Regular Customer")}</span>
               </Select.Option>
               <Select.Option value="special">
-                <span className="customer-btn-text">{t("អតិថិជនពិសេស (Special)")}</span>
+                <span className="customer-btn-text">{t("Special Customer")}</span>
               </Select.Option>
             </Select>
           </Form.Item>
@@ -622,10 +983,17 @@ function CustomerPage() {
         name="customer_id"
         rules={[{ required: true, message: t("តម្រូវឱ្យមានអតិថិជន") }]}
       >
-        <Select placeholder={t("ជ្រើសរើសអតិថិជន")}>
-          {list.map((customer) => (
+        <Select
+          showSearch
+          placeholder={t("ជ្រើសរើសអតិថិជន")}
+          optionFilterProp="children"
+          filterOption={(input, option) =>
+            option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }
+        >
+          {filteredList.map(customer => (
             <Select.Option key={customer.id} value={customer.id}>
-              {customer.name} - {customer.tel || ""}
+              {customer.name} - {customer.tel}
             </Select.Option>
           ))}
         </Select>
@@ -651,98 +1019,265 @@ function CustomerPage() {
 
   return (
     <MainPage loading={loading}>
-      {/* Page Header */}
-      <div className="pageHeader">
-        <Space>
+      {/* Page Header - Responsive */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4 px-2 sm:px-4 lg:px-0">
+        {/* Left Side - Title and Filters */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 flex-wrap">
           <div>
-            <h1 className="customer-page-title">{t("ការគ្រប់គ្រងអតិថិជន")}</h1>
+            <h1 className="customer-page-title text-xl sm:text-2xl font-bold text-gray-900">
+              {t("Customer Management")}
+            </h1>
+            {/* Gender Statistics */}
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-xs font-medium text-gray-600">
+                {t("total")}: <span className="font-bold text-blue-600">{getGenderStats().total}</span>
+              </span>
+              <span className="text-gray-300">|</span>
+              <span className="text-xs font-medium text-gray-600">
+                👨 {t("male")}: <span className="font-bold text-blue-500">{getGenderStats().male}</span>
+              </span>
+              <span className="text-gray-300">|</span>
+              <span className="text-xs font-medium text-gray-600">
+                👩 {t("female")}: <span className="font-bold text-pink-500">{getGenderStats().female}</span>
+              </span>
+              {getGenderStats().other > 0 && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-xs font-medium text-gray-600">
+                    {t("ផ្សេងៗ")}: <span className="font-bold text-gray-500">{getGenderStats().other}</span>
+                  </span>
+                </>
+              )}
+            </div>
           </div>
-          <Input.Search
-            className="customer-search-input"
-            onChange={(e) =>
-              setState((prev) => ({ ...prev, txtSearch: e.target.value }))
-            }
-            allowClear
-            onSearch={getList}
-            placeholder={t("ស្វែងរកតាមឈ្មោះ")}
-            style={{ width: 200 }}
-          />
-          <Select
-            className="customer-type-filter"
-            placeholder={t("ប្រភេទអតិថិជន")}
-            allowClear
-            style={{ width: 180 }}
-            value={state.customerTypeFilter}
-            onChange={(value) => {
-              setState((prev) => ({ ...prev, customerTypeFilter: value }));
-            }}
-          >
-            <Select.Option value="regular">
-              <span className="customer-btn-text">{t("អតិថិជនធម្មតា")}</span>
-            </Select.Option>
-            <Select.Option value="special">
-              <span className="customer-btn-text">{t("អតិថិជនពិសេស")}</span>
-            </Select.Option>
-          </Select>
-          <Button className="customer-btn-text" type="primary" onClick={getList} icon={<CiSearch />}>
-            {t("ស្វែងរក")}
-          </Button>
-          {permissionsLoaded && isPermission("customer.getone") && (
-            <Button
-              className="customer-btn-text"
-              type="primary"
-              icon={<MdSecurity />}
-              onClick={() => setDeletePermissionModalVisible(true)}
+          
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+            <Input.Search
+              className="customer-search-input w-full sm:w-48"
+              onChange={(e) =>
+                setState((prev) => ({ ...prev, txtSearch: e.target.value }))
+              }
+              allowClear
+              onSearch={getList}
+              placeholder={t("Search by name")}
+            />
+            
+            <Select
+              className="customer-type-filter w-full sm:w-44"
+              placeholder={t("customer_type")}
+              allowClear
+              value={state.customerTypeFilter}
+              onChange={(value) => {
+                setState((prev) => ({ ...prev, customerTypeFilter: value }));
+              }}
             >
-              {t("កំណត់សិទ្ធ")}
-            </Button>
-          )}
-        </Space>
-        <div>
-          {permissionsLoaded && isPermission("customer.getone") && (
-            <Button
-              className="customer-btn-text mr-2"
-              type="primary"
-              onClick={onClickAssignToUser}
-              icon={<IoPersonAddSharp />}
+              <Select.Option value="regular">
+                <span className="customer-btn-text">{t("អតិថិជនធម្មតា")}</span>
+              </Select.Option>
+              <Select.Option value="special">
+                <span className="customer-btn-text">{t("អតិថិជនពិសេស")}</span>
+              </Select.Option>
+            </Select>
+            
+            <Button 
+              className="customer-btn-text w-full sm:w-auto" 
+              type="primary" 
+              onClick={getList} 
+              icon={<CiSearch />}
             >
-              {t("បង្កើតអតិថិជនទៅអ្នកប្រើប្រាស់")}
+              <span className="hidden sm:inline">{t("Search")}</span>
             </Button>
-          )}
-          {canCreateCustomer && (
+
             <Button
-              className="customer-btn-text"
-              type="primary"
-              onClick={onClickAddBtn}
-              icon={<MdOutlineCreateNewFolder />}
+              className="customer-btn-text w-full sm:w-auto"
+              type="default"
+              onClick={toggleFullscreen}
+              icon={isFullscreen ? <MdFullscreenExit /> : <MdFullscreen />}
             >
-              {t("បង្កើតថ្មី")}
+              <span className="hidden sm:inline">
+                {isFullscreen ? t("Exit Fullscreen") : t("Enter Fullscreen")}
+              </span>
             </Button>
-          )}
+            
+            {permissionsLoaded && isPermission("customer.getone") && (
+              <Button
+                className="customer-btn-text w-full sm:w-auto"
+                type="primary"
+                icon={<MdSecurity />}
+                onClick={() => setDeletePermissionModalVisible(true)}
+              >
+                <span className="hidden sm:inline">{t("Set Permissions")}</span>
+              </Button>
+            )}
+            {permissionsLoaded && isPermission("customer.getone") && (
+              <Button
+                className="customer-btn-text w-full sm:w-auto"
+                type="primary"
+                onClick={onClickAssignToUser}
+                icon={<IoPersonAddSharp />}
+              >
+                <span className="hidden md:inline">{t("Assign Customer to User")}</span>
+                <span className="md:hidden">{t("ចាត់ចែង")}</span>
+              </Button>
+            )}
+            {canCreateCustomer && (
+              <Button
+                className="customer-btn-text w-full sm:w-auto"
+                type="primary"
+                onClick={onClickAddBtn}
+                icon={<MdOutlineCreateNewFolder />}
+              >
+                {t("Create New")}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
-      <Table
-        rowClassName={() => "customer-table-row"}
-        rowKey="id"
-        dataSource={filteredList}
-        columns={columns}
-        pagination={false}
-        scroll={{
-          x: 1600,
-          y: 'calc(100vh - 350px)'
-        }}
-        sticky={{
-          offsetHeader: 0
-        }}
-      />
+      {/* Table for Desktop / Cards for Mobile */}
+      {isMobile ? (
+        <div className="px-2 sm:px-4 pb-4">
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">
+              {t("កំពុងផ្ទុក...")}
+            </div>
+          ) : filteredList.length > 0 ? (
+            filteredList.map((record, index) => (
+              <MobileCustomerCard 
+                key={record.id} 
+                record={record} 
+                index={index} 
+              />
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500 bg-white rounded-lg">
+              {t("គ្មានទិន្នន័យ")}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div 
+          ref={setTableContainerRef}
+          className={`customer-table-container ${isFullscreen ? 'fullscreen-table' : ''}`}
+          style={{
+            backgroundColor: isFullscreen ? '#ffffff' : 'transparent',
+            padding: isFullscreen ? '20px' : '0',
+            position: 'relative'
+          }}
+        >
+          {isFullscreen && (
+            <div className="fullscreen-header" style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '16px',
+              paddingBottom: '12px',
+              borderBottom: '2px solid #e8e8e8'
+            }}>
+              <div>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '700',
+                  color: '#262626',
+                  margin: 0,
+                  fontFamily: 'var(--khmer-font-main)'
+                }}>
+                  {t("Customer Management")}
+                </h2>
+                {/* Gender Statistics in Fullscreen */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '500', color: '#666' }}>
+                    {t("total")}: <span style={{ fontWeight: '700', color: '#1890ff' }}>{getGenderStats().total}</span>
+                  </span>
+                  <span style={{ color: '#d9d9d9' }}>|</span>
+                  <span style={{ fontSize: '13px', fontWeight: '500', color: '#666' }}>
+                    👨 {t("male")}: <span style={{ fontWeight: '700', color: '#3b82f6' }}>{getGenderStats().male}</span>
+                  </span>
+                  <span style={{ color: '#d9d9d9' }}>|</span>
+                  <span style={{ fontSize: '13px', fontWeight: '500', color: '#666' }}>
+                    👩 {t("female")}: <span style={{ fontWeight: '700', color: '#ec4899' }}>{getGenderStats().female}</span>
+                  </span>
+                  {getGenderStats().other > 0 && (
+                    <>
+                      <span style={{ color: '#d9d9d9' }}>|</span>
+                      <span style={{ fontSize: '13px', fontWeight: '500', color: '#666' }}>
+                        {t("other")}: <span style={{ fontWeight: '700', color: '#6b7280' }}>{getGenderStats().other}</span>
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                {/* Font Size Zoom Controls in Fullscreen */}
+                <div className="flex items-center gap-1 border border-gray-300 rounded-lg p-1 bg-white">
+                  <Tooltip title={t("Decrease font size")}>
+                    <Button
+                      size="small"
+                      icon={<AiOutlineZoomOut />}
+                      onClick={decreaseFontSize}
+                      disabled={fontSize <= 70}
+                      className="zoom-btn"
+                    />
+                  </Tooltip>
+                  <span className="text-xs font-semibold px-2 min-w-[45px] text-center" style={{ fontFamily: 'monospace' }}>
+                    {fontSize}%
+                  </span>
+                  <Tooltip title={t("Reset font size")}>
+                    <Button
+                      size="small"
+                      icon={<TbZoomReset />}
+                      onClick={resetFontSize}
+                      className="zoom-btn"
+                    />
+                  </Tooltip>
+                  <Tooltip title={t("Increase font size")}>
+                    <Button
+                      size="small"
+                      icon={<AiOutlineZoomIn />}
+                      onClick={increaseFontSize}
+                      disabled={fontSize >= 150}
+                      className="zoom-btn"
+                    />
+                  </Tooltip>
+                </div>
+                <Button
+                  type="primary"
+                  danger
+                  onClick={toggleFullscreen}
+                  icon={<MdFullscreenExit />}
+                  size="large"
+                >
+                  {t("បិត Fullscreen")}
+                </Button>
+              </div>
+            </div>
+          )}
+          <div className="overflow-x-auto">
+            <Table
+              rowClassName={() => "customer-table-row"}
+              rowKey="id"
+              dataSource={filteredList}
+              columns={columns}
+              pagination={false}
+              scroll={{
+                x: 1800,
+                y: isFullscreen ? 'calc(100vh - 220px)' : 'calc(100vh - 350px)'
+              }}
+              sticky={{
+                offsetHeader: 0
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Permission Settings Modal */}
       <Modal
-        title={<span className="customer-modal-title">{t("កំណត់សិទ្ធអ្នកប្រើប្រាស់")}</span>}
+        title={<span className="customer-modal-title">{t("Set User Permissions")}</span>}
         open={deletePermissionModalVisible}
         onOk={() => setDeletePermissionModalVisible(false)}
         onCancel={() => setDeletePermissionModalVisible(false)}
+        width={isMobile ? '95%' : 600}
       >
         <div className="mb-4">
           <Select
@@ -751,8 +1286,8 @@ function CustomerPage() {
             value={selectedPermissionType}
             onChange={(value) => setSelectedPermissionType(value)}
           >
-            <Select.Option value="delete">{t("មិនអនុញ្ញាតឲ្យលុប")}</Select.Option>
-            <Select.Option value="create">{t('មិនអនុញ្ញាតឲ្យបង្កើត')}</Select.Option>
+            <Select.Option value="delete">{t("Block Delete Permission")}</Select.Option>
+            <Select.Option value="create">{t('Block Create Permission')}</Select.Option>
           </Select>
         </div>
 
@@ -760,9 +1295,8 @@ function CustomerPage() {
           value={blockedPermissions[selectedPermissionType]}
           onChange={handleCheckboxChange}
         >
-          <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-4 sm:gap-x-8">
             {(config?.user || []).map((user) => {
-              // Add null/undefined check for user.label
               const label = user.label || "";
               const [namePart, ...rest] = label.split(" - ");
               const subPart = rest.join(" - ");
@@ -770,7 +1304,7 @@ function CustomerPage() {
               return (
                 <Checkbox key={user.value} value={user.value} className="customer-permission-checkbox">
                   <span className="customer-permission-label">{namePart}</span>
-                  <span className="customer-permission-sub">{subPart}</span>
+                  <span className="customer-permission-sub block sm:inline">{subPart}</span>
                 </Checkbox>
               );
             })}
@@ -782,13 +1316,16 @@ function CustomerPage() {
       <Modal
         title={
           <span className="customer-modal-title">
-            {state.isEditing ? "កែសម្រួលអតិថិជន" : "បង្កើតអតិថិជន"}
+            {state.isEditing ? t("Edit Customer") : t("Create Customer")}
           </span>
         }
         open={state.visibleModal}
         onOk={handleModalSubmit}
         onCancel={handleModalCancel}
-        width={700}
+        width={isMobile ? '95%' : 700}
+        styles={{
+          body: { maxHeight: isMobile ? '70vh' : 'auto', overflowY: 'auto' }
+        }}
       >
         {renderCustomerForm()}
       </Modal>
@@ -796,14 +1333,26 @@ function CustomerPage() {
       {/* Assign Customer to User Modal */}
       <Modal
         title={
-          <span className="customer-modal-title">ចាត់ចែងអតិថិជនទៅអ្នកប្រើប្រាស់</span>
+          <span className="customer-modal-title">{t("Assign Customer to User")}</span>
         }
         open={state.visibleAssignModal}
         onOk={handleAssignToUserSubmit}
         onCancel={handleAssignModalCancel}
+        width={isMobile ? '95%' : 500}
       >
         {renderAssignForm()}
       </Modal>
+
+       <CustomerLocationsModal
+        visible={locationModalVisible}
+        onClose={() => {
+          setLocationModalVisible(false);
+          setSelectedCustomer(null);
+        }}
+        customerId={selectedCustomer?.id}
+        customerName={selectedCustomer?.name}
+      />
+
     </MainPage>
   );
 }

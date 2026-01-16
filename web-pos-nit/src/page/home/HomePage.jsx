@@ -1,1521 +1,945 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { request } from "../../util/helper";
-import { Button, Card, Row, Col, Statistic, Divider, Select, DatePicker, Empty, Dropdown, Menu, message, Badge, Avatar, Progress, Typography } from "antd";
 import {
-  DownloadOutlined,
-  PrinterOutlined,
-  BarChartOutlined,
-  LineChartOutlined,
-  PieChartOutlined,
+  Button, Card, Row, Col, Typography, Badge, Spin, Empty, DatePicker,
+  message, Alert, Modal, Descriptions, Tag
+} from "antd";
+import {
   UserOutlined,
   DollarOutlined,
-  MoreOutlined,
   TeamOutlined,
-  ShoppingCartOutlined,
-  WalletOutlined,
+  TrophyOutlined,
   ShopOutlined,
-  RiseOutlined,
-  FallOutlined,
+  WalletOutlined,
+  ReloadOutlined,
+  CalendarOutlined,
   FilterOutlined,
-  EyeOutlined
+  InfoCircleOutlined,
+  EyeOutlined,
+  UsergroupAddOutlined,
+  ArrowRightOutlined,
+  PrinterOutlined
 } from "@ant-design/icons";
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
-  Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
   CartesianGrid,
+  RadialBarChart,
+  RadialBar,
+  PolarAngleAxis,
   PieChart,
   Pie,
   Cell,
-  AreaChart,
-  Area,
-  RadialBarChart,
-  RadialBar
+  Legend
 } from "recharts";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
-import moment from "moment";
-import CustomerList from "../NewCustomer/CustomerList";
 import { useTranslation } from "../../locales/TranslationContext";
+import { getProfile } from "../../store/profile.store";
+import { useDarkMode } from "../../component/DarkModeContext.jsx";
+import moment from "moment";
+import "./HomePage.css";
 
-const { RangePicker } = DatePicker;
-const { Option } = Select;
 const { Title, Text } = Typography;
-
-
+const { RangePicker } = DatePicker;
 
 function HomePage() {
   const { t } = useTranslation();
+  const profile = getProfile();
+  const navigate = useNavigate();
+  const { isDarkMode } = useDarkMode();
 
-
-
+  // State management
   const [dashboard, setDashboard] = useState([]);
   const [saleByMonth, setSaleByMonth] = useState([]);
   const [expenseByMonth, setExpenseByMonth] = useState([]);
-  const [dateRange, setDateRange] = useState([moment().startOf('year'), moment()]);
-  const [categoryId, setCategoryId] = useState(null);
-  const [expenseTypeId, setExpenseTypeId] = useState(null);
-  const [supplierId, setSupplierId] = useState(null);
-  const [topSales, setTopSales] = useState([]);
   const [productByMonth, setProductByMonth] = useState([]);
-
-  const [customerData, setCustomerData] = useState([]);
+  const [topSales, setTopSales] = useState([]);
+  const [filterInfo, setFilterInfo] = useState(null);
+  const [userDetails, setUserDetails] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedCardIndex, setSelectedCardIndex] = useState(null);
-  const [viewMode, setViewMode] = useState('grid');
-  const [isDarkMode, setIsDarkMode] = useState(false);
-
-  const dashboardRef = useRef(null);
-  const cardRefs = useRef([]);
-  const chartRefs = useRef({
-    combinedChart: useRef(null),
-    salesTrendChart: useRef(null),
-    expenseTrendChart: useRef(null),
-    profitChart: useRef(null)
-  });
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [startDate, setStartDate] = useState(moment().startOf('year'));
+  const [endDate, setEndDate] = useState(moment());
+  const [profitByMonth, setProfitByMonth] = useState([]);
+  const [dateRange, setDateRange] = useState([
+    moment().startOf('year'),
+    moment()
+  ]);
+  const [showDateWarning, setShowDateWarning] = useState(false);
 
   const COLORS = [
-    '#667eea',
-    '#764ba2',
-    '#f093fb',
-    '#f5576c',
-    '#4facfe',
-    '#43e97b',
-    '#fa709a',
-    '#fee140'
+    '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b',
+    '#ef4444', '#06b6d4', '#ec4899', '#84cc16'
   ];
 
-  const GRADIENT_COLORS = [
-    'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-    'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-    'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-    'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-    'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-    'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
-    'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
-  ];
-
-  const getCardIcon = (index) => {
-    const icons = [
-      <TeamOutlined style={{ fontSize: 32, color: 'white' }} />,
-      <UserOutlined style={{ fontSize: 32, color: 'white' }} />,
-      <TeamOutlined style={{ fontSize: 32, color: 'white' }} />,
-      <ShopOutlined style={{ fontSize: 32, color: 'white' }} />,
-      <WalletOutlined style={{ fontSize: 32, color: 'white' }} />,
-      <ShoppingCartOutlined style={{ fontSize: 32, color: 'white' }} />,
-      <RiseOutlined style={{ fontSize: 32, color: 'white' }} />
-    ];
-    return icons[index % icons.length];
-  };
-
-  useEffect(() => {
-    cardRefs.current = Array(dashboard.length).fill().map((_, i) => cardRefs.current[i] || React.createRef());
-  }, [dashboard]);
-
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === '3') {
-        message.info(t('ជ្រើសរើសផ្ទាំងដែលត្រូវការបោះពុម្ព ឬទាញយក PDF'), 2);
-        setSelectedCardIndex(0);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, []);
-
+  // Fetch data on mount
   useEffect(() => {
     getList();
   }, []);
 
-  const formatNumber = (value) => {
-    if (value === null || value === undefined) return '';
-
-    if (typeof value === 'string') {
-      if (value.includes(',')) return value;
-      const numericValue = value.replace(/[^\d.-]/g, '');
-      if (!isNaN(numericValue) && numericValue !== '') {
-        const formattedNum = Number(numericValue).toLocaleString();
-        if (value.includes('$')) {
-          return formattedNum + ' $';
-        }
-        return formattedNum;
-      }
-      return value;
-    }
-
-    if (typeof value === 'number') {
-      return value.toLocaleString();
-    }
-
-    return value;
-  };
-
-  const processDashboardData = (data) => {
-    if (!data || !Array.isArray(data)) return [];
-
-    return data.map(item => {
-      const processedSummary = {};
-
-      if (item.Summary) {
-        Object.entries(item.Summary).forEach(([key, value]) => {
-          processedSummary[key] = formatNumber(value);
-        });
-      }
-
-      return {
-        ...item,
-        Summary: processedSummary
-      };
-    });
-  };
-
-  const fetchAllData = async () => {
-    setIsLoading(true);
-    try {
-      await Promise.all([
-        getList(),
-      ]);
-    } catch (error) {
-      console.error("Error fetching all data:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Main API call
   const getList = async () => {
     setIsLoading(true);
+    setShowDateWarning(false);
+
     try {
       let apiUrl = 'dashbaord';
 
       if (dateRange && dateRange[0] && dateRange[1]) {
-        const [fromDate, toDate] = dateRange;
-        const formattedFromDate = fromDate.format('YYYY-MM-DD');
-        const formattedToDate = toDate.format('YYYY-MM-DD');
+        const formattedFromDate = dateRange[0].format('YYYY-MM-DD');
+        const formattedToDate = dateRange[1].format('YYYY-MM-DD');
         apiUrl += `?from_date=${formattedFromDate}&to_date=${formattedToDate}`;
+
       }
 
       const res = await request(apiUrl, "get");
-      if (res && !res.error) {
-        setDashboard(processDashboardData(res.dashboard));
 
-        if (res.Sale_Summary_By_Month) {
+
+      if (res && !res.error) {
+        setDashboard(res.dashboard || []);
+        setFilterInfo(res.filter_info || null);
+        setUserDetails(res.user_details || null);
+
+        // Process Sale Summary
+        if (res.Sale_Summary_By_Month && Array.isArray(res.Sale_Summary_By_Month)) {
           const saleData = res.Sale_Summary_By_Month.map(item => ({
             month: item.title,
-            sale: Number(item.total) || 0
+            value: parseFloat(item.total) || 0
           }));
           setSaleByMonth(saleData);
+        } else {
+          setSaleByMonth([]);
         }
 
-        if (res.Expense_Summary_By_Month) {
+        // Process Expense Summary
+        if (res.Expense_Summary_By_Month && Array.isArray(res.Expense_Summary_By_Month)) {
           const expenseData = res.Expense_Summary_By_Month.map(item => ({
             month: item.title,
-            expense: Number(item.total) || 0
+            value: parseFloat(item.total) || 0
           }));
           setExpenseByMonth(expenseData);
+
+          if (expenseData.length === 0 || expenseData.every(e => e.value === 0)) {
+            setShowDateWarning(true);
+          }
+        } else {
+          setExpenseByMonth([]);
+        }
+        if (res.Profit_Summary_By_Month && Array.isArray(res.Profit_Summary_By_Month)) {
+          const profitData = res.Profit_Summary_By_Month.map(item => ({
+            month: item.title,
+            value: parseFloat(item.total) || 0
+          }));
+          setProfitByMonth(profitData);
+        } else {
+          setProfitByMonth([]);
         }
 
-        // បន្ថែមនេះ
-        if (res.Product_Summary_By_Month) {
+        // Process Product Summary
+        if (res.Product_Summary_By_Month && Array.isArray(res.Product_Summary_By_Month)) {
           const productData = res.Product_Summary_By_Month.map(item => ({
             month: item.title,
-            product: Number(item.total) || 0
+            value: parseFloat(item.total) || 0
           }));
           setProductByMonth(productData);
+        } else {
+          setProductByMonth([]);
         }
 
+        // Process Top Sales
         if (res.Top_Sale && Array.isArray(res.Top_Sale)) {
-          const topSalesData = res.Top_Sale.slice(0, 5).map(item => ({
-            name: ` (${item.category_name})`,
-            value: Number(item.total_sale_amount) || 0,
-            qty: Number(item.total_qty) || 0
+          const topSalesData = res.Top_Sale.map(item => ({
+            name: item.category_name || 'Unknown',
+            value: parseFloat(item.total_sale_amount) || 0,
+            qty: parseInt(item.total_qty) || 0
           }));
           setTopSales(topSalesData);
+        } else {
+          setTopSales([]);
         }
 
+        message.success(t('Dashboard loaded successfully!') || 'Dashboard loaded successfully!');
+      } else {
+        message.error(res.message || t('Failed to load dashboard data'));
       }
     } catch (error) {
-      console.error("Error fetching dashboard data:", error);
+      console.error("❌ Error fetching dashboard:", error);
+      message.error(t('Failed to load dashboard data'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePrintAll = () => {
-    const printContent = document.getElementById("dashboard-content");
-    const originalContents = document.body.innerHTML;
-    document.body.innerHTML = printContent.innerHTML;
-    window.print();
-    document.body.innerHTML = originalContents;
-    window.location.reload();
+  // Get greeting based on time
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t('អរុណសួស្តី') || t('Good morning');
+    if (hour < 18) return t('ល្ងាចសួស្តី') || t('Good afternoon');
+    return t('សាយ័ណសួស្តី') || t('Good evening');
   };
 
-  const handleDownloadAllPDF = () => {
-    const input = document.getElementById("dashboard-content");
-    html2canvas(input, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF("landscape");
-      const imgWidth = 280;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 10, 10, imgWidth, imgHeight);
-      pdf.save("dashboard.pdf");
-    });
+  const getProfitByMonth = () => {
+    const profitData = profitByMonth.map(item => ({
+      month: item.month,
+      value: parseFloat(item.value) || 0
+    }));
+    return profitData;
+  };
+  // In HomePage.jsx - Add new title mapping
+  const getCardIcon = (title) => {
+    const iconMap = {
+      'អ្នកប្រើប្រាស់': <TeamOutlined />,
+      'អតិថិជន': <UserOutlined />,
+      'ប្រព័ន្ធចំណាយទូទៅ': <WalletOutlined />,
+      'ផលិតផល': <ShopOutlined />,
+      'ផលិតផល / ស្តុក': <ShopOutlined />,  // ✅ បន្ថែមនេះ!
+      'ការលក់': <TrophyOutlined />
+    };
+    return iconMap[title] || <DollarOutlined />;
   };
 
-  const handlePrintIndividual = (elementRef, title) => {
-    if (!elementRef.current) return;
-
-    html2canvas(elementRef.current).then((canvas) => {
-      const printWindow = window.open('', '_blank');
-
-      if (!printWindow) {
-        message.error(t('បិទការហាមឃាត់ popup ដើម្បីបោះពុម្ព'));
-        return;
-      }
-
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>${title}</title>
-            <style>
-              body {
-                margin: 0;
-                padding: 20px;
-                text-align: center;
-                font-family: 'Khmer OS', 'Khmer OS System', sans-serif;
-              }
-              img {
-                max-width: 100%;
-              }
-              @media print {
-                body {
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
-              }
-            </style>
-          </head>
-          <body>
-            <h2>${title}</h2>
-            <img src="${canvas.toDataURL('image/png')}" />
-          </body>
-        </html>
-      `);
-
-      printWindow.document.close();
-      const img = printWindow.document.querySelector('img');
-      if (img) {
-        img.onload = function () {
-          printWindow.print();
-          setTimeout(() => {
-            printWindow.close();
-          }, 500);
-        };
-      } else {
-        printWindow.print();
-        setTimeout(() => {
-          printWindow.close();
-        }, 500);
-      }
-    });
+  const getCardRoute = (title) => {
+    const routeMap = {
+      'អ្នកប្រើប្រាស់': '/user',
+      'អតិថិជន': '/customer',
+      'ប្រព័ន្ធចំណាយទូទៅ': '/expense',
+      'ផលិតផល': '/product',
+      'ផលិតផល / ស្តុក': '/product',  // ✅ បន្ថែមនេះ!
+      'ការលក់': '/order'
+    };
+    return routeMap[title] || '/';
+  };
+  // Get color scheme for cards
+  const getCardColor = (index) => {
+    const colors = [
+      { bg: 'rgba(59, 130, 246, 0.15)', color: '#3b82f6' },
+      { bg: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' },
+      { bg: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' },
+      { bg: 'rgba(16, 185, 129, 0.15)', color: '#10b981' },
+      { bg: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }
+    ];
+    return colors[index % colors.length];
   };
 
-  const handleDownloadIndividualPDF = (elementRef, title) => {
-    if (!elementRef.current) return;
-
-    html2canvas(elementRef.current, { scale: 2 }).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      const imgWidth = 190;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      pdf.setFontSize(16);
-      pdf.text(title, 10, 10);
-      pdf.addImage(imgData, "PNG", 10, 20, imgWidth, imgHeight);
-      pdf.save(`${title.replace(/\s+/g, '_')}.pdf`);
-
-      message.success(t('បានទាញយក PDF ដោយជោគជ័យ'));
-    });
+  const calculateSatisfactionRate = () => {
+    if (saleByMonth.length === 0) return 75;
+    const totalSales = saleByMonth.reduce((sum, item) => sum + item.value, 0);
+    const avgSales = totalSales / saleByMonth.length;
+    const maxSales = Math.max(...saleByMonth.map(item => item.value), 1);
+    return Math.min(Math.round((avgSales / maxSales) * 100), 100);
   };
 
-  const handleDateRangeChange = (dates) => {
-    setDateRange(dates);
+  const calculateCustomerScore = () => {
+    const customerCard = dashboard.find(d => d.title === 'អតិថិជន');
+    if (!customerCard || !customerCard.Summary) return 5.0;
+
+    const totalText = customerCard.Summary['សរុប'] || '0';
+    const total = parseInt(totalText.replace(/\D/g, '')) || 0;
+
+    return Math.min((total / 10).toFixed(1), 10);
   };
 
-  const handleSearch = () => {
-    fetchAllData();
-  };
+  const satisfactionRate = calculateSatisfactionRate();
+  const customerScore = calculateCustomerScore();
 
-  const tooltipFormatter = (value) => {
-    return [`$${value.toLocaleString()}`, t('Amount')];
-  };
+  const satisfactionData = [{
+    name: 'Satisfaction',
+    value: satisfactionRate,
+    fill: '#3b82f6'
+  }];
 
-  const combinedChartData = saleByMonth.map(sale => {
-    const expenseEntry = expenseByMonth.find(exp => exp.month === sale.month);
+  const customerScoreData = [{
+    name: 'Score',
+    value: (customerScore / 10) * 100,
+    fill: '#10b981'
+  }];
+
+  const combinedData = saleByMonth.map((sale, index) => {
+    const expense = expenseByMonth.find(e => e.month === sale.month) || { value: 0 };
     return {
       month: sale.month,
-      sale: sale.sale,
-      expense: expenseEntry ? expenseEntry.expense : 0,
-      profit: sale.sale - (expenseEntry ? expenseEntry.expense : 0)
+      sales: sale.value,
+      expenses: expense.value,
+      profit: sale.value - expense.value
     };
   });
 
-  const handleCardSelect = (index) => {
-    setSelectedCardIndex(index);
-    message.success(`${t('បានជ្រើសរើសផ្ទាំង')} "${index >= 0 && index < dashboard.length ? dashboard[index].title : t('ក្រាហ្វិក')}"`, 1);
+  const handleDateRangeChange = (dates) => {
+    setDateRange(dates);
+    setShowDateWarning(false);
   };
 
-  const handleChartSelect = (chartType) => {
-    setSelectedCardIndex(chartType);
-    message.success(`${t('បានជ្រើសរើសក្រាហ្វិក')} "${chartType}"`, 1);
+  const handleFilter = () => {
+    if (!dateRange || !dateRange[0] || !dateRange[1]) {
+      message.warning(t('Please select a date range'));
+      return;
+    }
+    getList();
   };
 
-  const getSelectedElementRef = () => {
-    if (selectedCardIndex === null) return null;
+  const handleQuickDateRange = (type) => {
+    const today = moment();
+    let newRange = [];
 
-    if (typeof selectedCardIndex === 'number' && selectedCardIndex >= 0 && selectedCardIndex < dashboard.length) {
-      return cardRefs.current[selectedCardIndex];
+    switch (type) {
+      case 'today':
+        newRange = [today, today];
+        break;
+      case 'this_week':
+        newRange = [moment().startOf('week'), today];
+        break;
+      case 'this_month':
+        newRange = [moment().startOf('month'), today];
+        break;
+      case 'this_year':
+        newRange = [moment().startOf('year'), today];
+        break;
+      case 'last_year':
+        newRange = [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')];
+        break;
+      case 'all_time':
+        newRange = [moment('2020-01-01'), today];
+        break;
+      default:
+        newRange = [moment().startOf('year'), today];
     }
 
-    if (selectedCardIndex === 'combinedChart') return chartRefs.current.combinedChart;
-    if (selectedCardIndex === 'salesTrendChart') return chartRefs.current.salesTrendChart;
-    if (selectedCardIndex === 'expenseTrendChart') return chartRefs.current.expenseTrendChart;
-
-    return null;
+    setDateRange(newRange);
+    setTimeout(() => getList(), 100);
   };
 
-  const getSelectedElementTitle = () => {
-    if (selectedCardIndex === null) return "";
+  const handlePrint = () => {
+    window.print();
+  };
 
-    if (typeof selectedCardIndex === 'number' && selectedCardIndex >= 0 && selectedCardIndex < dashboard.length) {
-      return dashboard[selectedCardIndex].title;
+  const getMainValue = (summary) => {
+    if (!summary) return '0';
+    const firstKey = Object.keys(summary)[0];
+    return summary[firstKey] || '0';
+  };
+
+  // Handle card click
+  const handleCardClick = (title) => {
+    // Special handling for user card - show modal
+    if (title === 'អ្នកប្រើប្រាស់') {
+      setShowUserModal(true);
+      return;
     }
 
-    if (selectedCardIndex === 'combinedChart') return t('ទិដ្ឋភាពនៃការលក់និងចំណាយ');
-    if (selectedCardIndex === 'salesTrendChart') return t('និន្នាការលក់');
-    if (selectedCardIndex === 'expenseTrendChart') return t('និន្នាការចំណាយ');
-
-    return "";
+    const route = getCardRoute(title);
+    navigate(route);
   };
 
-  const calculateGrowth = (current, previous) => {
-    if (!previous || previous === 0) return 0;
-    return ((current - previous) / previous * 100).toFixed(1);
+  // Render User Details Modal
+  const renderUserModal = () => {
+    if (!userDetails) return null;
+
+    return (
+      <Modal
+        title={
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <UsergroupAddOutlined style={{ fontSize: 24, color: '#3b82f6' }} />
+            <span>{t('អ្នកប្រើប្រាស់ប្រព័ន្ធ')} - {t('User Details')}</span>
+          </div>
+        }
+        open={showUserModal}
+        onCancel={() => setShowUserModal(false)}
+        footer={[
+          <Button key="navigate" type="primary" onClick={() => {
+            setShowUserModal(false);
+            navigate('/user');
+          }}>
+            {t('Go to User Management')}
+          </Button>,
+          <Button key="close" onClick={() => setShowUserModal(false)}>
+            {t('Close')}
+          </Button>
+        ]}
+        width={700}
+      >
+        <Descriptions bordered column={2} size="small">
+          <Descriptions.Item label={t('Total Users')} span={2}>
+            <Tag color="blue" style={{ fontSize: 16, padding: '4px 12px' }}>
+              {userDetails.active_users} {t('Active Users')}
+            </Tag>
+            <Tag color="red" style={{ fontSize: 16, padding: '4px 12px', marginLeft: 8 }}>
+              {userDetails.inactive_users} {t('Inactive')}
+            </Tag>
+          </Descriptions.Item>
+        </Descriptions>
+
+        <Title level={5} style={{ marginTop: 24, marginBottom: 16 }}>
+          👥 {t('Users by Role')}:
+        </Title>
+
+        <div style={{ maxHeight: 400, overflowY: 'auto' }}>
+          {userDetails.roles_breakdown && userDetails.roles_breakdown.map((role, index) => (
+            <Card
+              key={role.role_id}
+              size="small"
+              style={{ marginBottom: 8 }}
+              bodyStyle={{ padding: '12px 16px' }}
+            >
+              <Row justify="space-between" align="middle">
+                <Col>
+                  <Text strong style={{ fontSize: 15 }}>
+                    {role.role_name}
+                  </Text>
+                  <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
+                    ({role.role_code})
+                  </Text>
+                </Col>
+                <Col>
+                  <Badge
+                    count={role.total_users}
+                    style={{
+                      backgroundColor: COLORS[index % COLORS.length],
+                      fontSize: 14,
+                      height: 24,
+                      lineHeight: '24px',
+                      minWidth: 24
+                    }}
+                  />
+                </Col>
+              </Row>
+
+              {role.user_names && (
+                <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
+                  <UserOutlined style={{ marginRight: 4 }} />
+                  {role.user_names.length > 100
+                    ? role.user_names.substring(0, 100) + '...'
+                    : role.user_names}
+                </div>
+              )}
+            </Card>
+          ))}
+        </div>
+      </Modal>
+    );
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '0'
-    }}>
-      {/* Modern Header with Glass Effect */}
-      <div style={{
-        background: 'rgba(255, 255, 255, 0.1)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-        padding: '24px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000
-      }}>
+    <div className={`dashboard-container ${isDarkMode ? 'dark' : 'light'}`}>
+      {/* User Details Modal */}
+      {renderUserModal()}
+
+      {/* Header with Filters */}
+      <Card className="dashboard-header-card">
         <Row gutter={[16, 16]} align="middle">
-          <Col span={16}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <Avatar
-                style={{
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  marginRight: 16,
-                  width: 48,
-                  height: 48
-                }}
-                icon={<BarChartOutlined style={{ fontSize: 24, color: 'white' }} />}
-              />
+          <Col xs={24} md={8}>
+            <div className="header-title-section">
+              <div className="header-icon-wrapper">
+                <FilterOutlined className="header-icon" />
+              </div>
               <div>
-                <Title level={2} style={{
-                  color: 'white',
-                  margin: 0,
-                  fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                  textShadow: '0 2px 4px rgba(0,0,0,0.3)'
-                }}>
-                  {t('ផ្ទាំងគ្រប់គ្រងអាជីវកម្ម')}
+                <Title level={3} className="header-title">
+                  {t('ផ្ទាំងគ្រប់គ្រង')}
                 </Title>
-                <Text style={{
-                  color: 'rgba(255,255,255,0.8)',
-                  fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif"
-                }}>
-                  {t('ទិដ្ឋភាពទូលំទូលាយនៃដំណើរការអាជីវកម្មរបស់អ្នក')}
-                </Text>
+                {filterInfo && (
+                  <Text className="header-subtitle">
+                    📍 {filterInfo.branch}
+                  </Text>
+                )}
               </div>
             </div>
           </Col>
-          <Col span={8} style={{ textAlign: "right" }}>
-            {selectedCardIndex !== null ? (
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+
+          <Col xs={24} md={16}>
+            <Row gutter={[8, 8]} justify="end">
+              <Col xs={24} sm={12}>
+                <RangePicker
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  style={{ width: '100%' }}
+                />
+              </Col>
+              <Col xs={8} sm={4}>
                 <Button
                   type="primary"
-                  icon={<DownloadOutlined />}
-                  onClick={() => handleDownloadIndividualPDF(getSelectedElementRef(), getSelectedElementTitle())}
-                  style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    backdropFilter: 'blur(10px)'
-                  }}
+                  icon={<CalendarOutlined />}
+                  onClick={handleFilter}
+                  loading={isLoading}
+                  className="filter-button"
+                  block
                 >
-                  {t('ទាញយក PDF')}
+                  {t('Filter')}
                 </Button>
+              </Col>
+              <Col xs={8} sm={4}>
                 <Button
-                  type="default"
                   icon={<PrinterOutlined />}
-                  onClick={() => handlePrintIndividual(getSelectedElementRef(), getSelectedElementTitle())}
-                  style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    color: 'white'
-                  }}
+                  onClick={handlePrint}
+                  className="print-button"
+                  block
                 >
-                  {t('បោះពុម្ព')}
+                  {t('Print')}
                 </Button>
+              </Col>
+              <Col xs={8} sm={4}>
                 <Button
-                  type="dashed"
-                  onClick={() => setSelectedCardIndex(null)}
-                  style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    color: 'white'
-                  }}
+                  icon={<ReloadOutlined />}
+                  onClick={getList}
+                  loading={isLoading}
+                  className="refresh-button"
+                  block
                 >
-                  {t('បិទ')}
+                  {t('Refresh')}
                 </Button>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <Button
-                  type="primary"
-                  icon={<DownloadOutlined />}
-                  onClick={handleDownloadAllPDF}
-                  style={{
-                    background: 'rgba(255,255,255,0.2)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    backdropFilter: 'blur(10px)'
-                  }}
-                >
-                  {t('ទាញយក PDF')}
-                </Button>
-                <Button
-                  type="default"
-                  icon={<PrinterOutlined />}
-                  onClick={handlePrintAll}
-                  style={{
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.3)',
-                    color: 'white'
-                  }}
-                >
-                  {t('បោះពុម្ព')}
-                </Button>
-              </div>
-            )}
+              </Col>
+            </Row>
           </Col>
-          
         </Row>
-      </div>
 
-      <div style={{ padding: '24px' }}>
-        <Card style={{
-          marginBottom: 24,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          borderRadius: 16,
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
-        }}>
-          <Row gutter={16} align="middle">
-            
-            <Col span={2}>
-              <div style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '12px',
-                padding: '12px',
-                textAlign: 'center'
-              }}>
-                <FilterOutlined style={{ color: 'white', fontSize: 20 }} />
-              </div>
-            </Col>
-            <Col span={8}>
-              <Text strong style={{
-                fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                color: '#1a3353',
-                display: 'block',
-                marginBottom: 8
-              }}>
-                {t('ជ្រើសរើសកាលបរិច្ឆេទ')}
-              </Text>
-              <RangePicker
-                value={dateRange}
-                onChange={handleDateRangeChange}
-                style={{ width: "100%", borderRadius: 8 }}
-                format="YYYY-MM-DD"
-                allowClear={true}
-              />
-            </Col>
-            <Col span={6}>
-              <Text strong style={{
-                fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                color: '#1a3353',
-                display: 'block',
-                marginBottom: 8
-              }}>
-                {t('របៀបមើល')}
-              </Text>
-              <Select
-                value={viewMode}
-                onChange={setViewMode}
-                style={{ width: "100%" }}
-              >
-                <Option value="grid">{t('ទិដ្ឋភាពក្រឡា')}</Option>
-                <Option value="detailed">{t('ទិដ្ឋភាពលម្អិត')}</Option>
-              </Select>
-            </Col>
-            <Col span={4}>
-              <Button
-                type="primary"
-                onClick={handleSearch}
-                icon={<EyeOutlined />}
-                loading={isLoading}
-                style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  border: 'none',
-                  borderRadius: 8,
-                  height: 40,
-                  width: '100%',
-                  marginTop: 24
-                }}
-              >
-                {t('មើលទិន្នន័យ')}
-              </Button>
-            </Col>
-            <Col span={4}>
-              <Text style={{
-                fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                color: '#666',
-                fontSize: 12,
-                marginTop: 24,
-                display: 'block'
-              }}>
-                {t('Ctrl+3 ជ្រើសរើស')}
-              </Text>
-            </Col>
-          </Row>
-        </Card>
+        {/* Quick Date Range Buttons */}
+        <Row gutter={[8, 8]} style={{ marginTop: 16 }}>
+          <Col>
+            <Button size="small" onClick={() => handleQuickDateRange('today')}>
+              {t('Today')}
+            </Button>
+          </Col>
+          <Col>
+            <Button size="small" onClick={() => handleQuickDateRange('this_week')}>
+              {t('This Week')}
+            </Button>
+          </Col>
+          <Col>
+            <Button size="small" onClick={() => handleQuickDateRange('this_month')}>
+              {t('This Month')}
+            </Button>
+          </Col>
+          <Col>
+            <Button size="small" onClick={() => handleQuickDateRange('this_year')}>
+              {t('This Year')}
+            </Button>
+          </Col>
+          <Col>
+            <Button size="small" onClick={() => handleQuickDateRange('last_year')}>
+              {t('Last Year')} (2025)
+            </Button>
+          </Col>
+          <Col>
+            <Button size="small" onClick={() => handleQuickDateRange('all_time')}>
+              {t('All Time')}
+            </Button>
+          </Col>
+        </Row>
 
-        <div id="dashboard-content" ref={dashboardRef}>
-          <Row gutter={[24, 24]}>
-            {dashboard.length > 0 ? dashboard.map((item, index) => (
-              <Col xs={24} sm={12} md={8} lg={8} xl={8} key={index}>
-                <Card
-                  ref={cardRefs.current[index]}
-                  hoverable
-                  style={{
-                    height: viewMode === 'detailed' ? 320 : 280,
-                    borderRadius: 16,
-                    background: 'white',
-                    border: selectedCardIndex === index ?
-                      `2px solid ${COLORS[index % COLORS.length]}` :
-                      '1px solid #f0f0f0',
-                    boxShadow: selectedCardIndex === index ?
-                      `0 8px 30px rgba(102, 126, 234, 0.2)` :
-                      '0 2px 8px rgba(0, 0, 0, 0.06)',
-                    cursor: 'pointer',
-                    transform: selectedCardIndex === index ? 'translateY(-2px)' : 'none',
-                    transition: 'all 0.3s ease',
-                    overflow: 'hidden'
-                  }}
-                  onClick={() => handleCardSelect(index)}
-                  title={null}
-                  bodyStyle={{ padding: 0 }}
-                >
-                  {/* Header Section */}
-                  <div style={{
-                    padding: '24px 20px 16px 20px',
-                    borderBottom: '1px solid #f5f5f5'
-                  }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'flex-start',
-                      marginBottom: 8
-                    }}>
-                      <div style={{ flex: 1 }}>
-                        <Title level={3} style={{
-                          color: '#1a1a1a',
-                          margin: 0,
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontSize: 24,
-                          fontWeight: '600',
-                          lineHeight: 1.2
-                        }}>
-                          {Object.values(item.Summary)[0] || '350'}
-                        </Title>
-                        <Title level={5} style={{
-                          color: COLORS[index % COLORS.length],
-                          margin: '4px 0 0 0',
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontSize: 14,
-                          fontWeight: '500',
-                          textTransform: 'capitalize'
-                        }}>
-                          {item.title}
-                        </Title>
-                      </div>
-
-                      <div style={{
-                        background: `${COLORS[index % COLORS.length]}15`,
-                        borderRadius: '12px',
-                        padding: '10px',
-                        marginLeft: 12
-                      }}>
-                        {getCardIcon(index)}
-                      </div>
-                    </div>
-
-                    <Text style={{
-                      color: '#666',
-                      fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                      fontSize: 13,
-                      lineHeight: 1.4
-                    }}>
-                      {t('Total number of')} {item.title.toLowerCase()} {t('that come in.')}
-                    </Text>
-                  </div>
-
-                  {/* Wave Chart Area */}
-                  <div style={{
-                    position: 'relative',
-                    height: 120,
-                    background: `linear-gradient(135deg, ${COLORS[index % COLORS.length]}08, ${COLORS[index % COLORS.length]}03)`,
-                    overflow: 'hidden'
-                  }}>
-                    <svg
-                      width="100%"
-                      height="120"
-                      style={{ position: 'absolute', top: 0, left: 0 }}
-                      viewBox="0 0 400 120"
-                      preserveAspectRatio="none"
-                    >
-                      <defs>
-                        <linearGradient id={`waveGradient${index}`} x1="0%" y1="0%" x2="0%" y2="100%">
-                          <stop offset="0%" stopColor={COLORS[index % COLORS.length]} stopOpacity="0.3" />
-                          <stop offset="100%" stopColor={COLORS[index % COLORS.length]} stopOpacity="0.1" />
-                        </linearGradient>
-                      </defs>
-                      <path
-                        d="M0,60 Q100,40 200,50 T400,45 L400,120 L0,120 Z"
-                        fill={`url(#waveGradient${index})`}
-                      />
-                      <path
-                        d="M0,60 Q100,40 200,50 T400,45"
-                        stroke={COLORS[index % COLORS.length]}
-                        strokeWidth="2"
-                        fill="none"
-                        opacity="0.8"
-                      />
-                    </svg>
-                  </div>
-
-                  {/* Bottom Stats Section */}
-                  <div style={{
-                    padding: '16px 20px',
-                    background: `${COLORS[index % COLORS.length]}05`
-                  }}>
-                    {Object.entries(item.Summary).slice(1).length > 0 ? (
-                      <div style={{
-                        display: 'flex',
-                        justifyContent: 'space-around',
-                        alignItems: 'center'
-                      }}>
-                        {Object.entries(item.Summary).slice(1, 4).map(([key, value], idx) => (
-                          <div key={idx} style={{ textAlign: 'center', flex: 1 }}>
-                            <Text style={{
-                              fontSize: 18,
-                              fontWeight: '700',
-                              color: COLORS[index % COLORS.length],
-                              display: 'block',
-                              fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-                              lineHeight: 1
-                            }}>
-                              {value}
-                            </Text>
-                            <Text style={{
-                              color: '#666',
-                              fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                              fontSize: 12,
-                              fontWeight: '500',
-                              marginTop: 2,
-                              textTransform: 'capitalize'
-                            }}>
-                              {key}
-                            </Text>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ textAlign: 'center', padding: '8px 0' }}>
-                        <Text style={{
-                          color: '#999',
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontSize: 13
-                        }}>
-                          {t('No additional data available')}
-                        </Text>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Action Menu */}
-                  <div style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    zIndex: 10,
-                  }}>
-                    <Dropdown
-                      overlay={
-                        <Menu>
-                          <Menu.Item
-                            key="select"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCardSelect(index);
-                            }}
-                          >
-                            {t('ជ្រើសរើសដើម្បីបោះពុម្ព')}
-                          </Menu.Item>
-                          <Menu.Item
-                            key="print"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handlePrintIndividual(cardRefs.current[index], item.title);
-                            }}
-                          >
-                            {t('បោះពុម្ព')}
-                          </Menu.Item>
-                          <Menu.Item
-                            key="pdf"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadIndividualPDF(cardRefs.current[index], item.title);
-                            }}
-                          >
-                            {t('ទាញយក PDF')}
-                          </Menu.Item>
-                        </Menu>
-                      }
-                      trigger={['click']}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button
-                        type="text"
-                        icon={<MoreOutlined />}
-                        style={{
-                          color: '#666',
-                          background: 'rgba(255, 255, 255, 0.9)',
-                          border: '1px solid #f0f0f0',
-                          borderRadius: '8px',
-                          width: 32,
-                          height: 32,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    </Dropdown>
-                  </div>
-
-                  {/* Selection Indicator */}
-                  {selectedCardIndex === index && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 12,
-                      left: 12,
-                      background: COLORS[index % COLORS.length],
-                      borderRadius: '50%',
-                      width: 24,
-                      height: 24,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                    }}>
-                      <Text style={{
-                        color: 'white',
-                        fontSize: 12,
-                        fontWeight: 'bold',
-                        lineHeight: 1
-                      }}>
-                        ✓
-                      </Text>
-                    </div>
-                  )}
-                </Card>
-              </Col>
-            )) : (
-              <Col span={24}>
-                <Card style={{
-                  background: 'white',
-                  border: '1px solid #f0f0f0',
-                  borderRadius: 16,
-                  textAlign: 'center',
-                  padding: 40,
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
-                }}>
-                  <Empty
-                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                    description={
-                      <span style={{
-                        fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                        color: '#666'
-                      }}>
-                        {t('មិនមានទិន្នន័យ')}
-                      </span>
-                    }
-                  />
-                </Card>
-              </Col>
-              
-              
-            )}
-            {/* Product Trend Chart */}
-<Col xs={24} lg={24}>
-  <Card
-    hoverable
-    style={{
-      borderRadius: 20,
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255, 255, 255, 0.3)',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-      transition: 'all 0.3s ease',
-      height: '100%'
-    }}
-    title={
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            borderRadius: '12px',
-            padding: '8px',
-            marginRight: 12
-          }}>
-            <ShopOutlined style={{ fontSize: 20, color: 'white' }} />
-          </div>
-          <div>
-            <Title level={5} style={{
-              fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-              fontWeight: "600",
-              margin: 0,
-              color: '#1a3353'
-            }}>
-              {t('និន្នាការផលិតផល')}
-            </Title>   
-            <Text style={{
-              color: '#666',
-              fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-              fontSize: 12
-            }}>
-              {t('ការវិភាគផលិតផលប្រចាំខែ')}
+        {filterInfo?.date_range_applied && (
+          <div className="filter-info-banner">
+            <Text className="filter-info-text">
+              📅 {filterInfo.from_date} → {filterInfo.to_date}
+              {filterInfo.is_super_admin && (
+                <Badge
+                  count="Super Admin"
+                  className="admin-badge"
+                  style={{ marginLeft: 8 }}
+                />
+              )}
             </Text>
           </div>
+        )}
+
+        {showDateWarning && (
+          <Alert
+            message={t('No data found for selected date range')}
+            description={
+              <>
+                {t('Your expense data may be from a different year. Try selecting')}{' '}
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => handleQuickDateRange('last_year')}
+                  style={{ padding: 0 }}
+                >
+                  Last Year (2025)
+                </Button>
+                {' '}or{' '}
+                <Button
+                  type="link"
+                  size="small"
+                  onClick={() => handleQuickDateRange('all_time')}
+                  style={{ padding: 0 }}
+                >
+                  All Time
+                </Button>
+              </>
+            }
+            type="warning"
+            showIcon
+            icon={<InfoCircleOutlined />}
+            closable
+            onClose={() => setShowDateWarning(false)}
+            style={{ marginTop: 16 }}
+          />
+        )}
+      </Card>
+
+      {isLoading ? (
+        <div className="loading-container">
+          <Spin size="large" />
+          <div className="loading-text">
+            {t('កំពុងផ្ទុកទិន្នន័យ...')}
+          </div>
         </div>
+      ) : (
+        <>
+          {/* Top Metrics Cards */}
+          <Row gutter={[24, 24]} className="metrics-row">
+            {dashboard.map((item, index) => {
+              const cardColor = getCardColor(index);
+              const mainValue = getMainValue(item.Summary);
+              const isUserCard = item.title === 'អ្នកប្រើប្រាស់';
 
-        <Badge
-          count={productByMonth.length}
-          style={{
-            backgroundColor: '#667eea',
-            fontSize: 10
-          }}
-        />
-      </div>
-    }
-  >
-    {productByMonth.length > 0 ? (
-      <ResponsiveContainer width="100%" height={320}>
-        <AreaChart data={productByMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <defs>
-            <linearGradient id="productAreaGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#667eea" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#667eea" stopOpacity={0.05} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-          <XAxis
-            dataKey="month"
-            tick={{ fontFamily: "'Khmer OS', sans-serif", fontSize: 11 }}
-            stroke="#666"
-          />
-          <YAxis
-            tickFormatter={(value) => `${value.toLocaleString()}`}
-            tick={{ fontFamily: "system-ui, sans-serif", fontSize: 11 }}
-            stroke="#666"
-          />
-          <Tooltip
-            formatter={tooltipFormatter}
-            contentStyle={{
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: 12
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="product"
-            name={t('ផលិតផល')}
-            stroke="#667eea"
-            strokeWidth={3}
-            fill="url(#productAreaGradient)"
-            dot={{ fill: '#667eea', r: 4 }}
-            activeDot={{ r: 6, fill: '#667eea', stroke: 'white', strokeWidth: 2 }}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
-    ) : (
-      <div style={{ textAlign: 'center', padding: 60 }}>
-        <Empty
-          image={Empty.PRESENTED_IMAGE_SIMPLE}
-          description={
-            <span style={{
-              fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-              color: '#666'
-            }}>
-              {t('មិនមានទិន្នន័យ')}
-            </span>
-          }
-        />
-      </div>
-    )}
-  </Card>
-</Col>
-          </Row>
-
-          <Row gutter={[24, 24]} style={{ marginTop: 32 }}>
-            <Col span={24}>
-              <Card
-                ref={chartRefs.current.combinedChart}
-                hoverable
-                style={{
-                  borderRadius: 20,
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(20px)',
-                  border: selectedCardIndex === 'combinedChart' ?
-                    '2px solid #667eea' :
-                    '1px solid rgba(255, 255, 255, 0.3)',
-                  boxShadow: selectedCardIndex === 'combinedChart' ?
-                    '0 12px 40px rgba(102, 126, 234, 0.3)' :
-                    '0 8px 32px rgba(0, 0, 0, 0.1)',
-                  cursor: 'pointer',
-                  transform: selectedCardIndex === 'combinedChart' ? 'translateY(-4px)' : 'none',
-                  transition: 'all 0.3s ease'
-                }}
-                onClick={() => handleChartSelect('combinedChart')}
-                title={
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: '8px 0' }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <div style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        borderRadius: '12px',
-                        padding: '8px',
-                        marginRight: 12
-                      }}>
-                        <BarChartOutlined style={{ fontSize: 20, color: 'white' }} />
-                      </div>
-                      <div>
-                        <Title level={4} style={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontWeight: "600",
-                          margin: 0,
-                          color: '#1a3353'
-                        }}>
-                          {t('ទិដ្ឋភាពនៃការលក់និងចំណាយ')}
-                        </Title>
-                        <Text style={{
-                          color: '#666',
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontSize: 12
-                        }}>
-                          {t('ការប្រៀបធៀបចំណូលនិងចំណាយប្រចាំខែ')}
+              return (
+                <Col xs={24} sm={12} lg={index < 4 ? 6 : 24} key={index}>
+                  <Card
+                    hoverable
+                    className="metric-card"
+                    onClick={() => handleCardClick(item.title)}
+                  >
+                    <div className="metric-card-header">
+                      <div className="metric-card-content">
+                        <Text className="metric-label">
+                          {t(item.title)}
+                          {isUserCard && userDetails && (
+                            <EyeOutlined
+                              style={{
+                                marginLeft: 8,
+                                fontSize: 12,
+                                color: '#3b82f6',
+                                cursor: 'pointer'
+                              }}
+                            />
+                          )}
                         </Text>
+                        <Title level={3} className="metric-value">
+                          {typeof mainValue === 'string' ? mainValue.replace(/នាក់/g, t('People')).replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female')) : mainValue}
+                        </Title>
                       </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                      <Badge
-                        count={combinedChartData.length}
-                        style={{
-                          backgroundColor: '#52c41a',
-                          fontSize: 10
-                        }}
-                      />
-                      <Dropdown
-                        overlay={
-                          <Menu>
-                            <Menu.Item key="select" onClick={(e) => { e.stopPropagation(); handleChartSelect('combinedChart'); }}>
-                              {t('ជ្រើសរើសដើម្បីបោះពុម្ព')}
-                            </Menu.Item>
-                            <Menu.Item key="print" onClick={(e) => { e.stopPropagation(); handlePrintIndividual(chartRefs.current.combinedChart, t('ទិដ្ឋភាពនៃការលក់និងចំណាយ')); }}>
-                              {t('បោះពុម្ព')}
-                            </Menu.Item>
-                            <Menu.Item key="pdf" onClick={(e) => { e.stopPropagation(); handleDownloadIndividualPDF(chartRefs.current.combinedChart, t('ទិដ្ឋភាពនៃការលក់និងចំណាយ')); }}>
-                              {t('ទាញយក PDF')}
-                            </Menu.Item>
-                          </Menu>
-                        }
-                        trigger={['click']}
-                        onClick={(e) => e.stopPropagation()}
+                      <div
+                        className="metric-icon-wrapper"
+                        style={{ background: cardColor.bg }}
                       >
-                        <Button
-                          type="text"
-                          icon={<MoreOutlined />}
-                          style={{
-                            background: 'rgba(102, 126, 234, 0.1)',
-                            border: '1px solid rgba(102, 126, 234, 0.2)',
-                            borderRadius: 8,
-                            color: '#667eea'
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      </Dropdown>
+                        {React.cloneElement(getCardIcon(item.title), {
+                          style: { fontSize: 20, color: cardColor.color }
+                        })}
+                      </div>
                     </div>
-                  </div>
-                }
-              >
-                {combinedChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={combinedChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <defs>
-                        <linearGradient id="saleGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#667eea" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#667eea" stopOpacity={0.1} />
-                        </linearGradient>
-                        <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f5576c" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#f5576c" stopOpacity={0.1} />
-                        </linearGradient>
-                        <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#43e97b" stopOpacity={0.8} />
-                          <stop offset="95%" stopColor="#43e97b" stopOpacity={0.1} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-                      <XAxis
-                        dataKey="month"
-                        tick={{ fontFamily: "'Khmer OS', sans-serif", fontSize: 12 }}
-                        stroke="#666"
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `${value.toLocaleString()}`}
-                        tick={{ fontFamily: "system-ui, sans-serif", fontSize: 12 }}
-                        stroke="#666"
-                      />
-                      <Tooltip
-                        formatter={tooltipFormatter}
-                        contentStyle={{
-                          background: 'rgba(255, 255, 255, 0.95)',
-                          backdropFilter: 'blur(20px)',
-                          border: '1px solid rgba(255, 255, 255, 0.3)',
-                          borderRadius: 12,
-                          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
-                        }}
-                      />
-                      <Legend
-                        wrapperStyle={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif"
-                        }}
-                      />
-                      <Bar dataKey="sale" name={t('ការលក់')} fill="url(#saleGradient)" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="expense" name={t('ចំណាយ')} fill="url(#expenseGradient)" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="profit" name={t('ប្រាក់ចំណេញ')} fill="url(#profitGradient)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: 60 }}>
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description={
-                        <span style={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          color: '#666'
-                        }}>
-                          {t('មិនមានទិន្នន័យសម្រាប់បង្ហាញ')}
-                        </span>
-                      }
-                    />
-                  </div>
-                )}
 
-                {selectedCardIndex === 'combinedChart' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 16,
-                    left: 16,
-                    background: '#667eea',
-                    borderRadius: '50%',
-                    width: 32,
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 16px rgba(102, 126, 234, 0.4)',
-                    zIndex: 10
-                  }}>
-                    <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✓</Text>
-                  </div>
-                )}
-              </Card>
-            </Col>
-            
+                    <div className="metric-card-footer">
+                      {Object.entries(item.Summary).slice(1, 3).map(([key, value], idx) => (
+                        <div key={idx} className="metric-detail-row">
+                          <Text className="metric-detail-label">{t(key)}:</Text>
+                          <Text className="metric-detail-value">
+                            {typeof value === 'string' ? value.replace(/នាក់/g, t('People')).replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female')) : value}
+                          </Text>
+                        </div>
+                      ))}
+
+                      {/* Show "View All" for user card if more than 2 roles */}
+                      {isUserCard && Object.keys(item.Summary).length > 3 && (
+                        <div style={{ marginTop: 8, textAlign: 'center' }}>
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<EyeOutlined />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowUserModal(true);
+                            }}
+                          >
+                            {t('View All')} {Object.keys(item.Summary).length - 1} {t('Roles')}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              );
+            })}
           </Row>
 
-          <Row gutter={[24, 24]} style={{ marginTop: 24 }}>
-            {/* Sales Trend Chart */}
+          {/* Rest of the dashboard - Welcome, Gauges, Charts */}
+          <Row gutter={[24, 24]} className="welcome-row">
             <Col xs={24} lg={12}>
-              <Card
-                ref={chartRefs.current.salesTrendChart}
-                hoverable
-                style={{
-                  borderRadius: 20,
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(20px)',
-                  border: selectedCardIndex === 'salesTrendChart' ?
-                    '2px solid #43e97b' :
-                    '1px solid rgba(255, 255, 255, 0.3)',
-                  boxShadow: selectedCardIndex === 'salesTrendChart' ?
-                    '0 12px 40px rgba(67, 233, 123, 0.3)' :
-                    '0 8px 32px rgba(0, 0, 0, 0.1)',
-                  cursor: 'pointer',
-                  transform: selectedCardIndex === 'salesTrendChart' ? 'translateY(-4px)' : 'none',
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
-                  height: '100%'
-                }}
-                onClick={() => handleChartSelect('salesTrendChart')}
-                title={
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <div style={{
-                        background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-                        borderRadius: '12px',
-                        padding: '8px',
-                        marginRight: 12
-                      }}>
-                        <RiseOutlined style={{ fontSize: 20, color: 'white' }} />
-                      </div>
-                      <div>
-                        <Title level={5} style={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontWeight: "600",
-                          margin: 0,
-                          color: '#1a3353'
-                        }}>
-                          {t('និន្នាការលក់')}
-                        </Title>
-                        <Text style={{
-                          color: '#666',
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontSize: 12
-                        }}>
-                          {t('ការវិភាគនិន្នាការលក់ប្រចាំខែ')}
-                        </Text>
-                      </div>
+              <Card className="welcome-card">
+                <div className="welcome-bg-gradient" />
+                <div className="welcome-content">
+                  <Text className="welcome-greeting">
+                    {getGreeting()},
+                  </Text>
+                  <Title level={2} className="welcome-name">
+                    {profile?.name || 'User'}
+                  </Title>
+                  <Text className="welcome-message">
+                    {t('Glad to see you again!')}
+                    <br />
+                    {t('Check your dashboard metrics below.')}
+                  </Text>
+
+                  {dashboard.length > 0 && (
+                    <div className="welcome-stats">
+                      <Row gutter={[12, 12]}>
+                        <Col span={12}>
+                          <Text className="welcome-stat-label">
+                            {t('Total Records')}
+                          </Text>
+                          <div className="welcome-stat-value primary">
+                            {dashboard.reduce((sum, item) => {
+                              const val = getMainValue(item.Summary);
+                              // Extract first number from string (e.g., "4 នាក់" → 4)
+                              const match = val.match(/\d+/);
+                              const num = match ? parseInt(match[0], 10) : 0;
+                              return sum + num;
+                            }, 0).toLocaleString()}
+                          </div>
+                        </Col>
+                        <Col span={12}>
+                          <Text className="welcome-stat-label">
+                            {t('Data Sources')}
+                          </Text>
+                          <div className="welcome-stat-value success">
+                            {dashboard.length}
+                          </div>
+                        </Col>
+                      </Row>
                     </div>
+                  )}
+                </div>
+              </Card>
+            </Col>
+
+            <Col xs={24} sm={12} lg={6}>
+              <Card className="gauge-card">
+                <Title level={5} className="gauge-title">
+                  {t('Performance Rate')}
+                </Title>
+                <Text className="gauge-subtitle">
+                  {t('Based on sales data')}
+                </Text>
+
+                <div className="gauge-chart-container">
+                  <ResponsiveContainer width="100%" height={140}>
+                    <RadialBarChart
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="70%"
+                      outerRadius="100%"
+                      data={satisfactionData}
+                      startAngle={90}
+                      endAngle={-270}
+                    >
+                      <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                      <RadialBar
+                        background
+                        dataKey="value"
+                        cornerRadius={10}
+                        fill="#3b82f6"
+                      />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                  <div className="gauge-value-overlay">
+                    <Title level={1} className="gauge-percentage">
+                      {satisfactionRate}%
+                    </Title>
                   </div>
-                }
-              >
-                {saleByMonth.length > 0 ? (
+                </div>
+
+                <div className="gauge-info">
+                  <Text className="gauge-info-text">
+                    {saleByMonth.length} {t('months of data')}
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+
+            <Col xs={24} sm={12} lg={6}>
+              <Card className="gauge-card">
+                <Title level={5} className="gauge-title">
+                  {t('Customer Score')}
+                </Title>
+                <Text className="gauge-subtitle">
+                  {t('Overall rating')}
+                </Text>
+
+                <div className="gauge-chart-container">
+                  <ResponsiveContainer width="100%" height={100}>
+                    <RadialBarChart
+                      cx="50%"
+                      cy="50%"
+                      innerRadius="70%"
+                      outerRadius="100%"
+                      data={customerScoreData}
+                      startAngle={180}
+                      endAngle={0}
+                    >
+                      <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
+                      <RadialBar
+                        background
+                        dataKey="value"
+                        cornerRadius={10}
+                        fill="#10b981"
+                      />
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                  <div className="gauge-value-overlay score">
+                    <Title level={1} className="gauge-score">
+                      {customerScore}
+                    </Title>
+                    <Text className="gauge-score-divider">/ 10</Text>
+                  </div>
+                </div>
+
+                <div className="gauge-info">
+                  <Text className="gauge-info-text">
+                    {dashboard.find(d => d.title === 'អតិថិជន')?.Summary?.['សរុប'] || '0'}
+                  </Text>
+                </div>
+              </Card>
+            </Col>
+          </Row>
+
+          <Row gutter={[24, 24]} className="charts-row">
+            <Col xs={24} lg={14}>
+              <Card className="chart-card">
+                <div className="chart-header">
+                  <div>
+                    <Title level={4} className="chart-title">
+                      {t('Financial Overview')}
+                    </Title>
+                    <Text className="chart-subtitle">
+                      {t('Sales vs Expenses vs Profit')}
+                    </Text>
+                  </div>
+                  <Badge count={combinedData.length} className="chart-badge" />
+                </div>
+
+                {combinedData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={saleByMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <AreaChart data={combinedData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                       <defs>
-                        <linearGradient id="salesAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#43e97b" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#43e97b" stopOpacity={0.05} />
+                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
+                        </linearGradient>
+                        <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05} />
+                        </linearGradient>
+                        {/* ✅ NEW: Profit gradient */}
+                        <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.05} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-                      <XAxis
-                        dataKey="month"
-                        tick={{ fontFamily: "'Khmer OS', sans-serif", fontSize: 11 }}
-                        stroke="#666"
-                      />
+
+                      <CartesianGrid strokeDasharray="3 3" className="chart-grid" />
+                      <XAxis dataKey="month" className="chart-axis" />
                       <YAxis
-                        tickFormatter={(value) => `${value.toLocaleString()}`}
-                        tick={{ fontFamily: "system-ui, sans-serif", fontSize: 11 }}
-                        stroke="#666"
+                        className="chart-axis"
+                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                       />
                       <Tooltip
-                        formatter={tooltipFormatter}
                         contentStyle={{
-                          background: 'rgba(255, 255, 255, 0.95)',
-                          backdropFilter: 'blur(20px)',
-                          border: '1px solid rgba(255, 255, 255, 0.3)',
-                          borderRadius: 12
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: 12,
+                          color: 'var(--text-primary)'
+                        }}
+                        formatter={(value, name) => {
+                          const labels = {
+                            sales: 'Sales',
+                            expenses: 'Expenses',
+                            profit: 'Profit'
+                          };
+                          const colors = {
+                            sales: '#3b82f6',
+                            expenses: '#ef4444',
+                            profit: '#10b981'
+                          };
+                          return [
+                            <span style={{ color: colors[name] }}>
+                              ${value.toLocaleString()}
+                            </span>,
+                            t(labels[name])
+                          ];
                         }}
                       />
+                      <Legend />
+
+                      {/* Sales Area */}
                       <Area
                         type="monotone"
-                        dataKey="sale"
-                        name={t('ការលក់')}
-                        stroke="#43e97b"
+                        dataKey="sales"
+                        name={t('Sales')}
+                        stroke="#3b82f6"
                         strokeWidth={3}
-                        fill="url(#salesAreaGradient)"
-                        dot={{ fill: '#43e97b', r: 4 }}
-                        activeDot={{ r: 6, fill: '#43e97b', stroke: 'white', strokeWidth: 2 }}
+                        fill="url(#salesGradient)"
+                        dot={{ fill: '#3b82f6', r: 4 }}
+                      />
+
+                      {/* Expenses Area */}
+                      <Area
+                        type="monotone"
+                        dataKey="expenses"
+                        name={t('Expenses')}
+                        stroke="#ef4444"
+                        strokeWidth={3}
+                        fill="url(#expensesGradient)"
+                        dot={{ fill: '#ef4444', r: 4 }}
+                      />
+
+                      {/* ✅✅✅ NEW: Profit Area ✅✅✅ */}
+                      <Area
+                        type="monotone"
+                        dataKey="profit"
+                        name={t('Profit')}
+                        stroke="#10b981"
+                        strokeWidth={3}
+                        fill="url(#profitGradient)"
+                        dot={{ fill: '#10b981', r: 4 }}
+                        strokeDasharray="5 5"  // ✅ Dashed line
                       />
                     </AreaChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: 60 }}>
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description={
-                        <span style={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          color: '#666'
-                        }}>
-                          {t('មិនមានទិន្នន័យ')}
-                        </span>
-                      }
-                    />
-                  </div>
-                )}
-
-                {selectedCardIndex === 'salesTrendChart' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 16,
-                    left: 16,
-                    background: '#43e97b',
-                    borderRadius: '50%',
-                    width: 32,
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 16px rgba(67, 233, 123, 0.4)',
-                    zIndex: 10
-                  }}>
-                    <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✓</Text>
+                  <div className="empty-state">
+                    <Empty description={t('No chart data available')} />
                   </div>
                 )}
               </Card>
             </Col>
 
-            {/* Expense Trend Chart */}
-            <Col xs={24} lg={12}>
-              <Card
-                ref={chartRefs.current.expenseTrendChart}
-                hoverable
-                style={{
-                  borderRadius: 20,
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(20px)',
-                  border: selectedCardIndex === 'expenseTrendChart' ?
-                    '2px solid #f5576c' :
-                    '1px solid rgba(255, 255, 255, 0.3)',
-                  boxShadow: selectedCardIndex === 'expenseTrendChart' ?
-                    '0 12px 40px rgba(245, 87, 108, 0.3)' :
-                    '0 8px 32px rgba(0, 0, 0, 0.1)',
-                  cursor: 'pointer',
-                  transform: selectedCardIndex === 'expenseTrendChart' ? 'translateY(-4px)' : 'none',
-                  transition: 'all 0.3s ease',
-                  position: 'relative',
-                  height: '100%'
-                }}
-                onClick={() => handleChartSelect('expenseTrendChart')}
-                title={
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <div style={{
-                        background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-                        borderRadius: '12px',
-                        padding: '8px',
-                        marginRight: 12
-                      }}>
-                        <FallOutlined style={{ fontSize: 20, color: 'white' }} />
-                      </div>
-                      <div>
-                        <Title level={5} style={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontWeight: "600",
-                          margin: 0,
-                          color: '#1a3353'
-                        }}>
-                          {t('និន្នាការចំណាយ')}
-                        </Title>
-                        <Text style={{
-                          color: '#666',
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontSize: 12
-                        }}>
-                          {t('ការវិភាគចំណាយប្រចាំខែ')}
-                        </Text>
-                      </div>
-                    </div>
+            <Col xs={24} lg={10}>
+              <Card className="chart-card">
+                <div className="chart-header">
+                  <div>
+                    <Title level={4} className="chart-title">
+                      {t('Top 5 Categories')}
+                    </Title>
+                    <Text className="chart-subtitle">
+                      {t('By sales amount')}
+                    </Text>
+                  </div>
+                  <Badge count={topSales.length} className="chart-badge success" />
+                </div>
 
-                    <Badge
-                      count={expenseByMonth.length}
-                      style={{
-                        backgroundColor: '#f5576c',
-                        fontSize: 10
-                      }}
-                    />
-                  </div>
-                }
-              >
-                {expenseByMonth.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={expenseByMonth} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                      <defs>
-                        <linearGradient id="expenseAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#f5576c" stopOpacity={0.3} />
-                          <stop offset="95%" stopColor="#f5576c" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.1)" />
-                      <XAxis
-                        dataKey="month"
-                        tick={{ fontFamily: "'Khmer OS', sans-serif", fontSize: 11 }}
-                        stroke="#666"
-                      />
-                      <YAxis
-                        tickFormatter={(value) => `${value.toLocaleString()}`}
-                        tick={{ fontFamily: "system-ui, sans-serif", fontSize: 11 }}
-                        stroke="#666"
-                      />
-                      <Tooltip
-                        formatter={tooltipFormatter}
-                        contentStyle={{
-                          background: 'rgba(255, 255, 255, 0.95)',
-                          backdropFilter: 'blur(20px)',
-                          border: '1px solid rgba(255, 255, 255, 0.3)',
-                          borderRadius: 12
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="expense"
-                        name={t('ចំណាយ')}
-                        stroke="#f5576c"
-                        strokeWidth={3}
-                        fill="url(#expenseAreaGradient)"
-                        dot={{ fill: '#f5576c', r: 4 }}
-                        activeDot={{ r: 6, fill: '#f5576c', stroke: 'white', strokeWidth: 2 }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: 60 }}>
-                    <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
-                      description={
-                        <span style={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          color: '#666'
-                        }}>
-                          {t('មិនមានទិន្នន័យ')}
-                        </span>
-                      }
-                    />
-                  </div>
-                )}
-
-                {selectedCardIndex === 'expenseTrendChart' && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 16,
-                    left: 16,
-                    background: '#f5576c',
-                    borderRadius: '50%',
-                    width: 32,
-                    height: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 4px 16px rgba(245, 87, 108, 0.4)',
-                    zIndex: 10
-                  }}>
-                    <Text style={{ color: 'white', fontSize: 14, fontWeight: 'bold' }}>✓</Text>
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            {/* Top Products Pie Chart */}
-            <Col xs={24} lg={16}>
-              <Card
-                hoverable
-                style={{
-                  borderRadius: 20,
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  backdropFilter: 'blur(20px)',
-                  border: '1px solid rgba(255, 255, 255, 0.3)',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-                  transition: 'all 0.3s ease',
-                  height: '100%'
-                }}
-                title={
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                    <div style={{
-                      background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-                      borderRadius: '12px',
-                      padding: '8px',
-                      marginRight: 12
-                    }}>
-                      <PieChartOutlined style={{ fontSize: 20, color: 'white' }} />
-                    </div>
-                    <div>
-                      <Title level={5} style={{
-                        fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                        fontWeight: "600",
-                        margin: 0,
-                        color: '#1a3353'
-                      }}>
-                        {t('ផលិតផលលក់ដាច់បំផុត')}
-                      </Title>
-                      <Text style={{
-                        color: '#666',
-                        fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                        fontSize: 12
-                      }}>
-                        {t('Top 5 ផលិតផលលក់ដាច់')}
-                      </Text>
-                    </div>
-                  </div>
-                }
-              >
                 {topSales.length > 0 ? (
                   <ResponsiveContainer width="100%" height={320}>
-                    <PieChart margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                    <PieChart>
                       <Pie
                         data={topSales}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                        label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
                         outerRadius={100}
-                        fill="#8884d8"
                         dataKey="value"
-                        stroke="white"
+                        stroke="var(--card-bg)"
                         strokeWidth={2}
                       >
                         {topSales.map((entry, index) => (
@@ -1523,55 +947,51 @@ function HomePage() {
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value) => [`${value.toLocaleString()}`, t('ចំនួនលក់')]}
                         contentStyle={{
-                          background: 'rgba(255, 255, 255, 0.95)',
-                          backdropFilter: 'blur(20px)',
-                          border: '1px solid rgba(255, 255, 255, 0.3)',
+                          background: 'var(--card-bg)',
+                          border: '1px solid var(--border-color)',
                           borderRadius: 12,
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif"
+                          color: 'var(--text-primary)'
                         }}
+                        formatter={(value, name, props) => [
+                          <>
+                            <div>${value.toLocaleString()}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                              Qty: {props.payload.qty.toLocaleString()}
+                            </div>
+                          </>,
+                          props.payload.name
+                        ]}
                       />
                       <Legend
-                        wrapperStyle={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          fontSize: 12
-                        }}
+                        wrapperStyle={{ fontSize: 11 }}
+                        formatter={(value, entry) => (
+                          <span style={{ color: 'var(--text-primary)' }}>
+                            {entry.payload.name}
+                          </span>
+                        )}
                       />
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: 60 }}>
+                  <div className="empty-state">
                     <Empty
-                      image={Empty.PRESENTED_IMAGE_SIMPLE}
                       description={
-                        <span style={{
-                          fontFamily: "'Khmer OS', 'Khmer OS System', 'Khmer OS Battambang', sans-serif",
-                          color: '#666'
-                        }}>
-                          {t('មិនមានទិន្នន័យផលិតផល')}
-                        </span>
+                        <>
+                          <div>{t('No sales data available')}</div>
+                          <div style={{ fontSize: 12, marginTop: 8 }}>
+                            {t('Try changing the date range to see data')}
+                          </div>
+                        </>
                       }
                     />
                   </div>
                 )}
               </Card>
             </Col>
-
-
-            {/* Customer Directory */}
-            <Col xs={24} lg={8}>
-              <div style={{ height: '100%' }}>
-                <CustomerList />
-              </div>
-            </Col>
           </Row>
-
-
-
-
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

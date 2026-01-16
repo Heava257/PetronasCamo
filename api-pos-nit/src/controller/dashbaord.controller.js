@@ -1,685 +1,488 @@
-// const { db, isArray, isEmpty, logError } = require("../util/helper");
+const { db, logError } = require("../util/helper");
 
-// exports.getList = async (req, res) => {
-//   try {
-//     let { from_date, to_date } = req.query;
+const formatCurrency = (value) => {
+  const num = parseFloat(value || 0);
+  if (isNaN(num)) return "$0.00";
+  
+  // ✅ Format with 2 decimal places and dollar sign at end
+  return num.toFixed(2) + "$";
+};
 
-//     if (!from_date || !to_date) {
-//       const currentDate = new Date();
-//       to_date = currentDate.toISOString().split('T')[0]; 
-
-//       from_date = `${currentDate.getFullYear()}-01-01`;
-//     }
-//     const dateFilter = from_date && to_date ?
-//       `AND DATE(r.create_at) BETWEEN '${from_date}' AND '${to_date}'` :
-//       '';
-//     const expenseDateFilter = from_date && to_date ?
-//       `AND DATE(r.expense_date) BETWEEN '${from_date}' AND '${to_date}'` :
-//       '';
-//    const topSaleQuery = `
-//       SELECT 
-//         c.name AS category_name,
-//         SUM(od.qty) AS total_qty,
-//         SUM(od.total) AS total_sale_amount
-//       FROM order_detail od
-//       JOIN product p ON od.product_id = p.id
-//       LEFT JOIN category c ON p.category_id = c.id
-//       JOIN \`order\` o ON od.order_id = o.id
-//       WHERE od.total > 0
-//       AND (p.category_id IS NULL OR p.category_id != 0)
-//       ${from_date && to_date ? `AND DATE(o.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//       GROUP BY c.id, c.name
-//       ORDER BY total_sale_amount DESC
-//       LIMIT 5
-//     `;
-//     const [Top_Sale] = await db.query(topSaleQuery);
-//     const customerQuery = `
-//       SELECT 
-//         COUNT(id) AS total,
-//         SUM(CASE WHEN gender = 'male' THEN 1 ELSE 0 END) AS male,
-//         SUM(CASE WHEN gender = 'female' THEN 1 ELSE 0 END) AS female
-//       FROM customer
-//       ${from_date && to_date ? `WHERE DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//     `;
-//     const [customer] = await db.query(customerQuery);
-//     const newCustomerDetailQuery = `
-//       SELECT 
-//         id,
-//         name,
-//         tel,
-//         email,
-//         address,
-//         type,
-//         gender,
-//         spouse_name,
-//         guarantor_name,
-//         id_card_number,
-//         id_card_expiry,
-//         status,
-//         DATE(create_at) as registration_date,
-//         DATE(updated_at) as last_updated
-//       FROM customer
-//       WHERE 1=1
-//       ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//       ORDER BY create_at DESC
-//     `;
-//     const [New_Customer_Details] = await db.query(newCustomerDetailQuery);
-//     const customerTrendQuery = `
-//       SELECT 
-//         DATE_FORMAT(create_at, '%Y-%m') AS month,
-//         DATE_FORMAT(create_at, '%M %Y') AS month_name,
-//         COUNT(*) AS new_customers,
-//         SUM(CASE WHEN gender = 'male' THEN 1 ELSE 0 END) AS male_count,
-//         SUM(CASE WHEN gender = 'female' THEN 1 ELSE 0 END) AS female_count
-//       FROM customer
-//       WHERE 1=1
-//       ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//       GROUP BY DATE_FORMAT(create_at, '%Y-%m'), DATE_FORMAT(create_at, '%M %Y')
-//       ORDER BY month DESC
-//     `;
-//     const [Customer_Registration_Trend] = await db.query(customerTrendQuery);
-//     const customerTypeQuery = `
-//       SELECT 
-//         type,
-//         COUNT(*) AS count,
-//         ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM customer 
-//           WHERE 1=1 ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''})), 2) AS percentage
-//       FROM customer
-//       WHERE 1=1
-//       ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//       GROUP BY type
-//       ORDER BY count DESC
-//     `;
-//     const [Customer_Type_Breakdown] = await db.query(customerTypeQuery);
-//     const customerActivityQuery = `
-//       SELECT 
-//         c.id,
-//         c.name,
-//         c.tel,
-//         c.email,
-//         c.gender,
-//         DATE(c.create_at) as registration_date,
-//         COUNT(o.id) AS total_orders,
-//         COALESCE(SUM(o.total_amount), 0) AS total_spent,
-//         MAX(o.create_at) AS last_order_date,
-//         DATEDIFF(NOW(), MAX(o.create_at)) AS days_since_last_order
-//       FROM customer c
-//       LEFT JOIN \`order\` o ON c.id = o.customer_id
-//       WHERE 1=1
-//       ${from_date && to_date ? `AND DATE(c.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//       GROUP BY c.id, c.name, c.tel, c.email, c.gender, c.create_at
-//       ORDER BY total_spent DESC
-//     `;
-//     const [Customer_Activity_Report] = await db.query(customerActivityQuery);
-//     const recentCustomerQuery = `
-//       SELECT 
-//         'Last 7 Days' AS period,
-//         COUNT(*) AS new_customers
-//       FROM customer 
-//       WHERE create_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-      
-//       UNION ALL
-      
-//       SELECT 
-//         'Last 30 Days' AS period,
-//         COUNT(*) AS new_customers
-//       FROM customer 
-//       WHERE create_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-      
-//       UNION ALL
-      
-//       SELECT 
-//         'This Month' AS period,
-//         COUNT(*) AS new_customers
-//       FROM customer 
-//       WHERE MONTH(create_at) = MONTH(NOW()) AND YEAR(create_at) = YEAR(NOW())
-      
-//       UNION ALL
-      
-//       SELECT 
-//         'Previous Month' AS period,
-//         COUNT(*) AS new_customers
-//       FROM customer 
-//       WHERE MONTH(create_at) = MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH)) 
-//       AND YEAR(create_at) = YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH))
-//     `;
-//     const [Recent_Customer_Stats] = await db.query(recentCustomerQuery);
-//     const [employee] = await db.query(`
-//       SELECT 
-//         COUNT(id) AS total, 
-//         SUM(CASE WHEN gender = 1 THEN 1 ELSE 0 END) AS male, 
-//         SUM(CASE WHEN gender = 0 THEN 1 ELSE 0 END) AS female
-//       FROM employee;
-//     `);
-//     const expenseQuery = `
-//       SELECT 
-//         COALESCE(SUM(amount), 0) AS total, 
-//         COUNT(id) AS total_expense 
-//       FROM expense 
-//       WHERE 1=1
-//       ${from_date && to_date ? `AND DATE(expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//     `;
-//     const [expanse] = await db.query(expenseQuery);
-//     const saleQuery = `
-//       SELECT 
-//         CONCAT(COALESCE(SUM(r.total_amount), 0), '$') AS total, 
-//         COUNT(r.id) AS total_order 
-//       FROM \`order\` r 
-//       WHERE 1=1
-//       ${from_date && to_date ? `AND DATE(r.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-//     `;
-//     const [sale] = await db.query(saleQuery);
-//     const saleSummaryQuery = `
-//       SELECT 
-//         DATE_FORMAT(r.create_at, '%M') AS title, 
-//         SUM(r.total_amount) AS total 
-//       FROM \`order\` r 
-//       WHERE 1=1
-//       ${dateFilter}
-//       GROUP BY DATE_FORMAT(r.create_at, '%M')
-//     `;
-//     const [Sale_Summary_By_Month] = await db.query(saleSummaryQuery);
-//     const expenseSummaryQuery = `
-//       SELECT 
-//         DATE_FORMAT(r.expense_date, '%M') AS title, 
-//         SUM(r.amount) AS total 
-//       FROM expense r 
-//       WHERE 1=1
-//       ${expenseDateFilter}
-//       GROUP BY DATE_FORMAT(r.expense_date, '%M')
-//     `;
-//     const [Expense_Summary_By_Month] = await db.query(expenseSummaryQuery);
-//     const [User_Summary] = await db.query(`
-//   SELECT 
-//     r.name, 
-//     COUNT(u.id) AS total_users
-//   FROM user u
-//   JOIN role r ON u.role_id = r.id
-//   GROUP BY r.name, r.id
-//   ORDER BY r.id
-// `);
-//     let dashboard = [
-//       {
-//         title: "អ្នកប្រើប្រាស់",
-//         Summary: {
-//           "សរុប": User_Summary.reduce((sum, row) => sum + row.total_users, 0) + " នាក់",
-//           ...User_Summary.reduce((acc, role) => {
-//             acc[`${role.name}`] = role.total_users + " នាក់";
-//             return acc;
-//           }, {})
-//         }
-//       },
-//       {
-//         title: "អតិថិជន",
-//         Summary: {
-//           "សរុប": customer[0].total + " នាក់",
-//           "បុរស": customer[0].male + " នាក់",
-//           "ស្ត្រី": customer[0].female + " នាក់"
-//         }
-//       },
-//       {
-//         title: "ប្រព័ន្ធចំណាយ",
-//         Summary: {
-//           "ចំណាយ": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-//           "សរុប": expanse[0].total + "$",
-//           "ចំនួនសរុប": expanse[0].total_expense
-//         }
-//       },
-//       {
-//         title: "ការលក់",
-//         Summary: {
-//           "លក់": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-//           "សរុប": sale[0].total,
-//           "ការបញ្ជាទិញសរុប": sale[0].total_order
-//         }
-//       }
-//     ];
-//     res.json({
-//       dashboard,
-//       Sale_Summary_By_Month,
-//       Expense_Summary_By_Month,
-//       Top_Sale,
-//       Customer_Reports: {
-//         New_Customer_Details,
-//         Customer_Registration_Trend,
-//         Customer_Type_Breakdown,
-//         Customer_Activity_Report,
-//         Recent_Customer_Stats
-//       },
-//       Customer_Summary: {
-//         total_new_customers: customer[0].total,
-//         active_customers: Customer_Activity_Report.filter(c => c.total_orders > 0).length,
-//         inactive_customers: Customer_Activity_Report.filter(c => c.total_orders === 0).length,
-//         average_spent_per_customer: Customer_Activity_Report.length > 0
-//           ? (Customer_Activity_Report.reduce((sum, c) => sum + parseFloat(c.total_spent), 0) / Customer_Activity_Report.length).toFixed(2)
-//           : 0,
-//         top_spending_customer: Customer_Activity_Report.length > 0 ? Customer_Activity_Report[0] : null
-//       },
-//       filter_info: {
-//         from_date,
-//         to_date,
-//         date_range_applied: !!(from_date && to_date)
-//       }
-//     });
-
-//   } catch (error) {
-//     logError("Dashboard.getList", error, res);
-//   }
-// };
-// exports.getCustomerReport = async (req, res) => {
-//   try {
-//     let { from_date, to_date, customer_type, gender, limit = 50 } = req.query;
-
-//     // Set default date range if not provided
-//     if (!from_date || !to_date) {
-//       const currentDate = new Date();
-//       to_date = currentDate.toISOString().split('T')[0];
-//       from_date = `${currentDate.getFullYear()}-01-01`;
-//     }
-
-//     // Build dynamic filters
-//     let whereConditions = [];
-//     let params = [];
-
-//     if (from_date && to_date) {
-//       whereConditions.push(`DATE(c.create_at) BETWEEN ? AND ?`);
-//       params.push(from_date, to_date);
-//     }
-
-//     if (customer_type) {
-//       whereConditions.push(`c.type = ?`);
-//       params.push(customer_type);
-//     }
-
-//     if (gender) {
-//       whereConditions.push(`c.gender = ?`);
-//       params.push(gender);
-//     }
-
-//     const whereClause = whereConditions.length > 0
-//       ? `WHERE ${whereConditions.join(' AND ')}`
-//       : '';
-
-//     // Detailed customer report with orders
-//     const detailedCustomerQuery = `
-//       SELECT 
-//         c.id,
-//         c.name,
-//         c.tel,
-//         c.email,
-//         c.address,
-//         c.type,
-//         c.gender,
-//         c.spouse_name,
-//         c.guarantor_name,
-//         c.id_card_number,
-//         c.id_card_expiry,
-//         c.status,
-//         DATE(c.create_at) as registration_date,
-//         DATE(c.updated_at) as last_updated,
-//         COUNT(o.id) AS total_orders,
-//         COALESCE(SUM(o.total_amount), 0) AS total_spent,
-//         AVG(o.total_amount) AS avg_order_value,
-//         MAX(o.create_at) AS last_order_date,
-//         MIN(o.create_at) AS first_order_date,
-//         DATEDIFF(NOW(), c.create_at) AS days_since_registration
-//       FROM customer c
-//       LEFT JOIN \`order\` o ON c.id = o.customer_id
-//       ${whereClause}
-//       GROUP BY c.id
-//       ORDER BY c.create_at DESC
-//       LIMIT ?
-//     `;
-
-//     const [customers] = await db.query(detailedCustomerQuery, [...params, parseInt(limit)]);
-
-//     res.json({
-//       customers,
-//       total_records: customers.length,
-//       filters_applied: {
-//         date_range: from_date && to_date ? `${from_date} to ${to_date}` : null,
-//         customer_type,
-//         gender,
-//         limit
-//       },
-//       summary: {
-//         total_customers: customers.length,
-//         active_customers: customers.filter(c => c.total_orders > 0).length,
-//         total_revenue_from_customers: customers.reduce((sum, c) => sum + parseFloat(c.total_spent), 0),
-//         average_customer_value: customers.length > 0
-//           ? (customers.reduce((sum, c) => sum + parseFloat(c.total_spent), 0) / customers.length).toFixed(2)
-//           : 0
-//       }
-//     });
-
-//   } catch (error) {
-//     logError("Dashboard.getCustomerReport", error, res);
-//   }
-// };
-const { db, isArray, isEmpty, logError } = require("../util/helper");
+const formatNumber = (value) => {
+  const num = parseInt(value || 0);
+  return isNaN(num) ? 0 : num;
+};
 
 exports.getList = async (req, res) => {
   try {
+    const currentUserId = req.current_id;
     let { from_date, to_date } = req.query;
 
+    // ✅ Default date range
     if (!from_date || !to_date) {
       const currentDate = new Date();
-      to_date = currentDate.toISOString().split('T')[0]; 
-
+      to_date = currentDate.toISOString().split('T')[0];
       from_date = `${currentDate.getFullYear()}-01-01`;
     }
-    const dateFilter = from_date && to_date ?
-      `AND DATE(r.create_at) BETWEEN '${from_date}' AND '${to_date}'` :
-      '';
-    const expenseDateFilter = from_date && to_date ?
-      `AND DATE(r.expense_date) BETWEEN '${from_date}' AND '${to_date}'` :
-      '';
-    
-    // Product Date Filter
-    const productDateFilter = from_date && to_date ?
-      `AND DATE(p.receive_date) BETWEEN '${from_date}' AND '${to_date}'` :
-      '';
-   
-   const topSaleQuery = `
+
+    // ✅ Get current user info
+    const [currentUser] = await db.query(`
       SELECT 
-        c.name AS category_name,
+        u.id,
+        u.branch_name,
+        u.group_id,
+        u.role_id,
+        r.code AS role_code,
+        r.name AS role_name
+      FROM user u
+      INNER JOIN role r ON u.role_id = r.id
+      WHERE u.id = :user_id
+    `, { user_id: currentUserId });
+
+    if (!currentUser || currentUser.length === 0) {
+      console.error('❌ User not found:', currentUserId);
+      return res.status(404).json({
+        error: true,
+        message: "User not found",
+        message_kh: "រកមិនឃើញអ្នកប្រើប្រាស់"
+      });
+    }
+
+    const userRoleId = currentUser[0].role_id;
+    const userBranch = currentUser[0].branch_name;
+    const userGroupId = currentUser[0].group_id;
+
+    // ✅ Branch filter
+    let branchFilter = '';
+    if (userRoleId !== 29) {
+      if (!userBranch) {
+        console.error('❌ Branch Admin has no branch_name');
+        return res.status(403).json({
+          error: true,
+          message: "Your account is not assigned to a branch",
+          message_kh: "គណនីរបស់អ្នកមិនបានកំណត់សាខា"
+        });
+      }
+      branchFilter = `AND u.branch_name = '${userBranch}'`;
+    }
+
+    // ✅✅✅ TOP SALES QUERY ✅✅✅
+    const topSaleQuery = `
+      SELECT 
+        p.name AS category_name,
         SUM(od.qty) AS total_qty,
-        SUM(od.total) AS total_sale_amount
+        SUM(
+          (od.qty * od.price) / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0)
+        ) AS total_sale_amount
       FROM order_detail od
+      JOIN \`order\` o ON od.order_id = o.id
       JOIN product p ON od.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      JOIN \`order\` o ON od.order_id = o.id
-      WHERE od.total > 0
-      AND (p.category_id IS NULL OR p.category_id != 0)
-      ${from_date && to_date ? `AND DATE(o.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-      GROUP BY c.id, c.name
+      JOIN user u ON o.user_id = u.id
+      WHERE 1=1
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+      GROUP BY p.name
+      HAVING total_sale_amount > 0
       ORDER BY total_sale_amount DESC
       LIMIT 5
     `;
     const [Top_Sale] = await db.query(topSaleQuery);
-    
+
+    // ✅✅✅ CUSTOMER QUERY ✅✅✅
     const customerQuery = `
       SELECT 
-        COUNT(id) AS total,
-        SUM(CASE WHEN gender = 'male' THEN 1 ELSE 0 END) AS male,
-        SUM(CASE WHEN gender = 'female' THEN 1 ELSE 0 END) AS female
-      FROM customer
-      ${from_date && to_date ? `WHERE DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+        COUNT(c.id) AS total,
+        SUM(CASE WHEN c.gender = 'male' THEN 1 ELSE 0 END) AS male,
+        SUM(CASE WHEN c.gender = 'female' THEN 1 ELSE 0 END) AS female
+      FROM customer c
+      JOIN user u ON c.user_id = u.id
+      WHERE 1=1
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(c.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [customer] = await db.query(customerQuery);
-    
-    const newCustomerDetailQuery = `
+
+    // ✅✅✅ REVENUE QUERY ✅✅✅
+    const revenueQuery = `
       SELECT 
-        id,
-        name,
-        tel,
-        email,
-        address,
-        type,
-        gender,
-        spouse_name,
-        guarantor_name,
-        id_card_number,
-        id_card_expiry,
-        status,
-        DATE(create_at) as registration_date,
-        DATE(updated_at) as last_updated
-      FROM customer
+        COALESCE(SUM(
+          (od.qty * od.price) / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0)
+        ), 0) AS total_revenue,
+        COUNT(DISTINCT o.id) AS total_orders
+      FROM \`order\` o
+      JOIN order_detail od ON o.id = od.order_id
+      JOIN product p ON od.product_id = p.id
+      LEFT JOIN category c ON p.category_id = c.id
+      JOIN user u ON o.user_id = u.id
       WHERE 1=1
-      ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-      ORDER BY create_at DESC
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
-    const [New_Customer_Details] = await db.query(newCustomerDetailQuery);
-    
-    const customerTrendQuery = `
+    const [revenue] = await db.query(revenueQuery);
+
+    // ✅✅✅ GET OPERATING EXPENSES (OPEX) ✅✅✅
+    const opexQuery = `
       SELECT 
-        DATE_FORMAT(create_at, '%Y-%m') AS month,
-        DATE_FORMAT(create_at, '%M %Y') AS month_name,
-        COUNT(*) AS new_customers,
-        SUM(CASE WHEN gender = 'male' THEN 1 ELSE 0 END) AS male_count,
-        SUM(CASE WHEN gender = 'female' THEN 1 ELSE 0 END) AS female_count
-      FROM customer
+        COALESCE(SUM(e.amount), 0) AS total, 
+        COUNT(e.id) AS total_expense 
+      FROM expense e
+      INNER JOIN expense_type et ON e.expense_type_id = et.id
+      LEFT JOIN user u ON e.user_id = u.id
       WHERE 1=1
-      ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-      GROUP BY DATE_FORMAT(create_at, '%Y-%m'), DATE_FORMAT(create_at, '%M %Y')
-      ORDER BY month DESC
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(e.expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
-    const [Customer_Registration_Trend] = await db.query(customerTrendQuery);
-    
-    const customerTypeQuery = `
+    const [opexResult] = await db.query(opexQuery);
+
+    // ✅✅✅ GET COST OF GOODS SOLD (COGS) - FIXED ✅✅✅
+    const cogsQuery = `
       SELECT 
-        type,
-        COUNT(*) AS count,
-        ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM customer 
-          WHERE 1=1 ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''})), 2) AS percentage
-      FROM customer
-      WHERE 1=1
-      ${from_date && to_date ? `AND DATE(create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-      GROUP BY type
-      ORDER BY count DESC
+        COALESCE(SUM(p.total_amount), 0) AS total_cogs
+      FROM purchase p
+      WHERE p.status IN ('confirmed', 'shipped', 'delivered')
+      ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
-    const [Customer_Type_Breakdown] = await db.query(customerTypeQuery);
-    
-    const customerActivityQuery = `
-      SELECT 
-        c.id,
-        c.name,
-        c.tel,
-        c.email,
-        c.gender,
-        DATE(c.create_at) as registration_date,
-        COUNT(o.id) AS total_orders,
-        COALESCE(SUM(o.total_amount), 0) AS total_spent,
-        MAX(o.create_at) AS last_order_date,
-        DATEDIFF(NOW(), MAX(o.create_at)) AS days_since_last_order
-      FROM customer c
-      LEFT JOIN \`order\` o ON c.id = o.customer_id
-      WHERE 1=1
-      ${from_date && to_date ? `AND DATE(c.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-      GROUP BY c.id, c.name, c.tel, c.email, c.gender, c.create_at
-      ORDER BY total_spent DESC
-    `;
-    const [Customer_Activity_Report] = await db.query(customerActivityQuery);
-    
-    const recentCustomerQuery = `
-      SELECT 
-        'Last 7 Days' AS period,
-        COUNT(*) AS new_customers
-      FROM customer 
-      WHERE create_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
-      
-      UNION ALL
-      
-      SELECT 
-        'Last 30 Days' AS period,
-        COUNT(*) AS new_customers
-      FROM customer 
-      WHERE create_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-      
-      UNION ALL
-      
-      SELECT 
-        'This Month' AS period,
-        COUNT(*) AS new_customers
-      FROM customer 
-      WHERE MONTH(create_at) = MONTH(NOW()) AND YEAR(create_at) = YEAR(NOW())
-      
-      UNION ALL
-      
-      SELECT 
-        'Previous Month' AS period,
-        COUNT(*) AS new_customers
-      FROM customer 
-      WHERE MONTH(create_at) = MONTH(DATE_SUB(NOW(), INTERVAL 1 MONTH)) 
-      AND YEAR(create_at) = YEAR(DATE_SUB(NOW(), INTERVAL 1 MONTH))
-    `;
-    const [Recent_Customer_Stats] = await db.query(recentCustomerQuery);
-    
-    const [employee] = await db.query(`
-      SELECT 
-        COUNT(id) AS total, 
-        SUM(CASE WHEN gender = 1 THEN 1 ELSE 0 END) AS male, 
-        SUM(CASE WHEN gender = 0 THEN 1 ELSE 0 END) AS female
-      FROM employee;
-    `);
-    
-    const expenseQuery = `
-      SELECT 
-        COALESCE(SUM(amount), 0) AS total, 
-        COUNT(id) AS total_expense 
-      FROM expense 
-      WHERE 1=1
-      ${from_date && to_date ? `AND DATE(expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
-    `;
-    const [expanse] = await db.query(expenseQuery);
-    
-    // Product Query - បង្កើតថ្មី
+    const [cogsResult] = await db.query(cogsQuery);
+
+    // ✅ Calculate Profit
+    const totalRevenue = parseFloat(revenue[0]?.total_revenue || 0);
+    const totalOpex = parseFloat(opexResult[0]?.total || 0);
+    const totalCogs = parseFloat(cogsResult[0]?.total_cogs || 0);
+    const totalExpense = totalOpex + totalCogs;
+    const totalProfit = totalRevenue - totalExpense;
+    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
+
+    // ✅ Expense object for dashboard card
+    const expanse = [{
+      total: totalExpense,
+      total_expense: parseInt(opexResult[0]?.total_expense || 0)
+    }];
+
+    // ✅✅✅ PRODUCT QUERY ✅✅✅
     const productQuery = `
       SELECT 
-        COALESCE(SUM(actual_price), 0) AS total, 
-        COUNT(id) AS total_product 
-      FROM product 
-      WHERE 1=1
-      ${from_date && to_date ? `AND DATE(receive_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+        -- ✅ Current Stock Value using same logic as Stock Status Report
+        -- Formula: (qty × unit_price) ÷ actual_price
+        COALESCE(
+          SUM(
+            ROUND(
+              p.qty * p.unit_price / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0),
+              2
+            )
+          ), 0
+        ) AS total_stock_value,
+        
+        -- Total Active Products
+        COUNT(p.id) AS total_products,
+        
+        -- Total Quantity in Stock
+        COALESCE(SUM(p.qty), 0) AS total_quantity,
+        
+        -- Low Stock Alert (< 100 units)
+        COUNT(CASE WHEN p.qty > 0 AND p.qty < 100 THEN 1 END) AS low_stock_count
+        
+      FROM product p
+      LEFT JOIN category c ON p.category_id = c.id
+      JOIN user u ON p.user_id = u.id
+      WHERE p.status = 1
+        AND p.qty > 0  -- Only products with stock
+        ${branchFilter}
     `;
     const [product] = await db.query(productQuery);
-    
+
+    // ✅✅✅ SALE QUERY (for backward compatibility) ✅✅✅
     const saleQuery = `
       SELECT 
-        CONCAT(COALESCE(SUM(r.total_amount), 0), '$') AS total, 
-        COUNT(r.id) AS total_order 
-      FROM \`order\` r 
+        CONCAT(
+          COALESCE(
+            SUM(
+              (od.qty * od.price) / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0)
+            ), 0
+          ), 
+        '$') AS total, 
+        COUNT(DISTINCT o.id) AS total_order 
+      FROM \`order\` o
+      JOIN order_detail od ON o.id = od.order_id
+      JOIN product p ON od.product_id = p.id
+      LEFT JOIN category c ON p.category_id = c.id
+      JOIN user u ON o.user_id = u.id
       WHERE 1=1
-      ${from_date && to_date ? `AND DATE(r.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [sale] = await db.query(saleQuery);
-    
+
+    // ✅✅✅ SALE SUMMARY BY MONTH ✅✅✅
     const saleSummaryQuery = `
       SELECT 
-        DATE_FORMAT(r.create_at, '%M') AS title, 
-        SUM(r.total_amount) AS total 
-      FROM \`order\` r 
+        DATE_FORMAT(o.order_date, '%M') AS title, 
+        MONTH(o.order_date) as month_num,
+        SUM(
+          (od.qty * od.price) / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0)
+        ) AS total 
+      FROM \`order\` o
+      JOIN order_detail od ON o.id = od.order_id
+      JOIN product p ON od.product_id = p.id
+      LEFT JOIN category c ON p.category_id = c.id
+      JOIN user u ON o.user_id = u.id
       WHERE 1=1
-      ${dateFilter}
-      GROUP BY DATE_FORMAT(r.create_at, '%M')
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+      GROUP BY DATE_FORMAT(o.order_date, '%M'), MONTH(o.order_date)
+      ORDER BY MONTH(o.order_date)
     `;
     const [Sale_Summary_By_Month] = await db.query(saleSummaryQuery);
-    
-    const expenseSummaryQuery = `
+
+    // ✅✅✅ EXPENSE SUMMARY BY MONTH (OPEX + COGS) - FIXED ✅✅✅
+    const opexByMonthQuery = `
       SELECT 
-        DATE_FORMAT(r.expense_date, '%M') AS title, 
-        SUM(r.amount) AS total 
-      FROM expense r 
+        DATE_FORMAT(e.expense_date, '%M') AS title, 
+        SUM(e.amount) AS total,
+        MONTH(e.expense_date) as month_num
+      FROM expense e
+      INNER JOIN expense_type et ON e.expense_type_id = et.id
+      LEFT JOIN user u ON e.user_id = u.id
       WHERE 1=1
-      ${expenseDateFilter}
-      GROUP BY DATE_FORMAT(r.expense_date, '%M')
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(e.expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+      GROUP BY DATE_FORMAT(e.expense_date, '%M'), MONTH(e.expense_date)
     `;
-    const [Expense_Summary_By_Month] = await db.query(expenseSummaryQuery);
+    const [opexByMonth] = await db.query(opexByMonthQuery);
+
+    const cogsByMonthQuery = `
+      SELECT 
+        DATE_FORMAT(p.order_date, '%M') AS title, 
+        SUM(p.total_amount) AS total,
+        MONTH(p.order_date) as month_num
+      FROM purchase p
+      WHERE p.status IN ('confirmed', 'shipped', 'delivered')
+      ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+      GROUP BY DATE_FORMAT(p.order_date, '%M'), MONTH(p.order_date)
+    `;
+    const [cogsByMonth] = await db.query(cogsByMonthQuery);
+
+    // ✅ Merge monthly expense data
+    const monthlyExpenseMap = {};
     
-    // Product Summary By Month - បង្កើតថ្មី
+    opexByMonth.forEach(item => {
+      if (!monthlyExpenseMap[item.title]) {
+        monthlyExpenseMap[item.title] = { total: 0, month_num: item.month_num };
+      }
+      monthlyExpenseMap[item.title].total += parseFloat(item.total);
+    });
+
+    cogsByMonth.forEach(item => {
+      if (!monthlyExpenseMap[item.title]) {
+        monthlyExpenseMap[item.title] = { total: 0, month_num: item.month_num };
+      }
+      monthlyExpenseMap[item.title].total += parseFloat(item.total);
+    });
+
+    const Expense_Summary_By_Month = Object.keys(monthlyExpenseMap).map(key => ({
+      title: key,
+      total: monthlyExpenseMap[key].total
+    })).sort((a, b) => {
+      const monthA = monthlyExpenseMap[a.title].month_num;
+      const monthB = monthlyExpenseMap[b.title].month_num;
+      return monthA - monthB;
+    });
+
+    // ✅✅✅ CALCULATE PROFIT BY MONTH ✅✅✅
+    const Profit_Summary_By_Month = Sale_Summary_By_Month.map(saleMonth => {
+      const expenseMonth = Expense_Summary_By_Month.find(e => e.title === saleMonth.title);
+      const revenue = parseFloat(saleMonth.total || 0);
+      const expense = parseFloat(expenseMonth?.total || 0);
+      const profit = revenue - expense;
+      
+      return {
+        title: saleMonth.title,
+        total: profit,
+        month_num: saleMonth.month_num
+      };
+    }).sort((a, b) => a.month_num - b.month_num);
+
+    // ✅✅✅ PRODUCT SUMMARY BY MONTH ✅✅✅
     const productSummaryQuery = `
       SELECT 
-        DATE_FORMAT(p.receive_date, '%M') AS title, 
-        SUM(p.actual_price) AS total 
-      FROM product p 
-      WHERE 1=1
-      ${productDateFilter}
-      GROUP BY DATE_FORMAT(p.receive_date, '%M')
+        DATE_FORMAT(p.create_at, '%M') AS title,
+        SUM(p.qty * p.unit_price) AS total
+      FROM product p
+      JOIN user u ON p.user_id = u.id
+      WHERE p.status = 1
+      ${branchFilter}
+      ${from_date && to_date ? `AND DATE(p.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+      GROUP BY MONTH(p.create_at), DATE_FORMAT(p.create_at, '%M')
+      ORDER BY MONTH(p.create_at)
     `;
     const [Product_Summary_By_Month] = await db.query(productSummaryQuery);
-    
-    const [User_Summary] = await db.query(`
+
+    // ✅✅✅ USER SUMMARY - COMPLETELY FIXED TO SHOW ALL ROLES ✅✅✅
+    const userSummaryQuery = `
       SELECT 
-        r.name, 
-        COUNT(u.id) AS total_users
-      FROM user u
-      JOIN role r ON u.role_id = r.id
-      GROUP BY r.name, r.id
-      ORDER BY r.id
-    `);
-    
+        r.id AS role_id,
+        r.name AS role_name,
+        r.code AS role_code,
+        COUNT(u.id) AS total_users,
+        GROUP_CONCAT(u.name SEPARATOR ', ') as user_names
+      FROM role r
+      LEFT JOIN user u ON u.role_id = r.id 
+        AND u.is_active = 1
+        ${userRoleId !== 29 && userBranch ? `AND u.branch_name = '${userBranch}'` : ''}
+      GROUP BY r.id, r.name, r.code
+      HAVING total_users > 0
+      ORDER BY total_users DESC, r.name ASC
+    `;
+    const [User_Summary] = await db.query(userSummaryQuery);
+
+    // ✅ Calculate total users correctly
+    const totalUsers = User_Summary.reduce((sum, row) => sum + row.total_users, 0);
+
+    // ✅ Also get count by status for verification
+    const userStatusQuery = `
+      SELECT 
+        COUNT(CASE WHEN is_active = 1 THEN 1 END) AS active_users,
+        COUNT(CASE WHEN is_active = 0 THEN 1 END) AS inactive_users,
+        COUNT(*) AS total_all_users
+      FROM user
+      WHERE 1=1
+      ${userRoleId !== 29 && userBranch ? `AND branch_name = '${userBranch}'` : ''}
+    `;
+    const [userStatus] = await db.query(userStatusQuery);
+
+    // ✅✅✅ BUILD DASHBOARD with all roles and PROFIT CARD ✅✅✅
+    const userSummaryObject = {
+      "សរុប": formatNumber(totalUsers) + " នាក់",
+    };
+
+    // Add each role to the summary
+    User_Summary.forEach(role => {
+      userSummaryObject[role.role_name] = role.total_users + " នាក់";
+    });
+
     let dashboard = [
       {
         title: "អ្នកប្រើប្រាស់",
-        Summary: {
-          "សរុប": User_Summary.reduce((sum, row) => sum + row.total_users, 0) + " នាក់",
-          ...User_Summary.reduce((acc, role) => {
-            acc[`${role.name}`] = role.total_users + " នាក់";
-            return acc;
-          }, {})
-        }
+        Summary: userSummaryObject
       },
       {
         title: "អតិថិជន",
         Summary: {
-          "សរុប": customer[0].total + " នាក់",
-          "បុរស": customer[0].male + " នាក់",
-          "ស្ត្រី": customer[0].female + " នាក់"
+          "សរុប": formatNumber(customer[0]?.total) + " នាក់",
+          "បុរស": formatNumber(customer[0]?.male) + " នាក់",
+          "ស្ត្រី": formatNumber(customer[0]?.female) + " នាក់"
         }
       },
       {
         title: "ប្រព័ន្ធចំណាយទូទៅ",
         Summary: {
           "ចំណាយ": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-          "សរុប": expanse[0].total + "$",
-          "ចំនួនសរុប": expanse[0].total_expense
+          "សរុប": formatCurrency(totalExpense),  // ✅ $7,394.96
+          "OPEX": formatCurrency(totalOpex),
+          "COGS": formatCurrency(totalCogs)
         }
       },
       {
         title: "ផលិតផល",
         Summary: {
-          "ផលិតផល": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-          "សរុប": product[0].total + "$",
-          "ចំនួនសរុប": product[0].total_product
+          "ស្តុក": "Current Stock",
+          "តម្លៃ": formatCurrency(product[0]?.total_stock_value),  // ✅ $7,394.96
+          "ចំនួនផលិតផល": formatNumber(product[0]?.total_products) + " items",
+          "ចំនួនស្តុកសរុប": formatNumber(product[0]?.total_quantity) + " L"
         }
       },
       {
         title: "ការលក់",
         Summary: {
           "លក់": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-          "សរុប": sale[0].total,
-          "ការបញ្ជាទិញសរុប": sale[0].total_order
+          "សរុប": formatCurrency(totalRevenue),  // ✅ $8,226.89
+          "ការបញ្ជាទិញសរុប": formatNumber(sale[0]?.total_order)  // ✅ 4 (no extra chars!)
+        }
+      },
+      // ✅✅✅ PROFIT CARD ✅✅✅
+      {
+        title: "ចំណេញ",
+        Summary: {
+          "រយៈពេល": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
+          "ចំណូលសរុប": formatCurrency(totalRevenue),    // ✅ $8,226.89
+          "ចំណាយសរុប": formatCurrency(totalExpense),   // ✅ $7,394.96
+          "ចំណេញសុទ្ធ": formatCurrency(totalProfit),   // ✅ $831.93
+          "អត្រាចំណេញ": profitMargin.toFixed(2) + "%",  // ✅ 10.11%
+          "ស្ថានភាព": totalProfit > 0 ? "📈 Profit" : totalProfit < 0 ? "📉 Loss" : "➖ Break Even"
         }
       }
     ];
-    
+    // ✅ Send response with all data including Profit
     res.json({
       dashboard,
       Sale_Summary_By_Month,
       Expense_Summary_By_Month,
-      Product_Summary_By_Month,  // បន្ថែមថ្មី
+      Profit_Summary_By_Month,  // ✅ NEW
+      Product_Summary_By_Month,
       Top_Sale,
-      Customer_Reports: {
-        New_Customer_Details,
-        Customer_Registration_Trend,
-        Customer_Type_Breakdown,
-        Customer_Activity_Report,
-        Recent_Customer_Stats
+      financial_summary: {  // ✅ NEW
+        total_revenue: parseFloat(totalRevenue.toFixed(2)),
+        total_expense: parseFloat(totalExpense.toFixed(2)),
+        total_profit: parseFloat(totalProfit.toFixed(2)),
+        profit_margin: parseFloat(profitMargin.toFixed(2)),
+        opex: parseFloat(totalOpex.toFixed(2)),
+        cogs: parseFloat(totalCogs.toFixed(2))
       },
-      Customer_Summary: {
-        total_new_customers: customer[0].total,
-        active_customers: Customer_Activity_Report.filter(c => c.total_orders > 0).length,
-        inactive_customers: Customer_Activity_Report.filter(c => c.total_orders === 0).length,
-        average_spent_per_customer: Customer_Activity_Report.length > 0
-          ? (Customer_Activity_Report.reduce((sum, c) => sum + parseFloat(c.total_spent), 0) / Customer_Activity_Report.length).toFixed(2)
-          : 0,
-        top_spending_customer: Customer_Activity_Report.length > 0 ? Customer_Activity_Report[0] : null
+      user_details: {
+        active_users: userStatus[0]?.active_users || 0,
+        inactive_users: userStatus[0]?.inactive_users || 0,
+        total_all_users: userStatus[0]?.total_all_users || 0,
+        roles_breakdown: User_Summary
       },
       filter_info: {
         from_date,
         to_date,
+        branch: userRoleId === 29 ? 'All Branches' : userBranch,
+        is_super_admin: userRoleId === 29,
+        role_id: userRoleId,
+        group_id: userGroupId,
         date_range_applied: !!(from_date && to_date)
       }
     });
 
   } catch (error) {
+    console.error('❌ Dashboard error:', error);
     logError("Dashboard.getList", error, res);
+
+    return res.status(500).json({
+      error: true,
+      message: "Failed to load dashboard",
+      message_kh: "មិនអាចផ្ទុក Dashboard បានទេ",
+      details: error.message
+    });
   }
 };
 
+// ✅✅✅ GET CUSTOMER REPORT ✅✅✅
 exports.getCustomerReport = async (req, res) => {
   try {
+    const currentUserId = req.current_id;
     let { from_date, to_date, customer_type, gender, limit = 50 } = req.query;
+
+    const [currentUser] = await db.query(`
+      SELECT 
+        u.branch_name,
+        u.role_id,
+        r.code AS role_code
+      FROM user u
+      INNER JOIN role r ON u.role_id = r.id
+      WHERE u.id = :user_id
+    `, { user_id: currentUserId });
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({
+        error: true,
+        message: "User not found"
+      });
+    }
+
+    const userRoleId = currentUser[0].role_id;
+    const userBranch = currentUser[0].branch_name;
 
     if (!from_date || !to_date) {
       const currentDate = new Date();
@@ -705,6 +508,11 @@ exports.getCustomerReport = async (req, res) => {
       params.push(gender);
     }
 
+    if (userRoleId !== 29 && userBranch) {
+      whereConditions.push(`u.branch_name = ?`);
+      params.push(userBranch);
+    }
+
     const whereClause = whereConditions.length > 0
       ? `WHERE ${whereConditions.join(' AND ')}`
       : '';
@@ -718,27 +526,18 @@ exports.getCustomerReport = async (req, res) => {
         c.address,
         c.type,
         c.gender,
-        c.spouse_name,
-        c.guarantor_name,
-        c.id_card_number,
-        c.id_card_expiry,
-        c.status,
         DATE(c.create_at) as registration_date,
-        DATE(c.updated_at) as last_updated,
         COUNT(o.id) AS total_orders,
-        COALESCE(SUM(o.total_amount), 0) AS total_spent,
-        AVG(o.total_amount) AS avg_order_value,
-        MAX(o.create_at) AS last_order_date,
-        MIN(o.create_at) AS first_order_date,
-        DATEDIFF(NOW(), c.create_at) AS days_since_registration
+        COALESCE(SUM(o.total_amount), 0) AS total_spent
       FROM customer c
       LEFT JOIN \`order\` o ON c.id = o.customer_id
+      ${userRoleId !== 29 ? 'LEFT JOIN user u ON o.user_id = u.id' : ''}
       ${whereClause}
       GROUP BY c.id
       ORDER BY c.create_at DESC
       LIMIT ?
     `;
- 
+
     const [customers] = await db.query(detailedCustomerQuery, [...params, parseInt(limit)]);
 
     res.json({
@@ -748,19 +547,19 @@ exports.getCustomerReport = async (req, res) => {
         date_range: from_date && to_date ? `${from_date} to ${to_date}` : null,
         customer_type,
         gender,
+        branch: userRoleId === 29 ? 'All Branches' : userBranch,
         limit
-      },
-      summary: {
-        total_customers: customers.length,
-        active_customers: customers.filter(c => c.total_orders > 0).length,
-        total_revenue_from_customers: customers.reduce((sum, c) => sum + parseFloat(c.total_spent), 0),
-        average_customer_value: customers.length > 0
-          ? (customers.reduce((sum, c) => sum + parseFloat(c.total_spent), 0) / customers.length).toFixed(2)
-          : 0
       }
     });
 
   } catch (error) {
+    console.error('❌ Customer Report error:', error);
     logError("Dashboard.getCustomerReport", error, res);
+
+    return res.status(500).json({
+      error: true,
+      message: "Failed to load customer report",
+      details: error.message
+    });
   }
 };

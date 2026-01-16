@@ -202,11 +202,31 @@
   background: rgba(55, 65, 81, 0.3) !important;
 }
 
-:global(.dark) .checked-row {
-  background: rgba(34, 197, 94, 0.2) !important;
-  border-left: 3px solid #22c55e !important;
+/* Checked Row - Light Mode */
+.checked-row {
+  background: rgba(255, 235, 59, 0.3) !important; /* Yellow background */
+  border-left: 3px solid #fbbf24 !important;
 }
 
-:global(.dark) .checked-row:hover {
-  background: rgba(34, 197, 94, 0.3) !important;
+.checked-row:hover {
+  background: rgba(255, 235, 59, 0.4) !important;
+}
+
+/* Checked Row - Light Mode */
+.checkedRow {
+  background: rgba(201, 185, 47, 0.3) !important; /* Yellow background */
+  border-left: 3px solid #fbbf24 !important;
+}
+
+.checkedRow:hover {
+  background: rgba(255, 235, 59, 0.4) !important;
+}
+
+:global(.dark) .checkedRow {
+  background: rgba(251, 191, 36, 0.2) !important; /* Darker yellow for dark mode */
+  border-left: 3px solid #fbbf24 !important;
+}
+
+:global(.dark) .checkedRow:hover {
+  background: rgba(251, 191, 36, 0.3) !important;
 }

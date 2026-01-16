@@ -1,786 +1,356 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useEffect } from 'react';
+import { Card, Row, Col, Statistic, Table, Tag, Button, Select, Space, DatePicker, message } from 'antd';
 import {
-  Button,
-  Form,
-  Input,
-  message,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Tag,
-  DatePicker,
-  InputNumber,
-  Divider,
-  Row,
-  Col
-} from "antd";
+  MdLocalShipping,
+  MdCheckCircle,
+  MdAccessTime,
+  MdWarning,
+  MdMap,
+  MdPhone,
+  MdRefresh
+} from 'react-icons/md';
+import { useTranslation } from '../../locales/TranslationContext';
+import { request } from '../../util/helper';
+import DeliveryTrackingModal from './DeliveryTrackingModal';
 import moment from 'moment';
-import { formatDateClient, isPermission, request } from "../../util/helper";
-import { MdAdd, MdDelete, MdEdit, MdOutlineCreateNewFolder, MdPrint } from "react-icons/md";
-import MainPage from "../../component/layout/MainPage";
-import { configStore } from "../../store/configStore";
-import "./DeliveryNotePage.css";
-import { getProfile } from "../../store/profile.store";
-import DeliveryNotePrint from "../../component/printer/DeliveryNotePrint";
-import { useTranslation } from '../../locales/TranslationContext'; 
+import "./DeliveryNotePage.css"
 
-function DeliveryNotePage() {
-  const { config } = configStore();
-  const { t } = useTranslation(); // Use translation
-  const [form] = Form.useForm();
-
-  const [list, setList] = useState([]);
+const DeliveryDashboard = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([]);
-  const [isPrinting, setIsPrinting] = useState(false);
-  const [dataLoading, setDataLoading] = useState({
-    categories: true,
-    customers: true
-  });
-
-  // Reference to the DeliveryNotePrint component
-  const printRef = useRef();
-
-  const [state, setState] = useState({
-    visibleModal: false,
-    id: null,
-    delivery_number: "",
-    customer_id: null,
-    delivery_date: null,
-    order_date: null,
-    order_number: "",
-    driver_name: "",
-    driver_phone: "",
-    vehicle_number: "",
-    note: "",
-    status: 1,
-    txtSearch: "",
-  });
+  const [stats, setStats] = useState({});
+  const [todayDeliveries, setTodayDeliveries] = useState([]);
+  const [selectedPeriod, setSelectedPeriod] = useState('today');
+  const [trackingModalVisible, setTrackingModalVisible] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState(null);
+  const [filterStatus, setFilterStatus] = useState(null);
 
   useEffect(() => {
-    loadAllData();
-  }, []);
+    loadData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(loadData, 30000);
+    return () => clearInterval(interval);
+  }, [selectedPeriod, filterStatus]);
 
-  const loadAllData = async () => {
+  const loadData = async () => {
     setLoading(true);
-
     try {
-      // Load all data in parallel with individual error handling
-      const [categoriesResult, customersResult, listResult] = await Promise.allSettled([
-        loadCategories(),
-        loadCustomers(),
-        getList()
-      ]);
+      // Load stats
+      const statsRes = await request(`orders/delivery-stats?period=${selectedPeriod}`, 'get');
+      if (statsRes && statsRes.success) {
+        setStats(statsRes.stats || {});
+      }
 
-      // Check for any failures
-      const failures = [categoriesResult, customersResult, listResult].filter(
-        result => result.status === 'rejected'
+      // Load today's deliveries
+      const deliveriesRes = await request(
+        `orders/delivery-today${filterStatus ? `?status=${filterStatus}` : ''}`,
+        'get'
       );
-      
-      if (failures.length > 0) {
-        message.error(t('failed_load_data'));
+      if (deliveriesRes && deliveriesRes.success) {
+        setTodayDeliveries(deliveriesRes.deliveries || []);
       }
     } catch (error) {
-      console.error("Error loading data:", error);
-      message.error(t('failed_load_data'));
+      console.error('Error loading dashboard:', error);
+      message.error(t('failed_to_load_data'));
     } finally {
       setLoading(false);
     }
   };
 
-  const getList = async () => {
-    setLoading(true);
-    try {
-      const res = await request("delivery-note", "get");
-      if (res && !res.error) {
-        setList(res.list || []);
-      } else {
-        console.error("Error fetching delivery notes:", res?.error);
-        message.error(t('failed_load_delivery_notes'));
-      }
-    } catch (error) {
-      console.error("Error in getList:", error);
-      message.error(t('failed_load_delivery_notes'));
-    } finally {
-      setLoading(false);
-    }
+  const handleViewTracking = (orderId) => {
+    setSelectedOrderId(orderId);
+    setTrackingModalVisible(true);
   };
 
-  const loadCategories = async () => {
-    setDataLoading(prev => ({ ...prev, categories: true }));
-    const { id: user_id } = getProfile();
-    if (!user_id) return;
-
-    try {
-      const res = await request(`category/my-group`, "get");
-      if (res && !res.error) {
-        setCategories(res.list || []);
-      } else {
-        console.error("Error in category response:", res?.error);
-        message.error(t('failed_load_categories'));
-      }
-    } catch (error) {
-      console.error("Error loading categories:", error);
-      message.error(t('failed_load_categories'));
-    } finally {
-      setDataLoading(prev => ({ ...prev, categories: false }));
-    }
-  };
-
-  const loadCustomers = async () => {
-    setDataLoading(prev => ({ ...prev, customers: true }));
-    const { id } = getProfile();
-    if (!id) return;
-
-    try {
-      const res = await request(`customer/my-group`, "get");
-      if (res && !res.error) {
-        setCustomers(res.list || []);
-      } else {
-        console.error("Error in customers response:", res?.error);
-        message.error(t('failed_load_customers'));
-      }
-    } catch (error) {
-      console.error("Error loading customers:", error);
-      message.error(t('failed_load_customers'));
-    } finally {
-      setDataLoading(prev => ({ ...prev, customers: false }));
-    }
-  };
-
-  const onClickEdit = async (data) => {
-    setState({
-      ...state,
-      visibleModal: true,
-      id: data.id,
-    });
-
-    // Fetch delivery note details
-    const detailRes = await request(`delivery-note/${data.id}/detail`, "get");
-    const items = detailRes && !detailRes.error ? detailRes.items || [] : [];
-
-    // Add keys to items for proper React rendering
-    const itemsWithKeys = items.map((item, index) => ({
-      ...item,
-      key: item.id || `item-${index}-${Date.now()}`
-    }));
-
-    form.setFieldsValue({
-      id: data.id,
-      delivery_number: data.delivery_number,
-      customer_id: data.customer_id,
-      delivery_date: data.delivery_date ? moment(data.delivery_date) : null,
-      order_date: data.order_date ? moment(data.order_date) : null,
-      order_number: data.order_number || "",
-      driver_name: data.driver_name,
-      driver_phone: data.driver_phone,
-      vehicle_number: data.vehicle_number,
-      note: data.note,
-      status: data.status,
-      items: itemsWithKeys,
-      top_tank_number: data.top_tank_number || "",
-      bottom_tank_number: data.bottom_tank_number || "",
-    });
-
-    setSelectedItems(itemsWithKeys);
-  };
-
-  const onClickDelete = async (data) => {
-    Modal.confirm({
-      title: t('delete'),
-      content: t('delete_delivery_confirm'),
-      okText: t('yes'),
-      cancelText: t('cancel'),
-      onOk: async () => {
-        const res = await request("delivery-note", "delete", { id: data.id });
-        if (res && !res.error) {
-          message.success(res.message || t('deleted_successfully'));
-          setList(list.filter((item) => item.id !== data.id));
-        } else {
-          message.error(t('failed_to_delete'));
-        }
-      },
-    });
-  };
-
-  const getCategoryInfo = (categoryId) => {
-    const categoryInfo = categories.find(c => c.id === categoryId);
-    return {
-      category_name: categoryInfo ? categoryInfo.name : "",
-      category_id: categoryId
-    };
-  };
-
-  const onClickPrint = async (data) => {
-    try {
-      setIsPrinting(true);
-
-      // Fetch the items
-      const detailRes = await request(`delivery-note/${data.id}/detail`, "get");
-      const items = detailRes && !detailRes.error ? detailRes.items || [] : [];
-
-      // Find customer information
-      const customer = customers.find(c => c.id === data.customer_id) || {};
-
-      // Prepare data for printing with proper date formatting
-      const printData = {
-        ...data,
-        customer_name: customer.name || "",
-        customer_phone: customer.tel || "",
-        customer_address: customer.address || "",
-        order_date_formatted: data.order_date ? formatDateClient(data.order_date, "DD/MM/YYYY") : "",
-        delivery_date_formatted: data.delivery_date ? formatDateClient(data.delivery_date, "DD/MM/YYYY") : "",
-        top_tank_number: data.top_tank_number || "",
-        bottom_tank_number: data.bottom_tank_number || "",
-      };
-
-      // Get category info
-      const getCategoryInfoAsync = async (categoryId) => {
-        try {
-          const categoryInfo = categories.find(c => c.id === categoryId);
-          return {
-            category_name: categoryInfo ? categoryInfo.name : "",
-            category_id: categoryId
-          };
-        } catch (error) {
-          console.error("Error getting category info:", error);
-          return { category_name: "", category_id: null };
-        }
-      };
-
-      // Prepare items with category names
-      const printItems = await Promise.all(items.map(async (item) => {
-        const info = await getCategoryInfoAsync(item.category_id);
-        return {
-          ...item,
-          category_name: info.category_name || "",
-          product_name: item.description || ""
-        };
-      }));
-
-      // Now call print directly from the component
-      if (printRef.current && printRef.current.print) {
-        printRef.current.print({
-          data: printData,
-          items: printItems
-        });
-      } else {
-        message.error(t('print_failed'));
-      }
-    } catch (error) {
-      console.error("Error preparing print:", error);
-      message.error(t('print_failed'));
-    } finally {
-      setIsPrinting(false);
-    }
-  };
-
-  const onClickAddBtn = () => {
-    setState({
-      ...state,
-      visibleModal: true,
-    });
-    form.resetFields();
-    setSelectedItems([]);
-
-    // Current date for defaults
-    const today = moment();
-    const dateStr = today.format('YYYYMMDD');
-    const randomSeq = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-
-    // Generate numbers
-    const newDeliveryNumber = `DN-${dateStr}-${randomSeq}`;
-    const newOrderNumber = `ORD-${dateStr}-${randomSeq}`;
-
-    form.setFieldsValue({
-      delivery_number: newDeliveryNumber,
-      order_number: newOrderNumber,
-      delivery_date: null,
-      order_date: null,
-      status: 1,
-    });
-  };
-
-  const onCloseModal = () => {
-    form.resetFields();
-    setState({
-      ...state,
-      visibleModal: false,
-      id: null,
-    });
-    setSelectedItems([]);
-  };
-
-  const handleAddItem = () => {
-    const newItem = {
-      key: `new-item-${Date.now()}`,
-      category_id: null,
-      description: "",
-      quantity: 1,
-      unit: "",
-      unit_price: 0,
-      amount: 0,
-    };
-
-    setSelectedItems([...selectedItems, newItem]);
-  };
-
-  const handleRemoveItem = (key) => {
-    setSelectedItems(selectedItems.filter(item => item.key !== key));
-  };
-
-  const handleItemChange = (key, field, value) => {
-    const updatedItems = selectedItems.map(item => {
-      if (item.key === key) {
-        const updatedItem = { ...item, [field]: value };
-
-        // Auto calculate amount if quantity or unit_price changes
-        if (field === 'quantity' || field === 'unit_price') {
-          updatedItem.amount = (updatedItem.quantity || 0) * (updatedItem.unit_price || 0);
-        }
-
-        // If category_id changes, get category details
-        if (field === 'category_id') {
-          const selectedCategory = categories.find(c => c.id === value);
-          if (selectedCategory) {
-            updatedItem.category_name = selectedCategory.name || "";
-          }
-        }
-
-        return updatedItem;
-      }
-      return item;
-    });
-
-    setSelectedItems(updatedItems);
-  };
-
-  const onFinish = async (values) => {
-    // Validate that we have items and all items have category_id
-    if (selectedItems.length === 0) {
-      message.error(t('please_add_item'));
-      return;
-    }
-
-    // Check if any item has null category_id
-    const invalidItems = selectedItems.filter(item => !item.category_id);
-    if (invalidItems.length > 0) {
-      message.error(t('please_select_category_all'));
-      return;
-    }
-
-    // Additional validation for required fields in items
-    const incompleteItems = selectedItems.filter(item =>
-      !item.category_id ||
-      !item.quantity ||
-      item.quantity <= 0 ||
-      !item.unit
-    );
-
-    if (incompleteItems.length > 0) {
-      message.error(t('please_complete_item_details'));
-      return;
-    }
-
-    const formattedOrderDate = values.order_date ? values.order_date.format('YYYY-MM-DD') : null;
-    const formattedDeliveryDate = values.delivery_date ? values.delivery_date.format('YYYY-MM-DD') : null;
-
-    const data = {
-      id: form.getFieldValue("id"),
-      delivery_number: values.delivery_number,
-      customer_id: values.customer_id,
-      delivery_date: formattedDeliveryDate,
-      order_date: formattedOrderDate,
-      order_number: values.order_number || "",
-      driver_name: values.driver_name || "",
-      driver_phone: values.driver_phone || "",
-      vehicle_number: values.vehicle_number || "",
-      note: values.note || "",
-      status: values.status,
-      top_tank_number: values.top_tank_number || "",
-      bottom_tank_number: values.bottom_tank_number || "",
-      items: selectedItems.map(item => ({
-        category_id: item.category_id,
-        description: item.description || "",
-        quantity: item.quantity,
-        unit: item.unit || "",
-        unit_price: item.unit_price || 0,
-        amount: item.amount || 0,
-      }))
-    };
-
-    const method = data.id ? "put" : "post";
-    const res = await request("delivery-note", method, data);
-
-    if (res && !res.error) {
-      message.success(res.message || t('saved_successfully'));
-      getList();
-      onCloseModal();
+  const handleNavigate = (latitude, longitude) => {
+    if (latitude && longitude) {
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+      window.open(url, '_blank');
     } else {
-      message.error(res?.message || t('failed_to_save'));
+      message.warning(t('no_location_data'));
     }
   };
 
-  const calculateTotal = () => {
-    return selectedItems.reduce((total, item) => total + (parseFloat(item.amount) || 0), 0);
+  const getStatusColor = (status) => {
+    const colors = {
+      pending: 'blue',
+      in_transit: 'orange',
+      delivered: 'green',
+      cancelled: 'red'
+    };
+    return colors[status] || 'default';
   };
+
+  const columns = [
+    {
+      title: t('order_no'),
+      dataIndex: 'order_no',
+      key: 'order_no',
+      width: 120,
+      render: (text) => <span className="font-semibold">{text}</span>
+    },
+    {
+      title: t('customer'),
+      key: 'customer',
+      width: 180,
+      render: (_, record) => (
+        <div>
+          <div>{record.customer_name}</div>
+          {record.customer_phone && (
+            <a href={`tel:${record.customer_phone}`} className="text-xs text-blue-600">
+              <MdPhone className="inline mr-1" />
+              {record.customer_phone}
+            </a>
+          )}
+        </div>
+      )
+    },
+    {
+      title: t('delivery_location'),
+      key: 'location',
+      width: 200,
+      render: (_, record) => (
+        <div>
+          <div className="font-medium">{record.location_name || '-'}</div>
+          <div className="text-xs text-gray-500">{record.delivery_address || '-'}</div>
+        </div>
+      )
+    },
+    {
+      title: t('truck_driver'),
+      key: 'truck',
+      width: 150,
+      render: (_, record) => (
+        <div>
+          <div className="text-sm">{record.plate_number || '-'}</div>
+          {record.assigned_driver && (
+            <div className="text-xs text-gray-600">{record.assigned_driver}</div>
+          )}
+        </div>
+      )
+    },
+    {
+      title: t('status'),
+      dataIndex: 'delivery_status',
+      key: 'status',
+      width: 120,
+      render: (status) => (
+        <Tag color={getStatusColor(status)}>
+          {t(status)}
+        </Tag>
+      )
+    },
+    {
+      title: t('delivery_time'),
+      dataIndex: 'delivery_date',
+      key: 'delivery_date',
+      width: 150,
+      render: (date) => moment(date).format('HH:mm')
+    },
+    {
+      title: t('amount'),
+      dataIndex: 'total_amount',
+      key: 'amount',
+      width: 100,
+      align: 'right',
+      render: (amount) => `$${parseFloat(amount).toLocaleString()}`
+    },
+    {
+      title: t('actions'),
+      key: 'actions',
+      width: 150,
+      align: 'center',
+      render: (_, record) => (
+        <Space>
+          <Button
+            size="small"
+            icon={<MdMap />}
+            onClick={() => handleViewTracking(record.id)}
+          >
+            {t('track')}
+          </Button>
+          {record.latitude && record.longitude && (
+            <Button
+              size="small"
+              type="primary"
+              icon={<MdMap />}
+              onClick={() => handleNavigate(record.latitude, record.longitude)}
+            >
+              {t('navigate')}
+            </Button>
+          )}
+        </Space>
+      )
+    }
+  ];
 
   return (
-    <MainPage loading={loading}>
-      {/* Hidden print component */}
-      <div style={{ display: "none" }}>
-        <DeliveryNotePrint ref={printRef} />
-      </div>
-
-      <div className="pageHeader">
+    <div className="delivery-dashboard p-4">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h1 className="text-2xl font-bold">{t('delivery_dashboard')}</h1>
+          <p className="text-gray-500">{t('real_time_delivery_monitoring')}</p>
+        </div>
         <Space>
-          <div className="delivery-khmer-title">{t('delivery_note_list')}</div>
-          <Input.Search
-            onChange={(e) => setState((prev) => ({ ...prev, txtSearch: e.target.value }))}
-            allowClear
-            onSearch={getList}
-            placeholder={t('search_placeholder')}
-            className="delivery-input"
-          />
+          <Select
+            value={selectedPeriod}
+            onChange={setSelectedPeriod}
+            style={{ width: 150 }}
+          >
+            <Select.Option value="today">{t('today')}</Select.Option>
+            <Select.Option value="week">{t('this_week')}</Select.Option>
+            <Select.Option value="month">{t('this_month')}</Select.Option>
+            <Select.Option value="year">{t('this_year')}</Select.Option>
+          </Select>
+          <Button
+            icon={<MdRefresh />}
+            onClick={loadData}
+            loading={loading}
+          >
+            {t('refresh')}
+          </Button>
         </Space>
-        <Button type="primary" onClick={onClickAddBtn} icon={<MdOutlineCreateNewFolder />}>
-          {t('new')}
-        </Button>
       </div>
 
-      <Modal
-        open={state.visibleModal}
+      {/* Stats Cards */}
+      <Row gutter={[16, 16]} className="mb-4">
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title={t('total_orders')}
+              value={stats.total_orders || 0}
+              prefix={<MdLocalShipping className="text-blue-500" />}
+              valueStyle={{ color: '#1890ff' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title={t('pending')}
+              value={stats.pending_orders || 0}
+              prefix={<MdAccessTime className="text-orange-500" />}
+              valueStyle={{ color: '#fa8c16' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title={t('in_transit')}
+              value={stats.in_transit_orders || 0}
+              prefix={<MdLocalShipping className="text-purple-500" />}
+              valueStyle={{ color: '#722ed1' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card>
+            <Statistic
+              title={t('delivered')}
+              value={stats.delivered_orders || 0}
+              prefix={<MdCheckCircle className="text-green-500" />}
+              valueStyle={{ color: '#52c41a' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Performance Metrics */}
+      <Row gutter={[16, 16]} className="mb-4">
+        <Col xs={24} lg={12}>
+          <Card title={t('financial_summary')}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic
+                  title={t('total_amount')}
+                  value={stats.total_amount || 0}
+                  prefix="$"
+                  precision={2}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title={t('delivered_amount')}
+                  value={stats.delivered_amount || 0}
+                  prefix="$"
+                  precision={2}
+                  valueStyle={{ color: '#52c41a' }}
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card title={t('performance')}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Statistic
+                  title={t('completion_rate')}
+                  value={stats.delivery_completion_rate || 0}
+                  suffix="%"
+                  precision={1}
+                  valueStyle={{ 
+                    color: (stats.delivery_completion_rate || 0) >= 80 ? '#52c41a' : '#fa8c16' 
+                  }}
+                />
+              </Col>
+              <Col span={12}>
+                <Statistic
+                  title={t('active_trucks')}
+                  value={stats.active_trucks || 0}
+                />
+              </Col>
+            </Row>
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Today's Deliveries */}
+      <Card
         title={
-          <div className="delivery-modal-title">
-            {form.getFieldValue("id") ? t('edit_delivery_note') : t('new_delivery_note')}
+          <div className="flex justify-between items-center">
+            <span>{t('todays_deliveries')}</span>
+            <Select
+              placeholder={t('filter_by_status')}
+              style={{ width: 150 }}
+              allowClear
+              value={filterStatus}
+              onChange={setFilterStatus}
+            >
+              <Select.Option value="pending">{t('pending')}</Select.Option>
+              <Select.Option value="in_transit">{t('in_transit')}</Select.Option>
+              <Select.Option value="delivered">{t('delivered')}</Select.Option>
+              <Select.Option value="cancelled">{t('cancelled')}</Select.Option>
+            </Select>
           </div>
         }
-        footer={null}
-        onCancel={onCloseModal}
-        width={800}
       >
-        <Form layout="vertical" onFinish={onFinish} form={form}>
-          <Form.Item name="id" hidden>
-            <Input />
-          </Form.Item>
+        <Table
+          dataSource={todayDeliveries}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            pageSize: 10,
+            showTotal: (total) => `${t('total')} ${total} ${t('deliveries')}`
+          }}
+          scroll={{ x: 1200 }}
+        />
+      </Card>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="delivery_number"
-                label={<div className="delivery-form-label">{t('delivery_number')}</div>}
-                rules={[{ required: true, message: t('please_enter_delivery_number') }]}
-              >
-                <Input placeholder={t('input_delivery_number')} readOnly className="delivery-input" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="delivery_date"
-                label={<div className="delivery-form-label">{t('delivery_date_label')}</div>}
-                rules={[{ required: true, message: t('please_select_date') }]}
-              >
-                <DatePicker
-                  style={{ width: '100%' }}
-                  format="DD/MM/YYYY"
-                  placeholder={t('select_date')}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="order_number"
-                label={<div className="delivery-form-label">{t('order_number')}</div>}
-              >
-                <Input placeholder={t('input_order_number')} className="delivery-input" readOnly />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="order_date"
-                label={<div className="delivery-form-label">{t('order_date_receive')}</div>}
-              >
-                <DatePicker
-                  style={{ width: '100%' }}
-                  format="DD/MM/YYYY"
-                  placeholder={t('select_date')}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="top_tank_number"
-                label={<div className="delivery-form-label">{t('top_tank_number')}</div>}
-              >
-                <Input.TextArea
-                  placeholder={t('tank_number_placeholder')}
-                  className="delivery-input"
-                  autoSize={{ minRows: 2, maxRows: 2 }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                name="bottom_tank_number"
-                label={<div className="delivery-form-label">{t('bottom_tank_number')}</div>}
-              >
-                <Input.TextArea
-                  placeholder={t('tank_number_placeholder')}
-                  className="delivery-input"
-                  autoSize={{ minRows: 2, maxRows: 2 }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            name="customer_id"
-            label={<div className="delivery-form-label">{t('customer')}</div>}
-            rules={[{ required: true, message: t('please_select_customer') }]}
-          >
-            <Select
-              placeholder={t('select_customer')}
-              showSearch
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                option?.label?.toLowerCase().includes(input.toLowerCase())
-              }
-              className="delivery-select"
-              loading={dataLoading.customers}
-              options={customers.map((customer, index) => ({
-                label: `${index + 1}. ${customer.name}`,
-                value: customer.id
-              }))}
-            />
-          </Form.Item>
-
-          <Row gutter={16}>
-            <Col span={8}>
-              <Form.Item
-                name="driver_name"
-                label={<div className="delivery-form-label">{t('driver_name')}</div>}
-              >
-                <Input placeholder={t('input_driver_name')} className="delivery-input" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="driver_phone"
-                label={<div className="delivery-form-label">{t('driver_phone')}</div>}
-              >
-                <Input placeholder={t('input_phone_number')} className="delivery-input" />
-              </Form.Item>
-            </Col>
-            <Col span={8}>
-              <Form.Item
-                name="vehicle_number"
-                label={<div className="delivery-form-label">{t('vehicle_number')}</div>}
-              >
-                <Input placeholder={t('input_vehicle_number')} className="delivery-input" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Divider orientation="left">
-            <div className="delivery-khmer-title">{t('items')}</div>
-          </Divider>
-
-          <div style={{ marginBottom: 16 }}>
-            <Button type="dashed" onClick={handleAddItem} block icon={<MdAdd />}>
-              <span className="delivery-button-text">{t('add_item')}</span>
-            </Button>
-          </div>
-
-          <Table
-            dataSource={selectedItems}
-            rowKey="key"
-            size="small"
-            columns={[
-              {
-                title: <div className="delivery-table-header">{t('category')}</div>,
-                dataIndex: 'category_id',
-                key: 'category_id',
-                render: (categoryId, record) => (
-                  <Select
-                    value={categoryId}
-                    onChange={(value) => handleItemChange(record.key, 'category_id', value)}
-                    placeholder={t('select_category')}
-                    style={{ width: '100%' }}
-                    showSearch
-                    optionFilterProp="children"
-                    loading={dataLoading.categories}
-                    options={categories.map(category => ({
-                      label: category.name,
-                      value: category.id
-                    }))}
-                  />
-                ),
-              },
-              {
-                title: <div className="delivery-table-header">{t('quantity')}</div>,
-                dataIndex: 'quantity',
-                key: 'quantity',
-                width: 100,
-                render: (quantity, record) => (
-                  <InputNumber
-                    min={1}
-                    value={quantity}
-                    onChange={(value) => handleItemChange(record.key, 'quantity', value)}
-                    style={{ width: '100%' }}
-                    placeholder={t('enter_quantity')}
-                  />
-                ),
-              },
-              {
-                title: <div className="delivery-table-header">{t('unit')}</div>,
-                dataIndex: 'unit',
-                key: 'unit',
-                width: 100,
-                render: (unit, record) => (
-                  <Select
-                    value={unit}
-                    onChange={(value) => handleItemChange(record.key, 'unit', value)}
-                    className="delivery-select"
-                    placeholder={t('select_unit')}
-                    style={{ width: '100%' }}
-                    options={[
-                      { label: "L", value: "L" },
-                      { label: "T", value: "T" },
-                      { label: "KG", value: "KG" },
-                      { label: "PC", value: "PC" }
-                    ]}
-                  />
-                ),
-              },
-            ]}
-            pagination={false}
-          />
-
-          {selectedItems.length > 0 && (
-            <div style={{ marginTop: 16, textAlign: 'right', fontSize: '16px', fontWeight: 'bold' }}>
-              <div className="delivery-khmer-title">
-                {t('total')}: {calculateTotal().toLocaleString('en-US', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </div>
-            </div>
-          )}
-
-          <Form.Item 
-            name="note" 
-            label={<div className="delivery-form-label">{t('note')}</div>} 
-            style={{ marginTop: 16 }}
-          >
-            <Input.TextArea placeholder={t('enter_note')} rows={3} className="delivery-input" />
-          </Form.Item>
-
-          <Form.Item name="status" label={<div className="delivery-form-label">{t('status')}</div>}>
-            <Select
-              placeholder={t('select_status')}
-              options={[
-                { label: t('active'), value: 1 },
-                { label: t('inactive'), value: 0 },
-                { label: t('delivered_status'), value: 2 },
-              ]}
-              className="delivery-select"
-            />
-          </Form.Item>
-
-          <Space>
-            <Button onClick={onCloseModal}>
-              <span className="delivery-button-text">{t('cancel')}</span>
-            </Button>
-            <Button type="primary" htmlType="submit">
-              <span className="delivery-button-text">
-                {form.getFieldValue("id") ? t('edit') : t('save')}
-              </span>
-            </Button>
-          </Space>
-        </Form>
-      </Modal>
-
-      <Table
-        dataSource={list}
-        rowKey="id"
-        loading={loading}
-        columns={[
-          {
-            key: "No",
-            title: <div className="delivery-table-header">{t('no')}</div>,
-            render: (item, data, index) => index + 1,
-            width: 70,
-          },
-          {
-            key: "delivery_number",
-            title: <div className="delivery-table-header">{t('delivery_number')}</div>,
-            dataIndex: "delivery_number",
-          },
-          {
-            key: "customer_name",
-            title: <div className="delivery-table-header">{t('customer')}</div>,
-            dataIndex: "customer_name",
-            render: (text) => <div className="delivery-khmer-text">{text}</div>,
-          },
-          {
-            key: "delivery_date",
-            title: <div className="delivery-table-header">{t('date')}</div>,
-            dataIndex: "created_at",
-            render: (date) => formatDateClient(date, "DD/MM/YYYY H:m A"),
-          },
-          {
-            key: "created_by",
-            title: <div className="delivery-table-header">{t('created_by')}</div>,
-            dataIndex: "created_by_name",
-            render: (text) => <div className="delivery-khmer-text">{text}</div>,
-          },
-          {
-            key: "status",
-            title: <div className="delivery-table-header">{t('status')}</div>,
-            dataIndex: "status",
-            render: (status) => {
-              if (status === 2) return <Tag color="blue" className="delivery-status-tag">{t('delivered_status')}</Tag>;
-              return status === 1 ?
-                <Tag color="green" className="delivery-status-tag">{t('active')}</Tag> :
-                <Tag color="red" className="delivery-status-tag">{t('inactive')}</Tag>;
-            },
-            width: 120,
-          },
-          {
-            title: <div className="delivery-table-header">{t('actions')}</div>,
-            align: "center",
-            width: 180,
-            render: (item, data) => (
-              <Space>
-                {isPermission("customer.getone") && (
-                  <Button type="primary" icon={<MdEdit />} onClick={() => onClickEdit(data)} />
-                )}
-                {isPermission("customer.getone") && (
-                  <Button type="primary" danger icon={<MdDelete />} onClick={() => onClickDelete(data)} />
-                )}
-                <Button
-                  type="default"
-                  icon={<MdPrint />}
-                  onClick={() => onClickPrint(data)}
-                  loading={isPrinting}
-                />
-              </Space>
-            ),
-          }
-        ]}
-        pagination={false}
+      {/* Tracking Modal */}
+      <DeliveryTrackingModal
+        visible={trackingModalVisible}
+        orderId={selectedOrderId}
+        onClose={() => {
+          setTrackingModalVisible(false);
+          setSelectedOrderId(null);
+        }}
       />
-    </MainPage>
+    </div>
   );
-}
+};
 
-export default DeliveryNotePage;
+export default DeliveryDashboard;

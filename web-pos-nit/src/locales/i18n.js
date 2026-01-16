@@ -14,7 +14,7 @@ i18n
       en: { translation: enTranslation }
     },
     fallbackLng: 'km',
-    lng: 'km', // default language
+    lng: localStorage.getItem('language') || 'km', // default language from storage or km
     interpolation: {
       escapeValue: false
     }

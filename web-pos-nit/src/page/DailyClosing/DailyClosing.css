@@ -1,0 +1,621 @@
+/* ✅ DailyClosing.css - Complete Styling for Daily Closing Dashboard */
+
+/* ========================================
+   MAIN CONTAINER
+   ======================================== */
+
+.daily-closing-page {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.daily-closing-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ========================================
+   HEADER SECTION
+   ======================================== */
+
+.daily-closing-header {
+  background: white;
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.daily-closing-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.daily-closing-title .anticon {
+  color: #1890ff;
+  font-size: 36px;
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.daily-date-picker {
+  border-radius: 8px;
+  border: 2px solid #e8e8e8;
+  height: 48px;
+  font-size: 16px;
+}
+
+.daily-date-picker:hover,
+.daily-date-picker:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+/* ========================================
+   DASHBOARD STATISTICS CARDS
+   ======================================== */
+
+.daily-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.daily-stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.daily-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #1890ff, #52c41a, #faad14, #ff4d4f);
+}
+
+.daily-stat-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+.daily-stat-card.blue::before {
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+}
+
+.daily-stat-card.green::before {
+  background: linear-gradient(135deg, #52c41a, #237804);
+}
+
+.daily-stat-card.orange::before {
+  background: linear-gradient(135deg, #faad14, #d48806);
+}
+
+.daily-stat-card.red::before {
+  background: linear-gradient(135deg, #ff4d4f, #cf1322);
+}
+
+.daily-stat-card .ant-statistic-title {
+  color: #8c8c8c;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.daily-stat-card .ant-statistic-content {
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.daily-stat-icon {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  font-size: 48px;
+  opacity: 0.1;
+}
+
+/* ========================================
+   SHIFT LIST SECTION
+   ======================================== */
+
+.shift-list-card {
+  background: white;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.shift-list-card .ant-card-head {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  padding: 20px 24px;
+}
+
+.shift-list-card .ant-card-head-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.shift-list-card .ant-card-extra {
+  display: flex;
+  gap: 12px;
+}
+
+.shift-create-btn {
+  background: white;
+  color: #667eea;
+  border: none;
+  font-weight: 600;
+  height: 40px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.shift-create-btn:hover {
+  background: #f0f0f0;
+  color: #764ba2;
+  transform: translateY(-2px);
+}
+
+.shift-create-btn:disabled {
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* ========================================
+   SHIFT TABLE
+   ======================================== */
+
+.shift-table {
+  font-size: 14px;
+}
+
+.shift-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #1a1a1a;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.shift-table .ant-table-tbody > tr {
+  transition: all 0.2s ease;
+}
+
+.shift-table .ant-table-tbody > tr:hover {
+  background: #f5f9ff;
+}
+
+.shift-name-cell {
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.shift-time-cell {
+  color: #595959;
+  font-family: 'Courier New', monospace;
+}
+
+.shift-amount-cell {
+  font-weight: 600;
+  color: #52c41a;
+  font-family: 'Courier New', monospace;
+}
+
+.shift-loss-cell {
+  font-weight: 600;
+  color: #ff4d4f;
+}
+
+.shift-variance-cell.positive {
+  color: #52c41a;
+  font-weight: 600;
+}
+
+.shift-variance-cell.negative {
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+/* Status Tags */
+.shift-status-tag {
+  font-weight: 600;
+  border-radius: 12px;
+  padding: 4px 12px;
+  border: none;
+}
+
+.shift-status-tag.open {
+  background: #e6f7ff;
+  color: #0050b3;
+}
+
+.shift-status-tag.pending {
+  background: #fff7e6;
+  color: #d46b08;
+}
+
+.shift-status-tag.approved {
+  background: #f6ffed;
+  color: #237804;
+}
+
+.shift-status-tag.rejected {
+  background: #fff1f0;
+  color: #cf1322;
+}
+
+/* ========================================
+   DAILY CLOSING HISTORY
+   ======================================== */
+
+.daily-history-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.daily-history-card .ant-card-head {
+  background: linear-gradient(135deg, #fa8c16 0%, #d4380d 100%);
+  border: none;
+  padding: 20px 24px;
+}
+
+.daily-history-card .ant-card-head-title {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.daily-history-table .ant-table-thead > tr > th {
+  background: #fafafa;
+  font-weight: 600;
+  color: #1a1a1a;
+  border-bottom: 2px solid #e8e8e8;
+}
+
+.daily-profit-cell {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.daily-profit-cell.profit {
+  color: #52c41a;
+}
+
+.daily-profit-cell.loss {
+  color: #ff4d4f;
+}
+
+.daily-margin-cell {
+  font-weight: 600;
+  font-family: 'Courier New', monospace;
+}
+
+/* ========================================
+   DETAIL MODAL
+   ======================================== */
+
+.daily-detail-modal .ant-modal-header {
+  background: linear-gradient(135deg, #1890ff 0%, #096dd9 100%);
+  border-radius: 8px 8px 0 0;
+  padding: 24px;
+}
+
+.daily-detail-modal .ant-modal-title {
+  color: white;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.daily-detail-modal .ant-modal-close {
+  color: white;
+}
+
+.daily-detail-modal .ant-modal-close:hover {
+  color: #f0f0f0;
+}
+
+.daily-detail-modal .ant-modal-body {
+  padding: 32px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.daily-detail-modal .ant-descriptions-item-label {
+  font-weight: 600;
+  color: #595959;
+  background: #fafafa;
+}
+
+.daily-detail-modal .ant-descriptions-item-content {
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.daily-detail-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.daily-detail-breakdown-item {
+  background: #f5f5f5;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #1890ff;
+}
+
+.daily-detail-breakdown-label {
+  font-size: 12px;
+  color: #8c8c8c;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.daily-detail-breakdown-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.daily-net-profit-display {
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%);
+  border-radius: 12px;
+  margin: 16px 0;
+  border: 2px solid #b7eb8f;
+}
+
+.daily-net-profit-display.loss {
+  background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%);
+  border-color: #ffa39e;
+}
+
+.daily-profit-margin-bar {
+  margin-top: 16px;
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+
+.daily-action-btn {
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.daily-action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.daily-view-btn {
+  background: #1890ff;
+  border: none;
+  color: white;
+}
+
+.daily-view-btn:hover {
+  background: #096dd9;
+  color: white;
+}
+
+.daily-approve-btn {
+  background: #52c41a;
+  border: none;
+  color: white;
+}
+
+.daily-approve-btn:hover {
+  background: #389e0d;
+  color: white;
+}
+
+/* ========================================
+   FILTERS ROW
+   ======================================== */
+
+.daily-filters-row {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.daily-filters-row .ant-select,
+.daily-filters-row .ant-picker {
+  border-radius: 8px;
+}
+
+/* ========================================
+   LOADING & EMPTY STATES
+   ======================================== */
+
+.daily-loading-container {
+  text-align: center;
+  padding: 60px 0;
+}
+
+.daily-loading-spinner {
+  font-size: 48px;
+  color: #1890ff;
+}
+
+.daily-empty-state {
+  text-align: center;
+  padding: 80px 20px;
+}
+
+.daily-empty-icon {
+  font-size: 64px;
+  color: #d9d9d9;
+  margin-bottom: 16px;
+}
+
+.daily-empty-text {
+  font-size: 16px;
+  color: #8c8c8c;
+  margin-bottom: 24px;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 1200px) {
+  .daily-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .daily-detail-breakdown {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .daily-closing-header {
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .daily-closing-title {
+    font-size: 24px;
+  }
+
+  .daily-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-stat-card .ant-statistic-content {
+    font-size: 28px;
+  }
+
+  .shift-list-card .ant-card-head-title,
+  .daily-history-card .ant-card-head-title {
+    font-size: 16px;
+  }
+
+  .daily-detail-modal .ant-modal-body {
+    padding: 16px;
+  }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.daily-fade-in-up {
+  animation: fadeInUp 0.4s ease;
+}
+
+@keyframes countUp {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.daily-stat-card .ant-statistic-content {
+  animation: countUp 0.5s ease;
+}
+
+/* ========================================
+   CUSTOM SCROLLBAR
+   ======================================== */
+
+.daily-closing-container::-webkit-scrollbar,
+.daily-detail-modal .ant-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.daily-closing-container::-webkit-scrollbar-track,
+.daily-detail-modal .ant-modal-body::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.daily-closing-container::-webkit-scrollbar-thumb,
+.daily-detail-modal .ant-modal-body::-webkit-scrollbar-thumb {
+  background: #bfbfbf;
+  border-radius: 4px;
+}
+
+.daily-closing-container::-webkit-scrollbar-thumb:hover,
+.daily-detail-modal .ant-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #8c8c8c;
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+  .daily-action-btn,
+  .shift-create-btn,
+  .daily-filters-row,
+  .ant-modal-mask,
+  .ant-modal-wrap {
+    display: none !important;
+  }
+
+  .daily-closing-page {
+    background: white;
+    padding: 0;
+  }
+
+  .daily-stat-card,
+  .shift-list-card,
+  .daily-history-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
+}

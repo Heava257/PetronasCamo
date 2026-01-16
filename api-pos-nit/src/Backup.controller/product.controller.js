@@ -1300,7 +1300,6 @@ exports.sendBatchTelegramNotification = async (products) => {
 
   try {
     await sendTelegramMessagenewstock(message);
-    console.log('✅ Batch Telegram notification sent successfully');
   } catch (error) {
     console.error('❌ Failed to send batch Telegram notification:', error);
   }

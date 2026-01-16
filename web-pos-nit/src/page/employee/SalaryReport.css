@@ -1,0 +1,127 @@
+/* SalaryReport.css */
+
+/* 打印样式 */
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    
+    #salary-report-print,
+    #salary-report-print * {
+        visibility: visible;
+    }
+    
+    #salary-report-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* 表格样式 */
+.highlight-row {
+    background-color: #fff7e6 !important;
+}
+
+.highlight-row:hover {
+    background-color: #ffe7ba !important;
+}
+
+/* 状态标签 */
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 2px;
+}
+
+.status-good {
+    background: #f6ffed;
+    color: #52c41a;
+    border: 1px solid #b7eb8f;
+}
+
+.status-warning {
+    background: #fff7e6;
+    color: #fa8c16;
+    border: 1px solid #ffd591;
+}
+
+.status-critical {
+    background: #fff1f0;
+    color: #ff4d4f;
+    border: 1px solid #ffa39e;
+}
+
+/* 进度条样式 */
+.deduction-progress .ant-progress-inner {
+    background-color: #f0f0f0;
+}
+
+/* 卡片悬停效果 */
+.salary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .print-header .company-name {
+        font-size: 18px;
+    }
+    
+    .print-table {
+        font-size: 10px;
+    }
+    
+    .print-table th,
+    .print-table td {
+        padding: 4px 3px;
+    }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.salary-report-enter {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* 工具提示 */
+.print-tooltip {
+    position: relative;
+    cursor: help;
+}
+
+.print-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 1000;
+}

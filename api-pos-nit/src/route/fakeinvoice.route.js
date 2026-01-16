@@ -13,13 +13,8 @@ const {
 
 module.exports = (app) => {
   app.get("/api/fakeinvoice", validate_token(), getList);
-  
-  // ✅ Fix: Add route to get invoice details by ID
   app.get("/api/fakeinvoice/detail/:id", validate_token(), getInvoiceDetails);
-  
-  // ✅ Keep the createWithDetails for creating invoices
   app.post("/api/fakeinvoice/create-with-details", validate_token(), createWithDetails);
-  
   app.post("/api/fakeinvoice", validate_token(), create);
   app.put("/api/fakeinvoice", validate_token(), update);
   app.delete("/api/fakeinvoice", validate_token(), remove);

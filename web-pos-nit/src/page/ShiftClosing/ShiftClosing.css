@@ -1,0 +1,549 @@
+/* ✅ ShiftClosing.css - Complete Styling for Shift Closing Page */
+
+/* ========================================
+   MAIN CONTAINER
+   ======================================== */
+
+.shift-closing-page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 24px;
+}
+
+.shift-closing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  padding: 32px;
+}
+
+/* ========================================
+   HEADER SECTION
+   ======================================== */
+
+.shift-closing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.shift-closing-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.shift-closing-title .anticon {
+  color: #1890ff;
+  font-size: 32px;
+}
+
+.shift-status-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.shift-status-badge.open {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  color: white;
+  animation: pulse 2s infinite;
+}
+
+.shift-status-badge.closed {
+  background: #f5f5f5;
+  color: #8c8c8c;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* ========================================
+   STATISTICS CARDS
+   ======================================== */
+
+.shift-stats-row {
+  margin-bottom: 24px;
+}
+
+.shift-stat-card {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
+}
+
+.shift-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1890ff, #52c41a);
+}
+
+.shift-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.shift-stat-card .ant-statistic-title {
+  color: #8c8c8c;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.shift-stat-card .ant-statistic-content {
+  font-size: 32px;
+  font-weight: 700;
+}
+
+/* ========================================
+   FORM SECTIONS
+   ======================================== */
+
+.shift-form-section {
+  background: #fafafa;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid #e8e8e8;
+}
+
+.shift-form-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shift-form-section-title .anticon {
+  color: #1890ff;
+}
+
+/* ========================================
+   OPENING/CLOSING STOCK INPUT
+   ======================================== */
+
+.stock-input-row {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  border: 2px solid #f0f0f0;
+  transition: all 0.2s ease;
+}
+
+.stock-input-row:hover {
+  border-color: #1890ff;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
+}
+
+.stock-product-name {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 15px;
+}
+
+.stock-product-category {
+  color: #8c8c8c;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.stock-input-field .ant-input-number {
+  width: 100%;
+  border-radius: 8px;
+  border: 2px solid #e8e8e8;
+}
+
+.stock-input-field .ant-input-number:focus,
+.stock-input-field .ant-input-number-focused {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1);
+}
+
+.stock-opening-value {
+  background: #e6f7ff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #0050b3;
+  font-weight: 600;
+}
+
+.stock-variance {
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.stock-variance.positive {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.stock-variance.negative {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+.stock-variance.zero {
+  background: #fafafa;
+  color: #8c8c8c;
+}
+
+/* ========================================
+   EXPENSES TABLE
+   ======================================== */
+
+.expenses-card {
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.expenses-card .ant-card-head {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px 12px 0 0;
+  border: none;
+}
+
+.expenses-card .ant-card-head-title {
+  color: white;
+  font-weight: 600;
+}
+
+.expenses-card .ant-btn-primary {
+  background: white;
+  color: #667eea;
+  border: none;
+  font-weight: 600;
+}
+
+.expenses-card .ant-btn-primary:hover {
+  background: #f0f0f0;
+  color: #764ba2;
+}
+
+.expense-category-tag {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.expense-summary-row {
+  background: #fafafa;
+  font-weight: 700;
+}
+
+/* ========================================
+   CASH RECONCILIATION
+   ======================================== */
+
+.cash-reconciliation-card {
+  background: linear-gradient(135deg, #f6f9fc 0%, #e9f2fa 100%);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 2px solid #d6e9f8;
+}
+
+.cash-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.cash-breakdown-item {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid #1890ff;
+}
+
+.cash-breakdown-label {
+  font-size: 12px;
+  color: #8c8c8c;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.cash-breakdown-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.cash-variance-alert {
+  margin-top: 16px;
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.cash-variance-alert.positive {
+  background: #f6ffed;
+  border-left: 4px solid #52c41a;
+}
+
+.cash-variance-alert.negative {
+  background: #fff1f0;
+  border-left: 4px solid #ff4d4f;
+}
+
+/* ========================================
+   ACTION BUTTONS
+   ======================================== */
+
+.shift-action-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid #f0f0f0;
+}
+
+.shift-btn-start {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  border: none;
+  height: 56px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(82, 196, 26, 0.3);
+  transition: all 0.3s ease;
+}
+
+.shift-btn-start:hover {
+  background: linear-gradient(135deg, #73d13d 0%, #95de64 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(82, 196, 26, 0.4);
+}
+
+.shift-btn-close {
+  background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
+  border: none;
+  height: 56px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(255, 77, 79, 0.3);
+  transition: all 0.3s ease;
+}
+
+.shift-btn-close:hover {
+  background: linear-gradient(135deg, #ff7875 0%, #ffa39e 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 77, 79, 0.4);
+}
+
+/* ========================================
+   MODALS
+   ======================================== */
+
+.expense-modal .ant-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.expense-modal .ant-modal-title {
+  color: white;
+  font-weight: 600;
+}
+
+.expense-modal .ant-modal-close {
+  color: white;
+}
+
+.expense-modal .ant-modal-close:hover {
+  color: #f0f0f0;
+}
+
+/* ========================================
+   ALERTS & NOTIFICATIONS
+   ======================================== */
+
+.shift-alert-info {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+}
+
+.shift-alert-info .ant-alert-icon {
+  font-size: 20px;
+}
+
+/* ========================================
+   LOADING OVERLAY
+   ======================================== */
+
+.shift-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.shift-loading-spinner {
+  text-align: center;
+}
+
+.shift-loading-spinner .anticon {
+  font-size: 48px;
+  color: #1890ff;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+  .shift-closing-container {
+    padding: 16px;
+    border-radius: 0;
+  }
+
+  .shift-closing-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .shift-closing-title {
+    font-size: 22px;
+  }
+
+  .shift-stat-card .ant-statistic-content {
+    font-size: 24px;
+  }
+
+  .stock-input-row {
+    padding: 12px;
+  }
+
+  .cash-breakdown {
+    grid-template-columns: 1fr;
+  }
+
+  .shift-action-buttons {
+    flex-direction: column;
+  }
+
+  .shift-btn-start,
+  .shift-btn-close {
+    width: 100%;
+  }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shift-fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.shift-slide-in {
+  animation: slideIn 0.3s ease;
+}
+
+/* ========================================
+   CUSTOM SCROLLBAR
+   ======================================== */
+
+.shift-closing-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.shift-closing-container::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.shift-closing-container::-webkit-scrollbar-thumb {
+  background: #bfbfbf;
+  border-radius: 4px;
+}
+
+.shift-closing-container::-webkit-scrollbar-thumb:hover {
+  background: #8c8c8c;
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+  .shift-action-buttons,
+  .ant-btn,
+  .ant-input-number-handler-wrap {
+    display: none !important;
+  }
+
+  .shift-closing-container {
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .shift-stat-card {
+    break-inside: avoid;
+  }
+}

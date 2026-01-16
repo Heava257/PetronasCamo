@@ -1,0 +1,647 @@
+/* AdminManagement Full Height & Responsive Styles */
+
+/* Root Container */
+.admin-management-root {
+  min-height: 100vh;
+  padding: 8px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+@media (min-width: 640px) {
+  .admin-management-root {
+    padding: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-management-root {
+    padding: 12px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-management-root {
+    padding: 0;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .admin-management-root {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  }
+}
+
+/* Content Wrapper */
+.admin-content-wrapper {
+  max-width: 100%;
+  margin: 0;
+  width: 100%;
+  padding: 0;
+}
+
+@media (min-width: 1024px) {
+  .admin-content-wrapper {
+    padding: 16px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .admin-content-wrapper {
+    padding: 20px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .admin-content-wrapper {
+    padding: 24px;
+  }
+}
+
+/* Main Card */
+.admin-main-card {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+@media (min-width: 768px) {
+  .admin-main-card {
+    border-radius: 12px;
+  }
+}
+
+/* Tabs Container */
+.admin-tabs-container .ant-tabs-nav {
+  margin-bottom: 12px;
+  padding: 0 8px;
+}
+
+@media (min-width: 640px) {
+  .admin-tabs-container .ant-tabs-nav {
+    margin-bottom: 16px;
+    padding: 0 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-tabs-container .ant-tabs-nav {
+    margin-bottom: 24px;
+    padding: 0 16px;
+  }
+}
+
+/* Activity Tabs */
+.admin-activity-tabs .ant-tabs-nav {
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .admin-activity-tabs .ant-tabs-nav {
+    margin-bottom: 16px;
+  }
+}
+
+/* Table Container - Hidden on Mobile, Visible on Desktop */
+.admin-table-container {
+  display: none;
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+@media (min-width: 1024px) {
+  .admin-table-container {
+    display: block;
+  }
+}
+
+/* Activity Table - Hidden on Mobile */
+.activity-table {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .activity-table {
+    display: block;
+  }
+}
+
+/* Mobile Cards - Visible on Mobile, Hidden on Desktop */
+.admin-mobile-cards {
+  display: block;
+  width: 100%;
+}
+
+@media (min-width: 1024px) {
+  .admin-mobile-cards {
+    display: none;
+  }
+}
+
+/* Cards Inner Container */
+.admin-cards-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+}
+
+@media (min-width: 640px) {
+  .admin-cards-inner {
+    gap: 12px;
+    padding: 8px;
+  }
+}
+
+/* Loading Container */
+.admin-loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 200px;
+  padding: 24px;
+}
+
+/* Category Card */
+.admin-category-card {
+  margin-bottom: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .admin-category-card {
+    margin-bottom: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-category-card {
+    margin-bottom: 24px;
+    border-radius: 12px;
+  }
+}
+
+.admin-category-card .ant-card-head {
+  padding: 10px 12px;
+  min-height: auto;
+}
+
+@media (min-width: 640px) {
+  .admin-category-card .ant-card-head {
+    padding: 12px 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-category-card .ant-card-head {
+    padding: 16px 24px;
+  }
+}
+
+.admin-category-card .ant-card-body {
+  padding: 8px;
+}
+
+@media (min-width: 640px) {
+  .admin-category-card .ant-card-body {
+    padding: 12px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-category-card .ant-card-body {
+    padding: 16px;
+  }
+}
+
+/* Category Section */
+.admin-category-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .admin-category-section {
+    gap: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-category-section {
+    gap: 24px;
+  }
+}
+
+/* Stats Grid */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .admin-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-stats-grid {
+    gap: 24px;
+  }
+}
+
+/* Stats Card */
+.admin-stats-card {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .admin-stats-card {
+    border-radius: 12px;
+  }
+}
+
+.admin-stats-card .ant-card-head {
+  padding: 10px 12px;
+}
+
+@media (min-width: 640px) {
+  .admin-stats-card .ant-card-head {
+    padding: 12px 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  .admin-stats-card .ant-card-head {
+    padding: 16px 24px;
+  }
+}
+
+/* Table Improvements for Mobile View */
+.admin-table-container .ant-table {
+  font-size: 12px;
+}
+
+@media (min-width: 768px) {
+  .admin-table-container .ant-table {
+    font-size: 14px;
+  }
+}
+
+.admin-table-container .ant-table-thead > tr > th {
+  padding: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+@media (min-width: 768px) {
+  .admin-table-container .ant-table-thead > tr > th {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+}
+
+.admin-table-container .ant-table-tbody > tr > td {
+  padding: 8px;
+}
+
+@media (min-width: 768px) {
+  .admin-table-container .ant-table-tbody > tr > td {
+    padding: 12px 16px;
+  }
+}
+
+/* Scrollbar Styling */
+.admin-table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
+.admin-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.admin-table-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.admin-table-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark mode scrollbar */
+@media (prefers-color-scheme: dark) {
+  .admin-table-container::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+  
+  .admin-table-container::-webkit-scrollbar-thumb {
+    background: #666;
+  }
+  
+  .admin-table-container::-webkit-scrollbar-thumb:hover {
+    background: #888;
+  }
+}
+
+/* Ant Design Overrides for Better Mobile Experience */
+@media (max-width: 639px) {
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+  
+  .ant-modal-content {
+    border-radius: 8px;
+  }
+  
+  .ant-modal-header {
+    padding: 12px 16px;
+  }
+  
+  .ant-modal-body {
+    padding: 12px 16px;
+  }
+  
+  .ant-modal-footer {
+    padding: 10px 16px;
+  }
+}
+
+/* Card Spacing on Mobile */
+@media (max-width: 639px) {
+  .ant-card {
+    border-radius: 8px;
+  }
+  
+  .ant-card-head {
+    padding: 12px;
+    min-height: auto;
+  }
+  
+  .ant-card-body {
+    padding: 12px;
+  }
+}
+
+/* Button Groups on Mobile */
+@media (max-width: 639px) {
+  .ant-space-horizontal {
+    flex-wrap: wrap;
+  }
+  
+  .ant-space-item {
+    margin-bottom: 4px;
+  }
+}
+
+/* Statistic Cards on Mobile */
+@media (max-width: 639px) {
+  .ant-statistic {
+    text-align: center;
+  }
+  
+  .ant-statistic-title {
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+  
+  .ant-statistic-content {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 640px) {
+  .ant-statistic-title {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+  
+  .ant-statistic-content {
+    font-size: 20px;
+  }
+}
+
+@media (min-width: 768px) {
+  .ant-statistic-title {
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  
+  .ant-statistic-content {
+    font-size: 24px;
+  }
+}
+
+/* Tag Improvements */
+.ant-tag {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Progress Bar on Mobile */
+@media (max-width: 639px) {
+  .ant-progress-text {
+    font-size: 11px;
+  }
+}
+
+/* Empty State */
+.ant-empty {
+  margin: 16px 0;
+}
+
+@media (min-width: 768px) {
+  .ant-empty {
+    margin: 32px 0;
+  }
+}
+
+/* Responsive Typography */
+@media (max-width: 639px) {
+  h1, h2, h3 {
+    word-break: break-word;
+  }
+}
+
+/* Tabs Mobile Optimization */
+@media (max-width: 639px) {
+  .ant-tabs-tab {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .ant-tabs-tab-btn {
+    font-size: 12px;
+  }
+}
+
+/* Select Dropdown Mobile */
+@media (max-width: 639px) {
+  .ant-select-dropdown {
+    max-height: 60vh;
+  }
+}
+
+/* Form Items Mobile Spacing */
+@media (max-width: 639px) {
+  .ant-form-item {
+    margin-bottom: 12px;
+  }
+}
+
+/* Divider Mobile */
+@media (max-width: 639px) {
+  .ant-divider {
+    margin: 12px 0;
+  }
+}
+
+/* Upload Component Mobile */
+@media (max-width: 639px) {
+  .ant-upload-picture-card-wrapper {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .ant-upload.ant-upload-select-picture-card {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+/* Alert Mobile */
+@media (max-width: 639px) {
+  .ant-alert {
+    padding: 8px 12px;
+  }
+  
+  .ant-alert-message {
+    font-size: 12px;
+  }
+  
+  .ant-alert-description {
+    font-size: 11px;
+  }
+}
+
+/* Tooltip Mobile - Increase touch target */
+@media (max-width: 639px) {
+  .ant-tooltip {
+    max-width: 80vw;
+  }
+}
+
+/* Badge Mobile */
+@media (max-width: 639px) {
+  .ant-badge-count {
+    font-size: 10px;
+    height: 18px;
+    min-width: 18px;
+    line-height: 18px;
+    padding: 0 4px;
+  }
+}
+
+/* Popconfirm Mobile */
+@media (max-width: 639px) {
+  .ant-popover-inner {
+    max-width: 90vw;
+  }
+  
+  .ant-popover-message-title {
+    font-size: 13px;
+  }
+  
+  .ant-popover-buttons {
+    margin-top: 8px;
+  }
+}
+
+/* Table Pagination Mobile */
+@media (max-width: 639px) {
+  .ant-pagination {
+    text-align: center;
+  }
+  
+  .ant-pagination-item,
+  .ant-pagination-prev,
+  .ant-pagination-next {
+    min-width: 28px;
+    height: 28px;
+    line-height: 26px;
+    font-size: 12px;
+  }
+}
+
+/* Utility Classes for Responsive Breakpoints */
+@media (max-width: 479px) {
+  .xs\:inline {
+    display: inline !important;
+  }
+  
+  .xs\:hidden {
+    display: none !important;
+  }
+}
+
+/* Smooth Transitions */
+.admin-management-root * {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Print Styles */
+@media print {
+  .admin-management-root {
+    background: white;
+    padding: 0;
+  }
+  
+  .admin-table-container {
+    display: block;
+    overflow: visible;
+  }
+  
+  .admin-mobile-cards {
+    display: none;
+  }
+  
+  button,
+  .ant-btn {
+    display: none;
+  }
+}
+
+/* Accessibility Improvements */
+.admin-management-root *:focus-visible {
+  outline: 2px solid #1890ff;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .admin-management-root * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .admin-management-root {
+    border: 2px solid currentColor;
+  }
+  
+  .ant-card {
+    border: 2px solid currentColor;
+  }
+}

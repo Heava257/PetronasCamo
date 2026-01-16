@@ -36,7 +36,7 @@ import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Upload } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
-import { useTranslation } from '../../locales/TranslationContext'; 
+import { useTranslation } from '../../locales/TranslationContext';
 
 import "./TotalDuePage.css";
 
@@ -55,7 +55,7 @@ const cambodiaBanks = [
 ];
 
 function TotalDuePage() {
-  const { t } = useTranslation(); 
+  const { t } = useTranslation();
   const { config } = configStore();
   const [formRef] = Form.useForm();
   const [editFormRef] = Form.useForm();
@@ -319,14 +319,14 @@ function TotalDuePage() {
       if (selectedCustomer) {
         const relatedRecords = selectedCustomer.orders.filter(o => o.order_id === currentInvoice.order_id);
         const totalOrderAmount = relatedRecords.reduce((sum, r) => sum + parseFloat(r.total_amount || 0), 0);
-        
+
         const updatedOrders = selectedCustomer.orders.map(order => {
           if (order.order_id === currentInvoice.order_id) {
             const recordTotal = parseFloat(order.total_amount) || 0;
-            const proportionalPayment = totalOrderAmount > 0 
+            const proportionalPayment = totalOrderAmount > 0
               ? (recordTotal / totalOrderAmount) * parseFloat(paymentAmount)
               : 0;
-            
+
             const newPaidAmount = parseFloat(order.paid_amount) + proportionalPayment;
             const newDueAmount = Math.max(0, recordTotal - newPaidAmount);
 
@@ -588,7 +588,7 @@ function TotalDuePage() {
   };
 
   const { totalAmount, paidAmount, dueAmount } = getTotalStats();
-  
+
   const customerSummary = useMemo(() => {
     const customerMap = new Map();
 
@@ -747,730 +747,1101 @@ function TotalDuePage() {
 
   return (
     <MainPage loading={loading}>
-      <div className="pageHeader">
-        <div className="title-container">
-          <FaUserTie className="title-icon" />
-          <Title level={3} className="khmer-title">{t('customer_debt')}</Title>
+      <div className="px-2 sm:px-4 lg:px-6 py-4 dark:bg-gray-900 min-h-screen">
+        {/* Page Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4 sm:mb-6">
+          <FaUserTie className="text-2xl sm:text-3xl text-blue-600 dark:text-blue-400" />
+          <Title level={3} className="!mb-0 khmer-title dark:text-white text-lg sm:text-xl md:text-2xl">
+            {t('customer_debt')}
+          </Title>
         </div>
-      </div>
 
-      <Card className="filter-card">
-        <Space size="large" wrap>
-          <Input.Search
-            placeholder={t('search_customer_phone')}
-            allowClear
-            value={state.search}
-            onChange={(e) => setState(prev => ({ ...prev, search: e.target.value, page: 1 }))}
-            onSearch={getList}
-            style={{ width: 300 }}
-            prefix={<MdSearch className="search-icon" />}
-            className="search-input"
-          />
-          <Select
-            showSearch
-            placeholder={t('select_customer')}
-            style={{ width: 250 }}
-            allowClear
-            value={state.customer_id}
-            onChange={(value) => setState(prev => ({ ...prev, customer_id: value, page: 1 }))}
-            filterOption={(input, option) => {
-              const searchText = input.toLowerCase();
-              const optionText = String(option.children).toLowerCase();
-              const indexText = option.key.toString();
+        {/* Filter Card */}
+        <Card className="mb-4 sm:mb-6 dark:bg-gray-800 dark:border-gray-700">
+          <div className="flex flex-col gap-3">
+            <Input.Search
+              placeholder={t('search_customer_phone')}
+              allowClear
+              value={state.search}
+              onChange={(e) => setState(prev => ({ ...prev, search: e.target.value, page: 1 }))}
+              onSearch={getList}
+              className="w-full dark:bg-gray-700 dark:text-white"
+              prefix={<MdSearch className="search-icon dark:text-gray-300" />}
+            />
 
-              return optionText.indexOf(searchText) >= 0 ||
-                indexText.indexOf(searchText) >= 0;
-            }}
-            className="custom-select"
-          >
-            {customers.map((customer, index) => (
-              <Option key={index + 1} value={customer.id}>
-                {index + 1}. {customer.name} - {customer.phone}
-              </Option>
-            ))}
-          </Select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <Select
+                showSearch
+                placeholder={t('select_customer')}
+                className="w-full"
+                allowClear
+                value={state.customer_id}
+                onChange={(value) => setState(prev => ({ ...prev, customer_id: value, page: 1 }))}
+                filterOption={(input, option) => {
+                  const searchText = input.toLowerCase();
+                  const optionText = String(option.children).toLowerCase();
+                  const indexText = option.key.toString();
+                  return optionText.indexOf(searchText) >= 0 || indexText.indexOf(searchText) >= 0;
+                }}
+              >
+                {customers.map((customer, index) => (
+                  <Option key={index + 1} value={customer.id}>
+                    {index + 1}. {customer.name} - {customer.phone}
+                  </Option>
+                ))}
+              </Select>
 
-          <RangePicker
-            format="YYYY-MM-DD"
-            onChange={handleDateChange}
-            placeholder={[t('start_date'), t('end_date')]}
-            style={{ width: 250 }}
-            className="date-picker"
-            suffixIcon={<FaCalendarAlt className="calendar-icon" />}
-          />
+              <RangePicker
+                format="YYYY-MM-DD"
+                onChange={handleDateChange}
+                placeholder={[t('start_date'), t('end_date')]}
+                className="w-full"
+                suffixIcon={<FaCalendarAlt className="calendar-icon dark:text-gray-300" />}
+              />
 
-          <Select
-            placeholder={t('show_debt')}
-            style={{ width: 150 }}
-            value={state.show_paid}
-            onChange={(value) => setState(prev => ({ ...prev, show_paid: value, page: 1 }))}
-            className="status-select"
-          >
-            <Option value={false}>{t('unpaid_only')}</Option>
-            <Option value={true}>{t('all_debts')}</Option>
-          </Select>
-        </Space>
-      </Card>
+              <Select
+                placeholder={t('show_debt')}
+                className="w-full"
+                value={state.show_paid}
+                onChange={(value) => setState(prev => ({ ...prev, show_paid: value, page: 1 }))}
+              >
+                <Option value={false}>{t('unpaid_only')}</Option>
+                <Option value={true}>{t('all_debts')}</Option>
+              </Select>
+            </div>
+          </div>
+        </Card>
 
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={8}>
-          <Card className="stat-card total-amount">
+        {/* Statistics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-shadow">
             <Statistic
-              title={<div className="stat-title"><MdAttachMoney className="stat-icon" /> {t('purchase_amount')}</div>}
+              title={
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <MdAttachMoney className="text-green-600 dark:text-green-400" />
+                  <span className="dark:text-gray-300">{t('purchase_amount')}</span>
+                </div>
+              }
               value={totalAmount}
               precision={2}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: '#3f8600', fontSize: 'clamp(1.25rem, 4vw, 1.75rem)' }}
               prefix="$"
-              className="statistic-value"
+              className="dark:text-white"
             />
           </Card>
-        </Col>
-        <Col span={8}>
-          <Card className="stat-card paid-amount">
+
+          <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-shadow">
             <Statistic
-              title={<div className="stat-title"><FaMoneyBillWave className="stat-icon" /> {t('paid_amount')}</div>}
+              title={
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <FaMoneyBillWave className="text-blue-600 dark:text-blue-400" />
+                  <span className="dark:text-gray-300">{t('paid_amount')}</span>
+                </div>
+              }
               value={paidAmount}
               precision={2}
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: '#1890ff', fontSize: 'clamp(1.25rem, 4vw, 1.75rem)' }}
               prefix="$"
-              className="statistic-value"
+              className="dark:text-white"
             />
           </Card>
-        </Col>
-        <Col span={8}>
-          <Card className="stat-card due-amount">
+
+          <Card className="dark:bg-gray-800 dark:border-gray-700 hover:shadow-lg transition-shadow sm:col-span-2 lg:col-span-1">
             <Statistic
-              title={<div className="stat-title"><MdOutlinePayment className="stat-icon" /> {t('remaining_debt')}</div>}
+              title={
+                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                  <MdOutlinePayment className="text-red-600 dark:text-red-400" />
+                  <span className="dark:text-gray-300">{t('remaining_debt')}</span>
+                </div>
+              }
               value={dueAmount}
               precision={2}
-              valueStyle={{ color: '#cf1322' }}
+              valueStyle={{ color: '#cf1322', fontSize: 'clamp(1.25rem, 4vw, 1.75rem)' }}
               prefix="$"
-              className="statistic-value"
+              className="dark:text-white"
             />
           </Card>
-        </Col>
-      </Row>
-
-      <Card className="table-card">
-        <div className="card-title-container">
-          <RiContactsLine className="card-title-icon" />
-          <Title level={4} className="card-title">{t('customer_debt_list')}</Title>
         </div>
 
-        <Table
-          dataSource={customerSummary}
-          columns={[
-            {
-              key: "No",
-              title: <div className="khmer-text1">{t('no')}</div>,
-              render: (text, record, index) => index + 1,
-            },
-            {
-              title: <span className="khmer-text">{t('customer')}</span>,
-              dataIndex: "customer_name",
-              render: (text, record) => (
-                <div className="customer-info">
-                  <div className="customer-name khmer-text">{text}</div>
-                  <small className="customer-phone english-text">{record.tel}</small>
-                </div>
-              )
-            },
-            {
-              title: <span className="khmer-text">{t('customer_address')}</span>,
-              dataIndex: "branch_name",
-              render: (text) => <span className="address-text khmer-text">{text || '-'}</span>
-            },
-            {
-              title: <span className="khmer-text">{t('invoice_count')}</span>,
-              dataIndex: "order_count",
-              align: 'center',
-              render: (text) => <Tag color="blue" className="invoice-count-tag english-text">{text}</Tag>
-            },
-            {
-              title: <span className="khmer-text">{t('total_debt')}</span>,
-              dataIndex: "total_due",
-              render: (text) => <strong className="due-amount-text english-text">{formatCurrency(text)}</strong>,
-              align: 'right'
-            },
-            {
-              title: <span className="khmer-text">{t('actions')}</span>,
-              key: "action",
-              render: (_, record) => (
-                <Button
-                  type="primary"
-                  icon={<MdRemoveRedEye />}
-                  onClick={() => onViewCustomerDetails(record)}
-                  className="view-details-btn"
-                >
-                  <span className="khmer-text">{t('view_details')}</span>
-                </Button>
-              )
-            }
-          ]}
-          pagination={false}
-          scroll={true}
-          rowClassName="table-row"
-          className="custom-table"
-        />
-      </Card>
-
-      <Drawer
-        title={
-          <div className="drawer-title">
-            <FaUserTie className="drawer-title-icon" />
-            <span className="khmer-font">{t('customer_details')}: {selectedCustomer?.customer_name || ''}</span>
+        {/* Customer List Table */}
+        <Card className="dark:bg-gray-800 dark:border-gray-700">
+          <div className="flex items-center gap-2 mb-4">
+            <RiContactsLine className="text-xl sm:text-2xl text-blue-600 dark:text-blue-400" />
+            <Title level={4} className="!mb-0 dark:text-white text-base sm:text-lg">
+              {t('customer_debt_list')}
+            </Title>
           </div>
-        }
-        width={1200}
-        open={customerDetailVisible}
-        onClose={() => setCustomerDetailVisible(false)}
-        className="customer-drawer khmer-font"
-        extra={
-          <Button
-            type="primary"
-            icon={<FaFileExcel />}
-            onClick={() => selectedCustomer && exportToExcel(selectedCustomer)}
-            loading={excelExportLoading}
-            className="drawer-export-button"
-          >
-            {t('export_excel')}
-          </Button>
-        }
-      >
-        {selectedCustomer && (
-          <>
-            <div className="customer-card">
-              <Descriptions bordered column={1} className="english-font customer-descriptions">
-                <Descriptions.Item
-                  label={<span className="khmer-font description-label"><FaUserTie className="description-icon" /> {t('customer')}</span>}
-                  className="description-item"
-                >
-                  <span className="description-value">{selectedCustomer.customer_name}</span>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font description-label"><MdSearch className="description-icon" /> {t('phone_number')}</span>}
-                  className="description-item"
-                >
-                  <span className="description-value">{selectedCustomer.tel}</span>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font description-label"><RiContactsLine className="description-icon" /> {t('customer_address')}</span>}
-                  className="description-item"
-                >
-                  <span className="description-value">{selectedCustomer.branch_name || selectedCustomer.address || '-'}</span>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font description-label"><MdAttachMoney className="description-icon" /> {t('total_debt_amount')}</span>}
-                  className="description-item"
-                >
-                  <Tag color="red" className="english-font amount-tag">
-                    {formatCurrency(selectedCustomer.total_due)}
-                  </Tag>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font description-label"><RiFileListLine className="description-icon" /> {t('total_invoices')}</span>}
-                  className="description-item"
-                >
-                  <Tag color="orange" className="invoice-count">{formatNumber(selectedCustomer.orders.length)} {t('invoices')}</Tag>
-                </Descriptions.Item>
-              </Descriptions>
-            </div>
 
-            <Divider className="section-divider">
-              <FaRegListAlt className="divider-icon" />
-              <span className="khmer-font divider-text">{t('outstanding_invoices')}</span>
-            </Divider>
+          {/* Mobile Card View */}
+          <div className="block lg:hidden space-y-3">
+            {customerSummary.map((customer, index) => (
+              <Card
+                key={index}
+                size="small"
+                className="dark:bg-gray-700 dark:border-gray-600 hover:shadow-md transition-shadow"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Tag color="blue" className="text-xs">{index + 1}</Tag>
+                        <span className="font-semibold dark:text-white khmer-text text-sm">
+                          {customer.customer_name}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 english-text">
+                        {customer.tel}
+                      </div>
+                    </div>
+                    <Tag color="orange" className="text-xs">
+                      {customer.order_count} {t('invoices')}
+                    </Tag>
+                  </div>
 
-            <div className="customer-stats">
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Card size="small" className="stat-card customer-stat-card total">
-                    <Statistic
-                      title={<div className="stat-title"><MdAttachMoney className="stat-icon" /> {t('total_amount')}</div>}
-                      value={selectedCustomer.orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0)}
-                      precision={2}
-                      valueStyle={{ color: '#3f8600' }}
-                      formatter={(value) => formatCurrency(value)}
-                      className="statistic-value"
-                    />
-                  </Card>
-                </Col>
-                <Col span={8}>
-                  <Card size="small" className="stat-card customer-stat-card paid">
-                    <Statistic
-                      title={<div className="stat-title"><FaMoneyBillWave className="stat-icon" /> {t('paid_amount')}</div>}
-                      value={selectedCustomer.orders.reduce((sum, order) => sum + parseFloat(order.paid_amount || 0), 0)}
-                      precision={2}
-                      valueStyle={{ color: '#1890ff' }}
-                      formatter={(value) => formatCurrency(value)}
-                      className="statistic-value"
-                    />
-                  </Card>
-                </Col>
-                <Col span={8}>
-                  <Card size="small" className="stat-card customer-stat-card due">
-                    <Statistic
-                      title={<div className="stat-title"><MdOutlinePayment className="stat-icon" /> {t('due_amount')}</div>}
-                      value={selectedCustomer.total_due}
-                      precision={2}
-                      valueStyle={{ color: '#cf1322' }}
-                      formatter={(value) => formatCurrency(value)}
-                      className="statistic-value"
-                    />
-                  </Card>
-                </Col>
-              </Row>
-            </div>
+                  {customer.branch_name && (
+                    <div className="text-xs text-gray-600 dark:text-gray-400 khmer-text">
+                      <span className="font-medium">{t('customer_address')}: </span>
+                      {customer.branch_name}
+                    </div>
+                  )}
 
+                  <Divider className="my-2 dark:border-gray-600" />
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 khmer-text mb-1">
+                        {t('total_debt')}
+                      </div>
+                      <div className="text-lg font-bold text-red-600 dark:text-red-400 english-text">
+                        {formatCurrency(customer.total_due)}
+                      </div>
+                    </div>
+                    <Button
+                      type="primary"
+                      icon={<MdRemoveRedEye />}
+                      onClick={() => onViewCustomerDetails(customer)}
+                      size="small"
+                    >
+                      <span className="khmer-text">{t('view_details')}</span>
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+
+            {/* Mobile Pagination */}
+            {customerSummary.length > 0 && (
+              <div className="flex justify-center items-center gap-2 mt-4 pt-4 border-t dark:border-gray-700">
+                <Button
+                  size="small"
+                  disabled={state.page === 1}
+                  onClick={() => setState(prev => ({ ...prev, page: prev.page - 1 }))}
+                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+                  Previous
+                </Button>
+                <span className="text-sm dark:text-gray-300">
+                  Page {state.page} of {state.pagination?.totalPages || 1}
+                </span>
+                <Button
+                  size="small"
+                  disabled={state.page >= (state.pagination?.totalPages || 1)}
+                  onClick={() => setState(prev => ({ ...prev, page: prev.page + 1 }))}
+                  className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+
+            {customerSummary.length === 0 && (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <span className="khmer-text">{t('no_data')}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto">
             <Table
-              dataSource={groupedOrders}
+              dataSource={customerSummary}
               columns={[
                 {
                   key: "No",
-                  title: <div className="khmer-text1">{t('no')}</div>,
-                  render: (text, record, index) => index + 1,
-                  width: 60
+                  title: <div className="khmer-text1 dark:text-gray-300">{t('no')}</div>,
+                  render: (text, record, index) => <span className="dark:text-gray-300">{index + 1}</span>,
+                  width: 60,
+                  fixed: 'left',
                 },
                 {
-                  title: <span className="khmer-text">{t('invoice_number')}</span>,
-                  dataIndex: "product_description",
-                  render: (text) => <span className="english-text invoice-number">{text}</span>
+                  title: <span className="khmer-text dark:text-gray-300" style={{ fontSize: '17px', fontWeight: 600 }}>{t('customer')}</span>,
+                  dataIndex: "customer_name",
+                  render: (text, record) => (
+                    <div className="customer-info">
+                      <div className="customer-name khmer-text dark:text-white" style={{ fontSize: '17px', fontWeight: 600 }}>{text}</div>
+                      <small className="customer-phone english-text dark:text-gray-400" style={{ fontSize: '15px' }}>{record.tel}</small>
+                    </div>
+                  ),
+                  width: 200,
                 },
                 {
-                  title: <span className="khmer-text">{t('order_date')}</span>,
-                  dataIndex: "order_date",
-                  render: (text) => (
-                    <span className="english-text">{text ? formatDateClient(text) : '-'}</span>
-                  )
+                  title: <span className="khmer-text dark:text-gray-300">{t('customer_address')}</span>,
+                  dataIndex: "branch_name",
+                  render: (text) => <span className="address-text khmer-text dark:text-gray-300">{text || '-'}</span>,
                 },
                 {
-                  title: <span className="khmer-text">{t('delivery_date')}</span>,
-                  dataIndex: "delivery_date",
-                  render: (text) => (
-                    <span className="english-text" style={{ color: '#ff4d4f' }}>
-                      {text ? formatDateClient(text) : '-'}
-                    </span>
-                  )
+                  title: <span className="khmer-text dark:text-gray-300">{t('invoice_count')}</span>,
+                  dataIndex: "order_count",
+                  align: 'center',
+                  render: (text) => <Tag color="blue" className="invoice-count-tag english-text">{text}</Tag>,
+                  width: 100,
                 },
                 {
-                  title: <span className="khmer-text">{t('total_amount')}</span>,
-                  dataIndex: "total_amount",
-                  render: (text) => <span className="english-text amount-text">{formatCurrency(text)}</span>,
-                  align: 'right'
+                  title: <span className="khmer-text dark:text-gray-300">{t('total_debt')}</span>,
+                  dataIndex: "total_due",
+                  render: (text) => <strong className="due-amount-text english-text dark:text-red-400">{formatCurrency(text)}</strong>,
+                  align: 'right',
+                  width: 130,
                 },
                 {
-                  title: <span className="khmer-text">{t('paid_amount')}</span>,
-                  dataIndex: "paid_amount",
-                  render: (text) => <span className="english-text amount-text paid">{formatCurrency(text)}</span>,
-                  align: 'right'
-                },
-                {
-                  title: <span className="khmer-text">{t('due_amount')}</span>,
-                  dataIndex: "due_amount",
-                  render: (text) => <span className="english-text amount-text due">{formatCurrency(text)}</span>,
-                  align: 'right'
-                },
-                {
-                  title: <span className="khmer-text">{t('payment_status')}</span>,
-                  dataIndex: "payment_status",
-                  render: (status, record) => {
-                    const dueAmount = parseFloat(record.due_amount) || 0;
-                    let color = 'green';
-                    let text = t('paid');
-
-                    if (dueAmount > 0.01) {
-                      color = 'orange';
-                      text = t('partial_payment');
-                    }
-
-                    if (parseFloat(record.paid_amount) === 0) {
-                      color = 'red';
-                      text = t('unpaid');
-                    }
-
-                    return <Tag color={color} className="status-tag khmer-text">{text}</Tag>;
-                  }
-                },
-                {
-                  title: <span className="khmer-text">{t('actions')}</span>,
+                  title: <span className="khmer-text dark:text-gray-300">{t('actions')}</span>,
                   key: "action",
                   render: (_, record) => (
-                    <Space size="small">
-                      {parseFloat(record.due_amount) > 0 && (
-                        <Button
-                          type="primary"
-                          size="small"
-                          icon={<MdPayment />}
-                          onClick={() => handleMakePayment(record)}
-                          className="pay-button"
-                        >
-                          <span className="khmer-text">{t('pay_now')}</span>
-                        </Button>
-                      )}
-
-                      <Popconfirm
-                        title={<span className="khmer-text">{t('delete_confirm')}</span>}
-                        onConfirm={() => handleDeleteInvoice(record)}
-                        okText={<span className="khmer-text">{t('yes')}</span>}
-                        cancelText={<span className="khmer-text">{t('no')}</span>}
-                        okButtonProps={{ loading: deleteLoading }}
-                      >
-                        {isPermission("customer.getone") && (
-                          <Button
-                            type="primary"
-                            danger
-                            size="small"
-                            icon={<MdDelete />}
-                            className="delete-button"
-                          >
-                            <span className="khmer-text">{t('delete')}</span>
-                          </Button>
-                        )}
-                      </Popconfirm>
-                    </Space>
+                    <Button
+                      type="primary"
+                      icon={<MdRemoveRedEye />}
+                      onClick={() => onViewCustomerDetails(record)}
+                      size="small"
+                    >
+                      <span className="khmer-text">{t('view_details')}</span>
+                    </Button>
                   ),
-                  width: 200
+                  width: 140,
+                  fixed: 'right',
                 }
               ]}
-              pagination={false}
+              pagination={{
+                current: state.pagination?.currentPage || state.page || 1,
+                pageSize: state.pagination?.limit || state.limit || 10,
+                total: state.pagination?.total || 0,
+                showSizeChanger: true,
+                showTotal: (total) => `Total ${total} items`,
+                responsive: true,
+                onChange: (page, pageSize) => {
+                  setState(prev => ({ ...prev, page, limit: pageSize }));
+                },
+              }}
               scroll={{ x: 800 }}
               size="small"
-              className="customer-orders-table"
+              className="dark:bg-gray-800"
             />
-          </>
-        )}
-      </Drawer>
-
-      <Modal
-        title={
-          <div className="modal-title">
-            <MdPayment className="modal-title-icon" />
-            <span className="khmer-font">{t('payment_for_invoice')}: {currentInvoice?.product_description}</span>
           </div>
-        }
-        open={paymentModalVisible}
-        onCancel={() => {
-          setPaymentModalVisible(false);
-          setPaymentAmount(0);
-          setPaymentMethod("cash");
-          setBank(null);
-          setSlipImages([]);
-          setPaymentDate(dayjs());
-        }}
-        width={600}
-        footer={[
-          <Button
-            key="cancel"
-            onClick={() => {
-              setPaymentModalVisible(false);
-              setPaymentAmount(0);
-              setPaymentMethod("cash");
-              setBank(null);
-              setSlipImages([]);
-              setPaymentDate(dayjs());
-            }}
-            className="cancel-button"
-          >
-            <span className="khmer-text">{t('cancel')}</span>
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            loading={paymentLoading}
-            onClick={handlePaymentSubmit}
-            className="submit-button"
-          >
-            <span className="khmer-text">{t('pay_now')}</span>
-          </Button>
-        ]}
-        className="payment-modal khmer-font"
-      >
-        {currentInvoice && (
-          <div className="payment-form">
-            <div className="invoice-details">
-              <Descriptions bordered column={1} size="small" className="invoice-descriptions">
-                <Descriptions.Item
-                  label={<span className="khmer-font">{t('customer')}</span>}
-                >
-                  <span className="description-value">{currentInvoice.customer_name}</span>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font">{t('invoice_number')}</span>}
-                >
-                  <span className="description-value english-text">{currentInvoice.product_description}</span>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font">{t('total_amount')}</span>}
-                >
-                  <span className="description-value english-text">{formatCurrency(currentInvoice.total_amount)}</span>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font">{t('paid_amount')}</span>}
-                >
-                  <span className="description-value english-text">{formatCurrency(currentInvoice.paid_amount)}</span>
-                </Descriptions.Item>
-                <Descriptions.Item
-                  label={<span className="khmer-font">{t('due_amount')}</span>}
-                >
-                  <Tag color="red" className="english-text amount-tag">
-                    {formatCurrency(currentInvoice.due_amount)}
-                  </Tag>
-                </Descriptions.Item>
-              </Descriptions>
-            </div>
-            <Divider />
-            <Form layout="vertical" className="payment-details-form">
-              <Form.Item
-                label={<span className="khmer-font">{t('amount_to_pay')}</span>}
-                required
-              >
-                <InputNumber
-                  style={{ width: '100%' }}
-                  value={paymentAmount}
-                  onChange={setPaymentAmount}
-                  min={0}
-                  precision={2}
-                  formatter={(value) =>
-                    `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-                  }
-                  parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
-                />
-              </Form.Item>
+        </Card>
 
-              <Form.Item
-                label={<span className="khmer-font">{t('payment_method')}</span>}
-                required
-              >
-                <Select
-                  value={paymentMethod}
-                  onChange={(value) => {
-                    setPaymentMethod(value);
-                    if (value === "cash") {
-                      setBank(null);
-                    }
-                  }}
-                  style={{ width: '100%' }}
-                  className="payment-method-select"
+        <Drawer
+          title={
+            <div className="drawer-title flex items-center gap-2">
+              <FaUserTie className="drawer-title-icon text-lg" />
+              <span className="khmer-font text-base md:text-lg">
+                {t('customer_details')}: {selectedCustomer?.customer_name || ''}
+              </span>
+              <Button
+                type="text"
+                icon={
+                  <svg
+                    className="w-5 h-5 sm:w-6 sm:h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                }
+                onClick={() => setCustomerDetailVisible(false)}
+                className="lg:hidden absolute right-4 top-4 z-10 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                size="large"
+              />
+            </div>
+
+          }
+
+          width="100%"
+          styles={{
+            body: { padding: '12px' }
+          }}
+          className="customer-drawer khmer-font [&_.ant-drawer-wrapper-body]:!w-full md:[&_.ant-drawer-wrapper-body]:!w-[90%] lg:[&_.ant-drawer-wrapper-body]:!w-[1200px]"
+          open={customerDetailVisible}
+          onClose={() => setCustomerDetailVisible(false)}
+          extra={
+            <Button
+              type="primary"
+              icon={<FaFileExcel />}
+              onClick={() => selectedCustomer && exportToExcel(selectedCustomer)}
+              loading={excelExportLoading}
+              className="drawer-export-button hidden md:flex"
+            >
+              {t('export_excel')}
+            </Button>
+          }
+        >
+          {selectedCustomer && (
+            <>
+              {/* Export button for mobile */}
+              <div className="mb-4 md:hidden">
+                <Button
+                  type="primary"
+                  icon={<FaFileExcel />}
+                  onClick={() => selectedCustomer && exportToExcel(selectedCustomer)}
+                  loading={excelExportLoading}
+                  className="w-full"
+                  block
                 >
-                  <Option value="cash">
-                    <span className="khmer-text">{t('cash')}</span>
-                  </Option>
-                  <Option value="bank_transfer">
-                    <span className="khmer-text">{t('bank_transfer')}</span>
-                  </Option>
-                  <Option value="mobile_banking">
-                    <span className="khmer-text">{t('mobile_banking')}</span>
-                  </Option>
-                </Select>
-              </Form.Item>
-              {paymentMethod !== "cash" && (
+                  {t('export_excel')}
+                </Button>
+              </div>
+
+              {/* Customer Info Card */}
+              <div className="customer-card mb-4">
+                <Descriptions
+                  bordered
+                  column={1}
+                  className="english-font customer-descriptions"
+                  size="small"
+                >
+                  <Descriptions.Item
+                    label={
+                      <span className="khmer-font description-label flex items-center gap-2">
+                        <FaUserTie className="description-icon" /> {t('customer')}
+                      </span>
+                    }
+                    className="description-item"
+                  >
+                    <span className="description-value break-words">{selectedCustomer.customer_name}</span>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={
+                      <span className="khmer-font description-label flex items-center gap-2">
+                        <MdSearch className="description-icon" /> {t('phone_number')}
+                      </span>
+                    }
+                    className="description-item"
+                  >
+                    <span className="description-value">{selectedCustomer.tel}</span>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={
+                      <span className="khmer-font description-label flex items-center gap-2">
+                        <RiContactsLine className="description-icon" /> {t('customer_address')}
+                      </span>
+                    }
+                    className="description-item"
+                  >
+                    <span className="description-value break-words">
+                      {selectedCustomer.branch_name || selectedCustomer.address || '-'}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={
+                      <span className="khmer-font description-label flex items-center gap-2">
+                        <MdAttachMoney className="description-icon" /> {t('total_debt_amount')}
+                      </span>
+                    }
+                    className="description-item"
+                  >
+                    <Tag color="red" className="english-font amount-tag">
+                      {formatCurrency(selectedCustomer.total_due)}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={
+                      <span className="khmer-font description-label flex items-center gap-2">
+                        <RiFileListLine className="description-icon" /> {t('total_invoices')}
+                      </span>
+                    }
+                    className="description-item"
+                  >
+                    <Tag color="orange" className="invoice-count">
+                      {formatNumber(selectedCustomer.orders.length)} {t('invoices')}
+                    </Tag>
+                  </Descriptions.Item>
+                </Descriptions>
+              </div>
+
+              <Divider className="section-divider my-4">
+                <div className="flex items-center gap-2">
+                  <FaRegListAlt className="divider-icon" />
+                  <span className="khmer-font divider-text text-sm md:text-base">
+                    {t('outstanding_invoices')}
+                  </span>
+                </div>
+              </Divider>
+
+              {/* Statistics Cards */}
+              <div className="customer-stats mb-4">
+                <Row gutter={[8, 8]}>
+                  <Col xs={24} sm={8}>
+                    <Card size="small" className="stat-card customer-stat-card total">
+                      <Statistic
+                        title={
+                          <div className="stat-title flex items-center gap-1 text-xs md:text-sm">
+                            <MdAttachMoney className="stat-icon" /> {t('total_amount')}
+                          </div>
+                        }
+                        value={selectedCustomer.orders.reduce(
+                          (sum, order) => sum + parseFloat(order.total_amount || 0),
+                          0
+                        )}
+                        precision={2}
+                        valueStyle={{ color: '#3f8600', fontSize: 'clamp(16px, 4vw, 24px)' }}
+                        formatter={(value) => formatCurrency(value)}
+                        className="statistic-value"
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card size="small" className="stat-card customer-stat-card paid">
+                      <Statistic
+                        title={
+                          <div className="stat-title flex items-center gap-1 text-xs md:text-sm">
+                            <FaMoneyBillWave className="stat-icon" /> {t('paid_amount')}
+                          </div>
+                        }
+                        value={selectedCustomer.orders.reduce(
+                          (sum, order) => sum + parseFloat(order.paid_amount || 0),
+                          0
+                        )}
+                        precision={2}
+                        valueStyle={{ color: '#1890ff', fontSize: 'clamp(16px, 4vw, 24px)' }}
+                        formatter={(value) => formatCurrency(value)}
+                        className="statistic-value"
+                      />
+                    </Card>
+                  </Col>
+                  <Col xs={24} sm={8}>
+                    <Card size="small" className="stat-card customer-stat-card due">
+                      <Statistic
+                        title={
+                          <div className="stat-title flex items-center gap-1 text-xs md:text-sm">
+                            <MdOutlinePayment className="stat-icon" /> {t('due_amount')}
+                          </div>
+                        }
+                        value={selectedCustomer.total_due}
+                        precision={2}
+                        valueStyle={{ color: '#cf1322', fontSize: 'clamp(16px, 4vw, 24px)' }}
+                        formatter={(value) => formatCurrency(value)}
+                        className="statistic-value"
+                      />
+                    </Card>
+                  </Col>
+                </Row>
+              </div>
+
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table
+                  dataSource={groupedOrders}
+                  columns={[
+                    {
+                      key: "No",
+                      title: <div className="khmer-text1">{t('no')}</div>,
+                      render: (text, record, index) => index + 1,
+                      width: 60
+                    },
+                    {
+                      title: <span className="khmer-text">{t('invoice_number')}</span>,
+                      dataIndex: "product_description",
+                      render: (text) => <Tag color="cyan" className="english-text invoice-number">{text}</Tag>
+                    },
+                    {
+                      title: <span className="khmer-text">{t('order_date')}</span>,
+                      dataIndex: "order_date",
+                      render: (text) => (
+                        <span className="english-text">{text ? formatDateClient(text) : '-'}</span>
+                      )
+                    },
+                    {
+                      title: <span className="khmer-text">{t('delivery_date')}</span>,
+                      dataIndex: "delivery_date",
+                      render: (text) => (
+                        <span className="english-text" style={{ color: '#ff4d4f' }}>
+                          {text ? formatDateClient(text) : '-'}
+                        </span>
+                      )
+                    },
+                    {
+                      title: <span className="khmer-text">{t('total_amount')}</span>,
+                      dataIndex: "total_amount",
+                      render: (text) => <span className="english-text amount-text">{formatCurrency(text)}</span>,
+                      align: 'right'
+                    },
+                    {
+                      title: <span className="khmer-text">{t('paid_amount')}</span>,
+                      dataIndex: "paid_amount",
+                      render: (text) => <span className="english-text amount-text paid">{formatCurrency(text)}</span>,
+                      align: 'right'
+                    },
+                    {
+                      title: <span className="khmer-text">{t('due_amount')}</span>,
+                      dataIndex: "due_amount",
+                      render: (text) => <span className="english-text amount-text due">{formatCurrency(text)}</span>,
+                      align: 'right'
+                    },
+                    {
+                      title: <span className="khmer-text">{t('payment_status')}</span>,
+                      dataIndex: "payment_status",
+                      render: (status, record) => {
+                        const dueAmount = parseFloat(record.due_amount) || 0;
+                        let color = 'green';
+                        let text = t('paid');
+
+                        if (dueAmount > 0.01) {
+                          color = 'orange';
+                          text = t('partial_payment');
+                        }
+
+                        if (parseFloat(record.paid_amount) === 0) {
+                          color = 'red';
+                          text = t('unpaid');
+                        }
+
+                        return <Tag color={color} className="status-tag khmer-text">{text}</Tag>;
+                      }
+                    },
+                    {
+                      title: <span className="khmer-text">{t('actions')}</span>,
+                      key: "action",
+                      render: (_, record) => (
+                        <Space size="small">
+                          {parseFloat(record.due_amount) > 0 && (
+                            <Button
+                              type="primary"
+                              size="small"
+                              icon={<MdPayment />}
+                              onClick={() => handleMakePayment(record)}
+                              className="pay-button"
+                            >
+                              <span className="khmer-text">{t('pay_now')}</span>
+                            </Button>
+                          )}
+
+                          <Popconfirm
+                            title={<span className="khmer-text">{t('delete_confirm')}</span>}
+                            onConfirm={() => handleDeleteInvoice(record)}
+                            okText={<span className="khmer-text">{t('yes')}</span>}
+                            cancelText={<span className="khmer-text">{t('no')}</span>}
+                            okButtonProps={{ loading: deleteLoading }}
+                          >
+                            {isPermission("customer.getone") && (
+                              <Button
+                                type="primary"
+                                danger
+                                size="small"
+                                icon={<MdDelete />}
+                                className="delete-button"
+                              >
+                                <span className="khmer-text">{t('delete')}</span>
+                              </Button>
+                            )}
+                          </Popconfirm>
+                        </Space>
+                      ),
+                      width: 200
+                    }
+                  ]}
+                  pagination={false}
+                  scroll={{ x: 800 }}
+                  size="small"
+                  className="customer-orders-table"
+                />
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="block md:hidden space-y-3">
+                {groupedOrders.map((record, index) => {
+                  const dueAmount = parseFloat(record.due_amount) || 0;
+                  let statusColor = 'green';
+                  let statusText = t('paid');
+
+                  if (dueAmount > 0.01) {
+                    statusColor = 'orange';
+                    statusText = t('partial_payment');
+                  }
+
+                  if (parseFloat(record.paid_amount) === 0) {
+                    statusColor = 'red';
+                    statusText = t('unpaid');
+                  }
+
+                  return (
+                    <Card
+                      key={record.debt_id || index}
+                      className="shadow-sm border border-gray-200 dark:border-gray-700"
+                      size="small"
+                    >
+                      <div className="space-y-2">
+                        {/* Header with Invoice Number and Status */}
+                        <div className="flex justify-between items-start pb-2 border-b border-gray-200 dark:border-gray-700">
+                          <div className="flex-1">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 khmer-text mb-1">
+                              {t('invoice_number')}
+                            </div>
+                            <div className="font-semibold text-sm english-text">
+                              <Tag color="cyan" style={{ margin: 0 }}>{record.product_description}</Tag>
+                            </div>
+                          </div>
+                          <Tag color={statusColor} className="status-tag khmer-text text-xs">
+                            {statusText}
+                          </Tag>
+                        </div>
+
+                        {/* Dates */}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div>
+                            <div className="text-gray-500 dark:text-gray-400 khmer-text mb-1">
+                              {t('order_date')}
+                            </div>
+                            <div className="english-text font-medium">
+                              {record.order_date ? formatDateClient(record.order_date) : '-'}
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-gray-500 dark:text-gray-400 khmer-text mb-1">
+                              {t('delivery_date')}
+                            </div>
+                            <div className="english-text font-medium text-red-500">
+                              {record.delivery_date ? formatDateClient(record.delivery_date) : '-'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Amounts */}
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 khmer-text mb-1">
+                              {t('total_amount')}
+                            </div>
+                            <div className="font-semibold text-sm text-green-600 dark:text-green-400 english-text">
+                              {formatCurrency(record.total_amount)}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 khmer-text mb-1">
+                              {t('paid_amount')}
+                            </div>
+                            <div className="font-semibold text-sm text-blue-600 dark:text-blue-400 english-text">
+                              {formatCurrency(record.paid_amount)}
+                            </div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 khmer-text mb-1">
+                              {t('due_amount')}
+                            </div>
+                            <div className="font-semibold text-sm text-red-600 dark:text-red-400 english-text">
+                              {formatCurrency(record.due_amount)}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-2">
+                          {parseFloat(record.due_amount) > 0 && (
+                            <Button
+                              type="primary"
+                              size="small"
+                              icon={<MdPayment />}
+                              onClick={() => handleMakePayment(record)}
+                              className="pay-button flex-1"
+                              block
+                            >
+                              <span className="khmer-text text-xs">{t('pay_now')}</span>
+                            </Button>
+                          )}
+
+                          {isPermission("customer.getone") && (
+                            <Popconfirm
+                              title={<span className="khmer-text">{t('delete_confirm')}</span>}
+                              onConfirm={() => handleDeleteInvoice(record)}
+                              okText={<span className="khmer-text">{t('yes')}</span>}
+                              cancelText={<span className="khmer-text">{t('no')}</span>}
+                              okButtonProps={{ loading: deleteLoading }}
+                            >
+                              <Button
+                                type="primary"
+                                danger
+                                size="small"
+                                icon={<MdDelete />}
+                                className="delete-button"
+                              >
+                                <span className="khmer-text text-xs">{t('delete')}</span>
+                              </Button>
+                            </Popconfirm>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </Drawer>
+
+        {/* Payment Modal */}
+        <Modal
+          title={
+            <div className="flex items-center gap-2">
+              <MdPayment className="text-blue-600 dark:text-blue-400" />
+              <span className="khmer-font dark:text-white text-sm sm:text-base">
+                {t('payment_for_invoice')}: <Tag color="cyan">{currentInvoice?.product_description}</Tag>
+              </span>
+            </div>
+          }
+          open={paymentModalVisible}
+          onCancel={() => {
+            setPaymentModalVisible(false);
+            setPaymentAmount(0);
+            setPaymentMethod("cash");
+            setBank(null);
+            setSlipImages([]);
+            setPaymentDate(dayjs());
+          }}
+          width="100%"
+          style={{ maxWidth: '900px', top: 20 }}
+          footer={[
+            <Button
+              key="cancel"
+              onClick={() => {
+                setPaymentModalVisible(false);
+                setPaymentAmount(0);
+                setPaymentMethod("cash");
+                setBank(null);
+                setSlipImages([]);
+                setPaymentDate(dayjs());
+              }}
+              className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            >
+              <span className="khmer-text">{t('cancel')}</span>
+            </Button>,
+            <Button
+              key="submit"
+              type="primary"
+              loading={paymentLoading}
+              onClick={handlePaymentSubmit}
+            >
+              <span className="khmer-text">{t('pay_now')}</span>
+            </Button>
+          ]}
+          className="dark:bg-gray-900"
+        >
+          {currentInvoice && (
+            <div className="space-y-4">
+              <Card size="small" className="dark:bg-gray-800 dark:border-gray-700">
+                <Descriptions bordered column={1} size="small">
+                  <Descriptions.Item
+                    label={<span className="khmer-font dark:text-gray-300">{t('customer')}</span>}
+                  >
+                    <span className="dark:text-white">{currentInvoice.customer_name}</span>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={<span className="khmer-font dark:text-gray-300">{t('invoice_number')}</span>}
+                  >
+                    <Tag color="cyan" className="english-text dark:text-white">{currentInvoice.product_description}</Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={<span className="khmer-font dark:text-gray-300">{t('total_amount')}</span>}
+                  >
+                    <span className="english-text dark:text-white">{formatCurrency(currentInvoice.total_amount)}</span>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={<span className="khmer-font dark:text-gray-300">{t('paid_amount')}</span>}
+                  >
+                    <span className="english-text dark:text-white">{formatCurrency(currentInvoice.paid_amount)}</span>
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={<span className="khmer-font dark:text-gray-300">{t('due_amount')}</span>}
+                  >
+                    <Tag color="red" className="text-base">
+                      {formatCurrency(currentInvoice.due_amount)}
+                    </Tag>
+                  </Descriptions.Item>
+                </Descriptions>
+              </Card>
+
+              <Divider className="dark:border-gray-700" />
+
+              <Form layout="vertical" className="space-y-4">
+                {/* Amount to Pay */}
                 <Form.Item
-                  label={<span className="khmer-font">{t('select_bank')}</span>}
+                  label={<span className="khmer-font dark:text-gray-300 text-sm sm:text-base font-medium">{t("payment_amount")}</span>}
+                  required
+                >
+                  <InputNumber
+                    className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    value={paymentAmount}
+                    onChange={setPaymentAmount}
+                    min={0}
+                    precision={2}
+                    formatter={(value) =>
+                      `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+                    }
+                    parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                    placeholder="0.00"
+                  />
+                </Form.Item>
+
+                {/* Payment Method */}
+                <Form.Item
+                  label={<span className="khmer-font dark:text-gray-300 text-sm sm:text-base font-medium">{t("payment_method")}</span>}
                   required
                 >
                   <Select
-                    value={bank}
-                    onChange={setBank}
-                    placeholder={t('select_bank')}
-                    style={{ width: '100%' }}
-                    allowClear
-                    className="bank-select"
+                    value={paymentMethod}
+                    onChange={(value) => {
+                      setPaymentMethod(value);
+                      if (value === "cash" || value === "mobile_banking") {
+                        setBank(null);
+                      }
+                    }}
+                    className="w-full text-sm sm:text-base"
                   >
-                    {cambodiaBanks.map((bankOption) => (
-                      <Option key={bankOption.value} value={bankOption.value}>
-                        {bankOption.label}
-                      </Option>
-                    ))}
+                    <Option value="cash">
+                      <span className="khmer-text">{t("cash")}</span>
+                    </Option>
+                    <Option value="bank_transfer">
+                      <span className="khmer-text">{t("bank_transfer")}</span>
+                    </Option>
+                    <Option value="mobile_banking">
+                      <span className="khmer-text">{t("debenture")}</span>
+                    </Option>
                   </Select>
                 </Form.Item>
-              )}
-              <Form.Item
-                label={<span className="khmer-font">{t('payment_date')}</span>}
-                required
-              >
-                <DatePicker
-                  value={paymentDate}
-                  onChange={setPaymentDate}
-                  format="DD-MM-YYYY"
-                  style={{ width: '100%' }}
-                  className="payment-date-picker"
-                />
-              </Form.Item>
-              {paymentMethod !== "cash" && (
-                <Form.Item
-                  label={<span className="khmer-font">{t('slip_optional')}</span>}
-                >
-                  <Upload.Dragger
-                    multiple
-                    listType="picture-card"
-                    fileList={slipImages}
-                    onChange={(info) => setSlipImages(info.fileList)}
-                    beforeUpload={() => false}
-                    accept="image/*"
-                    className="slip-upload"
+
+                {/* Bank Selector - Only shows for Bank Transfer */}
+                {paymentMethod === "bank_transfer" && (
+                  <Form.Item
+                    label={<span className="khmer-font dark:text-gray-300 text-sm sm:text-base font-medium">{t("select_bank")}</span>}
+                    required
                   >
-                    <p className="ant-upload-drag-icon">
-                      <InboxOutlined />
-                    </p>
-                    <p className="ant-upload-text khmer-text">
-                      {t('upload_slip')}
-                    </p>
-                    <p className="ant-upload-hint khmer-text">
-                      {t('multiple_images')}
-                    </p>
-                  </Upload.Dragger>
+                    <Select
+                      value={bank}
+                      onChange={setBank}
+                      placeholder={t("select_bank")}
+                      className="w-full text-sm sm:text-base"
+                      allowClear
+                    >
+                      {cambodiaBanks.map((bankOption) => (
+                        <Option key={bankOption.value} value={bankOption.value}>
+                          {bankOption.label}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                )}
+
+                {/* Bank Slip Upload - Shows for Bank Transfer and Mobile Banking */}
+                {paymentMethod === "bank_transfer" && (
+                  <Form.Item
+                    label={<span className="khmer-font dark:text-gray-300 text-sm sm:text-base font-medium">{t("slip_optional")}</span>}
+                  >
+                    <Upload
+                      listType="picture-card"
+                      fileList={slipImages}
+                      onChange={({ fileList }) => setSlipImages(fileList)}
+                      beforeUpload={() => false}
+                      accept="image/*"
+                      maxCount={5}
+                      className="dark:bg-gray-700"
+                    >
+                      {slipImages.length < 5 && (
+                        <div>
+                          <InboxOutlined style={{ fontSize: 24 }} />
+                          <div style={{ marginTop: 8 }} className="khmer-text text-xs sm:text-sm">
+                            {t("slip_image")}
+                          </div>
+                        </div>
+                      )}
+                    </Upload>
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 khmer-text">
+                      {t("upload_slip")}
+                    </div>
+                  </Form.Item>
+                )}
+
+                {/* Payment Date */}
+                <Form.Item
+                  label={<span className="khmer-font dark:text-gray-300 text-sm sm:text-base font-medium">{t("payment_date")}</span>}
+                  required
+                >
+                  <DatePicker
+                    value={paymentDate}
+                    onChange={setPaymentDate}
+                    format="DD/MM/YYYY"
+                    className="w-full text-sm sm:text-base dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                    placeholder="ជ្រើសរើសកាលបរិច្ឆេទ"
+                  />
                 </Form.Item>
-              )}
-            </Form>
-          </div>
-        )}
-      </Modal>
+              </Form>
+            </div>
+          )}
+        </Modal>
 
-      <Modal
-        title={
-          <div className="modal-title">
-            <MdEdit className="modal-title-icon" />
-            <span className="khmer-font">{t('edit_invoice')}: {editInvoiceData?.product_description}</span>
-          </div>
-        }
-        open={editModalVisible}
-        onCancel={() => {
-          setEditModalVisible(false);
-          editFormRef.resetFields();
-          setEditInvoiceData(null);
-        }}
-        width={900}
-        footer={[
-          <Button
-            key="cancel"
-            onClick={() => {
-              setEditModalVisible(false);
-              editFormRef.resetFields();
-              setEditInvoiceData(null);
-            }}
-            className="cancel-button"
-          >
-            <span className="khmer-text">{t('cancel')}</span>
-          </Button>,
-          <Button
-            key="submit"
-            type="primary"
-            loading={editLoading}
-            onClick={() => editFormRef.submit()}
-            className="submit-button"
-          >
-            <span className="khmer-text">{t('save')}</span>
-          </Button>
-        ]}
-        className="edit-modal khmer-font"
-      >
-        <Form
-          form={editFormRef}
-          layout="vertical"
-          onFinish={handleEditSubmit}
-          className="edit-form"
+        {/* Edit Modal - Keep existing edit modal code with dark mode classes added */}
+        <Modal
+          title={
+            <div className="flex items-center gap-2">
+              <MdEdit className="text-blue-600 dark:text-blue-400" />
+              <span className="khmer-font dark:text-white text-sm sm:text-base">
+                {t('edit_invoice')}: <Tag color="cyan">{editInvoiceData?.product_description}</Tag>
+              </span>
+            </div>
+          }
+          open={editModalVisible}
+          onCancel={() => {
+            setEditModalVisible(false);
+            editFormRef.resetFields();
+            setEditInvoiceData(null);
+          }}
+          width="100%"
+          style={{ maxWidth: '900px', top: 20 }}
+          footer={[
+            <Button
+              key="cancel"
+              onClick={() => {
+                setEditModalVisible(false);
+                editFormRef.resetFields();
+                setEditInvoiceData(null);
+              }}
+              className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            >
+              <span className="khmer-text">{t('cancel')}</span>
+            </Button>,
+            <Button
+              key="submit"
+              type="primary"
+              loading={editLoading}
+              onClick={() => editFormRef.submit()}
+            >
+              <span className="khmer-text">{t('save')}</span>
+            </Button>
+          ]}
+          className="dark:bg-gray-900"
         >
-          <Divider orientation="left">
-            <span className="khmer-font">{t('product_information')}</span>
-          </Divider>
+          <Form
+            form={editFormRef}
+            layout="vertical"
+            onFinish={handleEditSubmit}
+            className="space-y-4"
+          >
+            <Divider orientation="left" className="dark:border-gray-700">
+              <span className="khmer-font dark:text-gray-300">{t('product_information')}</span>
+            </Divider>
 
-          <Form.List name="product_details">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.length > 0 && (
-                  <Row gutter={16} style={{ fontWeight: 'bold', marginBottom: 8 }}>
-                    <Col span={5}><span className="khmer-font">{t('product_category')}</span></Col>
-                    <Col span={5}><span className="khmer-font">{t('ton_price')}</span></Col>
-                    <Col span={4}><span className="khmer-font">{t('actual_price')}</span></Col>
-                    <Col span={5}><span className="khmer-font">{t('quantity')}</span></Col>
-                    <Col span={5}><span className="khmer-font">{t('due_amount')}</span></Col>
-                  </Row>
-                )}
+            <Form.List name="product_details">
+              {(fields) => (
+                <>
+                  {fields.length > 0 && (
+                    <div className="hidden lg:grid grid-cols-12 gap-2 font-bold mb-2 dark:text-gray-300">
+                      <div className="col-span-3 khmer-font">{t('product_category')}</div>
+                      <div className="col-span-2 khmer-font">{t('ton_price')}</div>
+                      <div className="col-span-2 khmer-font">{t('actual_price')}</div>
+                      <div className="col-span-2 khmer-font">{t('quantity')}</div>
+                      <div className="col-span-3 khmer-font">{t('due_amount')}</div>
+                    </div>
+                  )}
 
-                {fields.map(({ key, name, fieldKey, ...restField }) => (
-                  <Row gutter={16} key={key} style={{ marginBottom: 12 }}>
-                    <Col span={5}>
-                      <Form.Item name={[name, 'category_name']} noStyle>
-                        <Input disabled className="khmer-font" />
-                      </Form.Item>
-                    </Col>
-                    <Col span={5}>
-                      <Form.Item name={[name, 'unit_price']} noStyle>
-                        <InputNumber
-                          style={{ width: '100%' }}
-                          min={0}
-                          precision={2}
-                          formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                          parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
-                          onChange={(value) => handleUnitPriceChange(value, ['product_details', name, 'unit_price'])}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col span={4}>
-                      <Form.Item name={[name, 'actual_price']} noStyle>
-                        <InputNumber
-                          disabled
-                          style={{ width: '100%' }}
-                          min={0}
-                          precision={2}
-                          formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                          parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col span={5}>
-                      <Form.Item name={[name, 'quantity']} noStyle>
-                        <InputNumber
-                          style={{ width: '100%' }}
-                          min={0}
-                          precision={0}
-                          formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                          parser={(value) => value.replace(/(,*)/g, '')}
-                          onChange={(value) => handleQuantityChange(value, ['product_details', name, 'quantity'])}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col span={5}>
-                      <Form.Item name={[name, 'due_amount']} noStyle>
-                        <InputNumber
-                          disabled
-                          style={{ width: '100%' }}
-                          min={0}
-                          precision={2}
-                          formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                          parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
-                          readOnly
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
-                ))}
+                  {fields.map(({ key, name }) => (
+                    <div key={key} className="grid grid-cols-1 lg:grid-cols-12 gap-2 mb-3 p-3 bg-gray-50 dark:bg-gray-800 rounded">
+                      <div className="lg:col-span-3">
+                        <label className="block lg:hidden khmer-font dark:text-gray-300 mb-1">{t('product_category')}</label>
+                        <Form.Item name={[name, 'category_name']} noStyle>
+                          <Input disabled className="khmer-font dark:bg-gray-700 dark:text-white dark:border-gray-600" />
+                        </Form.Item>
+                      </div>
+                      <div className="lg:col-span-2">
+                        <label className="block lg:hidden khmer-font dark:text-gray-300 mb-1">{t('ton_price')}</label>
+                        <Form.Item name={[name, 'unit_price']} noStyle>
+                          <InputNumber
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            min={0}
+                            precision={2}
+                            formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                            onChange={(value) => handleUnitPriceChange(value, ['product_details', name, 'unit_price'])}
+                          />
+                        </Form.Item>
+                      </div>
+                      <div className="lg:col-span-2">
+                        <label className="block lg:hidden khmer-font dark:text-gray-300 mb-1">{t('actual_price')}</label>
+                        <Form.Item name={[name, 'actual_price']} noStyle>
+                          <InputNumber
+                            disabled
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            min={0}
+                            precision={2}
+                            formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                          />
+                        </Form.Item>
+                      </div>
+                      <div className="lg:col-span-2">
+                        <label className="block lg:hidden khmer-font dark:text-gray-300 mb-1">{t('quantity')}</label>
+                        <Form.Item name={[name, 'quantity']} noStyle>
+                          <InputNumber
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            min={0}
+                            precision={0}
+                            formatter={(value) => `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value.replace(/(,*)/g, '')}
+                            onChange={(value) => handleQuantityChange(value, ['product_details', name, 'quantity'])}
+                          />
+                        </Form.Item>
+                      </div>
+                      <div className="lg:col-span-3">
+                        <label className="block lg:hidden khmer-font dark:text-gray-300 mb-1">{t('due_amount')}</label>
+                        <Form.Item name={[name, 'due_amount']} noStyle>
+                          <InputNumber
+                            disabled
+                            className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
+                            min={0}
+                            precision={2}
+                            formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                            parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                            readOnly
+                          />
+                        </Form.Item>
+                      </div>
+                    </div>
+                  ))}
 
-                {fields.length === 0 && (
-                  <div style={{ textAlign: 'center', padding: '20px', color: '#999' }}>
-                    <span className="khmer-font">{t('no_product_info')}</span>
-                  </div>
-                )}
-              </>
-            )}
-          </Form.List>
+                  {fields.length === 0 && (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <span className="khmer-font">{t('no_product_info')}</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </Form.List>
 
-          <Divider orientation="left">
-            <span className="khmer-font">{t('payment_information')}</span>
-          </Divider>
+            <Divider orientation="left" className="dark:border-gray-700">
+              <span className="khmer-font dark:text-gray-300">{t('payment_information')}</span>
+            </Divider>
 
-          <Row gutter={16}>
-            <Col span={12}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Form.Item
                 name="paid_amount"
-                label={<span className="khmer-font">{t('paid_amount')}</span>}
+                label={<span className="khmer-font dark:text-gray-300">{t('paid_amount')}</span>}
                 rules={[
                   { required: true, message: t('enter_valid_amount') },
                   { type: 'number', min: 0, message: t('amount_must_positive') }
                 ]}
               >
                 <InputNumber
-                  style={{ width: '100%' }}
+                  className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   min={0}
                   precision={2}
                   formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
@@ -1479,18 +1850,17 @@ function TotalDuePage() {
                   onChange={handlePaidAmountChange}
                 />
               </Form.Item>
-            </Col>
-            <Col span={12}>
+
               <Form.Item
                 name="due_amount"
-                label={<span className="khmer-font">{t('due_amount')}</span>}
+                label={<span className="khmer-font dark:text-gray-300">{t('due_amount')}</span>}
                 rules={[
                   { required: true, message: t('enter_valid_amount') },
                   { type: 'number', min: 0, message: t('amount_must_positive') }
                 ]}
               >
                 <InputNumber
-                  style={{ width: '100%' }}
+                  className="w-full dark:bg-gray-700 dark:text-white dark:border-gray-600"
                   min={0}
                   precision={2}
                   readOnly
@@ -1498,17 +1868,15 @@ function TotalDuePage() {
                   parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
                 />
               </Form.Item>
-            </Col>
-          </Row>
+            </div>
 
-          <Row gutter={16}>
-            <Col span={12}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Form.Item
                 name="payment_status"
-                label={<span className="khmer-font">{t('payment_status')}</span>}
+                label={<span className="khmer-font dark:text-gray-300">{t('payment_status')}</span>}
                 rules={[{ required: true, message: t('select_payment_method') }]}
               >
-                <Select placeholder={t('payment_status')} style={{ width: '100%' }}>
+                <Select placeholder={t('payment_status')} className="w-full">
                   <Option value="Pending">
                     <span className="khmer-text">{t('unpaid')}</span>
                   </Option>
@@ -1520,271 +1888,140 @@ function TotalDuePage() {
                   </Option>
                 </Select>
               </Form.Item>
-            </Col>
-            <Col span={12}>
+
               <Form.Item
                 name="order_date"
-                label={<span className="khmer-font">{t('order_date')}</span>}
+                label={<span className="khmer-font dark:text-gray-300">{t('order_date')}</span>}
               >
                 <DatePicker
-                  style={{ width: '100%' }}
+                  className="w-full"
                   format="DD-MM-YYYY"
                   placeholder={t('select_date')}
                 />
               </Form.Item>
-            </Col>
-          </Row>
+            </div>
 
-          <Row gutter={16}>
-            <Col span={12}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Form.Item
                 name="delivery_date"
-                label={<span className="khmer-font">{t('delivery_date')}</span>}
+                label={<span className="khmer-font dark:text-gray-300">{t('delivery_date')}</span>}
               >
                 <DatePicker
-                  style={{ width: '100%' }}
+                  className="w-full"
                   format="DD-MM-YYYY"
                   placeholder={t('select_date')}
                 />
               </Form.Item>
-            </Col>
-            <Col span={12}></Col>
-          </Row>
+            </div>
 
-          <Form.Item
-            name="notes"
-            label={<span className="khmer-font">{t('notes')}</span>}
-          >
-            <Input.TextArea
-              rows={3}
-              placeholder={t('enter_note')}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+            <Form.Item
+              name="notes"
+              label={<span className="khmer-font dark:text-gray-300">{t('notes')}</span>}
+            >
+              <Input.TextArea
+                rows={3}
+                placeholder={t('enter_note')}
+                className="dark:bg-gray-700 dark:text-white dark:border-gray-600"
+              />
+            </Form.Item>
+          </Form>
+        </Modal>
 
-      {React.useMemo(() => {
-        const exportToExcel = async (customer) => {
-          try {
-            setExcelExportLoading(true);
+        {/* Excel Export Function */}
+        {React.useMemo(() => {
+          const exportToExcel = async (customer) => {
+            try {
+              setExcelExportLoading(true);
 
-            const workbook = new ExcelJS.Workbook();
-            const worksheet = workbook.addWorksheet('Customer Orders', {
-              pageSetup: {
-                orientation: 'landscape',
-                paperSize: 9,
-                fitToPage: true,
-                fitToWidth: 1,
-                fitToHeight: 0,
-                horizontalCentered: true,
-                margins: {
-                  left: 0.2,
-                  right: 0.2,
-                  top: 0.4,
-                  bottom: 0.4,
-                  header: 0.3,
-                  footer: 0.3
+              const workbook = new ExcelJS.Workbook();
+              const worksheet = workbook.addWorksheet('Customer Orders', {
+                pageSetup: {
+                  orientation: 'landscape',
+                  paperSize: 9,
+                  fitToPage: true,
+                  fitToWidth: 1,
+                  fitToHeight: 0,
+                  horizontalCentered: true,
+                  margins: {
+                    left: 0.2,
+                    right: 0.2,
+                    top: 0.4,
+                    bottom: 0.4,
+                    header: 0.3,
+                    footer: 0.3
+                  }
+                }
+              });
+
+              workbook.created = new Date();
+              workbook.modified = new Date();
+
+              worksheet.mergeCells('A1:K1');
+              const titleCell = worksheet.getCell('A1');
+              titleCell.value = `តារាងបញ្ជីទិញលក់ប្រេងឥន្ធន:អតិថិជន ${customer.customer_name || ''}`;
+              titleCell.font = {
+                size: 16,
+                bold: true,
+                name: 'Khmer Moul'
+              };
+              titleCell.alignment = { horizontal: 'center' };
+
+              worksheet.mergeCells('A2:K2');
+              const dateRangeCell = worksheet.getCell('A2');
+              const today = new Date();
+              const firstDay = '01';
+              const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+              const month = (today.getMonth() + 1).toString().padStart(2, '0');
+              const year = today.getFullYear();
+              let fromDate = `${firstDay}/${month}/${year}`;
+              let toDate = `${lastDay}/${month}/${year}`;
+
+              if (state.from_date) {
+                if (state.from_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  const parts = state.from_date.split('-');
+                  fromDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                } else {
+                  fromDate = state.from_date;
                 }
               }
-            });
-            
-            workbook.created = new Date();
-            workbook.modified = new Date();
-            
-            worksheet.mergeCells('A1:K1');
-            const titleCell = worksheet.getCell('A1');
-            titleCell.value = `តារាងបញ្ជីទិញលក់ប្រេងឥន្ធន:អតិថិជន ${customer.customer_name || ''}`;
-            titleCell.font = {
-              size: 16,
-              bold: true,
-              name: 'Khmer Moul'
-            };
-            titleCell.alignment = { horizontal: 'center' };
-            
-            worksheet.mergeCells('A2:K2');
-            const dateRangeCell = worksheet.getCell('A2');
-            const today = new Date();
-            const firstDay = '01';
-            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-            const month = (today.getMonth() + 1).toString().padStart(2, '0');
-            const year = today.getFullYear();
-            let fromDate = `${firstDay}/${month}/${year}`;
-            let toDate = `${lastDay}/${month}/${year}`;
-            
-            if (state.from_date) {
-              if (state.from_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                const parts = state.from_date.split('-');
-                fromDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-              } else {
-                fromDate = state.from_date;
-              }
-            }
-            if (state.to_date) {
-              if (state.to_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                const parts = state.to_date.split('-');
-                toDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-              } else {
-                toDate = state.to_date;
-              }
-            }
-            
-            dateRangeCell.value = `ចាប់ពីថ្ងៃទី ${fromDate} ដល់ថ្ងៃទី ${toDate}`;
-            dateRangeCell.font = { name: 'Khmer OS', size: 12 };
-            dateRangeCell.alignment = { horizontal: 'center' };
-            
-            worksheet.addRow([]);
-            
-            const topHeaderRow = worksheet.addRow([
-              'កំនើនក្នុងគ្រា',
-              '', '', '', '', '', '',
-              'ទឹកប្រាក់',
-              'សងក្នុងគ្រា',
-              'ចុងគ្រា',
-              '#'
-            ]);
-            worksheet.mergeCells('A4:G4');
-            topHeaderRow.height = 35;
-            topHeaderRow.eachCell((cell, colNumber) => {
-              if ([1, 8, 9, 10, 11].includes(colNumber)) {
-                cell.font = {
-                  bold: true,
-                  name: 'Khmer OS',
-                  size: 12
-                };
-                cell.fill = {
-                  type: 'pattern',
-                  pattern: 'solid',
-                  fgColor: { argb: 'DDDDDD' }
-                };
-              }
-              cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-              };
-              cell.alignment = {
-                vertical: 'middle',
-                horizontal: 'center',
-                wrapText: true
-              };
-            });
-            
-            const headers = [
-              'ល.រ',
-              'កាលបរិច្ឆេទ',
-              'លេខប័ណ្ណ',
-              'ប្រភេទឥន្ធនៈ',
-              'បរិមាណ',
-              'តម្លៃតោន',
-              'តម្លៃឯកតា',
-              'សរុបដុល្លារ',
-              'ដុល្លារ',
-              'ដុល្លារ',
-              '#'
-            ];
-            const headerRow = worksheet.addRow(headers);
-            headerRow.font = { bold: true, name: 'Khmer OS', size: 11 };
-            headerRow.height = 30;
-            headerRow.eachCell((cell) => {
-              cell.fill = {
-                type: 'pattern',
-                pattern: 'solid',
-                fgColor: { argb: 'DDDDDD' }
-              };
-              cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-              };
-              cell.alignment = {
-                vertical: 'middle',
-                horizontal: 'center',
-                wrapText: true
-              };
-            });
-            
-            let rowNumber = 1;
-            let totalAmountUSD = 0;
-            let totalPaymentsUSD = 0;
-            let totalRemainingBalanceUSD = 0;
-            
-            const allOrders = customer.orders || [];
-            if (allOrders.length === 0) {
-              console.error("No orders found for customer:", customer.customer_name);
-              message.warning(t('no_data_export'));
-            }
-            
-            allOrders.forEach(order => {
-              let quantity = 0;
-              if (order.qty !== undefined && order.qty !== null) {
-                quantity = parseFloat(order.qty);
-              } else if (order.quantity !== undefined && order.quantity !== null) {
-                quantity = parseFloat(order.quantity);
-              } else if (order.total_items !== undefined && order.total_items !== null) {
-                quantity = parseFloat(order.total_items);
-              } else if (typeof order === 'object' && Object.keys(order).some(key => key.includes('qty') || key.includes('quant'))) {
-                const qtyKey = Object.keys(order).find(key => key.includes('qty') || key.includes('quant'));
-                if (qtyKey && order[qtyKey] !== undefined) {
-                  quantity = parseFloat(order[qtyKey]);
+              if (state.to_date) {
+                if (state.to_date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  const parts = state.to_date.split('-');
+                  toDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                } else {
+                  toDate = state.to_date;
                 }
               }
-              
-              let fuelType = 'មិនស្គាល់';
-              if (order.product_category) {
-                fuelType = order.product_category;
-              } else if (order.category_name) {
-                fuelType = order.category_name;
-              } else if (order.Category_Name) {
-                fuelType = order.Category_Name;
-              } else if (order.product_name) {
-                fuelType = order.product_name;
-              } else if (order.product) {
-                fuelType = order.product;
-              }
 
-              const unitPrice = parseFloat(order.unit_price) || 0;
-              const totalAmount = parseFloat(order.total_amount) || 0;
-              const dueAmount = parseFloat(order.due_amount) || 0;
-              const formattedQty = quantity.toLocaleString('en-US');
-              const formattedUnitPrice = unitPrice.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-              const formattedTotalAmount = totalAmount.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-              const payment = totalAmount - dueAmount;
-              const remainingBalance = dueAmount;
-              const formattedPayment = payment.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-              const formattedRemainingBalance = remainingBalance.toLocaleString('en-US', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              });
-              const invoiceNumber = order.INV_NUMBER || order.product_description || order.invoice_number || `-${rowNumber}`;
-              
-              const row = worksheet.addRow([
-                rowNumber,
-                formatDateClient(order.order_date),
-                invoiceNumber,
-                fuelType,
-                formattedQty,
-                formattedUnitPrice,
-                order.exchange_rate || '0.83',
-                `${formattedTotalAmount}`,
-                `${formattedPayment}`,
-                `${formattedRemainingBalance}`,
+              dateRangeCell.value = `ចាប់ពីថ្ងៃទី ${fromDate} ដល់ថ្ងៃទី ${toDate}`;
+              dateRangeCell.font = { name: 'Khmer OS', size: 12 };
+              dateRangeCell.alignment = { horizontal: 'center' };
+
+              worksheet.addRow([]);
+
+              const topHeaderRow = worksheet.addRow([
+                'កំនើនក្នុងគ្រា',
+                '', '', '', '', '', '',
+                'ទឹកប្រាក់',
+                'សងក្នុងគ្រា',
+                'ចុងគ្រា',
                 '#'
               ]);
-              
-              row.getCell(4).font = { name: 'Khmer OS', size: 11 };
-              row.height = 25;
-              row.eachCell((cell) => {
+              worksheet.mergeCells('A4:G4');
+              topHeaderRow.height = 35;
+              topHeaderRow.eachCell((cell, colNumber) => {
+                if ([1, 8, 9, 10, 11].includes(colNumber)) {
+                  cell.font = {
+                    bold: true,
+                    name: 'Khmer OS',
+                    size: 12
+                  };
+                  cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'DDDDDD' }
+                  };
+                }
                 cell.border = {
                   top: { style: 'thin' },
                   left: { style: 'thin' },
@@ -1797,121 +2034,250 @@ function TotalDuePage() {
                   wrapText: true
                 };
               });
-              
-              rowNumber++;
-              totalAmountUSD += totalAmount;
-              totalPaymentsUSD += payment;
-              totalRemainingBalanceUSD += remainingBalance;
-            });
-            
-            const formattedTotalAmountUSD = totalAmountUSD.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-            const formattedTotalPaymentsUSD = totalPaymentsUSD.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-            const formattedTotalRemainingBalanceUSD = totalRemainingBalanceUSD.toLocaleString('en-US', {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            });
-            
-            const totalsRow = worksheet.addRow([
-              '', '', '', '', '', '',
-              'សរុប:',
-              `${formattedTotalAmountUSD}`,
-              `${formattedTotalPaymentsUSD}`,
-              `${formattedTotalRemainingBalanceUSD}`,
-              '#'
-            ]);
-            totalsRow.height = 30;
-            totalsRow.eachCell((cell, colNumber) => {
-              cell.border = {
-                top: { style: 'thin' },
-                left: { style: 'thin' },
-                bottom: { style: 'thin' },
-                right: { style: 'thin' }
-              };
-              if ([7, 8, 9, 10].includes(colNumber)) {
-                cell.font = { bold: true, size: 11, name: 'Khmer OS' };
-              }
-              if ([8, 9, 10].includes(colNumber)) {
+
+              const headers = [
+                'ល.រ',
+                'កាលបរិច្ឆេទ',
+                'លេខប័ណ្ណ',
+                'ប្រភេទឥន្ធនៈ',
+                'បរិមាណ',
+                'តម្លៃតោន',
+                'តម្លៃឯកតា',
+                'សរុបដុល្លារ',
+                'ដុល្លារ',
+                'ដុល្លារ',
+                '#'
+              ];
+              const headerRow = worksheet.addRow(headers);
+              headerRow.font = { bold: true, name: 'Khmer OS', size: 11 };
+              headerRow.height = 30;
+              headerRow.eachCell((cell) => {
                 cell.fill = {
                   type: 'pattern',
                   pattern: 'solid',
-                  fgColor: { argb: 'EEEEEE' }
+                  fgColor: { argb: 'DDDDDD' }
                 };
+                cell.border = {
+                  top: { style: 'thin' },
+                  left: { style: 'thin' },
+                  bottom: { style: 'thin' },
+                  right: { style: 'thin' }
+                };
+                cell.alignment = {
+                  vertical: 'middle',
+                  horizontal: 'center',
+                  wrapText: true
+                };
+              });
+
+              let rowNumber = 1;
+              let totalAmountUSD = 0;
+              let totalPaymentsUSD = 0;
+              let totalRemainingBalanceUSD = 0;
+
+              const allOrders = customer.orders || [];
+              if (allOrders.length === 0) {
+                console.error("No orders found for customer:", customer.customer_name);
+                message.warning(t('no_data_export'));
               }
-              cell.alignment = { vertical: 'middle', horizontal: 'center' };
-            });
-            
-            worksheet.addRow([]);
-            
-            const currentDate = new Date();
-            const formattedDay = currentDate.getDate();
-            const formattedMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
-            const formattedYear = currentDate.getFullYear();
-            const locationDateRow = worksheet.addRow([
-              '', '', '', '', '', '',
-              '',
-              '',
-              `ថ្ងៃទី ${formattedDay} ខែ ${formattedMonth} ឆ្នាំ ${formattedYear}`,
-              '', ''
-            ]);
-            worksheet.mergeCells(`I${worksheet.rowCount}:J${worksheet.rowCount}`);
-            locationDateRow.getCell(9).font = {
-              name: 'Khmer OS',
-              size: 11,
-              bold: true
-            };
-            locationDateRow.getCell(9).alignment = {
-              horizontal: 'left',
-              vertical: 'middle'
-            };
-            
-            worksheet.addRow([]);
-            worksheet.addRow([]);
-            
-            const signatureRow = worksheet.addRow(['អតិថិជន', '', '', '', 'ប្រធានសាខា', '', '', '', '', 'គណនេយ្យ', '']);
-            worksheet.mergeCells(`A${worksheet.rowCount}:B${worksheet.rowCount}`);
-            worksheet.mergeCells(`E${worksheet.rowCount}:G${worksheet.rowCount}`);
-            worksheet.mergeCells(`J${worksheet.rowCount}:K${worksheet.rowCount}`);
-            signatureRow.getCell(1).font = { bold: true, name: 'Khmer Moul', size: 11 };
-            signatureRow.getCell(1).alignment = { horizontal: 'center' };
-            signatureRow.getCell(5).font = { bold: true, name: 'Khmer Moul', size: 11 };
-            signatureRow.getCell(5).alignment = { horizontal: 'center' };
-            signatureRow.getCell(10).font = { bold: true, name: 'Khmer Moul', size: 11 };
-            signatureRow.getCell(10).alignment = { horizontal: 'center' };
-            
-            const columnWidths = [6, 18, 18, 25, 12, 12, 15, 15, 15, 15, 5];
-            columnWidths.forEach((width, i) => {
-              worksheet.getColumn(i + 1).width = width;
-            });
-            
-            workbook.definedNames.add('_xlnm.Print_Titles', `'Customer Orders'!$4:$5`);
-            worksheet.views = [
-              {
-                state: 'frozen',
-                ySplit: 5,
-                activeCell: 'A6'
-              }
-            ];
-            
-            const buffer = await workbook.xlsx.writeBuffer();
-            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            saveAs(blob, `Customer_${customer.customer_name.replace(/\s+/g, '_')}_Orders_${new Date().toISOString().slice(0, 10)}.xlsx`);
-            message.success(t('export_success'));
-          } catch (error) {
-            console.error('Error exporting to Excel:', error);
-            message.error(t('export_failed'));
-          } finally {
-            setExcelExportLoading(false);
-          }
-        };
-        window.exportToExcel = exportToExcel;
-        return null;
-      }, [list, selectedCustomer, t])}
+
+              allOrders.forEach(order => {
+                let quantity = 0;
+                if (order.qty !== undefined && order.qty !== null) {
+                  quantity = parseFloat(order.qty);
+                } else if (order.quantity !== undefined && order.quantity !== null) {
+                  quantity = parseFloat(order.quantity);
+                } else if (order.total_items !== undefined && order.total_items !== null) {
+                  quantity = parseFloat(order.total_items);
+                } else if (typeof order === 'object' && Object.keys(order).some(key => key.includes('qty') || key.includes('quant'))) {
+                  const qtyKey = Object.keys(order).find(key => key.includes('qty') || key.includes('quant'));
+                  if (qtyKey && order[qtyKey] !== undefined) {
+                    quantity = parseFloat(order[qtyKey]);
+                  }
+                }
+
+                let fuelType = 'មិនស្គាល់';
+                if (order.product_category) {
+                  fuelType = order.product_category;
+                } else if (order.category_name) {
+                  fuelType = order.category_name;
+                } else if (order.Category_Name) {
+                  fuelType = order.Category_Name;
+                } else if (order.product_name) {
+                  fuelType = order.product_name;
+                } else if (order.product) {
+                  fuelType = order.product;
+                }
+
+                const unitPrice = parseFloat(order.unit_price) || 0;
+                const totalAmount = parseFloat(order.total_amount) || 0;
+                const dueAmount = parseFloat(order.due_amount) || 0;
+                const formattedQty = quantity.toLocaleString('en-US');
+                const formattedUnitPrice = unitPrice.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                });
+                const formattedTotalAmount = totalAmount.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                });
+                const payment = totalAmount - dueAmount;
+                const remainingBalance = dueAmount;
+                const formattedPayment = payment.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                });
+                const formattedRemainingBalance = remainingBalance.toLocaleString('en-US', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                });
+                const invoiceNumber = order.INV_NUMBER || order.product_description || order.invoice_number || `-${rowNumber}`;
+
+                const row = worksheet.addRow([
+                  rowNumber,
+                  formatDateClient(order.order_date),
+                  invoiceNumber,
+                  fuelType,
+                  formattedQty,
+                  formattedUnitPrice,
+                  order.exchange_rate || '0.83',
+                  `${formattedTotalAmount}`,
+                  `${formattedPayment}`,
+                  `${formattedRemainingBalance}`,
+                  '#'
+                ]);
+
+                row.getCell(4).font = { name: 'Khmer OS', size: 11 };
+                row.height = 25;
+                row.eachCell((cell) => {
+                  cell.border = {
+                    top: { style: 'thin' },
+                    left: { style: 'thin' },
+                    bottom: { style: 'thin' },
+                    right: { style: 'thin' }
+                  };
+                  cell.alignment = {
+                    vertical: 'middle',
+                    horizontal: 'center',
+                    wrapText: true
+                  };
+                });
+
+                rowNumber++;
+                totalAmountUSD += totalAmount;
+                totalPaymentsUSD += payment;
+                totalRemainingBalanceUSD += remainingBalance;
+              });
+
+              const formattedTotalAmountUSD = totalAmountUSD.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+              const formattedTotalPaymentsUSD = totalPaymentsUSD.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+              const formattedTotalRemainingBalanceUSD = totalRemainingBalanceUSD.toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              });
+
+              const totalsRow = worksheet.addRow([
+                '', '', '', '', '', '',
+                'សរុប:',
+                `${formattedTotalAmountUSD}`,
+                `${formattedTotalPaymentsUSD}`,
+                `${formattedTotalRemainingBalanceUSD}`,
+                '#'
+              ]);
+              totalsRow.height = 30;
+              totalsRow.eachCell((cell, colNumber) => {
+                cell.border = {
+                  top: { style: 'thin' },
+                  left: { style: 'thin' },
+                  bottom: { style: 'thin' },
+                  right: { style: 'thin' }
+                };
+                if ([7, 8, 9, 10].includes(colNumber)) {
+                  cell.font = { bold: true, size: 11, name: 'Khmer OS' };
+                }
+                if ([8, 9, 10].includes(colNumber)) {
+                  cell.fill = {
+                    type: 'pattern',
+                    pattern: 'solid',
+                    fgColor: { argb: 'EEEEEE' }
+                  };
+                }
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+              });
+
+              worksheet.addRow([]);
+
+              const currentDate = new Date();
+              const formattedDay = currentDate.getDate();
+              const formattedMonth = (currentDate.getMonth() + 1).toString().padStart(2, '0');
+              const formattedYear = currentDate.getFullYear();
+              const locationDateRow = worksheet.addRow([
+                '', '', '', '', '', '',
+                '',
+                '',
+                `ថ្ងៃទី ${formattedDay} ខែ ${formattedMonth} ឆ្នាំ ${formattedYear}`,
+                '', ''
+              ]);
+              worksheet.mergeCells(`I${worksheet.rowCount}:J${worksheet.rowCount}`);
+              locationDateRow.getCell(9).font = {
+                name: 'Khmer OS',
+                size: 11,
+                bold: true
+              };
+              locationDateRow.getCell(9).alignment = {
+                horizontal: 'left',
+                vertical: 'middle'
+              };
+
+              worksheet.addRow([]);
+              worksheet.addRow([]);
+
+              const signatureRow = worksheet.addRow(['អតិថិជន', '', '', '', 'ប្រធានសាខា', '', '', '', '', 'គណនេយ្យ', '']);
+              worksheet.mergeCells(`A${worksheet.rowCount}:B${worksheet.rowCount}`);
+              worksheet.mergeCells(`E${worksheet.rowCount}:G${worksheet.rowCount}`);
+              worksheet.mergeCells(`J${worksheet.rowCount}:K${worksheet.rowCount}`);
+              signatureRow.getCell(1).font = { bold: true, name: 'Khmer Moul', size: 11 };
+              signatureRow.getCell(1).alignment = { horizontal: 'center' };
+              signatureRow.getCell(5).font = { bold: true, name: 'Khmer Moul', size: 11 };
+              signatureRow.getCell(5).alignment = { horizontal: 'center' };
+              signatureRow.getCell(10).font = { bold: true, name: 'Khmer Moul', size: 11 };
+              signatureRow.getCell(10).alignment = { horizontal: 'center' };
+
+              const columnWidths = [6, 18, 18, 25, 12, 12, 15, 15, 15, 15, 5];
+              columnWidths.forEach((width, i) => {
+                worksheet.getColumn(i + 1).width = width;
+              });
+
+              workbook.definedNames.add('_xlnm.Print_Titles', `'Customer Orders'!$4:$5`);
+              worksheet.views = [
+                {
+                  state: 'frozen',
+                  ySplit: 5,
+                  activeCell: 'A6'
+                }
+              ];
+
+              const buffer = await workbook.xlsx.writeBuffer();
+              const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+              saveAs(blob, `Customer_${customer.customer_name.replace(/\s+/g, '_')}_Orders_${new Date().toISOString().slice(0, 10)}.xlsx`);
+              message.success(t('export_success'));
+            } catch (error) {
+              console.error('Error exporting to Excel:', error);
+              message.error(t('export_failed'));
+            } finally {
+              setExcelExportLoading(false);
+            }
+          };
+          window.exportToExcel = exportToExcel;
+          return null;
+        }, [list, selectedCustomer, t, state.from_date, state.to_date])}
+      </div>
     </MainPage>
   );
 }

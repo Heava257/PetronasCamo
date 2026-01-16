@@ -23,7 +23,7 @@ import { BsSearch } from "react-icons/bs";
 import { LuUserRoundSearch } from "react-icons/lu";
 import { getProfile } from "../../store/profile.store";
 import { FaMoneyBillWave, FaGasPump, FaChartLine, FaPiggyBank, FaPercentage, FaFileInvoice } from "react-icons/fa";
-import { useTranslation } from '../../locales/TranslationContext'; 
+import { useTranslation } from '../../locales/TranslationContext';
 
 // In-memory checkbox store for Order completion
 const orderCheckboxStore = {
@@ -289,13 +289,12 @@ function OrderPage() {
   const getRowClassName = (record, index) => {
     const baseClass = index % 2 === 0 ? 'even-row' : 'odd-row';
     const isChecked = Boolean(record.is_completed);
-    return isChecked ? `${baseClass} checked-row` : baseClass;
+    return isChecked ? `${baseClass} ${Style.checkedRow}` : baseClass;
   };
-
   const columns = [
     {
       key: "No",
-      title: <div className="khmer-text1">{t('no')}</div>,
+      title: <div className="khmer-text1">{t('NO')}</div>,
       render: (text, record, index) => index + 1,
       width: 60
     },
@@ -303,29 +302,22 @@ function OrderPage() {
       key: "product_name",
       title: (
         <div className="table-header">
-          <div className="khmer-text">{t('category')}</div>
+          <div className="khmer-text">{t('ផលិតផល')}</div>  {/* ✅ Changed from Category */}
+          <div style={{ fontSize: '11px', fontWeight: 'normal' }}>Product</div>
         </div>
       ),
       render: (_, record) => (
         <div style={{ padding: '8px' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{record.category_name}</div>
+          {/* ✅ Show Product Name (not category) */}
+          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
+            {record.product_name || 'N/A'}
+          </div>
+          {/* ✅ Show Category as subtitle */}
+          <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '4px' }}>
+            {record.category_name || ''}
+          </div>
         </div>
       )
-    },
-    {
-      title: (
-        <div className="column-header-product">
-          <div className="khmer-text-product">{t('company')}</div>
-        </div>
-      ),
-      dataIndex: "product_company_name",
-      key: "company",
-      render: (company) => (
-        <span className="custom-cell-text english-company-product">
-          {company || t('not_available')}
-        </span>
-      ),
-      width: 150,
     },
     {
       key: "customer",
@@ -344,15 +336,42 @@ function OrderPage() {
       )
     },
     {
-      key: "product_description",
+      key: "supplier",
       title: (
-        <div className="table-header">
-          <div className="khmer-text">{t('card_number')}</div>
+        <div className="khmer-text">
+          <div>{t("ក្រុមហ៊ុនផ្គត់ផ្គង់")}</div>
+          <div style={{ fontSize: '11px', fontWeight: 'normal' }}>Supplier</div>
         </div>
       ),
-      dataIndex: "product_description",
-      render: (value) => value ? <Tag color="cyan">{value}</Tag> : <span style={{ color: '#999' }}>-</span>
+      dataIndex: "supplier_name",
+      render: (value) => (
+        <Tag color="blue" style={{ margin: 0 }}>
+          {value || "N/A"}
+        </Tag>
+      ),
+      width: 120
     },
+    // {
+    //   key: "product_description",
+    //   title: <div className="khmer-text">{t("លេខប័ណ្ណ")}</div>,
+    //   dataIndex: "product_description",
+    //   render: (value) => value ? <Tag color="cyan">{value}</Tag> : <span>-</span>,
+    //   width: 100
+    // },
+    {
+    title: <div className="khmer-text">{t("លេខប័ណ្ណ")}</div>,
+    dataIndex: "pre_order_no",
+    key: "pre_order_no",
+    render: (no) => (
+      no ? (
+        <Tag color="orange" className="font-mono">
+          {no}
+        </Tag>
+      ) : (
+        <span className="text-gray-400">-</span>
+      )
+    )
+  },
     {
       key: "qty",
       title: (
@@ -381,20 +400,23 @@ function OrderPage() {
           <div className="khmer-text">{t('unit_price')}</div>
         </div>
       ),
-      dataIndex: "price",
+      dataIndex: "unit_price",
       width: 120,
       render: (value) => <Tag color="pink">${formatCurrencyString(value)}</Tag>
     },
     {
-      key: "item_total",
-      title: (
-        <div className="table-header">
-          <div className="khmer-text">{t('item_total')}</div>
+      key: "total",
+      title: <div className="khmer-text">{t("សរុប")}</div>,
+      dataIndex: "grand_total",
+      render: (value) => (
+        <div style={{ fontWeight: 'bold', color: '#1890ff' }}>
+          ${Number(value || 0).toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })}
         </div>
       ),
-      dataIndex: "grand_total",
-      width: 120,
-      render: (value) => <Tag color="blue">${formatCurrencyString(value)}</Tag>
+      width: 120
     },
     {
       key: "Order_Date",
@@ -464,37 +486,7 @@ function OrderPage() {
               </div>
             </div>
 
-            <div className={Style.summaryCard}>
-              <div className={Style.summaryIcon}><FaGasPump /></div>
-              <div className={Style.summaryTitle}>{t('oil_expense')}</div>
-              <div className={`${Style.summaryValue} ${Style.summaryNegative}`}>
-                ${formatCurrencyString(financeSummary.oil_expense_total)}
-              </div>
-            </div>
 
-            <div className={Style.summaryCard}>
-              <div className={Style.summaryIcon}><FaChartLine /></div>
-              <div className={Style.summaryTitle}>{t('total_expense')}</div>
-              <div className={`${Style.summaryValue} ${Style.summaryNegative}`}>
-                ${formatCurrencyString(financeSummary.total_cost)}
-              </div>
-            </div>
-
-            <div className={Style.summaryCard}>
-              <div className={Style.summaryIcon}><FaPiggyBank /></div>
-              <div className={Style.summaryTitle}>{t('total_profit')}</div>
-              <div className={`${Style.summaryValue} ${Style.summaryPositive}`}>
-                ${formatCurrencyString(financeSummary.total_profit)}
-              </div>
-            </div>
-
-            <div className={Style.summaryCard}>
-              <div className={Style.summaryIcon}><FaPercentage /></div>
-              <div className={Style.summaryTitle}>{t('profit_margin')}</div>
-              <div className={`${Style.summaryValue} ${Style.summaryNeutral}`}>
-                {financeSummary.profit_margin.toFixed(2)}%
-              </div>
-            </div>
 
             <div className={Style.summaryCard}>
               <div className={Style.summaryIcon}><FaFileInvoice /></div>
@@ -516,31 +508,7 @@ function OrderPage() {
           </div>
         </Space>
 
-        <Tooltip title={t('tooltip_select_time')}>
-          <Select
-            style={{ width: 180 }}
-            value={filter.timeRange}
-            onChange={(value) => {
-              const now = dayjs();
-              const from = value === "1_week"
-                ? now.startOf("day").subtract(6, "day")
-                : now.startOf("day");
 
-              const to = now.endOf("day");
-
-              setFilter((prev) => ({
-                ...prev,
-                timeRange: value,
-                from_date: from,
-                to_date: to,
-              }));
-            }}
-            placeholder={t('select_time_range')}
-          >
-            <Select.Option value="1_day">📅 {t('today')}</Select.Option>
-            <Select.Option value="1_week">🗓 {t('last_7_days')}</Select.Option>
-          </Select>
-        </Tooltip>
       </div>
 
       <div>
@@ -607,33 +575,7 @@ function OrderPage() {
             </Tooltip>
           )}
 
-          {isPermission("customer.create") && (
-            <Select
-              style={{ width: 300 }}
-              allowClear
-              placeholder={t('select_user')}
-              value={filter.user_id}
-              options={
-                (config?.user || []).map((user, index) => ({
-                  label: `${index + 1}. ${user.label}`,
-                  value: user.value,
-                }))
-              }
-              onChange={(value) => {
-                setFilter((prev) => ({
-                  ...prev,
-                  user_id: value,
-                }));
-              }}
-              showSearch
-              optionFilterProp="children"
-              filterOption={(input, option) =>
-                option?.label?.toLowerCase().includes(input.toLowerCase()) ||
-                option?.label?.toLowerCase().includes(input)
-              }
-              suffixIcon={<LuUserRoundSearch />}
-            />
-          )}
+
 
           <Button type="primary" onClick={handleSearch} icon={<BsSearch />}>
             {t('filter')}

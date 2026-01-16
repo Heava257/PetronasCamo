@@ -1,0 +1,283 @@
+/* ==========================================
+   FIX: Empty Table Stretching Issue
+   ========================================== */
+
+/* Light Mode - Empty Table */
+.ant-table-wrapper {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.ant-table {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.ant-table-container {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+/* Fix empty table placeholder */
+.ant-table-placeholder {
+  min-height: 200px !important;
+  max-height: 300px !important;
+  height: auto !important;
+}
+
+.ant-table-tbody {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+/* Empty state container */
+.ant-empty {
+  padding: 40px 0 !important;
+  margin: 0 !important;
+}
+
+/* Dark Mode - Empty Table */
+.dark .ant-table-wrapper {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.dark .ant-table {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.dark .ant-table-container {
+  min-height: auto !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+.dark .ant-table-placeholder {
+  min-height: 200px !important;
+  max-height: 300px !important;
+  height: auto !important;
+  background: #1f2937 !important;
+  padding: 40px 20px !important;
+}
+
+.dark .ant-table-tbody {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+/* Card container fixes */
+.product-card-product {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+.dark .product-card-product {
+  height: auto !important;
+  min-height: auto !important;
+  max-height: none !important;
+}
+
+/* Page container */
+.product-page-container-product {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.dark .product-page-container-product {
+  min-height: auto !important;
+  height: auto !important;
+  padding: 16px;
+  background: transparent !important;
+}
+
+/* Custom empty state styling */
+.custom-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px !important;
+  min-height: 300px !important;
+  max-height: 400px !important;
+}
+
+.custom-empty-state .empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.custom-empty-state .empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #8c8c8c;
+}
+
+.dark .custom-empty-state .empty-title {
+  color: #9ca3af;
+}
+
+.custom-empty-state .empty-description {
+  font-size: 14px;
+  color: #bfbfbf;
+  text-align: center;
+}
+
+.dark .custom-empty-state .empty-description {
+  color: #6b7280;
+}
+
+/* Fix for desktop table view */
+.hidden.lg\:block {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+/* Override any conflicting height rules */
+.ant-spin-nested-loading,
+.ant-spin-container,
+.ant-table-content {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+.dark .ant-spin-nested-loading,
+.dark .ant-spin-container,
+.dark .ant-table-content {
+  min-height: auto !important;
+  height: auto !important;
+}
+
+/* Ensure proper table body sizing when empty */
+.ant-table-tbody:empty {
+  display: none;
+}
+
+/* Empty tbody alternative */
+.ant-table-tbody tr:only-child .ant-table-placeholder {
+  padding: 40px 20px;
+  min-height: 250px;
+  max-height: 350px;
+}
+
+.dark .ant-table-tbody tr:only-child .ant-table-placeholder {
+  background: #1f2937 !important;
+  padding: 40px 20px;
+  min-height: 250px;
+  max-height: 350px;
+}
+
+/* Table wrapper scroll fix */
+.ant-table-wrapper .ant-table {
+  overflow: visible !important;
+}
+
+.ant-table-wrapper .ant-table-container {
+  overflow: visible !important;
+}
+
+/* Additional safeguards */
+.product-card-product .ant-card-body {
+  height: auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+}
+
+.dark .product-card-product .ant-card-body {
+  height: auto !important;
+  min-height: auto !important;
+  overflow: visible !important;
+}
+
+/* Mobile view fixes */
+@media (max-width: 1024px) {
+  .lg\:hidden {
+    height: auto !important;
+    min-height: auto !important;
+  }
+  
+  .custom-empty-state {
+    min-height: 200px !important;
+    padding: 40px 20px !important;
+  }
+}
+
+/* Responsive empty state */
+@media (max-width: 768px) {
+  .custom-empty-state {
+    min-height: 180px !important;
+    padding: 30px 15px !important;
+  }
+  
+  .custom-empty-state .empty-icon {
+    font-size: 48px;
+  }
+  
+  .custom-empty-state .empty-title {
+    font-size: 16px;
+  }
+  
+  .custom-empty-state .empty-description {
+    font-size: 13px;
+  }
+}
+
+/* Fix for summary cards area - don't let it stretch */
+.ant-statistic {
+  height: auto !important;
+}
+
+.ant-row {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+.ant-col {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+/* Ensure cards maintain proper sizing */
+.ant-card {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+.dark .ant-card {
+  height: auto !important;
+  min-height: auto !important;
+}
+
+/* Fix loading state height */
+.ant-spin-spinning {
+  min-height: 200px !important;
+  max-height: 300px !important;
+}
+
+/* Better empty state with icon */
+.ant-empty-image {
+  height: 80px !important;
+  margin-bottom: 16px;
+}
+
+.dark .ant-empty-image svg {
+  fill: #4b5563;
+}
+
+/* Compact empty state */
+.ant-table-placeholder .ant-empty {
+  margin: 20px 0 !important;
+  padding: 20px 0 !important;
+}
+
+.ant-table-placeholder .ant-empty-description {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.dark .ant-table-placeholder .ant-empty-description {
+  color: #9ca3af !important;
+}

@@ -46,8 +46,14 @@ const khmerStyles = `
   
   .payment-history-wrapper {
     min-height: 100vh;
-    padding: 20px;
+    padding: 1rem;
     transition: background-color 0.3s, color 0.3s;
+  }
+  
+  @media (min-width: 768px) {
+    .payment-history-wrapper {
+      padding: 1.25rem;
+    }
   }
   
   /* Light Mode */
@@ -70,10 +76,16 @@ const khmerStyles = `
   /* Header Styles */
   .payment-header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    padding: 32px;
-    margin-bottom: 20px;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+  
+  @media (min-width: 768px) {
+    .payment-header {
+      padding: 2rem;
+    }
   }
   
   .dark .payment-header {
@@ -82,23 +94,41 @@ const khmerStyles = `
   
   .payment-header h1 {
     color: white !important;
-    font-size: 28px;
-    margin: 0 0 8px 0;
+    font-size: 1.5rem;
+    margin: 0 0 0.5rem 0;
     font-weight: 600;
+  }
+  
+  @media (min-width: 768px) {
+    .payment-header h1 {
+      font-size: 1.75rem;
+    }
   }
   
   .payment-header p {
     color: rgba(255, 255, 255, 0.9);
     margin: 0;
-    font-size: 15px;
+    font-size: 0.875rem;
+  }
+  
+  @media (min-width: 768px) {
+    .payment-header p {
+      font-size: 0.9375rem;
+    }
   }
   
   /* Filter Card */
   .filter-card {
-    border-radius: 12px;
-    padding: 24px;
-    margin-bottom: 20px;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
     transition: background-color 0.3s, box-shadow 0.3s;
+  }
+  
+  @media (min-width: 768px) {
+    .filter-card {
+      padding: 1.5rem;
+    }
   }
   
   .filter-card {
@@ -113,16 +143,28 @@ const khmerStyles = `
   
   .filter-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
-    margin-bottom: 16px;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  @media (min-width: 640px) {
+    .filter-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .filter-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
   
   .filter-item label {
     display: block;
-    font-size: 14px;
+    font-size: 0.875rem;
     font-weight: 500;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
     transition: color 0.3s;
   }
   
@@ -138,9 +180,9 @@ const khmerStyles = `
   .filter-select,
   .filter-date {
     width: 100%;
-    height: 40px;
-    border-radius: 8px;
-    font-size: 14px;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
     transition: all 0.3s;
   }
   
@@ -169,14 +211,14 @@ const khmerStyles = `
   
   .filter-actions {
     display: flex;
-    gap: 12px;
+    gap: 0.75rem;
     justify-content: flex-end;
   }
   
   .btn-reset {
-    height: 40px;
-    padding: 0 20px;
-    border-radius: 8px;
+    height: 2.5rem;
+    padding: 0 1.25rem;
+    border-radius: 0.5rem;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
@@ -202,16 +244,34 @@ const khmerStyles = `
   /* Stats Cards */
   .stats-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-bottom: 20px;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  @media (min-width: 640px) {
+    .stats-container {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .stats-container {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
   
   .stat-card {
-    border-radius: 12px;
-    padding: 24px;
+    border-radius: 0.75rem;
+    padding: 1.25rem;
     border-left: 4px solid #667eea;
     transition: all 0.3s;
+  }
+  
+  @media (min-width: 768px) {
+    .stat-card {
+      padding: 1.5rem;
+    }
   }
   
   .stat-card {
@@ -246,14 +306,22 @@ const khmerStyles = `
   }
   
   .stat-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.625rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
-    margin-bottom: 12px;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  
+  @media (min-width: 768px) {
+    .stat-icon {
+      width: 3rem;
+      height: 3rem;
+      font-size: 1.5rem;
+    }
   }
   
   .stat-card.customer .stat-icon {
@@ -287,8 +355,8 @@ const khmerStyles = `
   }
   
   .stat-label {
-    font-size: 14px;
-    margin-bottom: 8px;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
     transition: color 0.3s;
   }
   
@@ -301,10 +369,16 @@ const khmerStyles = `
   }
   
   .stat-value {
-    font-size: 28px;
+    font-size: 1.5rem;
     font-weight: 700;
     line-height: 1;
     transition: color 0.3s;
+  }
+  
+  @media (min-width: 768px) {
+    .stat-value {
+      font-size: 1.75rem;
+    }
   }
   
   .stat-value {
@@ -317,10 +391,16 @@ const khmerStyles = `
   
   /* View Toggle */
   .view-toggle-card {
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 20px;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
     transition: background-color 0.3s, box-shadow 0.3s;
+  }
+  
+  @media (min-width: 768px) {
+    .view-toggle-card {
+      padding: 1.25rem;
+    }
   }
   
   .view-toggle-card {
@@ -335,12 +415,20 @@ const khmerStyles = `
   
   .view-toggle-wrapper {
     display: flex;
-    align-items: center;
-    gap: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  @media (min-width: 640px) {
+    .view-toggle-wrapper {
+      flex-direction: row;
+      align-items: center;
+    }
   }
   
   .view-toggle-label {
-    font-size: 15px;
+    font-size: 0.9375rem;
     font-weight: 600;
     transition: color 0.3s;
   }
@@ -354,16 +442,24 @@ const khmerStyles = `
   }
   
   .view-btn {
-    height: 44px;
-    padding: 0 24px;
-    border-radius: 8px;
+    height: 2.75rem;
+    padding: 0 1.5rem;
+    border-radius: 0.5rem;
     border: 2px solid #e5e7eb;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  
+  @media (min-width: 640px) {
+    .view-btn {
+      flex: 0 0 auto;
+    }
   }
   
   .view-btn {
@@ -390,10 +486,18 @@ const khmerStyles = `
   
   /* Table Card */
   .table-card {
-    border-radius: 12px;
-    padding: 24px;
-    min-height: 500px;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    min-height: 400px;
     transition: background-color 0.3s, box-shadow 0.3s;
+    overflow-x: auto;
+  }
+  
+  @media (min-width: 768px) {
+    .table-card {
+      padding: 1.5rem;
+      min-height: 500px;
+    }
   }
   
   .table-card {
@@ -406,15 +510,127 @@ const khmerStyles = `
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
   
+  /* Mobile Card View */
+  .mobile-card-view {
+    display: block;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-card-view {
+      display: none;
+    }
+  }
+  
+  .mobile-table-view {
+    display: none;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-table-view {
+      display: block;
+    }
+  }
+  
+  .payment-mobile-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s;
+  }
+  
+  .dark .payment-mobile-card {
+    background: #374151;
+    border-color: #4b5563;
+  }
+  
+  .payment-mobile-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .dark .payment-mobile-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+  
+  .mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  
+  .dark .mobile-card-header {
+    border-bottom-color: #4b5563;
+  }
+  
+  .mobile-card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+  }
+  
+  .dark .mobile-card-title {
+    color: #f3f4f6;
+  }
+  
+  .mobile-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+  }
+  
+  .mobile-card-label {
+    color: #6b7280;
+    font-weight: 500;
+  }
+  
+  .dark .mobile-card-label {
+    color: #9ca3af;
+  }
+  
+  .mobile-card-value {
+    color: #111827;
+    font-weight: 600;
+    text-align: right;
+  }
+  
+  .dark .mobile-card-value {
+    color: #e5e7eb;
+  }
+  
+  .mobile-card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e5e7eb;
+    flex-wrap: wrap;
+  }
+  
+  .dark .mobile-card-actions {
+    border-top-color: #4b5563;
+  }
+  
   .modern-table .ant-table {
-    border-radius: 8px;
+    border-radius: 0.5rem;
     overflow: hidden;
   }
   
   .modern-table .ant-table-thead > tr > th {
     font-weight: 600;
-    font-size: 14px;
-    padding: 16px;
+    font-size: 0.875rem;
+    padding: 1rem;
     border-bottom: 2px solid #e5e7eb;
     transition: background-color 0.3s, color 0.3s;
   }
@@ -435,8 +651,8 @@ const khmerStyles = `
   }
   
   .modern-table .ant-table-tbody > tr > td {
-    padding: 16px;
-    font-size: 14px;
+    padding: 1rem;
+    font-size: 0.875rem;
     transition: background-color 0.3s, color 0.3s, border-color 0.3s;
   }
   
@@ -450,18 +666,17 @@ const khmerStyles = `
     color: #e5e7eb;
   }
   
- .modern-table .ant-table-tbody > tr:hover > td {
+  .modern-table .ant-table-tbody > tr:hover > td {
     background: transparent !important;
   }
   
-.modern-table .ant-table-tbody > tr:hover {
+  .modern-table .ant-table-tbody > tr:hover {
     background: #f9fafb !important;
   }
   
-.dark .modern-table .ant-table-tbody > tr:hover {
+  .dark .modern-table .ant-table-tbody > tr:hover {
     background: #374151 !important;
   }
-    
   
   .dark .modern-table .ant-table {
     background: #1f2937 !important;
@@ -486,20 +701,27 @@ const khmerStyles = `
   }
   
   .modern-table .ant-empty {
-    padding: 80px 0;
+    padding: 5rem 0;
+  }
+  
+  @media (max-width: 767px) {
+    .modern-table .ant-empty {
+      padding: 3rem 0;
+    }
   }
   
   /* Action Buttons */
   .action-btn {
-    height: 32px;
-    padding: 0 12px;
-    border-radius: 6px;
-    font-size: 13px;
+    height: 2rem;
+    padding: 0 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
     cursor: pointer;
     transition: all 0.2s;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 0.375rem;
+    white-space: nowrap;
   }
   
   .action-btn {
@@ -540,9 +762,9 @@ const khmerStyles = `
   
   /* Tags */
   .tag-modern {
-    padding: 4px 12px;
-    border-radius: 6px;
-    font-size: 12px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
     font-weight: 500;
     border: none;
   }
@@ -591,30 +813,35 @@ const khmerStyles = `
   .customer-info {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 0.75rem;
   }
   
   .customer-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.625rem;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 18px;
+    font-size: 1.125rem;
+    flex-shrink: 0;
   }
   
   .customer-details {
     flex: 1;
+    min-width: 0;
   }
   
   .customer-name {
     font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 2px;
+    font-size: 0.875rem;
+    margin-bottom: 0.125rem;
     transition: color 0.3s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .customer-name {
@@ -626,8 +853,11 @@ const khmerStyles = `
   }
   
   .customer-contact {
-    font-size: 12px;
+    font-size: 0.75rem;
     transition: color 0.3s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   .customer-contact {
@@ -640,7 +870,7 @@ const khmerStyles = `
   
   /* Amount Display */
   .amount-text {
-    font-size: 16px;
+    font-size: 1rem;
     font-weight: 700;
     color: #10b981;
   }
@@ -648,12 +878,13 @@ const khmerStyles = `
   .dark .amount-text {
     color: #34d399;
   }
+    
   
   /* Date Display */
   .date-wrapper {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 0.5rem;
     transition: color 0.3s;
   }
   
@@ -667,7 +898,7 @@ const khmerStyles = `
   
   /* Modal Styles */
   .modal-header {
-    font-size: 18px;
+    font-size: 1.125rem;
     font-weight: 600;
     transition: color 0.3s;
   }
@@ -681,7 +912,7 @@ const khmerStyles = `
   }
   
   .ant-modal-content {
-    border-radius: 12px;
+    border-radius: 0.75rem;
   }
   
   .dark .ant-modal-content {
@@ -780,136 +1011,378 @@ const khmerStyles = `
   .dark .ant-select-dropdown {
     background: #374151 !important;
   }
+    /* Responsive Modal Styles */
+@media (max-width: 768px) {
+  .ant-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+    top: 20px !important;
+  }
+  
+  .ant-modal-content {
+    max-height: calc(100vh - 40px) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .ant-modal-header {
+    padding: 12px 16px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .ant-modal-title {
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    word-break: break-word !important;
+    padding-right: 24px !important;
+  }
+  
+  .ant-modal-close {
+    top: 12px !important;
+    right: 12px !important;
+  }
+  
+  .ant-modal-body {
+    padding: 10px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  .ant-modal-footer {
+    padding: 8px 12px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    border-top: 1px solid #e5e7eb !important;
+  }
+  
+  .ant-modal-footer .ant-btn {
+    margin: 0 !important;
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    height: 36px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  
+  /* Descriptions responsive - Complete Override */
+  .ant-descriptions {
+    overflow: visible !important;
+  }
+  
+  .ant-descriptions-bordered .ant-descriptions-view {
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+  
+  .dark .ant-descriptions-bordered .ant-descriptions-view {
+    border-color: #4b5563 !important;
+  }
+  
+  .ant-descriptions-bordered .ant-descriptions-row {
+    display: block !important;
+    border: none !important;
+  }
+  
+  .ant-descriptions-bordered .ant-descriptions-item {
+    display: grid !important;
+    grid-template-columns: 35% 65% !important;
+    border: none !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  
+  .dark .ant-descriptions-bordered .ant-descriptions-item {
+    border-bottom-color: #4b5563 !important;
+  }
+  
+  .ant-descriptions-bordered .ant-descriptions-item:last-child {
+    border-bottom: none !important;
+  }
+  
+  .ant-descriptions-bordered .ant-descriptions-item-label {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-weight: 600 !important;
+    background: rgba(249, 250, 251, 0.5) !important;
+    border: none !important;
+    border-right: 1px solid #e5e7eb !important;
+    display: flex !important;
+    align-items: center !important;
+    min-height: 36px !important;
+  }
+  
+  .dark .ant-descriptions-bordered .ant-descriptions-item-label {
+    background: rgba(55, 65, 81, 0.5) !important;
+    border-right-color: #4b5563 !important;
+    color: #9ca3af !important;
+  }
+  
+  .ant-descriptions-bordered .ant-descriptions-item-content {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    background: transparent !important;
+    min-height: 36px !important;
+  }
+  
+  .dark .ant-descriptions-bordered .ant-descriptions-item-content {
+    color: #e5e7eb !important;
+  }
+  
+  /* Handle colspan */
+  .ant-descriptions-item[colspan="2"] {
+    grid-column: 1 / -1 !important;
+  }
+  
+  .ant-descriptions-item[colspan="2"] .ant-descriptions-item-label {
+    border-right: none !important;
+  }
+  
+  /* Card responsive in modal */
+  .ant-card {
+    margin-bottom: 12px !important;
+    border-radius: 8px !important;
+  }
+  
+  .ant-card-head {
+    padding: 10px 12px !important;
+    min-height: auto !important;
+  }
+  
+  .ant-card-head-title {
+    font-size: 14px !important;
+    padding: 0 !important;
+  }
+  
+  .ant-card-body {
+    padding: 12px !important;
+  }
+  
+  .ant-card-extra {
+    margin-left: 0 !important;
+    margin-top: 8px !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  
+  /* Space responsive */
+  .ant-space {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+  
+  .ant-space-item {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+  }
+  
+  /* Action buttons in modal */
+  .action-btn {
+    flex: 1 !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
+    padding: 0 6px !important;
+    height: 32px !important;
+    white-space: nowrap !important;
+  }
+  
+  .action-btn svg {
+    font-size: 14px !important;
+  }
+  
+  .action-btn span {
+    display: none !important;
+  }
+  
+  /* Row and Col responsive */
+  .ant-row {
+    margin-left: -4px !important;
+    margin-right: -4px !important;
+  }
+  
+  .ant-col {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+  
+  .ant-col-24 {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+  }
+  
+  .ant-col-6 {
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+  }
+  
+  /* Images in modal */
+  .ant-image {
+    width: 70px !important;
+    height: 70px !important;
+  }
+  
+  .ant-image-img {
+    border-radius: 6px !important;
+  }
+  
+  /* Title in modal */
+  .ant-typography {
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
+    margin-top: 12px !important;
+    font-weight: 600 !important;
+  }
+  
+  /* Statistics text */
+  .ant-statistic-content {
+    font-size: 16px !important;
+  }
+  
+  .ant-statistic-title {
+    font-size: 12px !important;
+  }
+  
+  /* Summary section in modal */
+  .ant-descriptions-bordered .ant-descriptions-item-content span {
+    display: inline-block !important;
+    word-break: break-word !important;
+  }
+  
+  /* Tag responsive */
+  .ant-tag {
+    margin: 2px !important;
+    padding: 2px 8px !important;
+    font-size: 12px !important;
+  }
+  
+  /* Form items in modal */
+  .ant-form-item {
+    margin-bottom: 16px !important;
+  }
+  
+  .ant-form-item-label {
+    padding-bottom: 4px !important;
+  }
+  
+  .ant-form-item-label > label {
+    font-size: 13px !important;
+  }
+  
+  .ant-input,
+  .ant-input-number,
+  .ant-select-selector,
+  .ant-picker {
+    font-size: 14px !important;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 480px) {
+  .ant-modal {
+    max-width: calc(100vw - 16px) !important;
+    margin: 8px auto !important;
+  }
+  
+  .ant-modal-title {
+    font-size: 14px !important;
+    padding-right: 20px !important;
+  }
+  
+  .ant-modal-body {
+    padding: 10px !important;
+  }
+  
+  .ant-modal-footer {
+    padding: 8px 10px !important;
+  }
+  
+  .ant-modal-footer .ant-btn {
+    font-size: 12px !important;
+    height: 32px !important;
+    padding: 4px 10px !important;
+  }
+  
+  /* Tighter layout for descriptions */
+  .ant-descriptions-bordered .ant-descriptions-item {
+    grid-template-columns: 40% 60% !important;
+  }
+  
+  .ant-descriptions-item-label,
+  .ant-descriptions-item-content {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+    min-height: 32px !important;
+  }
+  
+  .action-btn {
+    font-size: 10px !important;
+    height: 28px !important;
+    padding: 0 4px !important;
+  }
+  
+  .action-btn svg {
+    font-size: 12px !important;
+  }
+  
+  .ant-card-body {
+    padding: 10px !important;
+  }
+  
+  .ant-card-head {
+    padding: 8px 10px !important;
+  }
+  
+  .ant-card-head-title {
+    font-size: 13px !important;
+  }
+  
+  .ant-image {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  
+  .ant-col-6 {
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .ant-typography {
+    font-size: 14px !important;
+  }
+}
+
+/* Landscape mode for mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .ant-modal-content {
+    max-height: calc(100vh - 20px) !important;
+  }
+  
+  .ant-modal-body {
+    max-height: calc(100vh - 120px) !important;
+  }
+}
   
   .dark .ant-select-item {
     background: #374151 !important;
     color: #e5e7eb !important;
-  }
-  
-  .dark .ant-select-item-option-selected {
-    background: #4b5563 !important;
-  }
-  
-  .dark .ant-select-item-option-active {
-    background: #4b5563 !important;
-  }
-  
-  .dark .ant-picker-panel-container {
-    background: #374151 !important;
-  }
-  
-  .dark .ant-picker-panel {
-    background: #374151 !important;
-    border-color: #4b5563 !important;
-  }
-  
-  .dark .ant-picker-header,
-  .dark .ant-picker-body,
-  .dark .ant-picker-footer {
-    background: #374151 !important;
-    color: #e5e7eb !important;
-  }
-  
-  .dark .ant-picker-cell {
-    color: #e5e7eb !important;
-  }
-  
-  .dark .ant-picker-cell:hover .ant-picker-cell-inner {
-    background: #4b5563 !important;
-  }
-  
-  .dark .ant-picker-cell-in-view.ant-picker-cell-selected .ant-picker-cell-inner {
-    background: #667eea !important;
-  }
-  
-  .dark .ant-btn {
-    border-color: #4b5563 !important;
-    background: #374151 !important;
-    color: #e5e7eb !important;
-  }
-  
-  .dark .ant-btn-primary {
-    background: #667eea !important;
-    border-color: #667eea !important;
-    color: white !important;
-  }
-  
-  .dark .ant-btn:hover {
-    border-color: #667eea !important;
-    color: #667eea !important;
-  }
-  
-  .dark .ant-btn-primary:hover {
-    background: #5568d3 !important;
-    border-color: #5568d3 !important;
-    color: white !important;
-  }
-  
-  /* Responsive */
-  @media (max-width: 768px) {
-    .payment-history-wrapper {
-      padding: 12px;
-    }
-    
-    .payment-header {
-      padding: 20px;
-    }
-    
-    .payment-header h1 {
-      font-size: 22px;
-    }
-    
-    .filter-grid {
-      grid-template-columns: 1fr;
-    }
-    
-    .stats-container {
-      grid-template-columns: 1fr;
-    }
-    
-    .view-toggle-wrapper {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    
-    .table-card {
-      padding: 16px;
-      min-height: 400px;
-    }
-  }
-  
-  /* Scrollbar */
-  ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-  
-  ::-webkit-scrollbar-track {
-    background: #f3f4f6;
-    border-radius: 4px;
-  }
-  
-  .dark ::-webkit-scrollbar-track {
-    background: #374151;
-  }
-  
-  ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
-    border-radius: 4px;
-  }
-  
-  .dark ::-webkit-scrollbar-thumb {
-    background: #4b5563;
-  }
-  
-  ::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
-  }
-  
-  .dark ::-webkit-scrollbar-thumb:hover {
-    background: #6b7280;
-  }
-`;
+  }`
 const formatCurrency = (value) => {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -1099,6 +1572,18 @@ const printCustomerPaymentReport = (customerData) => {
             color: #f39c12 !important; 
             border: 1px solid #f39c12;
           }
+          
+          .method-mobile { 
+            background: #e9d5ff !important; 
+            color: #8b5cf6 !important; 
+            border: 1px solid #8b5cf6;
+          }
+          
+          .method-debenture { 
+            background: #fecaca !important; 
+            color: #ef4444 !important; 
+            border: 1px solid #ef4444;
+          }
 
           .summary-section {
             margin-top: 30px;
@@ -1184,6 +1669,16 @@ const printCustomerPaymentReport = (customerData) => {
               background: #fdeaa7 !important; 
               color: #f39c12 !important; 
             }
+            
+            .method-mobile { 
+              background: #e9d5ff !important; 
+              color: #8b5cf6 !important; 
+            }
+            
+            .method-debenture { 
+              background: #fecaca !important; 
+              color: #ef4444 !important; 
+            }
 
             .no-print { 
               display: none !important; 
@@ -1232,7 +1727,11 @@ const printCustomerPaymentReport = (customerData) => {
           <div class="payments-section">
             <div class="section-title">ប្រវត្តិការទូទាត់ (${payments.length} ការទូទាត់)</div>
             
-            ${payments.map((payment, index) => `
+            ${payments.map((payment, index) => {
+    const methodClass = getPaymentMethodClassForPrint(payment.payment_method);
+    const methodText = getPaymentMethodTextForPrint(payment.payment_method, 'km');
+
+    return `
               <div class="payment-card">
                 <div class="payment-header">
                   ការទូទាត់ #${index + 1} - លេខប័ណ្ណ ${payment.product_description ? payment.product_description.toString().padStart(4, '0') : 'មិនមាន'}
@@ -1250,10 +1749,8 @@ const printCustomerPaymentReport = (customerData) => {
                     <div class="payment-row">
                       <span class="payment-label">វិធីសាស្ត្រ៖</span>
                       <span class="payment-value">
-                        <span class="method-tag method-${payment.payment_method === 'cash' ? 'cash' : payment.payment_method === 'credit_card' ? 'card' : 'transfer'}">
-                          ${payment.payment_method === 'cash' ? 'សាច់ប្រាក់' :
-      payment.payment_method === 'credit_card' ? 'កាតឥណទាន' :
-        payment.payment_method === 'bank_transfer' ? 'ប្រេវេសប្រាក់' : 'មិនមាន'}
+                        <span class="method-tag method-${methodClass}">
+                          ${methodText}
                         </span>
                       </span>
                     </div>
@@ -1274,7 +1771,7 @@ const printCustomerPaymentReport = (customerData) => {
                   </div>
                 </div>
               </div>
-            `).join('')}
+            `}).join('')}
           </div>
 
           <div class="summary-section">
@@ -1312,7 +1809,43 @@ const printCustomerPaymentReport = (customerData) => {
   };
 };
 
+
+const getPaymentMethodTextForPrint = (method, language = 'km') => {
+  if (!method) return language === 'km' ? 'មិនមាន' : 'No data';
+
+  const methodLower = method.toString().toLowerCase();
+
+  if (language === 'km') {
+    if (methodLower === 'cash') return 'សាច់ប្រាក់សុទ្ធ';
+    if (methodLower === 'bank_transfer') return 'ធនាគារ';
+    if (methodLower.includes('mobile')) return 'មូលប្បទានបត្រ';
+    if (methodLower.includes('debenture')) return 'មូលប្បទានបត្រ';
+    if (methodLower === 'credit_card') return 'កាតឥណទាន';
+  } else {
+    if (methodLower === 'cash') return 'Cash';
+    if (methodLower === 'bank_transfer') return 'Bank Transfer';
+    if (methodLower.includes('mobile')) return 'Mobile Banking';
+    if (methodLower.includes('debenture')) return 'Debenture';
+    if (methodLower === 'credit_card') return 'Credit Card';
+  }
+
+  return method;
+};
+
+const getPaymentMethodClassForPrint = (method) => {
+  if (!method) return 'transfer';
+  const methodLower = method.toString().toLowerCase();
+  if (methodLower === 'cash') return 'cash';
+  if (methodLower === 'credit_card') return 'card';
+  if (methodLower === 'bank_transfer') return 'transfer';
+  if (methodLower.includes('mobile')) return 'mobile';
+  if (methodLower.includes('debenture')) return 'debenture';
+  return 'transfer';
+};
 const printSinglePaymentReport = (payment) => {
+  const methodClass = getPaymentMethodClassForPrint(payment.payment_method);
+  const methodText = getPaymentMethodTextForPrint(payment.payment_method, 'km');
+
   const printContent = `
       <html>
         <head>
@@ -1458,6 +1991,18 @@ const printSinglePaymentReport = (payment) => {
               color: #f39c12 !important; 
               border: 1px solid #f39c12;
             }
+            
+            .method-mobile { 
+              background: #e9d5ff !important; 
+              color: #8b5cf6 !important; 
+              border: 1px solid #8b5cf6;
+            }
+            
+            .method-debenture { 
+              background: #fecaca !important; 
+              color: #ef4444 !important; 
+              border: 1px solid #ef4444;
+            }
   
             .receipt-footer {
               text-align: center;
@@ -1479,6 +2024,7 @@ const printSinglePaymentReport = (payment) => {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
+                
               
               * {
                 background: white !important;
@@ -1508,6 +2054,16 @@ const printSinglePaymentReport = (payment) => {
               .method-transfer { 
                 background: #fdeaa7 !important; 
                 color: #f39c12 !important; 
+              }
+              
+              .method-mobile { 
+                background: #e9d5ff !important; 
+                color: #8b5cf6 !important; 
+              }
+              
+              .method-debenture { 
+                background: #fecaca !important; 
+                color: #ef4444 !important; 
               }
   
               .no-print { 
@@ -1550,10 +2106,8 @@ const printSinglePaymentReport = (payment) => {
                 <div class="info-row">
                   <span class="info-label">វិធីសាស្ត្រទូទាត់៖</span>
                   <span class="info-value">
-                    <span class="method-tag method-${payment.payment_method === 'cash' ? 'cash' : payment.payment_method === 'credit_card' ? 'card' : 'transfer'}">
-                      ${payment.payment_method === 'cash' ? 'សាច់ប្រាក់' :
-      payment.payment_method === 'credit_card' ? 'កាតឥណទាន' :
-        payment.payment_method === 'bank_transfer' ? 'ប្រេវេសប្រាក់' : 'មិនមាន'}
+                    <span class="method-tag method-${methodClass}">
+                      ${methodText}
                     </span>
                   </span>
                 </div>
@@ -1600,7 +2154,6 @@ const printSinglePaymentReport = (payment) => {
     printWindow.close();
   };
 };
-
 function PaymentHistoryPage() {
   const [state, setState] = useState({
     payments: [],
@@ -1894,6 +2447,162 @@ function PaymentHistoryPage() {
       }
     }
   };
+
+  const getPaymentMethodDisplay = (method, t) => {
+    if (!method) {
+      return {
+        className: 'tag-modern',
+        text: t('no_data'),
+        color: '#9ca3af'
+      };
+    }
+
+    // Normalize the method string
+    const methodStr = method.toString().trim();
+    const methodLower = methodStr.toLowerCase();
+
+    // Define all possible payment methods
+    const methodMap = {
+      // Exact matches
+      'cash': {
+        className: 'tag-green',
+        text: t('cash'),
+        color: '#10b981'
+      },
+      'bank_transfer': {
+        className: 'tag-blue',
+        text: t('bank_transfer'),
+        color: '#3b82f6'
+      },
+      'mobile_banking': {
+        className: 'tag-purple',
+        text: t('mobile_banking'),
+        color: '#8b5cf6'
+      },
+      'mobile_ban': {
+        className: 'tag-purple',
+        text: t('mobile_banking'),
+        color: '#8b5cf6'
+      },
+      'debenture': {
+        className: 'tag-orange',
+        text: t('debenture'),
+        color: '#f59e0b'
+      },
+      'Debenture': { // Handle capitalized version
+        className: 'tag-orange',
+        text: t('debenture'),
+        color: '#f59e0b'
+      },
+      'credit_card': {
+        className: 'tag-pink',
+        text: t('credit_card'),
+        color: '#ec4899'
+      },
+    };
+
+    // Check for exact match first
+    if (methodMap[methodStr]) {
+      return methodMap[methodStr];
+    }
+
+    // Check for case-insensitive match
+    if (methodMap[methodLower]) {
+      return methodMap[methodLower];
+    }
+
+    // Check for partial matches
+    if (methodLower.includes('mobile')) {
+      return methodMap['mobile_banking'];
+    }
+
+    if (methodLower.includes('bank') && !methodLower.includes('mobile')) {
+      return methodMap['bank_transfer'];
+    }
+
+    if (methodLower.includes('cash')) {
+      return methodMap['cash'];
+    }
+
+    if (methodLower.includes('debenture')) {
+      return methodMap['debenture'];
+    }
+
+    // Default fallback - show the raw value
+    return {
+      className: 'tag-modern',
+      text: methodStr,
+      color: '#6b7280'
+    };
+  };
+
+  const PaymentMobileCard = ({ record, showPaymentDetails, printSinglePaymentReport }) => {
+    const { t } = useTranslation();
+
+    const methodInfo = getPaymentMethodDisplay(record.payment_method, t);
+
+    return (
+      <div className="payment-mobile-card">
+        <div className="mobile-card-header">
+          <div>
+            <Tag className="tag-modern tag-purple" style={{ fontSize: '0.75rem' }}>
+              #{record.product_description ? record.product_description.toString().padStart(4, '0') : t('no_data')}
+            </Tag>
+          </div>
+          <div className="date-wrapper" style={{ fontSize: '0.6875rem' }}>
+            <CalendarOutlined />
+            <span>{formatDateClient(record.payment_date)}</span>
+          </div>
+        </div>
+
+        <div className="mobile-card-body">
+          <div className="mobile-card-row">
+            <span className="mobile-card-label">{t('customer')}:</span>
+            <span className="mobile-card-value" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {record.customer_name || t('no_data')}
+            </span>
+          </div>
+
+          <div className="mobile-card-row">
+            <span className="mobile-card-label">{t('phone')}:</span>
+            <span className="mobile-card-value">{record.customer_phone || t('no_data')}</span>
+          </div>
+
+          <div className="mobile-card-row">
+            <span className="mobile-card-label">{t('amount')}:</span>
+            <span className="mobile-card-value amount-text" style={{ fontSize: '0.9375rem' }}>
+              {formatCurrency(record.amount)}
+            </span>
+          </div>
+
+          <div className="mobile-card-row">
+            <span className="mobile-card-label">{t('method')}:</span>
+            <span className="mobile-card-value">
+              <Tag className={`tag-modern ${methodInfo.className}`} style={{ fontSize: '0.6875rem', color: methodInfo.color }}>
+                {methodInfo.text}
+              </Tag>
+            </span>
+          </div>
+        </div>
+
+        <div className="mobile-card-actions">
+          <button
+            className="action-btn"
+            onClick={() => showPaymentDetails(record)}
+          >
+            <IoEyeOutline /> <span>{t('view')}</span>
+          </button>
+          <button
+            className="action-btn"
+            onClick={() => printSinglePaymentReport(record)}
+          >
+            <PrinterOutlined /> <span>{t('print')}</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const customerColumns = [
     {
       title: '',
@@ -2012,14 +2721,9 @@ function PaymentHistoryPage() {
       dataIndex: 'payment_method',
       key: 'payment_method',
       render: (method) => {
-        const methodMap = {
-          'cash': { className: 'tag-green', text: t('cash') },
-          'credit_card': { className: 'tag-blue', text: t('credit_card') },
-          'bank_transfer': { className: 'tag-orange', text: t('bank_transfer') }
-        };
-        const methodInfo = methodMap[method] || { className: 'tag-modern', text: t('no_data') };
+        const methodInfo = getPaymentMethodDisplay(method, t);
         return (
-          <Tag className={`tag-modern ${methodInfo.className}`}>
+          <Tag className={`tag-modern ${methodInfo.className}`} style={{ color: methodInfo.color }}>
             {methodInfo.text}
           </Tag>
         );
@@ -2047,6 +2751,63 @@ function PaymentHistoryPage() {
       )
     }
   ];
+  const CustomerMobileCard = ({ record, showCustomerDetails }) => {
+    const { t } = useTranslation();
+
+    return (
+      <div className="payment-mobile-card">
+        <div className="mobile-card-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, minWidth: 0 }}>
+            <div className="customer-avatar">
+              <UserOutlined />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="mobile-card-title" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {record.customer_name || t('no_data')}
+              </div>
+              <div className="customer-contact" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {record.customer_phone || t('no_data')}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mobile-card-body">
+          <div className="mobile-card-row">
+            <span className="mobile-card-label">{t('payments_count')}:</span>
+            <span className="mobile-card-value">
+              <Tag className="tag-modern tag-blue" style={{ fontSize: '0.75rem' }}>
+                {record.paymentCount}
+              </Tag>
+            </span>
+          </div>
+
+          <div className="mobile-card-row">
+            <span className="mobile-card-label">{t('total_amount')}:</span>
+            <span className="mobile-card-value amount-text" style={{ fontSize: '0.9375rem' }}>
+              {formatCurrency(record.totalAmount)}
+            </span>
+          </div>
+
+          <div className="mobile-card-row">
+            <span className="mobile-card-label">{t('email')}:</span>
+            <span className="mobile-card-value" style={{ fontSize: '0.6875rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {record.customer_email || t('no_data')}
+            </span>
+          </div>
+        </div>
+
+        <div className="mobile-card-actions">
+          <button
+            className="action-btn primary"
+            onClick={() => showCustomerDetails(record)}
+          >
+            <IoEyeOutline /> <span>{t('view')}</span>
+          </button>
+        </div>
+      </div>
+    );
+  };
   const handleReset = () => {
     setFilter({
       search: "",
@@ -2110,6 +2871,8 @@ function PaymentHistoryPage() {
                   <Option value="cash">{t('cash')}</Option>
                   <Option value="credit_card">{t('credit_card')}</Option>
                   <Option value="bank_transfer">{t('bank_transfer')}</Option>
+                  <Option value="mobile_banking">{t('mobile_banking')}</Option>     {/* ← ADD */}
+                  <Option value="Debenture">{t('debenture')}</Option>                {/* ← ADD */}
                 </Select>
               </div>
 
@@ -2186,23 +2949,66 @@ function PaymentHistoryPage() {
             </div>
           )}
 
-          {/* Table Card */}
           <div className="table-card">
-            <div className="modern-table">
-              <Table
-                columns={viewMode === 'customer' ? customerColumns : paymentColumns}
-                dataSource={viewMode === 'customer' ? state.consolidatedCustomers : state.payments}
-                loading={state.loading}
-                pagination={false}
-                onChange={handleTableChange}
-                rowKey={(record, index) =>
-                  viewMode === 'customer'
-                    ? `${record.customer_name}-${record.customer_phone}-${index}`
-                    : record.id || index
-                }
-                scroll={{ x: 'max-content' }}
-                size="middle"
-              />
+            {/* Mobile Card View */}
+            <div className="mobile-card-view">
+              {state.loading ? (
+                <div style={{ textAlign: 'center', padding: '3rem' }}>
+                  <Text>{t('loading')}...</Text>
+                </div>
+              ) : (
+                <>
+                  {viewMode === 'customer' ? (
+                    state.consolidatedCustomers.map((record, index) => (
+                      <CustomerMobileCard
+                        key={`${record.customer_name}-${record.customer_phone}-${index}`}
+                        record={record}
+                        showCustomerDetails={showCustomerDetails}
+                      />
+                    ))
+                  ) : (
+                    state.payments.map((record, index) => (
+                      <PaymentMobileCard
+                        key={record.id || index}
+                        record={record}
+                        showPaymentDetails={showPaymentDetails}
+                        printSinglePaymentReport={printSinglePaymentReport}
+                      />
+                    ))
+                  )}
+
+                  {((viewMode === 'customer' && state.consolidatedCustomers.length === 0) ||
+                    (viewMode === 'payment' && state.payments.length === 0)) && (
+                      <div style={{
+                        textAlign: 'center',
+                        padding: '3rem',
+                        color: '#9ca3af'
+                      }}>
+                        <Text>{t('no_data')}</Text>
+                      </div>
+                    )}
+                </>
+              )}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="mobile-table-view">
+              <div className="modern-table">
+                <Table
+                  columns={viewMode === 'customer' ? customerColumns : paymentColumns}
+                  dataSource={viewMode === 'customer' ? state.consolidatedCustomers : state.payments}
+                  loading={state.loading}
+                  pagination={false}
+                  onChange={handleTableChange}
+                  rowKey={(record, index) =>
+                    viewMode === 'customer'
+                      ? `${record.customer_name}-${record.customer_phone}-${index}`
+                      : record.id || index
+                  }
+                  scroll={{ x: 'max-content' }}
+                  size="middle"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -2273,6 +3079,7 @@ function PaymentHistoryPage() {
                     <Option value="cash">{t('cash')}</Option>
                     <Option value="bank_transfer">{t('bank_transfer')}</Option>
                     <Option value="mobile_banking">{t('mobile_banking')}</Option>
+                    <Option value="Debenture">{t('debenture')}</Option>
                   </Select>
                 </Form.Item>
               </Col>
@@ -2472,9 +3279,9 @@ function PaymentHistoryPage() {
                         <div>
                           <strong>{t('method')}:</strong>
                           <br />
-                          {payment.payment_method === 'cash' ? t('cash') :
-                            payment.payment_method === 'credit_card' ? t('credit_card') :
-                              payment.payment_method === 'bank_transfer' ? t('bank_transfer') : t('no_data')}
+                          <Tag className={`tag-modern ${getPaymentMethodDisplay(payment.payment_method, t).className}`}>
+                            {getPaymentMethodDisplay(payment.payment_method, t).text}
+                          </Tag>
                         </div>
                       </Col>
 
@@ -2569,14 +3376,14 @@ function PaymentHistoryPage() {
                 </span>
               </Descriptions.Item>
               <Descriptions.Item label={t('payment_method')}>
-                <Tag color={
-                  paymentDetailModal.data.payment_method === 'cash' ? 'green' :
-                    paymentDetailModal.data.payment_method === 'credit_card' ? 'blue' : 'orange'
-                }>
-                  {paymentDetailModal.data.payment_method === 'cash' ? t('cash') :
-                    paymentDetailModal.data.payment_method === 'credit_card' ? t('credit_card') :
-                      paymentDetailModal.data.payment_method === 'bank_transfer' ? t('bank_transfer') : t('no_data')}
-                </Tag>
+                {(() => {
+                  const methodInfo = getPaymentMethodDisplay(paymentDetailModal.data.payment_method, t);
+                  return (
+                    <Tag className={`tag-modern ${methodInfo.className}`} style={{ color: methodInfo.color }}>
+                      {methodInfo.text}
+                    </Tag>
+                  );
+                })()}
               </Descriptions.Item>
               <Descriptions.Item label={t('collected_by')}>
                 {paymentDetailModal.data.collected_by || t('no_data')}

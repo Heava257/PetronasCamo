@@ -31,7 +31,6 @@ function Stock_UserPage() {
   });
   useEffect(() => {
     const userId = getProfile();
-    console.log("Fetched User ID from localStorage:", userId);
     if (userId) {
       setState((prev) => ({ ...prev, user_id: userId }));
     } else {
@@ -86,19 +85,15 @@ function Stock_UserPage() {
         unit: items.unit,
         unit_price: Number(items.unit_price),
       };
-      console.log("Submitting data:", data);
       setLoading(true);
       let res;
       const recordId = formRef.getFieldValue("id");
       if (recordId) {
-        console.log(`Updating record ID: ${recordId}`);
         res = await request(`stock/${recordId}`, "put", data);
       } else {
-        console.log("Creating new record");
         res = await request("stock", "post", data);
       }
       setLoading(false);
-      console.log("Response received:", res);
       if (res && res.success) {
         message.success(res.message || "Operation successful");
         getList();
@@ -121,7 +116,6 @@ function Stock_UserPage() {
     }
   };
 const onClickEdit = (record) => {
-  console.log("Editing record:", record);
   formRef.setFieldsValue({
     id: record.id,
     product_name: record.product_name,
@@ -170,7 +164,6 @@ const onClickEdit = (record) => {
       message.error("User ID is required!");
       return;
     }
-    console.log("Making request with user_id:", state.user_id);
     const param = {
       txtSearch: state.txtSearch || "",
     };

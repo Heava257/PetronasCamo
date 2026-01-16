@@ -139,10 +139,7 @@ function TotalDuePage() {
       message.error('Image must be smaller than 2MB!');
     }
     
-    // Log file type and extension for debugging
-    console.log("File type:", file.type);
-    console.log("File extension:", fileExtension);
-    
+
     return isValidExtension && isImage && isLt2M;
   };
 
@@ -163,8 +160,7 @@ function TotalDuePage() {
     // Log information about the files
     if (newFileList.length > 0 && newFileList[0].originFileObj) {
       const file = newFileList[0].originFileObj;
-      console.log("Changed file type:", file.type);
-      console.log("Changed file name:", file.name);
+
     }
     
     setImageDefault(newFileList);

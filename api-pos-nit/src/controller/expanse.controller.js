@@ -1,13 +1,62 @@
 const { db, isArray, isEmpty, logError } = require("../util/helper");
 
+// ✅✅✅ HELPER FUNCTION: Get Branch Filter ✅✅✅
+const getBranchFilter = async (currentUserId) => {
+  const [currentUser] = await db.query(`
+    SELECT 
+      u.branch_name,
+      u.role_id,
+      r.code AS role_code
+    FROM user u
+    INNER JOIN role r ON u.role_id = r.id
+    WHERE u.id = :user_id
+  `, { user_id: currentUserId });
+
+  if (!currentUser || currentUser.length === 0) {
+    return { error: true, message: "User not found" };
+  }
+
+  const userRoleId = currentUser[0].role_id;
+  const userBranch = currentUser[0].branch_name;
+
+
+  // If NOT Super Admin (role_id != 29), filter by branch
+  let branchFilter = '';
+  if (userRoleId !== 29) {
+    if (!userBranch) {
+      return { error: true, message: "Your account is not assigned to a branch" };
+    }
+    branchFilter = `AND creator.branch_name = '${userBranch}'`;
+  } else {
+  }
+
+  return { 
+    branchFilter, 
+    userRoleId, 
+    userBranch,
+    isSuperAdmin: userRoleId === 29 
+  };
+};
+
 exports.getListExpanseType = async (req, res) => {
   try {
+    const currentUserId = req.current_id;
     const { txtSearch, page = 1, limit = 10, expense_type_id } = req.query;
 
-    // Calculate offset for pagination
+    // ✅ Get branch filter
+    const filterResult = await getBranchFilter(currentUserId);
+    if (filterResult.error) {
+      return res.status(403).json({
+        success: false,
+        message: filterResult.message
+      });
+    }
+
+    const { branchFilter } = filterResult;
+
     const offset = (page - 1) * limit;
 
-    // Construct SQL query with filters and pagination
+    // ✅ Updated SQL with branch filter
     const sql = `
       SELECT 
         e.id,
@@ -17,32 +66,37 @@ exports.getListExpanseType = async (req, res) => {
         e.remark,
         e.expense_date,
         et.name AS expense_type_name,
-        e.expense_type_id
-      FROM 
-        expense e
-      JOIN 
-        expense_type et ON e.expense_type_id = et.id
+        e.expense_type_id,
+        creator.branch_name,
+        creator.name AS created_by_name
+      FROM expense e
+      JOIN expense_type et ON e.expense_type_id = et.id
+      JOIN user creator ON e.user_id = creator.id
       WHERE 
         (e.name LIKE :txtSearch OR e.ref_no LIKE :txtSearch)
         ${expense_type_id ? 'AND e.expense_type_id = :expense_type_id' : ''}
+        ${branchFilter}
+      ORDER BY e.expense_date DESC
       LIMIT :limit OFFSET :offset
     `;
 
-    // Execute the query with parameters
+
     const [data] = await db.query(sql, {
-      txtSearch: `%${txtSearch || ''}%`, // Add wildcards for partial matching
+      txtSearch: `%${txtSearch || ''}%`,
       limit: parseInt(limit),
       offset: parseInt(offset),
       expense_type_id: expense_type_id ? parseInt(expense_type_id) : undefined,
     });
 
-    // Fetch total count for pagination
+    // ✅ Count with branch filter
     const countSql = `
       SELECT COUNT(*) AS total
       FROM expense e
       JOIN expense_type et ON e.expense_type_id = et.id
+      JOIN user creator ON e.user_id = creator.id
       WHERE (e.name LIKE :txtSearch OR e.ref_no LIKE :txtSearch)
         ${expense_type_id ? 'AND e.expense_type_id = :expense_type_id' : ''}
+        ${branchFilter}
     `;
 
     const [countResult] = await db.query(countSql, {
@@ -52,55 +106,81 @@ exports.getListExpanseType = async (req, res) => {
 
     const total = countResult[0].total;
 
+
     res.json({
       success: true,
       data: data,
       total: total,
+      filter_info: {
+        branch: filterResult.isSuperAdmin ? 'All Branches' : filterResult.userBranch,
+        is_super_admin: filterResult.isSuperAdmin
+      },
       message: "Expense list fetched successfully!",
     });
   } catch (error) {
     console.error("Error fetching expense list:", error);
+    logError("expense.getListExpanseType", error, res);
     res.status(500).json({
       success: false,
       message: "Failed to fetch expense list.",
+      error: error.message
     });
   }
 };
 
 exports.getList = async (req, res) => {
   try {
-    var txtSearch = req.query.txtSearch;
+    const currentUserId = req.current_id;
+    const txtSearch = req.query.txtSearch;
+
+    const filterResult = await getBranchFilter(currentUserId);
+    if (filterResult.error) {
+      return res.status(403).json({
+        success: false,
+        message: filterResult.message
+      });
+    }
+
+    const { branchFilter } = filterResult;
     
-    // SQL query with JOIN to get expense type name
-    var sql = `
+    let sql = `
       SELECT 
         e.*,
         et.name AS expense_type_name, 
-        et.code AS expense_type_code
-      FROM 
-        expense e
-      LEFT JOIN 
-        expense_type et ON e.expense_type_id = et.id
+        et.code AS expense_type_code,
+        creator.branch_name,
+        creator.name AS created_by_name
+      FROM expense e
+      LEFT JOIN expense_type et ON e.expense_type_id = et.id
+      JOIN user creator ON e.user_id = creator.id
+      WHERE 1=1
+      ${branchFilter}
     `;
     
     // Add search condition if provided
     if (!isEmpty(txtSearch)) {
-      sql += " WHERE e.ref_no LIKE :txtSearch OR e.name LIKE :txtSearch OR et.name LIKE :txtSearch";
+      sql += " AND (e.ref_no LIKE :txtSearch OR e.name LIKE :txtSearch OR et.name LIKE :txtSearch)";
     }
 
-    // Add ordering for consistency
     sql += " ORDER BY e.create_at DESC";
     
+
     const [list] = await db.query(sql, {
       txtSearch: "%" + txtSearch + "%",
     });
+
     
     res.json({
       success: true,
       list: list,
+      filter_info: {
+        branch: filterResult.isSuperAdmin ? 'All Branches' : filterResult.userBranch,
+        is_super_admin: filterResult.isSuperAdmin
+      },
       message: "Expense list fetched successfully!"
     });
   } catch (error) {
+    console.error("Error in getList:", error);
     logError("expense.getList", error, res);
     res.status(500).json({
       success: false,
@@ -109,19 +189,18 @@ exports.getList = async (req, res) => {
     });
   }
 };
-// id,name,code,tel,email,address,website,note,create_by,create_at
-// id,:name,:code,:tel,:email,:address,:website,:note,:create_by,:create_at
+
 exports.create = async (req, res) => {
   try {
     const { expense_type_id, ref_no, name, amount, remark, expense_date } = req.body;
 
-    const user_id = req.auth?.id || req.body.user_id || null; // Use authenticated user or fallback
+    const user_id = req.current_id; // ✅ Use authenticated user ID
 
     // Validate required fields
-    if (!expense_type_id || !ref_no || !name || !amount || !expense_date || !user_id) {
+    if (!expense_type_id || !ref_no || !name || !amount || !expense_date) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields: expense_type_id, ref_no, name, amount, expense_date, user_id",
+        message: "Missing required fields: expense_type_id, ref_no, name, amount, expense_date",
       });
     }
 
@@ -142,20 +221,22 @@ exports.create = async (req, res) => {
       user_id
     });
 
+
     res.json({
       success: true,
       data: data,
       message: "Expense created successfully!",
     });
   } catch (error) {
+    console.error("Error creating expense:", error);
     logError("expense.create", error, res);
   }
 };
 
 exports.update = async (req, res) => {
   try {
-    const { id } = req.params; // Extract `id` from URL parameters
-    const {   name, amount, remark } = req.body;
+    const { id } = req.params;
+    const { name, amount, remark } = req.body;
 
     if (!name || !amount || !remark) {
       return res.status(400).json({
@@ -164,22 +245,20 @@ exports.update = async (req, res) => {
       });
     }
    
-    console.log("Request Payload:", req.body); // Log the payload for debugging
+
     const sql = `
-  UPDATE expense 
-  SET 
-    name = :name, 
-    amount = :amount, 
-    remark = :remark 
-  WHERE id = :id
-`;
+      UPDATE expense 
+      SET 
+        name = :name, 
+        amount = :amount, 
+        remark = :remark 
+      WHERE id = :id
+    `;
 
     const [data] = await db.query(sql, {
-     
       name,
       amount,
       remark,
-     
       id,
     });
 
@@ -189,15 +268,15 @@ exports.update = async (req, res) => {
       message: "Expense updated successfully!",
     });
   } catch (error) {
+    console.error("Error updating expense:", error);
     logError("expense.update", error, res);
   }
 };
 
 exports.remove = async (req, res) => {
   try {
-    const { id } = req.params; // Extract `id` from URL parameters
+    const { id } = req.params;
 
-    // Validate `id`
     if (!id) {
       return res.status(400).json({
         success: false,
@@ -208,7 +287,6 @@ exports.remove = async (req, res) => {
     const sql = "DELETE FROM expense WHERE id = :id";
     const [data] = await db.query(sql, { id });
 
-    // Check if any rows were affected
     if (data.affectedRows === 0) {
       return res.status(404).json({
         success: false,
@@ -216,14 +294,14 @@ exports.remove = async (req, res) => {
       });
     }
 
+
     res.json({
       success: true,
       data: data,
       message: "Expense deleted successfully!",
     });
   } catch (error) {
+    console.error("Error deleting expense:", error);
     logError("expense.remove", error, res);
   }
 };
-
-

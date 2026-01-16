@@ -44,7 +44,6 @@ export const request = (url = "", method = "get", data = {}) => {
       } else if (err.code == "ERR_NETWORK") {
         setServerSatus("error");
       }
-      console.log(">>>", err);
       return false;
     });
 };

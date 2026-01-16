@@ -8,17 +8,22 @@ import {
     FileText,
     Package,
     X,
-    AlertTriangle
+    AlertTriangle,
+    Truck,
+    Eye
 } from "lucide-react";
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { Button } from "antd";
+import { Button, message } from "antd";
 import { useTranslation } from "../../locales/TranslationContext";
+import LocationSelector from "../delivery/Locationselector";
 
 // Extend dayjs with custom parse format
 dayjs.extend(customParseFormat);
 
 // Load Kantumruy Pro font
+
+
 const loadKantumruyProFont = () => {
     if (document.querySelector('link[href*="Kantumruy"]')) {
         return;
@@ -64,6 +69,70 @@ const loadKantumruyProFont = () => {
             line-height: 1.6;
             letter-spacing: 0.02em;
         }
+
+        /* Custom scrollbar */
+        .scrollbar-custom::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Dark mode scrollbar styles */
+        .dark .scrollbar-custom::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        .dark .scrollbar-custom::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        .dark .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        /* Dark mode Khmer text improvements */
+        .dark .khmer-text,
+        .dark .khmer-text-light,
+        .dark .khmer-text-medium,
+        .dark .khmer-text-semibold,
+        .dark .khmer-text-bold {
+            color: #f1f5f9;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .dark [class*="khmer"] {
+            color: #e2e8f0;
+        }
+
+        /* Smooth animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
     `;
     document.head.appendChild(style);
 };
@@ -87,20 +156,20 @@ const AlertModal = ({ isOpen, onClose, onConfirm, title, message, type = "warnin
         switch (type) {
             case "danger":
                 return {
-                    icon: <Trash2 className="w-12 h-12 text-red-500" />,
-                    bgColor: "bg-red-50 dark:bg-red-900/20",
-                    borderColor: "border-red-200 dark:border-red-800",
-                    confirmBg: "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600",
-                    cancelBg: "bg-gray-300 hover:bg-gray-400 dark:bg-slate-600 dark:hover:bg-slate-500"
+                    icon: <Trash2 className="w-10 h-10 sm:w-12 sm:h-12 text-red-500" />,
+                    bgColor: "bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20",
+                    borderColor: "border-red-300 dark:border-red-700",
+                    confirmBg: "bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 dark:from-red-500 dark:to-red-600 dark:hover:from-red-600 dark:hover:to-red-700",
+                    cancelBg: "bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500"
                 };
             case "warning":
             default:
                 return {
-                    icon: <AlertTriangle className="w-12 h-12 text-yellow-500" />,
-                    bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
-                    borderColor: "border-yellow-200 dark:border-yellow-800",
-                    confirmBg: "bg-yellow-600 hover:bg-yellow-700 dark:bg-yellow-500 dark:hover:bg-yellow-600",
-                    cancelBg: "bg-gray-300 hover:bg-gray-400 dark:bg-slate-600 dark:hover:bg-slate-500"
+                    icon: <AlertTriangle className="w-10 h-10 sm:w-12 sm:h-12 text-amber-500" />,
+                    bgColor: "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/20",
+                    borderColor: "border-amber-300 dark:border-amber-700",
+                    confirmBg: "bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 dark:from-amber-500 dark:to-amber-600 dark:hover:from-amber-600 dark:hover:to-amber-700",
+                    cancelBg: "bg-gray-200 hover:bg-gray-300 dark:bg-slate-600 dark:hover:bg-slate-500"
                 };
         }
     };
@@ -108,36 +177,43 @@ const AlertModal = ({ isOpen, onClose, onConfirm, title, message, type = "warnin
     const styles = getTypeStyles();
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
-                <div className={`${styles.bgColor} ${styles.borderColor} border-b p-6`}>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            {styles.icon}
-                            <div>
-                                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{message}</p>
+        <div className="fixed inset-0 bg-black bg-opacity-60 dark:bg-opacity-80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full overflow-hidden animate-slide-in">
+                <div className={`${styles.bgColor} ${styles.borderColor} border-b-2 p-6`}>
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1">
+                            <div className="flex-shrink-0 p-2 bg-white dark:bg-slate-700 rounded-xl shadow-md">
+                                {styles.icon}
+                            </div>
+                            <div className="flex-1 min-w-0 pt-1">
+                                <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100 break-words khmer-text-bold">
+                                    {title}
+                                </h3>
+                                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300 mt-2 break-words khmer-text">
+                                    {message}
+                                </p>
                             </div>
                         </div>
                         <button
                             onClick={onClose}
-                            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors p-1.5 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-lg flex-shrink-0"
+                            aria-label="Close"
                         >
                             <X className="w-5 h-5" />
                         </button>
                     </div>
                 </div>
                 <div className="p-6">
-                    <div className="flex space-x-3 justify-end">
+                    <div className="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
                         <button
                             onClick={onClose}
-                            className={`px-4 py-2 ${styles.cancelBg} text-gray-700 dark:text-gray-100 rounded-lg font-medium transition-colors`}
+                            className={`w-full sm:w-auto px-6 py-3 ${styles.cancelBg} text-gray-800 dark:text-gray-100 rounded-xl font-semibold transition-all text-sm sm:text-base hover:shadow-md khmer-text-semibold`}
                         >
                             {t("cancel")}
                         </button>
                         <button
                             onClick={onConfirm}
-                            className={`px-4 py-2 ${styles.confirmBg} text-white rounded-lg font-medium transition-colors`}
+                            className={`w-full sm:w-auto px-6 py-3 ${styles.confirmBg} text-white rounded-xl font-semibold transition-all text-sm sm:text-base shadow-md hover:shadow-lg khmer-text-semibold`}
                         >
                             {t("confirm")}
                         </button>
@@ -148,8 +224,29 @@ const AlertModal = ({ isOpen, onClose, onConfirm, title, message, type = "warnin
     );
 };
 
+// Section Header Component for better organization
+const SectionHeader = ({ icon: Icon, title, badge = null, className = "" }) => (
+    <div className={`flex items-center justify-between mb-3 ${className}`}>
+        <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
+                <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 khmer-text-semibold">
+                {title}
+            </span>
+        </div>
+        {badge && (
+            <span className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full khmer-text">
+                {badge}
+            </span>
+        )}
+    </div>
+);
+
 const IntegratedInvoiceSidebar = ({
     cartItems = [],
+    preOrders = [], // ✅ New: List of pending pre-orders
+    handleLoadPreOrder = () => { }, // ✅ New: Quick load function
     objSummary = {},
     selectedLocations = "",
     setSelectedLocations = () => { },
@@ -163,9 +260,20 @@ const IntegratedInvoiceSidebar = ({
     isCheckingOut,
     invoiceBackup = null,
     setShowReprintModal = () => { },
-    setState = () => { }
+    setShowPreviewModal = () => { },
+    setState = () => { },
+    selectedLocation = null,
+    setSelectedLocation = () => { },
+    selectedTruck = null,
+    setSelectedTruck = () => { }
 }) => {
     const { t, language } = useTranslation();
+
+    useEffect(() => {
+        if (objSummary.customer_address && selectedLocations.length === 0 && cartItems.length > 0) {
+            setSelectedLocations([objSummary.customer_address]);
+        }
+    }, [objSummary.customer_address, cartItems.length]);
 
     useEffect(() => {
         loadKantumruyProFont();
@@ -181,10 +289,22 @@ const IntegratedInvoiceSidebar = ({
 
     const totalQuantity = objSummary.total_qty || 0;
     const totalAmount = cartItems.reduce((sum, item) => {
-        const actual = (item.actual_price || 1);
-        const total = (item.cart_qty * item.unit_price) / actual;
+        const qty = Number(item.cart_qty || 0);
+        const selling = Number(item.selling_price || 0);
+        const actual = Number(item.actual_price || 1);
+        const discount = Number(item.discount || 0) / 100;
+        const total = (qty * selling * (1 - discount)) / actual;  // ✅ Factor in discount
         return sum + total;
     }, 0);
+
+    const handlePreviewClick = () => {
+        if (cartItems.length === 0) {
+            message.error(t("cart_is_empty"));
+            return;
+        }
+
+        setShowPreviewModal(true);
+    };
 
     const showAlert = (type, title, message, onConfirm) => {
         setAlertModal({
@@ -263,7 +383,7 @@ const IntegratedInvoiceSidebar = ({
 
     const handleRemoveItem = (itemId) => {
         const item = cartItems.find(item => item.id === itemId);
-        const itemName = item?.category_name || t("item");
+        const itemName = item?.name || t("item");
         const itemQty = item?.cart_qty || 0;
 
         showAlert(
@@ -292,7 +412,6 @@ const IntegratedInvoiceSidebar = ({
         );
     };
 
-    // Get month names based on language
     const getMonthNames = () => {
         if (language === 'km') {
             return ['មករា', 'កម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
@@ -304,287 +423,392 @@ const IntegratedInvoiceSidebar = ({
 
     return (
         <>
-            <div className="w-full max-w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl dark:shadow-slate-900/50 overflow-hidden">
-                {/* Header */}
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 dark:from-blue-500 dark:to-indigo-600 p-6 text-white">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                            <ShoppingCart className="w-6 h-6" />
-                            <span className="text-lg font-semibold khmer-text-medium">
-                                {t("items_in_cart")} {cartItems.length}
-                            </span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            {invoiceBackup && (
-                                <button
-                                    onClick={() => setShowReprintModal(true)}
-                                    className="flex items-center space-x-1 px-2 py-1 bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/20 rounded-lg transition-colors text-xs khmer-text"
-                                    title={t("reprint")}
-                                >
-                                    <span>🖨️</span>
-                                </button>
-                            )}
-                            <button
-                                onClick={handleClearCartClick}
-                                disabled={cartItems.length === 0}
-                                className="flex items-center space-x-2 px-3 py-1.5 bg-white/20 hover:bg-white/30 dark:bg-white/10 dark:hover:bg-white/20 disabled:bg-white/10 disabled:cursor-not-allowed rounded-lg transition-colors text-sm khmer-text"
-                                title={t("clear_cart")}
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                <span>{t("clear_cart")}</span>
-                            </button>
-                        </div>
+            <div className="w-full max-w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl dark:shadow-slate-900/50 overflow-hidden border-2 border-gray-100 dark:border-slate-700">
+                {/* Enhanced Header with Gradient */}
+                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 p-5 text-white relative overflow-hidden">
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 opacity-10">
+                        <div className="absolute inset-0" style={{
+                            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+                            backgroundSize: '24px 24px'
+                        }} />
                     </div>
 
-                    {/* Quick Summary */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white/10 dark:bg-white/5 rounded-lg p-3">
-                            <div className="text-white/80 text-xs uppercase tracking-wide khmer-text">
-                                {t("total_qty")}
+                    <div className="relative z-10">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 backdrop-blur-sm rounded-xl">
+                                    <ShoppingCart className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <span className="text-base font-bold khmer-text-bold block">
+                                        {objSummary.pre_order_id ? `${t("processing_pre_order") || "Processing Draft"} #` : t("items_in_cart")}
+                                    </span>
+                                    <span className="text-xs text-white/80 khmer-text">
+                                        {objSummary.pre_order_id
+                                            ? (preOrders.find(po => po.id === objSummary.pre_order_id)?.pre_order_no || `Pre-Order #${objSummary.pre_order_id}`)
+                                            : `${cartItems.length} ${t("items")}`
+                                        }
+                                    </span>
+                                </div>
                             </div>
-                            <div className="text-lg font-bold khmer-text-semibold">
-                                {Number(totalQuantity).toLocaleString()}
-                                <span className="text-sm font-normal text-white/80 ml-1 khmer-text">
-                                    {totalQuantity >= 1000 ? `L (≈${(totalQuantity / 1000).toFixed(3)}T)` : 'L'}
-                                </span>
+                            <div className="flex items-center gap-2">
+                                {invoiceBackup && (
+                                    <button
+                                        onClick={() => setShowReprintModal(true)}
+                                        className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl transition-all text-sm khmer-text-medium shadow-lg hover:shadow-xl"
+                                        title={t("reprint")}
+                                    >
+                                        <span className="text-lg">🖨️</span>
+                                        <span className="hidden sm:inline font-semibold">F3</span>
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleClearCartClick}
+                                    disabled={cartItems.length === 0}
+                                    className="flex items-center gap-2 px-3 py-2 bg-white/20 hover:bg-white/30 disabled:bg-white/10 disabled:cursor-not-allowed backdrop-blur-sm rounded-xl transition-all text-sm khmer-text-medium shadow-lg hover:shadow-xl"
+                                    title={t("clear_cart")}
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span className="hidden sm:inline font-semibold">{t("clear_cart")}</span>
+                                </button>
                             </div>
                         </div>
-                        <div className="bg-white/10 dark:bg-white/5 rounded-lg p-3">
-                            <div className="text-white/80 text-xs uppercase tracking-wide khmer-text">
-                                {t("total_amount")}
+
+                        {/* Enhanced Summary Cards */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 border border-white/20 shadow-lg">
+                                <div className="text-white/90 text-xs uppercase tracking-wider khmer-text mb-1">
+                                    {t("total_qty")}
+                                </div>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-2xl font-bold khmer-text-bold">
+                                        {Number(totalQuantity).toLocaleString()}
+                                    </span>
+                                    <span className="text-sm font-medium text-white/80 khmer-text">
+                                        {totalQuantity >= 1000 ? `L (≈${(totalQuantity / 1000).toFixed(2)}T)` : 'L'}
+                                    </span>
+                                </div>
                             </div>
-                            <div className="text-lg font-bold khmer-text-semibold">
-                                ${Number(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            <div className="bg-white/15 backdrop-blur-md rounded-xl p-3 border border-white/20 shadow-lg">
+                                <div className="text-white/90 text-xs uppercase tracking-wider khmer-text mb-1">
+                                    {t("total_amount")}
+                                </div>
+                                <div className="text-2xl font-bold khmer-text-bold">
+                                    ${Number(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Cart Items */}
-                <div className="p-4 bg-white dark:bg-slate-800">
-                    <div className="max-h-60 overflow-y-auto space-y-3 mb-6 scrollbar-dark">
-                        {cartItems.length === 0 ? (
-                            <div className="text-center py-8">
-                                <Package className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                                <p className="text-gray-500 dark:text-gray-400 khmer-text">{t("cart_empty")}</p>
-                            </div>
-                        ) : (
-                            cartItems.map((item, index) => {
-                                const getCategoryColor = (category) => {
-                                    const categoryColors = {
-                                        'ហ្កាស(LPG)': { 
-                                            bg: 'bg-yellow-50 dark:bg-yellow-900/20', 
-                                            border: 'border-yellow-200 dark:border-yellow-800', 
-                                            text: 'text-yellow-800 dark:text-yellow-300' 
-                                        },
-                                        'ប្រេងសាំងធម្មតា(EA)': { 
-                                            bg: 'bg-cyan-50 dark:bg-cyan-900/20', 
-                                            border: 'border-cyan-200 dark:border-cyan-800', 
-                                            text: 'text-cyan-800 dark:text-cyan-300' 
-                                        },
-                                        'ប្រេងម៉ាស៊ូត(Do)': { 
-                                            bg: 'bg-green-50 dark:bg-green-900/20', 
-                                            border: 'border-green-200 dark:border-green-800', 
-                                            text: 'text-green-800 dark:text-green-300' 
-                                        },
-                                        'ប្រេងសាំងស៊ុបពែរ(Super)': { 
-                                            bg: 'bg-blue-50 dark:bg-blue-900/20', 
-                                            border: 'border-blue-200 dark:border-blue-800', 
-                                            text: 'text-blue-800 dark:text-blue-300' 
-                                        },
-                                        'default': { 
-                                            bg: 'bg-gray-50 dark:bg-gray-800', 
-                                            border: 'border-gray-200 dark:border-gray-700', 
-                                            text: 'text-gray-800 dark:text-gray-300' 
-                                        }
-                                    };
-                                    return categoryColors[category] || categoryColors['default'];
-                                };
-
-                                const colors = getCategoryColor(item.category_name);
-
-                                return (
-                                    <div key={`cart-item-${item.id}-${index}`} className={`${colors.bg} ${colors.border} border rounded-xl p-4 hover:shadow-md dark:hover:shadow-slate-900/50 transition-all`}>
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div className="flex-1">
-                                                <div className={`inline-block px-2 py-1 rounded-full text-xs khmer-text-medium ${colors.bg} ${colors.text} border ${colors.border} mb-2`}>
-                                                    {item.category_name}
-                                                </div>
-                                                <div className="text-xs text-gray-500 dark:text-gray-400 khmer-text">
-                                                    {t("order_date")}: {convertToDisplayFormat(objSummary.order_date) || 'N/A'} | {t("delivery_date")}: {convertToDisplayFormat(objSummary.delivery_date) || 'N/A'}
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                                                    ${Number((item.cart_qty || 0) * (item.unit_price || 0) / (item.actual_price || 1)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                </div>
-                                                <button
-                                                    onClick={() => handleRemoveItem(item.id)}
-                                                    className="mt-1 p-1 text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-all"
-                                                    title={t("remove_item")}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
+                {/* Main Content Area with Better Spacing */}
+                <div className="p-5 bg-gradient-to-br from-gray-50 to-white dark:from-slate-800 dark:to-slate-900 space-y-5">
+                    {/* Pre-Orders Quick Selection (Sale Orders) */}
+                    {preOrders && preOrders.length > 0 && (
+                        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border-2 border-orange-100 dark:border-orange-900/30 animate-pulse-subtle">
+                            <SectionHeader
+                                icon={FileText}
+                                title={t("pending_pre_orders") || "Sale Orders (Draft)"}
+                                badge={`${preOrders.length}`}
+                                className="!mb-2"
+                            />
+                            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-custom">
+                                {preOrders.map((order) => (
+                                    <button
+                                        key={`preorder-${order.id}-${index}`}
+                                        onClick={() => handleLoadPreOrder(order)}
+                                        className="flex-shrink-0 flex flex-col items-start p-3 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20 border border-orange-200 dark:border-orange-800 rounded-xl hover:shadow-md hover:scale-105 transition-all duration-200 min-w-[140px]"
+                                    >
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                                            <span className="text-xs font-bold text-orange-700 dark:text-orange-400 khmer-text-bold truncate">
+                                                {order.customer_name}
+                                            </span>
                                         </div>
+                                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+                                            {order.pre_order_no}
+                                        </span>
+                                        <div className="mt-2 text-xs font-bold text-gray-800 dark:text-gray-200">
+                                            {formatPrice ? formatPrice(order.total_amount) : `$${order.total_amount}`}
+                                        </div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
-                                       <div className="space-y-2">
-                                            <div className="space-y-2">
+                    {/* Cart Items Section */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                        <SectionHeader
+                            icon={Package}
+                            title={t("cart_items")}
+                            badge={`${cartItems.length} ${t("items")}`}
+                        />
+
+                        <div className="max-h-64 overflow-y-auto space-y-3 scrollbar-custom">
+                            {cartItems.length === 0 ? (
+                                <div className="text-center py-10">
+                                    <div className="inline-flex p-4 bg-gray-100 dark:bg-slate-700 rounded-full mb-3">
+                                        <Package className="w-12 h-12 text-gray-400 dark:text-gray-500" />
+                                    </div>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 khmer-text-medium">
+                                        {t("cart_empty")}
+                                    </p>
+                                </div>
+                            ) : (
+                                cartItems.map((item, index) => {
+                                    const getCategoryColor = (category) => {
+                                        const categoryColors = {
+                                            'ហ្កាស(LPG)': {
+                                                bg: 'bg-gradient-to-br from-yellow-50 to-amber-100 dark:from-yellow-900/20 dark:to-amber-900/20',
+                                                border: 'border-yellow-300 dark:border-yellow-700',
+                                                badge: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
+                                            },
+                                            'ប្រេងសាំងធម្មតា(EA)': {
+                                                bg: 'bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-cyan-900/20 dark:to-blue-900/20',
+                                                border: 'border-cyan-300 dark:border-cyan-700',
+                                                badge: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700'
+                                            },
+                                            'ប្រេងម៉ាស៊ូត(Do)': {
+                                                bg: 'bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20',
+                                                border: 'border-green-300 dark:border-green-700',
+                                                badge: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700'
+                                            },
+                                            'ប្រេងសាំងស៊ុបពែរ(Super)': {
+                                                bg: 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20',
+                                                border: 'border-blue-300 dark:border-blue-700',
+                                                badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+                                            },
+                                            'default': {
+                                                bg: 'bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-800 dark:to-slate-800',
+                                                border: 'border-gray-300 dark:border-gray-700',
+                                                badge: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-700'
+                                            }
+                                        };
+                                        return categoryColors[category] || categoryColors['default'];
+                                    };
+
+                                    const colors = getCategoryColor(item.category_name);
+
+                                    return (
+                                        <div
+                                            key={`cart-item-${item.id}-${index}`}
+                                            className={`${colors.bg} ${colors.border} border-2 rounded-xl p-4 hover:shadow-lg dark:hover:shadow-slate-900/50 transition-all duration-200 animate-slide-in`}
+                                        >
+                                            {/* Header - Category & Price */}
+                                            <div className="flex justify-between items-start mb-3 gap-3">
+                                                <div className="flex-1 min-w-0">
+                                                    {/* Category badge */}
+                                                    <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold khmer-text-semibold ${colors.badge} border mb-2`}>
+                                                        <span className="w-2 h-2 rounded-full bg-current opacity-60"></span>
+                                                        {item.name}
+                                                    </div>
+                                                </div>
+                                                <div className="text-right flex-shrink-0">
+                                                    {/* ✅ FIXED: Use selling_price for calculation */}
+                                                    <div className="text-xl font-bold text-green-600 dark:text-green-400 mb-2">
+                                                        ${Number(
+                                                            (item.cart_qty || 0) * (item.selling_price || 0) * (1 - (item.discount || 0) / 100) / (item.actual_price || 1)
+                                                        ).toLocaleString('en-US', {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2
+                                                        })}
+                                                    </div>
+                                                    {item.discount > 0 && (
+                                                        <div className="text-[10px] text-orange-500 font-bold bg-orange-50 px-1 rounded inline-block">
+                                                            -{item.discount}%
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        className="p-2 text-red-500 dark:text-red-400 hover:text-white hover:bg-red-500 dark:hover:bg-red-600 rounded-lg transition-all shadow-sm hover:shadow-md"
+                                                        title={t("remove_item")}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Input Fields */}
+                                            <div className="grid grid-cols-2 gap-3">
                                                 {/* Quantity Input */}
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <div className="flex items-center space-x-1">
-                                                        <span className="khmer-text-medium text-xs text-gray-600 dark:text-gray-400">
-                                                            {t("quantity")}:
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300 khmer-text-medium flex items-center justify-between gap-1 w-full">
+                                                        <span className="flex items-center gap-1">
+                                                            <Package className="w-3 h-3" />
+                                                            {t("quantity")}
                                                         </span>
+                                                        {/* ✅ Stock Visibility */}
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${Number(item.available_qty || 0) <= 1000 ? 'bg-red-50 text-red-600 border border-red-100 animate-pulse' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
+                                                            ស្តុក: {Number(item.available_qty || 0).toLocaleString()} L
+                                                        </span>
+                                                    </label>
+                                                    <div className="relative">
                                                         <input
                                                             type="number"
                                                             value={item.cart_qty === null || item.cart_qty === undefined ? '' : item.cart_qty}
-                                                            step="1"
-                                                            min="1"
-                                                            className="w-20 px-2 py-1 text-xs border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded focus:ring-1 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent"
-                                                            onChange={(e) => {
-                                                                const value = e.target.value;
-                                                                const newQty = value === '' ? 1 : parseInt(value);
-                                                                
-                                                                if (!isNaN(newQty) && newQty > 0) {
-                                                                    console.log('🔍 Updating quantity:', { itemId: item.id, newQty });
-                                                                    
-                                                                    // ✅ FIXED: Call with correct parameter order (newQty, itemId)
-                                                                    if (typeof handleQuantityChange === 'function') {
-                                                                        handleQuantityChange(newQty, item.id);
-                                                                        console.log('✅ Called handleQuantityChange(newQty, itemId)');
-                                                                    } else {
-                                                                        // Fallback: Direct state update
-                                                                        const updatedCart = cartItems.map(cartItem => 
-                                                                            cartItem.id === item.id 
-                                                                                ? { ...cartItem, cart_qty: newQty }
-                                                                                : cartItem
-                                                                        );
-                                                                        setState(prev => ({
-                                                                            ...prev,
-                                                                            cart_list: updatedCart
-                                                                        }));
-                                                                        console.log('✅ Updated quantity directly');
-                                                                    }
-                                                                }
-                                                            }}
-                                                        />
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400">L</span>
-                                                    </div>
-                                                    
-                                                    {/* Price Input */}
-                                                    <div className="flex items-center space-x-1">
-                                                        <span className="khmer-text-medium text-xs text-gray-600 dark:text-gray-400">
-                                                            {t("ton_price")}:
-                                                        </span>
-                                                        <input
-                                                            type="number"
-                                                            value={item.unit_price === null || item.unit_price === undefined ? '' : item.unit_price}
                                                             step="0.001"
                                                             min="0"
-                                                            className="w-18 px-2 py-1 text-xs border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
-                                                            onChange={(e) => {
-                                                                const value = e.target.value;
-                                                                if (value === '') {
-                                                                    updatePrice(item.id, null);
-                                                                } else {
-                                                                    const newPrice = parseFloat(value);
-                                                                    if (!isNaN(newPrice) && newPrice >= 0) {
-                                                                        updatePrice(item.id, newPrice);
-                                                                    }
-                                                                }
-                                                            }}
+                                                            disabled={true}
+                                                            className="w-full pl-8 pr-3 py-2.5 text-sm border-2 border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                                                            title="មានតែ Admin ទេដែលអាចកែប្រែតម្លៃនេះ ក្នុង Inventory Transaction Page"
+                                                        />
+
+                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium">L</span>
+                                                    </div>
+                                                </div>
+
+                                                {/* ✅ FIXED: Selling Price Input (Disabled) */}
+                                                <div className="space-y-1">
+                                                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300 khmer-text-medium flex items-center gap-1">
+                                                        <span>💲</span>
+                                                        {t("selling_price")}
+                                                        <span className="ml-1 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded text-xs flex items-center gap-1">
+                                                            🔒 <span className="hidden sm:inline">Admin</span>
+                                                        </span>
+                                                    </label>
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400 font-semibold">$</span>
+                                                        <input
+                                                            type="number"
+                                                            value={item.selling_price === null || item.selling_price === undefined ? '' : item.selling_price}
+                                                            step="0.001"
+                                                            min="0"
+                                                            disabled={true}
+                                                            className="w-full pl-8 pr-3 py-2.5 text-sm border-2 border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                                                            title="មានតែ Admin ទេដែលអាចកែប្រែតម្លៃនេះ ក្នុង Inventory Transaction Page"
                                                         />
                                                     </div>
+
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                );
-                            })
-                        )}
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
 
-                    {/* Form Section */}
-                    <div className="space-y-4">
-                        {/* Location Input */}
-                        <div className="space-y-2">
-                            <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                <MapPin className="w-4 h-4 text-green-500 dark:text-green-400" />
-                                <span className="khmer-text-medium">{t("destination_location")}</span>
-                            </label>
-                            <textarea
-                                className="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent resize-none text-sm khmer-text"
-                                placeholder={t("enter_locations")}
-                                onKeyDown={(e) => {
-                                    if (e.code === 'Space' && e.shiftKey) {
-                                        return;
-                                    }
-                                    if (e.code === 'Space' && !e.shiftKey) {
-                                        e.preventDefault();
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    const input = e.target.value;
-                                    const values = input.split(/[,]+/).filter(Boolean).map(v => v.trim());
-                                    setSelectedLocations(values);
-                                }}
-                                rows={3}
-                            />
-                        </div>
+                    {/* Customer Information Section */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                        <SectionHeader icon={User} title={t("customer_information")} />
 
-                        {/* Customer Selection */}
-                        <div className="space-y-2">
-                            <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                <User className="w-4 h-4 text-blue-500 dark:text-blue-400" />
-                                <span className="khmer-text-medium">{t("customer_selection")}</span>
-                            </label>
-                            <select
-                                value={objSummary.customer_id || ""}
-                                onChange={(e) => {
-                                    const selectedCustomer = customers.find(c => c.value === e.target.value);
-                                    if (selectedCustomer) {
-                                        setObjSummary(prev => ({
-                                            ...prev,
-                                            customer_id: selectedCustomer.value,
-                                            customer_name: selectedCustomer.name,
-                                            customer_address: selectedCustomer.address,
-                                            customer_tel: selectedCustomer.tel,
-                                        }));
-                                    }
-                                }}
-                                className="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-sm bg-white khmer-text"
-                            >
-                                <option value="">{t("select_customer")}</option>
-                                {customers.map((customer) => (
-                                    <option key={`customer-option-${customer.value}`} value={customer.value} className="khmer-text">
-                                        {customer.label}
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium">
+                                    {/* {t("customer_selection")} */}
+                                </label>
+                                <select
+                                    disabled={true}
+                                    value={objSummary.customer_id === null ? "GENERAL_STOCK" : (objSummary.customer_id || "")}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === "GENERAL_STOCK") {
+                                            // ✅ Handle General Stock Selection
+                                            setObjSummary(prev => ({
+                                                ...prev,
+                                                customer_id: null, // General Stock uses null ID
+                                                customer_name: t("general_stock") || "ស្តុកក្រុមហ៊ុន",
+                                                customer_address: "-",
+                                                customer_tel: "-",
+                                            }));
+                                        } else {
+                                            const selectedCustomer = customers.find(c => c.value === Number(value) || c.value === value);
+                                            if (selectedCustomer) {
+                                                setObjSummary(prev => ({
+                                                    ...prev,
+                                                    customer_id: selectedCustomer.value,
+                                                    customer_name: selectedCustomer.name,
+                                                    customer_address: selectedCustomer.address,
+                                                    customer_tel: selectedCustomer.tel,
+                                                }));
+                                            }
+                                        }
+                                    }}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-sm bg-white khmer-text font-medium transition-all"
+                                >
+                                    <option value="">{t("select_customer")}</option>
+                                    {/* ✅ Add General Stock Option */}
+                                    <option value="GENERAL_STOCK" className="khmer-text font-bold text-amber-600">
+                                        {t("general_stock") || "ស្តុកក្រុមហ៊ុន"}
                                     </option>
-                                ))}
-                            </select>
+                                    {customers.map((customer) => (
+                                        <option key={`customer-option-${customer.value}`} value={customer.value} className="khmer-text">
+                                            {customer.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
+                    </div>
 
-                        {/* Remark */}
-                        <div className="space-y-2">
-                            <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                <FileText className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-                                <span className="khmer-text-medium">{t("remarks")}</span>
-                            </label>
-                            <textarea
-                                value={objSummary.remark || ""}
-                                onChange={(e) => setObjSummary(prev => ({ ...prev, remark: e.target.value }))}
-                                placeholder={t("add_notes")}
-                                className="w-full px-3 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent resize-none text-sm khmer-text"
-                                rows={2}
-                            />
+                    {/* Location & Delivery Section */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                        <SectionHeader icon={MapPin} title={t("location_delivery")} />
+
+                        <div className="space-y-4">
+                            {/* Manual Location Input */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
+                                    <MapPin className="w-3.5 h-3.5 text-green-500" />
+                                    {t("destination_location")}
+                                    {selectedLocations.length > 0 && objSummary.customer_address && (
+                                        <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full khmer-text flex items-center gap-1">
+                                            <span>✓</span>
+                                            <span>បានបំពេញស្វ័យប្រវត្តិ</span>
+                                        </span>
+                                    )}
+                                </label>
+                                <textarea
+                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent resize-none text-sm khmer-text transition-all"
+                                    placeholder={t("enter_locations")}
+                                    value={Array.isArray(selectedLocations) ? selectedLocations.join(', ') : selectedLocations}
+                                    onChange={(e) => {
+                                        const input = e.target.value;
+                                        if (input.trim() === '') {
+                                            setSelectedLocations([]);
+                                        } else {
+                                            const values = input.split(/[,]+/).filter(Boolean).map(v => v.trim());
+                                            setSelectedLocations(values);
+                                        }
+                                    }}
+                                    rows={2}
+                                />
+                                {selectedLocations.length > 0 && (
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1 khmer-text">
+                                        <span>📍</span>
+                                        <span>ទីតាំងចំនួន: <strong>{selectedLocations.length}</strong></span>
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Location Selector Component */}
+                            {objSummary.customer_id && (
+                                <div className="pt-3 border-t-2 border-gray-100 dark:border-slate-700">
+                                    <LocationSelector
+                                        customerId={objSummary.customer_id}
+                                        selectedLocation={selectedLocation}
+                                        onLocationChange={setSelectedLocation}
+                                        selectedTruck={selectedTruck}
+                                        onTruckChange={setSelectedTruck}
+                                        t={t}
+                                    />
+                                </div>
+                            )}
                         </div>
-{/* Date Inputs */}
-                        <div className="grid grid-cols-1 gap-4">
+                    </div>
+
+                    {/* Dates & Remarks Section */}
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                        <SectionHeader icon={Calendar} title={t("dates_remarks")} />
+
+                        <div className="space-y-4">
                             {/* Order Date */}
-                            <div className="space-y-2">
-                                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    <Calendar className="w-4 h-4 text-green-500 dark:text-green-400" />
-                                    <span className="khmer-text-medium">{t("order_date")}</span>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
+                                    <Calendar className="w-3.5 h-3.5 text-orange-500" />
+                                    {t("order_date")}
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
                                     <select
@@ -600,7 +824,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, order_date: newDate }));
                                             }
                                         }}
-                                        className="px-2 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("day")}</option>
                                         {Array.from({ length: 31 }, (_, i) => (
@@ -623,7 +847,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, order_date: newDate }));
                                             }
                                         }}
-                                        className="px-2 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("month")}</option>
                                         {getMonthNames().map((month, index) => (
@@ -646,7 +870,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, order_date: newDate }));
                                             }
                                         }}
-                                        className="px-2 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("year")}</option>
                                         {Array.from({ length: 10 }, (_, i) => {
@@ -659,18 +883,19 @@ const IntegratedInvoiceSidebar = ({
                                         })}
                                     </select>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 khmer-text">
-                                    {objSummary.order_date
-                                        ? t("selected_date").replace("{date}", convertToDisplayFormat(objSummary.order_date))
-                                        : t("select_day_month_year")}
-                                </p>
+                                {objSummary.order_date && (
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1 khmer-text">
+                                        <span>✓</span>
+                                        <span>{t("selected_date").replace("{date}", convertToDisplayFormat(objSummary.order_date))}</span>
+                                    </p>
+                                )}
                             </div>
 
                             {/* Delivery Date */}
-                            <div className="space-y-2">
-                                <label className="flex items-center space-x-2 text-sm font-medium text-gray-700 dark:text-gray-300">
-                                    <Calendar className="w-4 h-4 text-green-500 dark:text-green-400" />
-                                    <span className="khmer-text-medium">{t("delivery_date")}</span>
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
+                                    <Truck className="w-3.5 h-3.5 text-green-500" />
+                                    {t("delivery_date")}
                                 </label>
                                 <div className="grid grid-cols-3 gap-2">
                                     <select
@@ -686,7 +911,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, delivery_date: newDate }));
                                             }
                                         }}
-                                        className="px-2 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("day")}</option>
                                         {Array.from({ length: 31 }, (_, i) => (
@@ -709,7 +934,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, delivery_date: newDate }));
                                             }
                                         }}
-                                        className="px-2 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("month")}</option>
                                         {getMonthNames().map((month, index) => (
@@ -732,7 +957,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, delivery_date: newDate }));
                                             }
                                         }}
-                                        className="px-2 py-2.5 border border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("year")}</option>
                                         {Array.from({ length: 10 }, (_, i) => {
@@ -745,42 +970,86 @@ const IntegratedInvoiceSidebar = ({
                                         })}
                                     </select>
                                 </div>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 khmer-text">
-                                    {objSummary.delivery_date
-                                        ? t("selected_date").replace("{date}", convertToDisplayFormat(objSummary.delivery_date))
-                                        : t("select_day_month_year")}
-                                </p>
+                                {objSummary.delivery_date && (
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1 khmer-text">
+                                        <span>✓</span>
+                                        <span>{t("selected_date").replace("{date}", convertToDisplayFormat(objSummary.delivery_date))}</span>
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Remarks */}
+                            <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
+                                    <FileText className="w-3.5 h-3.5 text-purple-500" />
+                                    {t("remarks")}
+                                </label>
+                                <textarea
+                                    value={objSummary.remark || ""}
+                                    onChange={(e) => setObjSummary(prev => ({ ...prev, remark: e.target.value }))}
+                                    placeholder={t("add_notes")}
+                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent resize-none text-sm khmer-text transition-all"
+                                    rows={3}
+                                />
                             </div>
                         </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Preview Button */}
+                        <Button
+                            size="large"
+                            onClick={handlePreviewClick}
+                            disabled={cartItems.length === 0}
+                            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 dark:from-purple-500 dark:to-pink-500 dark:hover:from-purple-600 dark:hover:to-pink-600 border-none shadow-lg hover:shadow-xl transition-all text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            style={{
+                                height: '52px',
+                                fontSize: '15px',
+                                fontWeight: 'bold'
+                            }}
+                        >
+                            <div className="flex items-center justify-center gap-2">
+                                <Eye className="w-5 h-5" />
+                                <span className="khmer-text-semibold">{t("preview")}</span>
+                            </div>
+                        </Button>
 
                         {/* Checkout Button */}
                         <Button
                             type="primary"
                             size="large"
                             onClick={handleClickOut}
-                            disabled={isDisabled || isCheckingOut} // ✅ បិទប៊ូតុងពេល checking out
-                            loading={isCheckingOut} // ✅ បង្ហាញ loading spinner
+                            disabled={isDisabled || isCheckingOut}
+                            loading={isCheckingOut}
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 dark:from-blue-500 dark:to-indigo-500 dark:hover:from-blue-600 dark:hover:to-indigo-600 border-none shadow-lg hover:shadow-xl transition-all"
                             style={{
-                                width: '100%',
-                                height: '50px',
-                                fontSize: '16px',
-                                fontWeight: 'bold',
-                                opacity: (isDisabled || isCheckingOut) ? 0.6 : 1
+                                height: '52px',
+                                fontSize: '15px',
+                                fontWeight: 'bold'
                             }}
                         >
-                            {isCheckingOut ? t("processing") : t("checkout")}
+                            <span className="khmer-text-semibold text-lg">
+                                {isCheckingOut ? t("processing") : t("checkout")}
+                            </span>
                         </Button>
                     </div>
                 </div>
 
-                {/* Footer Summary */}
-                <div className="bg-gray-50 p-4 border-t">
+                {/* Enhanced Footer Summary */}
+                <div className="bg-gradient-to-r from-slate-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 p-5 border-t-2 border-gray-200 dark:border-slate-700">
                     <div className="text-center">
-                        <div className="text-2xl font-bold text-gray-800 khmer-text-bold">
+                        <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 khmer-text-medium">
+                            {t("final_total_amount")}
+                        </div>
+                        <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent khmer-text-bold">
                             ${Number(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                        <div className="text-xs text-gray-500 mt-1 khmer-text-medium">
-                            {t("final_total_amount")}
+                        <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 khmer-text">
+                            <Package className="w-3.5 h-3.5" />
+                            <span>{cartItems.length} {t("items")}</span>
+                            <span>•</span>
+                            <span>{Number(totalQuantity).toLocaleString()} L</span>
                         </div>
                     </div>
                 </div>
@@ -794,6 +1063,7 @@ const IntegratedInvoiceSidebar = ({
                 title={alertModal.title}
                 message={alertModal.message}
                 type={alertModal.type}
+                t={t}
             />
         </>
     );

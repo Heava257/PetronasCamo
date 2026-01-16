@@ -1,4 +1,3 @@
-
 /* ================== DARK MODE GLOBAL STYLES ================== */
 
 /* Root Variables */
@@ -432,6 +431,7 @@ body {
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #64748b;
 }
+
 .dark .ant-table,
 .dark .ant-table-wrapper {
   background: transparent !important;
@@ -444,31 +444,31 @@ body {
 
 
 
-.dark .ant-table-thead > tr > th:last-child {
+.dark .ant-table-thead>tr>th:last-child {
   border-right: none !important;
 }
 
-.dark .ant-table-tbody > tr {
+.dark .ant-table-tbody>tr {
   background: #1f2937 !important;
 }
 
-.dark .ant-table-tbody > tr > td {
+.dark .ant-table-tbody>tr>td {
   border-bottom: 1px solid #374151 !important;
   border-right: 1px solid #374151 !important;
   background: #1f2937 !important;
   color: #e5e7eb !important;
 }
 
-.dark .ant-table-tbody > tr > td:last-child {
+.dark .ant-table-tbody>tr>td:last-child {
   border-right: none !important;
 }
 
-.dark .ant-table-tbody > tr:hover > td {
+.dark .ant-table-tbody>tr:hover>td {
   background: #374151 !important;
   color: #f3f4f6 !important;
 }
 
-.dark .ant-table-tbody > tr.ant-table-row:hover > td {
+.dark .ant-table-tbody>tr.ant-table-row:hover>td {
   background: #374151 !important;
 }
 
@@ -490,8 +490,8 @@ body {
   background: #1f2937 !important;
 }
 
-.dark .ant-table-tbody > tr:hover .ant-table-cell-fix-left,
-.dark .ant-table-tbody > tr:hover .ant-table-cell-fix-right {
+.dark .ant-table-tbody>tr:hover .ant-table-cell-fix-left,
+.dark .ant-table-tbody>tr:hover .ant-table-cell-fix-right {
   background: #374151 !important;
 }
 
@@ -530,8 +530,27 @@ body {
 }
 
 
+/* ================== FORM LABELS - VISIBILITY FIX ================== */
+/* Light Mode - Make labels darker and more visible */
+.ant-form-item-label>label {
+  color: #1f2937 !important;
+  /* Dark gray instead of light gray */
+  font-weight: 500 !important;
+}
 
-.dark .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+.ant-form-item-label>label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+  color: #ef4444 !important;
+  /* Red asterisk */
+}
+
+/* Dark Mode - Keep labels bright and visible */
+.dark .ant-form-item-label>label {
+  color: #f3f4f6 !important;
+  /* Bright white for dark mode */
+  font-weight: 500 !important;
+}
+
+.dark .ant-form-item-label>label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
   color: #ef4444 !important;
 }
 
@@ -599,14 +618,19 @@ body {
 .dark .ant-select-dropdown {
   box-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.6) !important;
 }
+
 .dark .ant-select-item {
   color: #e5e7eb !important;
-   background: #1f2937 !important;
+  background: #1f2937 !important;
 }
+
 .dark .ant-select-item {
-     color: #f3f4f6 !important;        /* អក្សរពណ៌ស */
-     background: #2d3748 !important;    /* ផ្ទៃខាងក្រោយពណ៌ gray dark */
-   }
+  color: #f3f4f6 !important;
+  /* អក្សរពណ៌ស */
+  background: #2d3748 !important;
+  /* ផ្ទៃខាងក្រោយពណ៌ gray dark */
+}
+
 .dark input:-webkit-autofill {
   -webkit-box-shadow: 0 0 0 1000px #374151 inset !important;
   -webkit-text-fill-color: #e5e7eb !important;
@@ -749,7 +773,7 @@ body {
   color: #9ca3af !important;
 }
 
-.dark .ant-input-search > .ant-input-group > .ant-input-group-addon {
+.dark .ant-input-search>.ant-input-group>.ant-input-group-addon {
   background: #374151 !important;
   border-color: #4b5563 !important;
 }
@@ -846,7 +870,7 @@ body {
   color: #60a5fa !important;
 }
 
-.dark .ant-picker-input > input {
+.dark .ant-picker-input>input {
   color: #e5e7eb !important;
 }
 
@@ -921,7 +945,7 @@ body {
   background-color: #60a5fa !important;
 }
 
-.dark .ant-table-tbody > tr.ant-table-placeholder:hover > td {
+.dark .ant-table-tbody>tr.ant-table-placeholder:hover>td {
   background: #1f2937 !important;
 }
 
@@ -1046,6 +1070,7 @@ body {
 .dark .ant-badge-status-text {
   color: #e5e7eb !important;
 }
+
 .dark body {
   background: linear-gradient(135deg, #1e293b 0%, #0f172a 25%, #1e1b4b 50%, #312e81 75%, #1e293b 100%) !important;
   background-size: 400% 400%;
@@ -1055,9 +1080,12 @@ body {
 }
 
 @keyframes gradientShift {
-  0%, 100% {
+
+  0%,
+  100% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
@@ -1122,7 +1150,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 80% 70%, rgba(168, 85, 247, 0.15) 0%, transparent 40%),
     radial-gradient(circle at 40% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
@@ -1138,7 +1166,7 @@ body {
 }
 
 /* Content wrapper for better spacing */
-.dark > div {
+.dark>div {
   background: transparent !important;
 }
 
@@ -1210,20 +1238,20 @@ body {
   background: #1f2937 !important;
 }
 
-.dark .ant-table-thead > tr > th {
+.dark .ant-table-thead>tr>th {
   background: #374151 !important;
   color: #f3f4f6 !important;
   border-bottom: 1px solid #4b5563 !important;
   border-right: 1px solid #4b5563 !important;
 }
 
-.dark .ant-table-tbody > tr > td {
+.dark .ant-table-tbody>tr>td {
   border-bottom: 1px solid #374151 !important;
   background: #1f2937 !important;
   color: #e5e7eb !important;
 }
 
-.dark .ant-table-tbody > tr:hover > td {
+.dark .ant-table-tbody>tr:hover>td {
   background: #374151 !important;
   color: #f3f4f6 !important;
 }
@@ -1249,9 +1277,9 @@ body {
 }
 
 /* ================== FORM INPUTS ================== */
-.dark .ant-form-item-label > label {
+.dark .ant-form-item-label>label {
   color: #e5e7eb !important;
-   font-size: 10px !important;
+  font-size: 10px !important;
 }
 
 .dark .ant-input,
@@ -1438,8 +1466,15 @@ body {
 }
 
 @keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .dark .pageHeader {
@@ -1470,14 +1505,12 @@ body {
 
 /* ================== GLOBAL BACKGROUND ================== */
 .dark body {
-  background: linear-gradient(
-    135deg, 
-    #0f172a 0%, 
-    #1e1b4b 25%, 
-    #312e81 50%, 
-    #1e293b 75%, 
-    #0f172a 100%
-  ) !important;
+  background: linear-gradient(135deg,
+      #0f172a 0%,
+      #1e1b4b 25%,
+      #312e81 50%,
+      #1e293b 75%,
+      #0f172a 100%) !important;
   background-size: 400% 400%;
   background-attachment: fixed;
   min-height: 100vh;
@@ -1485,8 +1518,15 @@ body {
 }
 
 @keyframes customerGradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .dark #root {
@@ -1495,12 +1535,10 @@ body {
 
 /* ================== PAGE HEADER ================== */
 .dark .pageHeader {
-  background: linear-gradient(
-    135deg, 
-    rgba(99, 102, 241, 0.95) 0%, 
-    rgba(139, 92, 246, 0.95) 50%, 
-    rgba(168, 85, 247, 0.95) 100%
-  ) !important;
+  background: linear-gradient(135deg,
+      rgba(99, 102, 241, 0.95) 0%,
+      rgba(139, 92, 246, 0.95) 50%,
+      rgba(168, 85, 247, 0.95) 100%) !important;
   backdrop-filter: blur(12px);
   padding: 24px;
   border-radius: 16px;
@@ -1642,7 +1680,7 @@ body {
 }
 
 /* ================== TABLE HEADER ================== */
-.dark .ant-table-thead > tr > th {
+.dark .ant-table-thead>tr>th {
   background: #374151 !important;
   color: #f3f4f6 !important;
   font-weight: 700 !important;
@@ -1654,7 +1692,7 @@ body {
   border-right: 1px solid #4b5563 !important;
 }
 
-.dark .ant-table-thead > tr > th:last-child {
+.dark .ant-table-thead>tr>th:last-child {
   border-right: none !important;
 }
 
@@ -1680,7 +1718,7 @@ body {
 }
 
 /* ================== TABLE ROWS ================== */
-.dark .ant-table-tbody > tr {
+.dark .ant-table-tbody>tr {
   background: #1f2937 !important;
   transition: all 0.2s ease;
 }
@@ -1696,19 +1734,19 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
 }
 
-.dark .ant-table-tbody > tr > td {
+/* .dark .ant-table-tbody > tr > td {
   border-bottom: 1px solid #374151 !important;
   border-right: 1px solid #374151 !important;
   background: transparent !important;
   color: #e5e7eb !important;
   padding: 12px !important;
-}
+} */
 
-.dark .ant-table-tbody > tr > td:last-child {
+.dark .ant-table-tbody>tr>td:last-child {
   border-right: none !important;
 }
 
-.dark .ant-table-tbody > tr:hover > td {
+.dark .ant-table-tbody>tr:hover>td {
   background: transparent !important;
   color: #f3f4f6 !important;
 }
@@ -1864,13 +1902,13 @@ body {
   display: block;
 }
 
-.dark .ant-form-item-label > label {
+.dark .ant-form-item-label>label {
   color: #e5e7eb !important;
   font-weight: 600 !important;
   font-size: 13px !important;
 }
 
-.dark .ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+.dark .ant-form-item-label>label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
   color: #ef4444 !important;
   font-size: 14px;
 }
@@ -2178,11 +2216,11 @@ body {
   .dark .customer-page-title {
     font-size: 20px;
   }
-  
+
   .dark .pageHeader {
     padding: 16px;
   }
-  
+
   .dark .ant-table-wrapper {
     padding: 12px;
   }
@@ -2254,20 +2292,20 @@ body {
   background: #1f2937 !important;
 }
 
-.dark .ant-table-thead > tr > th {
+.dark .ant-table-thead>tr>th {
   background: #374151 !important;
   color: #f3f4f6 !important;
   border-bottom: 1px solid #4b5563 !important;
   border-right: 1px solid #4b5563 !important;
 }
 
-.dark .ant-table-tbody > tr > td {
+.dark .ant-table-tbody>tr>td {
   border-bottom: 1px solid #374151 !important;
   background: #1f2937 !important;
   color: #e5e7eb !important;
 }
 
-.dark .ant-table-tbody > tr:hover > td {
+.dark .ant-table-tbody>tr:hover>td {
   background: #374151 !important;
   color: #f3f4f6 !important;
 }
@@ -2293,7 +2331,7 @@ body {
 }
 
 /* ================== FORM INPUTS ================== */
-.dark .ant-form-item-label > label {
+.dark .ant-form-item-label>label {
   color: #e5e7eb !important;
 }
 
@@ -2481,8 +2519,15 @@ body {
 }
 
 @keyframes gradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .dark .pageHeader {
@@ -2735,6 +2780,7 @@ body {
 .dark .checked-row td {
   color: #f3f4f6 !important;
 }
+
 /* ==========================================
    TOTAL DUE PAGE DARK MODE - COMPLETE STYLING
    ========================================== */
@@ -2744,14 +2790,12 @@ body {
 
 /* ================== GLOBAL BACKGROUND ================== */
 .dark body {
-  background: linear-gradient(
-    135deg, 
-    #0f172a 0%, 
-    #1e1b4b 25%, 
-    #312e81 50%, 
-    #1e293b 75%, 
-    #0f172a 100%
-  ) !important;
+  background: linear-gradient(135deg,
+      #0f172a 0%,
+      #1e1b4b 25%,
+      #312e81 50%,
+      #1e293b 75%,
+      #0f172a 100%) !important;
   background-size: 400% 400%;
   background-attachment: fixed;
   min-height: 100vh;
@@ -2759,8 +2803,15 @@ body {
 }
 
 @keyframes totalDueGradientShift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 /* ================== TOTAL DUE PAGE HEADER ================== */
@@ -2967,14 +3018,14 @@ body {
   transition: all 0.2s ease;
 }
 
-.dark .custom-table .ant-table-thead > tr > th {
+.dark .custom-table .ant-table-thead>tr>th {
   background: #374151 !important;
   color: #f3f4f6 !important;
   font-weight: 700;
   border-bottom: 2px solid #4b5563 !important;
 }
 
-.dark .custom-table .ant-table-tbody > tr > td {
+.dark .custom-table .ant-table-tbody>tr>td {
   background: #1f2937 !important;
   color: #e5e7eb !important;
   border-bottom: 1px solid #374151 !important;
@@ -3143,7 +3194,7 @@ body {
   background: transparent !important;
 }
 
-.dark .customer-orders-table .ant-table-thead > tr > th {
+.dark .customer-orders-table .ant-table-thead>tr>th {
   background: #2d3748 !important;
   color: #ffffff !important;
   font-weight: 700;
@@ -3154,18 +3205,18 @@ body {
   letter-spacing: 0.5px;
 }
 
-.dark .customer-orders-table .ant-table-tbody > tr {
+.dark .customer-orders-table .ant-table-tbody>tr {
   background: #1a202c !important;
   transition: all 0.2s ease;
 }
 
-.dark .customer-orders-table .ant-table-tbody > tr:hover {
+.dark .customer-orders-table .ant-table-tbody>tr:hover {
   background: #2d3748 !important;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.dark .customer-orders-table .ant-table-tbody > tr > td {
+.dark .customer-orders-table .ant-table-tbody>tr>td {
   background: transparent !important;
   color: #ffffff !important;
   border-bottom: 1px solid #374151 !important;
@@ -3247,31 +3298,32 @@ body {
 
 /* ================== GLOBAL BACKGROUND ================== */
 .dark body {
-  background: linear-gradient(
-    135deg, 
-    #0f172a 0%, 
-    #1e1b4b 25%, 
-    #312e81 50%, 
-    #1e293b 75%, 
-    #0f172a 100%
-  ) !important;
+  background: linear-gradient(135deg,
+      #0f172a 0%,
+      #1e1b4b 25%,
+      #312e81 50%,
+      #1e293b 75%,
+      #0f172a 100%) !important;
   background-size: 400% 400%;
   background-attachment: fixed;
   min-height: 100vh;
   animation: customerGradientShift 20s ease infinite;
 }
+
 /* បន្ថែម selectors មុខជាច្រើន */
-.dark .ant-table-thead > tr > th,
-.dark .custom-table .ant-table-thead > tr > th,
+.dark .ant-table-thead>tr>th,
+.dark .custom-table .ant-table-thead>tr>th,
 .dark table thead tr th {
   color: #ffffff !important;
 }
 
 /* Force color នៅ nested elements */
-.dark .ant-table-thead > tr > th *,
-.dark .custom-table .ant-table-thead > tr > th * {
-  color: #ffffff !important;  /* <-- នេះសំខាន់! */
+.dark .ant-table-thead>tr>th *,
+.dark .custom-table .ant-table-thead>tr>th * {
+  color: #ffffff !important;
+  /* <-- នេះសំខាន់! */
 }
+
 /* All descriptions labels & content */
 .dark .invoice-descriptions .ant-descriptions-item-label,
 .dark .payment-item .ant-descriptions-item-label {
@@ -3282,7 +3334,8 @@ body {
 /* Force nested elements */
 .dark .invoice-descriptions .ant-descriptions-item-label *,
 .dark .payment-item .ant-descriptions-item-label * {
-  color: #ffffff !important;  /* <-- Force all children */
+  color: #ffffff !important;
+  /* <-- Force all children */
 }
 
 
@@ -3368,7 +3421,7 @@ body {
 }
 
 /* Table Header */
-.dark .ant-table-thead > tr > th {
+.dark .ant-table-thead>tr>th {
   background-color: #0f172a !important;
   color: #f1f5f9 !important;
   border-bottom-color: #334155 !important;
@@ -3383,13 +3436,13 @@ body {
   background-color: #0f172a !important;
 }
 
-.dark .ant-table-tbody > tr.table-row-light:hover,
-.dark .ant-table-tbody > tr.table-row-dark:hover {
+.dark .ant-table-tbody>tr.table-row-light:hover,
+.dark .ant-table-tbody>tr.table-row-dark:hover {
   background-color: #334155 !important;
 }
 
 /* Table Cell */
-.dark .ant-table-tbody > tr > td {
+.dark .ant-table-tbody>tr>td {
   border-bottom-color: #334155 !important;
   color: #f1f5f9 !important;
 }
@@ -3637,7 +3690,7 @@ body {
 /* ================== FORM ELEMENTS ================== */
 
 /* Form Labels */
-.dark .ant-form-item-label > label {
+.dark .ant-form-item-label>label {
   color: #cbd5e1 !important;
 }
 
@@ -3653,7 +3706,7 @@ body {
   border-color: #3b82f6 !important;
 }
 
-.dark .ant-picker-input > input {
+.dark .ant-picker-input>input {
   color: #f1f5f9 !important;
 }
 
@@ -3693,7 +3746,7 @@ body {
   .dark .enhanced-pos-table {
     padding: 12px !important;
   }
-  
+
   .dark .ant-table {
     font-size: 13px !important;
   }
@@ -3702,11 +3755,12 @@ body {
 /* ================== TRANSITIONS ================== */
 
 .dark * {
-  transition: background-color 0.2s ease, 
-              border-color 0.2s ease, 
-              color 0.2s ease,
-              box-shadow 0.2s ease;
+  transition: background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
 /* Modal Styling */
 .product-modal .ant-modal-content {
   border-radius: 12px;
@@ -3769,6 +3823,7 @@ body {
   padding: 10px 24px 24px;
   background-color: #0f172a;
 }
+
 /* ==================== USER PAGE DARK MODE ==================== */
 
 /* Main Background */
@@ -3811,7 +3866,7 @@ body {
 /* ==================== FORM ELEMENTS ==================== */
 
 /* Form Labels */
-.dark .ant-form-item-label > label {
+.dark .ant-form-item-label>label {
   color: #cbd5e1 !important;
 }
 
@@ -3819,7 +3874,7 @@ body {
   color: #cbd5e1 !important;
 }
 
-.dark .ant-form-item-label > label.ant-form-item-required::before {
+.dark .ant-form-item-label>label.ant-form-item-required::before {
   color: #ef4444 !important;
 }
 
@@ -3983,7 +4038,7 @@ body {
 }
 
 /* Table Header */
-.dark .ant-table-thead > tr > th {
+.dark .ant-table-thead>tr>th {
   background-color: #0f172a !important;
   color: #f1f5f9 !important;
   border-bottom-color: #334155 !important;
@@ -3994,13 +4049,13 @@ body {
 }
 
 /* Table Body */
-.dark .ant-table-tbody > tr > td {
+.dark .ant-table-tbody>tr>td {
   background-color: #1e293b !important;
   border-bottom-color: #334155 !important;
   color: #cbd5e1 !important;
 }
 
-.dark .ant-table-tbody > tr:hover > td {
+.dark .ant-table-tbody>tr:hover>td {
   background-color: #334155 !important;
 }
 
@@ -4253,17 +4308,18 @@ body {
 
 /* ==================== ROW HOVER EFFECTS ==================== */
 
-.dark .ant-table-tbody > tr.ant-table-row:hover > td {
+.dark .ant-table-tbody>tr.ant-table-row:hover>td {
   background-color: #334155 !important;
 }
 
 /* ==================== TRANSITIONS ==================== */
 
 .dark * {
-  transition: background-color 0.2s ease, 
-              border-color 0.2s ease, 
-              color 0.2s ease;
+  transition: background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
+
 /* ==================== TABLE EMPTY STATE ==================== */
 
 .table-empty-state {

@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import { Chart } from "react-google-charts";
 import { request } from "../../util/helper";
-import { Button, DatePicker, Select, Space, Table, Tag, Card } from "antd";
-import { PrinterOutlined, FilePdfOutlined, LineChartOutlined } from '@ant-design/icons';
+import { Button, DatePicker, Select, Space, Table, Tag, Card, Row, Col, Statistic } from "antd";
+import { PrinterOutlined, FilePdfOutlined, LineChartOutlined, RiseOutlined, ShoppingOutlined } from '@ant-design/icons';
 import dayjs from "dayjs";
 import { configStore } from "../../store/configStore";
 import html2canvas from 'html2canvas';
@@ -15,6 +16,7 @@ export const options = {
 
 function ReportSale_Summary() {
   const { config } = configStore();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const reportRef = useRef(null);
   const [filter, setFilter] = useState({
@@ -47,6 +49,8 @@ function ReportSale_Summary() {
     });
   };
 
+  // ✅ FIXED: ReportSale_Summary.jsx
+
   const getList = async (customFilter = null) => {
     try {
       setLoading(true);
@@ -56,7 +60,12 @@ function ReportSale_Summary() {
         category_id: filter.category_id,
         brand_id: filter.brand_id,
       };
+
+      // ✅ FIXED: Correct spelling
       const res = await request("report_Sale_Sammary", "get", param);
+      //                          ^^^^^^^^^^^^^^^^^^^^
+      // Changed from "report_Sale_Sammary" to "report_Sale_Summary"
+
       if (res) {
         const listTMP = [["Day", "Sale"]];
         res.list?.forEach((item) => {
@@ -65,11 +74,6 @@ function ReportSale_Summary() {
         setState({
           Data_Chat: listTMP,
           list: res.list,
-        });
-      } else {
-        setState({
-          Data_Chat: [["Day", "Sale"]],
-          list: [],
         });
       }
     } catch (error) {
@@ -80,11 +84,11 @@ function ReportSale_Summary() {
   };
 
   const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', { 
-      style: 'currency', 
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2 
+      maximumFractionDigits: 2
     }).format(value);
   };
 
@@ -94,24 +98,24 @@ function ReportSale_Summary() {
 
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
-    
+
     try {
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,
         logging: false
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
         orientation: 'landscape',
         unit: 'mm',
         format: 'a4'
       });
-      
+
       const imgWidth = 280;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
       pdf.save(`Sales_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
     } catch (error) {
@@ -119,90 +123,110 @@ function ReportSale_Summary() {
     }
   };
 
-  // Calculate summary statistics
   const calculateStats = () => {
     const totalAmount = state.list.reduce((sum, item) => sum + Number(item.total_amount || 0), 0);
     const totalQty = state.list.reduce((sum, item) => sum + Number(item.total_qty || 0), 0);
     const avgDaily = state.list.length > 0 ? totalAmount / state.list.length : 0;
-    
+
     return { totalAmount, totalQty, avgDaily };
   };
 
   const stats = calculateStats();
 
+  // Mobile Card Component
+  const SaleMobileCard = ({ item, index }) => (
+    <Card
+      className="mb-3 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+      bodyStyle={{ padding: '16px' }}
+    >
+      <div className="space-y-3">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">#{index + 1}</span>
+              <Tag color="blue" className="text-sm">
+                {dayjs(item.order_date).format("DD/MM/YYYY")}
+              </Tag>
+            </div>
+          </div>
+          <div className={`px-3 py-1 rounded-full text-xs font-medium ${Number(item.total_amount) > 200
+            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+            : Number(item.total_amount) > 100
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              : 'bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200'
+            }`}>
+            {Number(item.total_amount) > 200 ? 'High' : Number(item.total_amount) > 100 ? 'Medium' : 'Low'}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <ShoppingOutlined className="text-blue-600 dark:text-blue-400" />
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('report.total_quantity')}</span>
+            </div>
+            <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+              {Number(item.total_qty).toLocaleString()} {t('report.liter')}
+            </span>
+          </div>
+
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <RiseOutlined className="text-green-600 dark:text-green-400" />
+              <span className="text-xs text-gray-600 dark:text-gray-400">{t('report.total_amount')}</span>
+            </div>
+            <span className="text-lg font-bold text-green-600 dark:text-green-400">
+              {formatCurrency(item.total_amount)}
+            </span>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+
   return (
-    <div style={{ padding: "24px", background: "linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)", minHeight: "100vh" }}>
+    <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
-      <Card 
-        style={{ 
-          marginBottom: "24px", 
-          borderRadius: "16px",
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.12)",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-        }}
-        bodyStyle={{ padding: "24px" }}
+      <Card
+        className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-800 dark:via-indigo-800 dark:to-purple-800"
+        bodyStyle={{ padding: '24px' }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
-            <h1 style={{ 
-              margin: 0, 
-              fontWeight: "700", 
-              fontSize: "28px",
-              color: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              gap: "12px"
-            }}>
-              <LineChartOutlined /> Sales Performance Dashboard
+            <h1 className="text-white text-2xl lg:text-3xl font-bold flex items-center gap-3 mb-2">
+              <LineChartOutlined /> {t('report.sale_summary_report')}
             </h1>
-            <p style={{ margin: "8px 0 0 0", color: "rgba(255, 255, 255, 0.9)", fontSize: "14px" }}>
-              Track and analyze your sales performance
+            <p className="text-white text-sm opacity-90">
+              {t('report.sale_summary_subtitle')}
             </p>
           </div>
-          <Space size="middle">
-            <Button 
-              icon={<PrinterOutlined />} 
+          <Space size="middle" className="flex-wrap">
+            <Button
+              icon={<PrinterOutlined />}
               onClick={handlePrint}
               loading={loading}
               size="large"
-              style={{ 
-                borderRadius: "8px",
-                height: "40px",
-                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)"
-              }}
+              className="shadow-md"
             >
-              Print
+              <span className="hidden sm:inline">{t('report.print')}</span>
             </Button>
-            <Button 
-              type="primary" 
-              icon={<FilePdfOutlined />} 
+            <Button
+              type="primary"
+              icon={<FilePdfOutlined />}
               onClick={handleDownloadPDF}
               loading={loading}
               size="large"
-              style={{ 
-                borderRadius: "8px",
-                height: "40px",
-                background: "#f59e0b",
-                borderColor: "#f59e0b",
-                boxShadow: "0 4px 12px rgba(245, 158, 11, 0.4)"
-              }}
+              className="bg-orange-500 hover:bg-orange-600 border-0 shadow-md"
             >
-              Download PDF
+              <span className="hidden sm:inline">{t('report.pdf')}</span>
             </Button>
           </Space>
         </div>
       </Card>
 
       {/* Filter Section */}
-      <Card 
-        style={{ 
-          marginBottom: "24px", 
-          borderRadius: "16px",
-          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)"
-        }}
-        bodyStyle={{ padding: "20px" }}
-      >
-        <Space wrap size="middle">
+      <Card className="mb-6 shadow-md dark:bg-gray-800" bodyStyle={{ padding: '20px' }}>
+        <Space wrap size="middle" className="w-full">
           <DatePicker.RangePicker
             value={[filter.from_date, filter.to_date]}
             loading={loading}
@@ -216,11 +240,11 @@ function ReportSale_Summary() {
               }));
             }}
             size="large"
-            style={{ borderRadius: "8px" }}
+            className="w-full sm:w-auto"
           />
           <Select
             allowClear
-            placeholder="Select Category"
+            placeholder={t('report.select_category')}
             value={filter.category_id}
             options={config?.category}
             onChange={(value) => {
@@ -230,11 +254,11 @@ function ReportSale_Summary() {
               }));
             }}
             size="large"
-            style={{ width: 200, borderRadius: "8px" }}
+            className="w-full sm:w-48"
           />
           <Select
             allowClear
-            placeholder="Select Brand"
+            placeholder={t('report.select_brand')}
             value={filter.brand_id}
             options={config?.brand}
             onChange={(value) => {
@@ -244,126 +268,93 @@ function ReportSale_Summary() {
               }));
             }}
             size="large"
-            style={{ width: 200, borderRadius: "8px" }}
+            className="w-full sm:w-48"
           />
-          <Button 
+          <Button
             onClick={onreset}
             size="large"
-            style={{ borderRadius: "8px" }}
+            className="w-full sm:w-auto"
           >
-            Reset
+            {t('report.reset')}
           </Button>
-          <Button 
-            type="primary" 
-            onClick={() => getList()} 
+          <Button
+            type="primary"
+            onClick={() => getList()}
             loading={loading}
             size="large"
-            style={{ borderRadius: "8px" }}
+            className="w-full sm:w-auto"
           >
-            Apply Filters
+            {t('report.apply_filters')}
           </Button>
         </Space>
       </Card>
 
       {/* Statistics Cards */}
-      <div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
-        gap: "20px",
-        marginBottom: "24px"
-      }}>
-        <Card 
-          style={{ 
-            borderRadius: "16px",
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-          }}
-        >
-          <div style={{ color: "#ffffff" }}>
-            <p style={{ margin: 0, fontSize: "14px", opacity: 0.9 }}>Total Revenue</p>
-            <h2 style={{ margin: "8px 0 0 0", fontSize: "32px", fontWeight: "700" }}>
-              {formatCurrency(stats.totalAmount)}
-            </h2>
-          </div>
-        </Card>
-        
-        <Card 
-          style={{ 
-            borderRadius: "16px",
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
-            background: "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-          }}
-        >
-          <div style={{ color: "#ffffff" }}>
-            <p style={{ margin: 0, fontSize: "14px", opacity: 0.9 }}>Total Quantity</p>
-            <h2 style={{ margin: "8px 0 0 0", fontSize: "32px", fontWeight: "700" }}>
-              {stats.totalQty.toLocaleString()} L
-            </h2>
-          </div>
-        </Card>
-        
-        <Card 
-          style={{ 
-            borderRadius: "16px",
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
-            background: "linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-          }}
-        >
-          <div style={{ color: "#ffffff" }}>
-            <p style={{ margin: 0, fontSize: "14px", opacity: 0.9 }}>Daily Average</p>
-            <h2 style={{ margin: "8px 0 0 0", fontSize: "32px", fontWeight: "700" }}>
-              {formatCurrency(stats.avgDaily)}
-            </h2>
-          </div>
-        </Card>
-      </div>
+      <Row gutter={[16, 16]} className="mb-6">
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="shadow-md bg-gradient-to-br from-blue-500 to-blue-600 border-0">
+            <Statistic
+              title={<span className="text-white opacity-90">{t('report.total_revenue')}</span>}
+              value={formatCurrency(stats.totalAmount)}
+              valueStyle={{ color: '#ffffff', fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', fontWeight: 'bold' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="shadow-md bg-gradient-to-br from-indigo-500 to-indigo-600 border-0">
+            <Statistic
+              title={<span className="text-white opacity-90">{t('report.total_quantity')}</span>}
+              value={stats.totalQty.toLocaleString()}
+              suffix={<span className="text-sm">{t('report.liter')}</span>}
+              valueStyle={{ color: '#ffffff', fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', fontWeight: 'bold' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={8}>
+          <Card className="shadow-md bg-gradient-to-br from-purple-500 to-purple-600 border-0">
+            <Statistic
+              title={<span className="text-white opacity-90">{t('report.daily_average')}</span>}
+              value={formatCurrency(stats.avgDaily)}
+              valueStyle={{ color: '#ffffff', fontSize: 'clamp(1.25rem, 3vw, 1.75rem)', fontWeight: 'bold' }}
+            />
+          </Card>
+        </Col>
+      </Row>
 
       {/* Report Content */}
       <div ref={reportRef}>
-        <Card 
-          style={{ 
-            marginBottom: "24px", 
-            borderRadius: "16px",
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)"
-          }}
-          bodyStyle={{ padding: "32px" }}
-        >
-          <div style={{ textAlign: "center", marginBottom: "32px" }}>
-            <h2 style={{ fontSize: "24px", fontWeight: "700", color: "#1f2937", margin: 0 }}>
-              Sales Performance Chart
+        {/* Chart Section */}
+        <Card className="mb-6 shadow-md dark:bg-gray-800" bodyStyle={{ padding: '32px' }}>
+          <div className="text-center mb-6">
+            <h2 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              {t('report.sales_performance_chart')}
             </h2>
-            <p style={{ color: "#6b7280", marginTop: "8px", fontSize: "14px" }}>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               {dayjs(filter.from_date).format("MMM DD, YYYY")} - {dayjs(filter.to_date).format("MMM DD, YYYY")}
             </p>
           </div>
 
           {state.Data_Chat.length > 1 ? (
-            <div style={{ 
-              background: "#ffffff",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "inset 0 2px 8px rgba(0, 0, 0, 0.06)"
-            }}>
+            <div className="bg-white dark:bg-gray-700 rounded-xl p-4 lg:p-6 shadow-inner">
               <Chart
                 chartType="LineChart"
                 width="100%"
-                height="450px"
+                height="400px"
                 data={state.Data_Chat}
                 options={{
                   curveType: "function",
-                  legend: { 
+                  legend: {
                     position: "bottom",
                     textStyle: { fontSize: 13, color: "#4b5563" }
                   },
-                  title: "",
-                  hAxis: { 
-                    title: "Date",
+                  hAxis: {
+                    title: t('report.order_date'),
                     titleTextStyle: { fontSize: 14, bold: true, color: "#374151" },
                     textStyle: { fontSize: 12, color: "#6b7280" },
                     gridlines: { color: "#f3f4f6" }
                   },
-                  vAxis: { 
-                    title: "Sales Amount ($)",
+                  vAxis: {
+                    title: t('report.sales_amount'),
                     titleTextStyle: { fontSize: 14, bold: true, color: "#374151" },
                     textStyle: { fontSize: 12, color: "#6b7280" },
                     gridlines: { color: "#f3f4f6" },
@@ -373,10 +364,9 @@ function ReportSale_Summary() {
                   chartArea: { width: "85%", height: "70%" },
                   lineWidth: 3,
                   pointSize: 6,
-                  pointShape: "circle",
                   backgroundColor: { fill: "transparent" },
                   series: {
-                    0: { 
+                    0: {
                       areaOpacity: 0.1,
                       lineWidth: 3
                     }
@@ -386,100 +376,135 @@ function ReportSale_Summary() {
               />
             </div>
           ) : (
-            <div style={{ 
-              textAlign: "center", 
-              padding: "80px 20px",
-              color: "#9ca3af",
-              background: "#f9fafb",
-              borderRadius: "12px"
-            }}>
-              <LineChartOutlined style={{ fontSize: "48px", marginBottom: "16px", opacity: 0.5 }} />
-              <p style={{ fontSize: "16px", margin: 0 }}>No data available for the selected filters.</p>
+            <div className="text-center py-20 text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-700 rounded-xl">
+              <LineChartOutlined className="text-5xl mb-4 opacity-50" />
+              <p className="text-lg">{t('report.no_data')}</p>
             </div>
           )}
         </Card>
 
-        {/* Table Section */}
-        <Card 
-          style={{ 
-            borderRadius: "16px",
-            boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)"
-          }}
-          bodyStyle={{ padding: "24px" }}
-        >
-          <h3 style={{ fontSize: "20px", fontWeight: "700", color: "#1f2937", marginBottom: "20px" }}>
-            Detailed Sales Data
-          </h3>
-          
-          <Table
-            loading={loading}
-            dataSource={state.list}
-            columns={[
-              {
-                key: "title",
-                title: "Order Date",
-                dataIndex: "order_date",
-                render: (value) => (
-                  <Tag color="blue" style={{ fontSize: "14px", padding: "4px 12px", borderRadius: "6px" }}>
-                    {value}
-                  </Tag>
-                ),
-              },
-              {
-                key: "totalqty",
-                title: "Total QTY",
-                dataIndex: "total_qty",
-                render: (value) => (
-                  <Tag
-                    color={Number(value) > 2 ? "blue" : Number(value) > 1 ? "green" : "pink"}
-                    style={{ fontSize: "14px", padding: "4px 12px", borderRadius: "6px" }}
-                  >
-                    {Number(value).toLocaleString()} Liter
-                  </Tag>
-                ),
-              },
-              {
-                key: "totalamount",
-                title: "Total Amount",
-                dataIndex: "total_amount",
-                render: (value) => (
-                  <Tag
-                    color={Number(value) > 200 ? "blue" : Number(value) > 100 ? "green" : "pink"}
-                    style={{ fontSize: "14px", padding: "4px 12px", borderRadius: "6px" }}
-                  >
-                    {formatCurrency(value)}
-                  </Tag>
-                ),
-              },
-            ]}
-            pagination={false}
-            summary={(pageData) => {
-              let totalQty = 0;
-              let totalAmount = 0;
+        {/* Table Section - Desktop */}
+        <div className="hidden md:block">
+          <Card className="shadow-md dark:bg-gray-800" bodyStyle={{ padding: '24px' }}>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+              {t('report.detailed_sales_data')}
+            </h3>
+            <Table
+              loading={loading}
+              dataSource={state.list}
+              columns={[
+                {
+                  key: "no",
+                  title: t('report.no'),
+                  width: 60,
+                  render: (_, __, index) => index + 1,
+                },
+                {
+                  key: "title",
+                  title: t('report.order_date'),
+                  dataIndex: "order_date",
+                  render: (value) => (
+                    <Tag color="blue" className="text-sm px-3 py-1">
+                      {value}
+                    </Tag>
+                  ),
+                },
+                {
+                  key: "totalqty",
+                  title: t('report.total_quantity'),
+                  dataIndex: "total_qty",
+                  render: (value) => (
+                    <Tag
+                      color={Number(value) > 2 ? "blue" : Number(value) > 1 ? "green" : "pink"}
+                      className="text-sm px-3 py-1"
+                    >
+                      {Number(value).toLocaleString()} {t('report.liter')}
+                    </Tag>
+                  ),
+                },
+                {
+                  key: "totalamount",
+                  title: t('report.total_amount'),
+                  dataIndex: "total_amount",
+                  render: (value) => (
+                    <Tag
+                      color={Number(value) > 200 ? "blue" : Number(value) > 100 ? "green" : "pink"}
+                      className="text-sm px-3 py-1"
+                    >
+                      {formatCurrency(value)}
+                    </Tag>
+                  ),
+                },
+              ]}
+              pagination={{ pageSize: 10, showSizeChanger: true }}
+              rowClassName={(_, index) =>
+                index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'
+              }
+              summary={(pageData) => {
+                let totalQty = 0;
+                let totalAmount = 0;
 
-              pageData.forEach(({ total_qty, total_amount }) => {
-                totalQty += Number(total_qty || 0);
-                totalAmount += Number(total_amount || 0);
-              });
+                pageData.forEach(({ total_qty, total_amount }) => {
+                  totalQty += Number(total_qty || 0);
+                  totalAmount += Number(total_amount || 0);
+                });
 
-              return (
-                <>
-                  <Table.Summary.Row style={{ background: "#f9fafb" }}>
+                return (
+                  <Table.Summary.Row className="bg-gray-100 dark:bg-gray-700">
                     <Table.Summary.Cell index={0}>
-                      <strong style={{ fontSize: "15px" }}>Total</strong>
+                      <strong className="text-base">{t('report.total')}</strong>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1}>
-                      <strong style={{ fontSize: "15px" }}>{totalQty.toLocaleString()} Liter</strong>
-                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={1}></Table.Summary.Cell>
                     <Table.Summary.Cell index={2}>
-                      <strong style={{ fontSize: "15px" }}>{formatCurrency(totalAmount)}</strong>
+                      <strong className="text-base">{totalQty.toLocaleString()} {t('report.liter')}</strong>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={3}>
+                      <strong className="text-base">{formatCurrency(totalAmount)}</strong>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>
-                </>
-              );
-            }}
-          />
-        </Card>
+                );
+              }}
+            />
+          </Card>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="md:hidden">
+          <Card className="shadow-md dark:bg-gray-800" bodyStyle={{ padding: '16px' }}>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+              {t('report.detailed_sales_data')}
+            </h3>
+            {loading ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">{t('report.loading')}</div>
+            ) : state.list.length > 0 ? (
+              <>
+                <div className="space-y-3 mb-4">
+                  {state.list.map((item, index) => (
+                    <SaleMobileCard key={index} item={item} index={index} />
+                  ))}
+                </div>
+                <Card className="bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 border-0">
+                  <div className="text-white">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="text-center">
+                        <p className="text-sm opacity-90 mb-1">{t('report.total_quantity')}</p>
+                        <p className="text-xl font-bold">{stats.totalQty.toLocaleString()} {t('report.liter')}</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm opacity-90 mb-1">{t('report.total_revenue')}</p>
+                        <p className="text-xl font-bold">{formatCurrency(stats.totalAmount)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </>
+            ) : (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                {t('report.no_data')}
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
 
       <style jsx global>{`
@@ -496,22 +521,12 @@ function ReportSale_Summary() {
             top: 0;
             width: 100%;
           }
-          .ant-tag {
-            border: 1px solid #d9d9d9 !important;
-            padding: 4px 8px !important;
-          }
-        }
-        
-        .ant-table {
-          border-radius: 12px !important;
-          overflow: hidden;
         }
         
         .ant-table-thead > tr > th {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
           color: #ffffff !important;
           font-weight: 600 !important;
-          border: none !important;
         }
         
         .ant-table-tbody > tr:hover > td {

@@ -49,10 +49,10 @@ function FakeInvoicePage() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
   const [isPrinting, setIsPrinting] = useState(false);
   const [printData, setPrintData] = useState(null);
-  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [productLoading, setProductLoading] = useState(false);
   const [statistics, setStatistics] = useState({
     totalInvoices: 0,
     totalAmount: 0,
@@ -65,9 +65,9 @@ function FakeInvoicePage() {
     visibleModal: false,
     id: null,
     txtSearch: "",
+    customerMode: 'existing', // 'existing' or 'manual'
   });
 
-  // ... (រក្សាទុក functions ទាំងអស់ដដែល)
   useEffect(() => {
     loadAllData();
   }, []);
@@ -76,7 +76,7 @@ function FakeInvoicePage() {
     setLoading(true);
     try {
       await Promise.allSettled([
-        loadCategories(),
+        loadProducts(),
         loadCustomers(),
         getList()
       ]);
@@ -146,16 +146,16 @@ function FakeInvoicePage() {
     setStatistics(stats);
   };
 
-  const loadCategories = async () => {
-    setCategoryLoading(true);
+  const loadProducts = async () => {
+    setProductLoading(true);
     try {
-      const res = await request(`category/my-group`, "get");
+      const res = await request(`product/my-group`, "get");
       if (res && !res.error) {
-        setCategories(res.list || []);
+        setProducts(res.list || []);
       }
     } catch (error) {
     } finally {
-      setCategoryLoading(false);
+      setProductLoading(false);
     }
   };
 
@@ -190,7 +190,7 @@ function FakeInvoicePage() {
       const res = await request(`fakeinvoice/detail/${data.id}`, "get");
       if (res && res.success && res.items) {
         const items = res.items.map((item) => ({
-          category_id: item.category_id,
+          product_id: item.product_id,
           quantity: item.quantity,
           unit_price: parseFloat(parseFloat(item.unit_price || 0).toFixed(4)),
           actual_price: item.actual_price
@@ -231,7 +231,16 @@ function FakeInvoicePage() {
         };
 
         Object.assign(formData, dates);
-        form.setFieldsValue(formData);
+        setState(prev => ({ ...prev, customerMode: invoiceInfo.customer_id ? 'existing' : 'manual' }));
+        form.setFieldsValue({
+          ...formData,
+          manual_customer_name: invoiceInfo.manual_customer_name,
+          manual_customer_tel: invoiceInfo.manual_customer_tel,
+          manual_customer_address: invoiceInfo.manual_customer_address,
+          // For existing mode, also populate the address/phone fields
+          customer_tel: invoiceInfo.customer_tel,
+          customer_address: invoiceInfo.customer_address
+        });
       } else {
         message.error(t('cannot_load_products_for_edit'));
       }
@@ -314,15 +323,19 @@ function FakeInvoicePage() {
         const cart_list = items.map((item) => {
           const quantity = parseFloat(item.quantity) || 0;
           const unit_price = parseFloat(parseFloat(item.unit_price || 0).toFixed(4));
-          const actual_price = parseFloat(item.actual_price);
+          const actual_price = parseFloat(item.actual_price) || 1;
+
           let line_total = quantity * unit_price;
+          if (actual_price > 0) {
+            line_total = (quantity * unit_price) / actual_price;
+          }
           if (!isFinite(line_total) || isNaN(line_total)) line_total = 0;
 
           return {
-            category_name: item.category_name || "Product",
+            product_name: item.product_name || "Product",
             cart_qty: quantity,
             unit_price: unit_price,
-            actual_price: actual_price || 0,
+            actual_price: actual_price,
             line_total: line_total
           };
         });
@@ -373,7 +386,7 @@ function FakeInvoicePage() {
   };
 
   const onClickAddBtn = () => {
-    setState(prev => ({ ...prev, visibleModal: true, id: null }));
+    setState(prev => ({ ...prev, visibleModal: true, id: null, customerMode: 'existing' }));
     form.resetFields();
     form.setFieldsValue({
       order_no: "",
@@ -400,8 +413,12 @@ function FakeInvoicePage() {
         message.error(t('please_enter_invoice_number'));
         return;
       }
-      if (!values.customer_id) {
+      if (state.customerMode === 'existing' && !values.customer_id) {
         message.error(t('please_select_customer'));
+        return;
+      }
+      if (state.customerMode === 'manual' && !values.manual_customer_name) {
+        message.error(t('please_enter_manual_customer_name'));
         return;
       }
       if (!values.items || values.items.length === 0) {
@@ -411,21 +428,21 @@ function FakeInvoicePage() {
 
       for (let i = 0; i < values.items.length; i++) {
         const item = values.items[i];
-        if (!item.category_id || !item.quantity || !item.unit_price) {
+        if (!item.product_id || !item.quantity || !item.unit_price) {
           message.error(t('please_complete_product_info') + ` ${i + 1}`);
           return;
         }
       }
 
       const items = values.items.map((item) => {
-        const category = categories.find(cat => cat.id === item.category_id);
-        if (!category) {
-          throw new Error(t('category_not_found') + `: ${item.category_id}`);
+        const product = products.find(p => p.id === item.product_id);
+        if (!product) {
+          throw new Error(t('product_not_found') || "Product not found" + `: ${item.product_id}`);
         }
-        const actual_price = category.actual_price || 0;
+        const actual_price = product.actual_price || 0;
         return {
-          category_id: item.category_id,
-          category_name: category.name || "Product",
+          product_id: item.product_id,
+          product_name: product.name || "Product",
           quantity: parseInt(item.quantity) || 0,
           unit_price: parseFloat(parseFloat(item.unit_price || 0).toFixed(4)),
           actual_price,
@@ -444,7 +461,7 @@ function FakeInvoicePage() {
 
       const payload = {
         order_no: values.order_no,
-        customer_id: values.customer_id,
+        customer_id: state.customerMode === 'existing' ? values.customer_id : null,
         items,
         total_amount,
         paid_amount,
@@ -458,6 +475,9 @@ function FakeInvoicePage() {
         receive_date: formatDateServer(values.receive_date),
         destination: values.destination || "",
         additional_notes: values.additional_notes || "",
+        manual_customer_name: state.customerMode === 'manual' ? values.manual_customer_name : null,
+        manual_customer_tel: state.customerMode === 'manual' ? values.manual_customer_tel : (values.customer_tel || null),
+        manual_customer_address: state.customerMode === 'manual' ? values.manual_customer_address : (values.customer_address || null),
         user_id
       };
 
@@ -496,22 +516,25 @@ function FakeInvoicePage() {
     </Form.Item>
   );
 
-  const calculateTotalAmount = useCallback(() => {
+const calculateTotalAmount = useCallback(() => {
     const items = form.getFieldValue('items') || [];
     let totalAmount = 0;
 
     items.forEach((item) => {
-      if (item && item.quantity && item.unit_price && item.category_id) {
+      if (item && item.quantity && item.unit_price && item.product_id) {
         const quantity = parseFloat(item.quantity) || 0;
         const unitPrice = parseFloat(parseFloat(item.unit_price || 0).toFixed(4));
         const actualPrice = parseFloat(item.actual_price) || 0;
 
         let itemTotal = 0;
-        if (actualPrice === 0) {
+        if (actualPrice === 0 || actualPrice === null || isNaN(actualPrice)) {
+          // If divisor is 0, just multiply quantity * unit_price (no division)
           itemTotal = quantity * unitPrice;
         } else {
+          // If divisor exists, divide by it
           itemTotal = (quantity * unitPrice) / actualPrice;
         }
+
         if (!isFinite(itemTotal) || isNaN(itemTotal)) {
           itemTotal = 0;
         }
@@ -534,7 +557,7 @@ function FakeInvoicePage() {
       total_due: parseFloat(totalDue.toFixed(2)),
       payment_status: paymentStatus
     });
-  }, [form, categories]);
+  }, [form, products]);
 
   return (
     <MainPage loading={loading}>
@@ -550,7 +573,7 @@ function FakeInvoicePage() {
         )}
       </div>
 
-      {/* Header - បន្ថែម dark mode classes */}
+      {/* Header */}
       <div className="pageHeader bg-white dark:bg-gray-800 p-4 mb-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
         <Space>
           <div className="invoice-khmer-title text-gray-900 dark:text-white text-xl font-semibold">
@@ -562,8 +585,10 @@ function FakeInvoicePage() {
             onSearch={getList}
             placeholder={t('search_by_invoice_or_customer')}
             className="invoice-input "
-            style={{ width: 300, background: isDarkMode ? '#374151' : '#ffffff',
-    borderColor: isDarkMode ? '#4b5563' : '#d9d9d9' }}
+            style={{
+              width: 300, background: isDarkMode ? '#374151' : '#ffffff',
+              borderColor: isDarkMode ? '#4b5563' : '#d9d9d9'
+            }}
           />
         </Space>
         <Button type="primary" onClick={onClickAddBtn} icon={<MdOutlineCreateNewFolder />}>
@@ -571,36 +596,35 @@ function FakeInvoicePage() {
         </Button>
       </div>
 
-      {/* Statistics Cards - បន្ថែម dark mode classes */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={6}>
-          <Card className="transition-colors hover:shadow-md">
+          <Card className="transition-colors hover:shadow-md border-0 bg-blue-50 dark:bg-blue-900/20">
             <Statistic
-              title={<div className="invoice-khmer-title text-gray-700 dark:text-gray-300">
+              title={<div className="invoice-khmer-title text-blue-800 dark:text-blue-300">
                 {t('total_invoices_stat')}
               </div>}
               value={statistics.totalInvoices}
               prefix={<MdReceipt className={isDarkMode ? 'text-blue-400' : 'text-blue-600'} />}
-              valueStyle={{ color: isDarkMode ? '#60a5fa' : '#1890ff' }}
+              valueStyle={{ color: isDarkMode ? '#60a5fa' : '#1d4ed8' }}
             />
           </Card>
         </Col>
         <Col span={6}>
-          <Card className="transition-colors hover:shadow-md">
+          <Card className="transition-colors hover:shadow-md border-0 bg-green-50 dark:bg-green-900/20">
             <Statistic
-              title={<div className="invoice-khmer-title text-gray-700 dark:text-gray-300">
+              title={<div className="invoice-khmer-title text-green-800 dark:text-green-300">
                 {t('total_amount')}
               </div>}
               value={statistics.totalAmount}
               precision={2}
               prefix="$"
-              valueStyle={{ color: '#3f8600' }}
+              valueStyle={{ color: isDarkMode ? '#4ade80' : '#15803d' }}
             />
           </Card>
         </Col>
       </Row>
 
-      {/* Modal - បន្ថែម dark mode classes */}
+      {/* Modal */}
       <Modal
         open={state.visibleModal}
         title={<div className="invoice-modal-title text-gray-900 dark:text-white">
@@ -618,8 +642,6 @@ function FakeInvoicePage() {
 
           <Row gutter={16}>
             <Col span={12}>
-
-
               <Form.Item
                 name="order_no"
                 label={<div className="invoice-form-label">{t('invoice_number')}</div>}
@@ -629,23 +651,89 @@ function FakeInvoicePage() {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item
-                name="customer_id"
-                label={<div className="invoice-form-label">{t('customer')}</div>}
-                rules={[{ required: true, message: t('please_select_customer') }]}
-              >
+              <Form.Item label={t('customer_selection_mode')}>
                 <Select
-                  placeholder={t('select_customer')}
-                  showSearch
-                  optionFilterProp="children"
+                  value={state.customerMode}
+                  onChange={(value) => {
+                    setState(prev => ({ ...prev, customerMode: value }));
+                    if (value === 'manual') {
+                      form.setFieldsValue({ customer_id: null });
+                    }
+                  }}
                   className="invoice-select"
-                  options={customers.map((customer, index) => ({
-                    label: `${index + 1}. ${customer.name}`,
-                    value: customer.id
-                  }))}
+                  options={[
+                    { label: t('existing_customer'), value: 'existing' },
+                    { label: t('manual_input'), value: 'manual' },
+                  ]}
                 />
               </Form.Item>
             </Col>
+          </Row>
+
+          <Row gutter={16}>
+            {state.customerMode === 'existing' ? (
+              <>
+                <Col span={12}>
+                  <Form.Item
+                    name="customer_id"
+                    label={<div className="invoice-form-label">{t('customer')}</div>}
+                    rules={[{ required: true, message: t('please_select_customer') }]}
+                  >
+                    <Select
+                      placeholder={t('select_customer')}
+                      showSearch
+                      optionFilterProp="children"
+                      className="invoice-select"
+                      options={customers.map((customer, index) => ({
+                        label: `${index + 1}. ${customer.name}`,
+                        value: customer.id
+                      }))}
+                      onChange={(id) => {
+                        const customer = customers.find(c => c.id === id);
+                        if (customer) {
+                          form.setFieldsValue({
+                            customer_tel: customer.tel,
+                            customer_address: customer.address
+                          });
+                        }
+                      }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item name="customer_tel" label={t('phone')}>
+                    <Input disabled className="invoice-input" />
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item name="customer_address" label={t('address')}>
+                    <Input disabled className="invoice-input" />
+                  </Form.Item>
+                </Col>
+              </>
+            ) : (
+              <>
+                <Col span={8}>
+                  <Form.Item
+                    name="manual_customer_name"
+                    label={<div className="invoice-form-label">{t('customer_name')}</div>}
+                    rules={[{ required: true, message: t('please_enter_customer_name') }]}
+                  >
+                    <Input placeholder={t('enter_customer_name')} className="invoice-input" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="manual_customer_tel" label={t('phone')}>
+                    <Input placeholder={t('enter_phone')} className="invoice-input" />
+                  </Form.Item>
+                </Col>
+                <Col span={8}>
+                  <Form.Item name="manual_customer_address" label={t('address')}>
+                    <Input placeholder={t('enter_address')} className="invoice-input" />
+                  </Form.Item>
+                </Col>
+              </>
+            )}
           </Row>
 
           <Divider orientation="left">
@@ -660,21 +748,27 @@ function FakeInvoicePage() {
                     <Col span={8}>
                       <Form.Item
                         {...restField}
-                        name={[name, 'category_id']}
-                        label={t('product_category')}
-                        rules={[{ required: true, message: t('select_category') }]}
+                        name={[name, 'product_id']}
+                        label={t('product') || "Product"}
+                        rules={[{ required: true, message: t('select_product') || "Please select product" }]}
                       >
                         <Select
-                          placeholder={t('select_category')}
-                          options={categories.map((c) => ({
-                            label: `${c.name} (${t('divisor')}: ${c.actual_price || 0})`,
-                            value: c.id
+                          placeholder={t('select_product') || "Select Product"}
+                          showSearch
+                          optionFilterProp="label"
+                          options={products.map((p) => ({
+                            label: `${p.name} (${t('divisor')}: ${p.actual_price || 0})`,
+                            value: p.id
                           }))}
                           onChange={(value) => {
-                            const selected = categories.find(cat => cat.id === value);
+                            // Use == instead of === for robust ID lookup
+                            const selected = products.find(p => p.id == value);
                             if (selected) {
-                              form.setFieldValue(['items', name, 'actual_price'], selected.actual_price || 0);
-                              calculateTotalAmount();
+                              const divisor = parseFloat(selected.actual_price) || parseFloat(selected.category_actual_price) || 0;
+                              form.setFieldValue(['items', name, 'actual_price'], divisor);
+
+                              // Trigger calculation
+                              setTimeout(calculateTotalAmount, 50);
                             }
                           }}
                         />
@@ -710,15 +804,6 @@ function FakeInvoicePage() {
                           style={{ width: '100%' }}
                           onChange={calculateTotalAmount}
                           placeholder="0.0000"
-                          formatter={value => {
-                            if (!value) return '';
-                            const num = parseFloat(value);
-                            return num.toFixed(4).replace(/\.?0+$/, '');
-                          }}
-                          parser={value => {
-                            if (!value) return '';
-                            return parseFloat(value.replace(/[^\d.-]/g, ''));
-                          }}
                         />
                       </Form.Item>
                     </Col>
@@ -728,14 +813,12 @@ function FakeInvoicePage() {
                         {...restField}
                         name={[name, 'actual_price']}
                         label={t('divisor')}
-                        tooltip={t('divisor_tooltip')}
                       >
                         <InputNumber
                           min={0}
                           step={0.01}
                           style={{ width: '100%' }}
                           onChange={() => setTimeout(calculateTotalAmount, 10)}
-                          placeholder="0.00"
                         />
                       </Form.Item>
                     </Col>
@@ -781,16 +864,59 @@ function FakeInvoicePage() {
           </Row>
 
           <Row gutter={16}>
+            <Col span={6}>
+              <Form.Item
+                name="total_amount"
+                label={<div className="invoice-form-label">{t('total_amount')}</div>}
+              >
+                <InputNumber disabled style={{ width: '100%' }} precision={2} prefix="$" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="paid_amount"
+                label={<div className="invoice-form-label">{t('paid_amount')}</div>}
+              >
+                <InputNumber
+                  min={0}
+                  style={{ width: '100%' }}
+                  onChange={calculateTotalAmount}
+                  precision={2}
+                  prefix="$"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="total_due"
+                label={<div className="invoice-form-label">{t('total_due')}</div>}
+              >
+                <InputNumber disabled style={{ width: '100%' }} precision={2} prefix="$" />
+              </Form.Item>
+            </Col>
+            <Col span={6}>
+              <Form.Item
+                name="payment_status"
+                label={<div className="invoice-form-label">{t('payment_status')}</div>}
+              >
+                <Select disabled options={[
+                  { label: t('paid'), value: "Paid" },
+                  { label: t('partial'), value: "Partial" },
+                  { label: t('unpaid'), value: "Unpaid" }
+                ]} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="destination"
                 label={<div className="invoice-form-label">{t('destination')}</div>}
-                tooltip={t('destination_tooltip')}
               >
                 <Input placeholder={t('destination_placeholder')} className="invoice-input" />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item name="remark" label={<div className="invoice-form-label">{t('remarks')}</div>}>
                 <Input.TextArea placeholder={t('enter_remarks')} rows={3} className="invoice-input" />
@@ -800,200 +926,177 @@ function FakeInvoicePage() {
         </Form>
       </Modal>
 
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title={<div className="invoice-khmer-title">{t('total_invoices_stat')}</div>}
-              value={statistics.totalInvoices}
-              prefix={<MdReceipt />}
-            />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card>
-            <Statistic
-              title={<div className="invoice-khmer-title">{t('total_amount')}</div>}
-              value={statistics.totalAmount}
-              precision={2}
-              prefix="$"
-              valueStyle={{ color: '#3f8600' }}
-            />
-          </Card>
-        </Col>
-
-      </Row>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
-        <Table
-          className="invoice-table"
-          dataSource={groupedInvoices.filter(item =>
-            !state.txtSearch ||
-            item.order_no.toLowerCase().includes(state.txtSearch.toLowerCase()) ||
-            item.customer_name.toLowerCase().includes(state.txtSearch.toLowerCase())
-          )}
-          columns={[
-            {
-              title: "No",
-              dataIndex: "no",
-              key: "no",
-              render: (text, record, index) => index + 1,
-              width: 50,
-              className: 'text-center'
-            },
-            {
-              title: t('invoice_number'),
-              dataIndex: "order_no",
-              key: "order_no",
-              width: 120,
-              sorter: (a, b) => (a.order_no || "").localeCompare(b.order_no || ""),
-              render: (text) => <span className="font-semibold">{text}</span>
-            },
-            {
-              title: t('customer'),
-              dataIndex: "customer_name",
-              key: "customer_name",
-              sorter: (a, b) => (a.customer_name || "").localeCompare(b.customer_name || ""),
-              render: (text) => <span className="text-center">{text}</span>,
-            },
-            {
-              title: t('address'),
-              dataIndex: "customer_address",
-              key: "customer_address",
-              render: (text) => <span className="text-center text-sm">{text}</span>
-            },
-            {
-              title: t('phone'),
-              dataIndex: "customer_tel",
-              key: "customer_tel",
-              width: 120,
-              className: 'text-center'
-            },
-            {
-              title: t('total_amount'),
-              dataIndex: "total_amount",
-              key: "total_amount",
-              width: 120,
-              sorter: (a, b) => (a.total_amount || 0) - (b.total_amount || 0),
-              render: (text) => <span className="font-mono font-medium text-green-500">${parseFloat(text || 0).toFixed(2)}</span>,
-              className: 'text-right'
-            },
-            {
-              title: t('paid_amount'),
-              dataIndex: "paid_amount",
-              key: "paid_amount",
-              width: 120,
-              sorter: (a, b) => (a.paid_amount || 0) - (b.paid_amount || 0),
-              render: (text) => <span className="font-mono font-medium text-blue-500">${parseFloat(text || 0).toFixed(2)}</span>,
-              className: 'text-right'
-            },
-            {
-              title: t('total_due'),
-              dataIndex: "total_due",
-              key: "total_due",
-              width: 120,
-              sorter: (a, b) => (a.total_due || 0) - (b.total_due || 0),
-              render: (text) => <span className="font-mono font-medium text-red-500">${parseFloat(text || 0).toFixed(2)}</span>,
-              className: 'text-right'
-            },
-            {
-              title: t('payment_status'),
-              dataIndex: "payment_status",
-              key: "payment_status",
-              width: 100,
-              className: 'text-center',
-              render: (text) => {
-                let color = 'gray';
-                if (text === 'Paid') color = 'green';
-                else if (text === 'Partial') color = 'blue';
-                else if (text === 'Unpaid') color = 'red';
-                return <Tag color={color}>{t(text.toLowerCase())}</Tag>;
-              }
-            },
-            {
-              title: t('order_date'),
-              dataIndex: "order_date",
-              key: "order_date",
-              width: 100,
-              className: 'text-center',
-              render: (text) => formatDateClient(text)
-            },
-            {
-              title: t('delivery_date'),
-              dataIndex: "delivery_date",
-              key: "delivery_date",
-              width: 100,
-              className: 'text-center',
-              render: (text) => formatDateClient(text)
-            },
-            {
-              title: t('created_by'),
-              dataIndex: "create_by",
-              key: "create_by",
-              width: 100,
-              render: (text) => <span className="text-center">{text}</span>
-            },
-            {
-              title: t('additional_notes'),
-              dataIndex: "additional_notes",
-              key: "additional_notes",
-              render: (text) => <span className="text-center text-sm">{text}</span>
-            },
-            {
-              key: "action",
-              title: <div className="delivery-table-header">{t('action')}</div>,
-              render: (item, data) => (
-                <Space>
-                  {isPermission("customer.getone") && (
+        <div className="hidden lg:block">
+          <Table
+            className="invoice-table"
+            dataSource={groupedInvoices.filter(item =>
+              !state.txtSearch ||
+              item.order_no.toLowerCase().includes(state.txtSearch.toLowerCase()) ||
+              item.customer_name.toLowerCase().includes(state.txtSearch.toLowerCase())
+            )}
+            columns={[
+              {
+                title: t('NO'),
+                dataIndex: "no",
+                key: "no",
+                render: (text, record, index) => index + 1,
+                width: 50,
+                className: 'text-center'
+              },
+              {
+                title: t('invoice_number'),
+                dataIndex: "order_no",
+                key: "order_no",
+                width: 120,
+                sorter: (a, b) => (a.order_no || "").localeCompare(b.order_no || ""),
+                render: (text) => <span className="font-semibold">{text}</span>
+              },
+              {
+                title: t('customer'),
+                dataIndex: "customer_name",
+                key: "customer_name",
+                sorter: (a, b) => (a.customer_name || "").localeCompare(b.customer_name || ""),
+                render: (text) => <span className="text-center">{text}</span>,
+              },
+              {
+                title: t('address'),
+                dataIndex: "customer_address",
+                key: "customer_address",
+                render: (text) => <span className="text-center text-sm">{text}</span>
+              },
+              {
+                title: t('phone'),
+                dataIndex: "customer_tel",
+                key: "customer_tel",
+                width: 120,
+                className: 'text-center'
+              },
+              {
+                title: t('total_amount'),
+                dataIndex: "total_amount",
+                key: "total_amount",
+                width: 120,
+                sorter: (a, b) => (a.total_amount || 0) - (b.total_amount || 0),
+                render: (text) => <span className="font-mono font-medium text-green-500">${parseFloat(text || 0).toFixed(2)}</span>,
+                className: 'text-right'
+              },
+              {
+                title: t('paid_amount'),
+                dataIndex: "paid_amount",
+                key: "paid_amount",
+                width: 120,
+                sorter: (a, b) => (a.paid_amount || 0) - (b.paid_amount || 0),
+                render: (text) => <span className="font-mono font-medium text-blue-500">${parseFloat(text || 0).toFixed(2)}</span>,
+                className: 'text-right'
+              },
+              {
+                title: t('total_due'),
+                dataIndex: "total_due",
+                key: "total_due",
+                width: 120,
+                sorter: (a, b) => (a.total_due || 0) - (b.total_due || 0),
+                render: (text) => <span className="font-mono font-medium text-red-500">${parseFloat(text || 0).toFixed(2)}</span>,
+                className: 'text-right'
+              },
+              {
+                title: t('payment_status'),
+                dataIndex: "payment_status",
+                key: "payment_status",
+                width: 100,
+                className: 'text-center',
+                render: (text) => {
+                  let color = 'gray';
+                  if (text === 'Paid') color = 'green';
+                  else if (text === 'Partial') color = 'blue';
+                  else if (text === 'Unpaid') color = 'red';
+                  return <Tag color={color}>{t(text.toLowerCase())}</Tag>;
+                }
+              },
+              {
+                title: t('order_date'),
+                dataIndex: "order_date",
+                key: "order_date",
+                width: 100,
+                className: 'text-center',
+                render: (text) => formatDateClient(text)
+              },
+              {
+                key: "action",
+                title: <div className="delivery-table-header">{t('action')}</div>,
+                render: (item, data) => (
+                  <Space>
+                    {isPermission("customer.getone") && (
+                      <Button
+                        size="small"
+                        type="primary"
+                        icon={<MdEdit />}
+                        onClick={() => onClickEdit(data)}
+                      />
+                    )}
                     <Button
                       size="small"
-                      type="primary"
-                      icon={<MdEdit />}
-                      onClick={() => onClickEdit(data)}
-                      title="Edit Invoice"
+                      type="default"
+                      icon={<MdPrint />}
+                      onClick={() => onClickPrint(data)}
+                      loading={isPrinting}
+                      style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
                     />
-                  )}
+                    {isPermission("customer.getone") && (
+                      <Button
+                        size="small"
+                        danger
+                        icon={<MdDelete />}
+                        onClick={() => onClickDelete(data)}
+                      />
+                    )}
+                  </Space>
+                ),
+                width: 150,
+                fixed: 'right',
+              },
+            ]}
+          />
+        </div>
 
-                  <Button
-                    size="small"
-                    type="default"
-                    icon={<MdPrint />}
-                    onClick={() => onClickPrint(data)}
-                    loading={isPrinting}
-                    title="Print Invoice"
-                    style={{ backgroundColor: '#1890ff', borderColor: '#1890ff', color: 'white' }}
-                  />
-
-                  {isPermission("customer.getone") && (
-                    <Button
-                      size="small"
-                      danger
-                      icon={<MdDelete />}
-                      onClick={() => onClickDelete(data)}
-                      title="Delete Invoice"
-                    />
-                  )}
+        {/* Mobile Cards */}
+        <div className="block lg:hidden">
+          {groupedInvoices
+            .filter(item =>
+              !state.txtSearch ||
+              item.order_no.toLowerCase().includes(state.txtSearch.toLowerCase()) ||
+              item.customer_name.toLowerCase().includes(state.txtSearch.toLowerCase())
+            )
+            .map((data) => (
+              <Card key={data.order_no} style={{ marginBottom: 16 }} className="dark:bg-gray-800">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-bold text-lg">{data.order_no}</span>
+                  <Tag color={data.payment_status === 'Paid' ? 'green' : data.payment_status === 'Partial' ? 'blue' : 'red'}>
+                    {t(data.payment_status.toLowerCase())}
+                  </Tag>
+                </div>
+                <div className="mb-2">
+                  <div className="text-gray-500 text-sm">{t('customer')}</div>
+                  <div className="font-medium">{data.customer_name}</div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="text-gray-500 text-sm">{t('total_amount')}</div>
+                    <div className="text-green-600 font-bold">${parseFloat(data.total_amount).toFixed(2)}</div>
+                  </div>
+                  <div>
+                    <div className="text-gray-500 text-sm">{t('order_date')}</div>
+                    <div>{formatDateClient(data.order_date)}</div>
+                  </div>
+                </div>
+                <Space wrap>
+                  <Button size="small" type="primary" icon={<MdEdit />} onClick={() => onClickEdit(data)}>{t('edit')}</Button>
+                  <Button size="small" type="default" icon={<MdPrint />} onClick={() => onClickPrint(data)} style={{ backgroundColor: '#1890ff', color: 'white' }}>{t('print')}</Button>
+                  <Button size="small" danger icon={<MdDelete />} onClick={() => onClickDelete(data)}>{t('delete')}</Button>
                 </Space>
-              ),
-              width: 200,
-              fixed: 'right',
-            },
-          ]}
-
-          summary={(pageData) => {
-            const totalAmount = pageData.reduce((sum, record) => sum + parseFloat(record.total_amount || 0), 0);
-            const totalPaid = pageData.reduce((sum, record) => sum + parseFloat(record.paid_amount || 0), 0);
-            const totalDue = pageData.reduce((sum, record) => sum + parseFloat(record.total_due || 0), 0);
-
-            return (
-              <Table.Summary fixed>
-                <Table.Summary.Row>
-
-
-                </Table.Summary.Row>
-              </Table.Summary>
-            );
-          }}
-        />
+              </Card>
+            ))}
+        </div>
       </div>
     </MainPage>
   );

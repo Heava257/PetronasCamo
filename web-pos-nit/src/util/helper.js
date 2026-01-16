@@ -115,7 +115,6 @@ export const request = (url = "", method = "get", data = {}, new_access_token = 
             clearTokens();
             
             // Redirect to login page or dispatch logout action
-            console.log("Refresh token failed - redirecting to login");
             window.location.href = "/login"; // Adjust path as needed
             
             return Promise.reject(refreshError);

@@ -1,0 +1,81 @@
+/* Pre-Order Management CSS */
+
+.pre-order-management-container {
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .pre-order-management-container {
+    padding: 16px;
+  }
+}
+
+/* Khmer Text Styling */
+.khmer-text-product {
+  font-family: 'Khmer OS Battambang', 'Hanuman', 'Moul', sans-serif !important;
+}
+
+/* Statistics Cards */
+.ant-statistic-title {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.ant-statistic-content {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+/* Table Styling */
+.ant-table-thead > tr > th {
+  font-weight: 600;
+  background: #fafafa;
+}
+
+.dark .ant-table-thead > tr > th {
+  background: #1f1f1f;
+}
+
+.ant-table-tbody > tr:hover {
+  background: #f5f5f5;
+}
+
+.dark .ant-table-tbody > tr:hover {
+  background: #2a2a2a;
+}
+
+/* Mobile Cards */
+.ant-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.ant-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.3s;
+}
+
+/* Button Styling */
+.ant-btn-primary {
+  background: #1890ff;
+  border-color: #1890ff;
+}
+
+.ant-btn-primary:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}
+
+/* Dark Mode */
+.dark .ant-card {
+  background: #1f1f1f;
+  border-color: #434343;
+}
+
+.dark .ant-statistic-title {
+  color: #ffffff;
+}
+
+.dark .ant-statistic-content {
+  color: #ffffff;
+}

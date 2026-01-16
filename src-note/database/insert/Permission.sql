@@ -34,18 +34,26 @@ INSERT INTO user_roles (user_id,role_id) VALUES
 
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
+
+(1,498),
+(1,499),
+(1,500),
+(1,501),
+(1,502);
+
+
+
+
+(28,190),
+(28,191),
+(28,256),
+(28,259),
 (28,166),
 (28,263),
 (28,266),
 
 
 
-(28,187),
-(28,189),
-(28,190),
-(28,191),
-(28,256),
-(28,259),
 (28,260),
 (28,261),
 (28,182),
@@ -64,8 +72,33 @@ INSERT INTO permission_roles (role_id, permission_id) VALUES
 
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
+(29,362),
+(29,363),
+(29,364),
+(29,365),
+(29,377),
+(29,378),
+(29,367),
+(29,368),
+(29,307),
+(29,308),
+(29,309),
+(29,310),
+(29,311),
+(29,312),
+(29,313),
+(29,314),
+(29,315),
+(29,316),
+(29,317),
+(29,318),
+(29,319),
+(29,320),
+(29,321),
+(29,322),
+(29,323),
+(29,324);
 
-(28,255);
 
 (28,222),
 (28,227),
@@ -84,15 +117,440 @@ SELECT * FROM `delivery_note`
 ALTER TABLE delivery_date ADD COLUMN 	driver_phone VARCHAR(255);
 
 
+
+
+
 ("user.getattendanceDashboard","attendanceDashboard",1,"/attendanceDashboard");
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Log Analysis
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.analyze", "security", NULL, NULL),
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- IP Management
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.blacklist", "security", 1, "/security/blacklist"),
+("security.blockip", "security", NULL, NULL),
+("security.unblockip", "security", NULL, NULL),
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Incident Management
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.investigate", "security", NULL, NULL),
+("security.resolve", "security", NULL, NULL),
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Threat Pattern Management
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.patterns.create", "security", NULL, NULL),
+("security.patterns.update", "security", NULL, NULL),
+("security.patterns.delete", "security", NULL, NULL);
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Dashboard & Reports (Menu Items)
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.dashboard", "security", 1, "/security/dashboard"),
+("security.incidents", "security", 1, "/security/incidents"),
+("security.report", "security", 1, "/security/report"),
+("security.patterns", "security", 1, "/security/patterns");
+
+
+
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Log Analysis
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.analyze", "security", NULL, NULL),
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- IP Management
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.blacklist", "security", 1, "/security/blacklist"),
+("security.blockip", "security", NULL, NULL),
+("security.unblockip", "security", NULL, NULL),
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Incident Management
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.investigate", "security", NULL, NULL),
+("security.resolve", "security", NULL, NULL),
+
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+-- Threat Pattern Management
+-- ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+("security.patterns.create", "security", NULL, NULL),
+("security.patterns.update", "security", NULL, NULL),
+("security.patterns.delete", "security", NULL, NULL);
+
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("super-BranchPermissionOverride.getlist", "super-BranchPermissionOverride", 1, "/super-BranchPermissionOverride"),
+("super-BranchPermissionOverride.getone", "super-BranchPermissionOverride", NULL, NULL),
+("super-BranchPermissionOverride.create", "super-BranchPermissionOverride", NULL, NULL),
+("super-BranchPermissionOverride.update", "super-BranchPermissionOverride", NULL, NULL),
+("super-BranchPermissionOverride.remove", "super-BranchPermissionOverride", NULL, NULL);
+
+
+
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("inventory-transactions.getlist", "inventory-transactions", 1, "/inventory-transactions"),
+("inventory-transactions.getone", "inventory-transactions", NULL, NULL),
+("inventory-transactions.create", "inventory-transactions", NULL, NULL),
+("inventory-transactions.update", "inventory-transactions", NULL, NULL),
+("inventory-transactions.remove", "inventory-transactions", NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("ip-Management.getlist", "ip-Management", 1, "/ip-Management"),
+("ip-Management.getone", "ip-Management", NULL, NULL),
+("ip-Management.create", "ip-Management", NULL, NULL),
+("ip-Management.update", "ip-Management", NULL, NULL),
+("ip-Management.remove", "ip-Management", NULL, NULL);
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("pre-order-management.getlist", "pre-order-management", 1, "/pre-order-management"),
+("pre-order-management.getone", "pre-order-management", NULL, NULL),
+("pre-order-management.create", "pre-order-management", NULL, NULL),
+("pre-order-management.update", "pre-order-management", NULL, NULL),
+("pre-order-management.remove", "pre-order-management", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("pre-order-detail.getlist", "pre-order-detail", 1, "/pre-order-detail"),
+("pre-order-detail.getone", "pre-order-detail", NULL, NULL),
+("pre-order-detail.create", "pre-order-detail", NULL, NULL),
+("pre-order-detail.update", "pre-order-detail", NULL, NULL),
+("pre-order-detail.remove", "pre-order-detail", NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("attendance.getlist", "attendance", 1, "/attendance"),
+("attendance.getone", "attendance", NULL, NULL),
+("attendance.create", "attendance", NULL, NULL),
+("attendance.update", "attendance", NULL, NULL),
+("attendance.remove", "attendance", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("driver-auth.getlist", "driver-auth", 1, "/driver-auth"),
+("driver-auth.getone", "driver-auth", NULL, NULL),
+("driver-auth.create", "driver-auth", NULL, NULL),
+("driver-auth.update", "driver-auth", NULL, NULL),
+("driver-auth.remove", "driver-auth", NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("Truck.getlist", "Truck", 1, "/Truck"),
+("Truck.getone", "Truck", NULL, NULL),
+("Truck.create", "Truck", NULL, NULL),
+("Truck.update", "Truck", NULL, NULL),
+("Truck.remove", "Truck", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("driver.getlist", "driver", 1, "/driver"),
+("driver.getone", "driver", NULL, NULL),
+("driver.create", "driver", NULL, NULL),
+("driver.update", "driver", NULL, NULL),
+("driver.remove", "driver", NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("admin-ShiftClosing.getlist", "admin-ShiftClosing", 1, "/admin-ShiftClosing"),
+("admin-ShiftClosing.getone", "admin-ShiftClosing", NULL, NULL),
+("admin-ShiftClosing.create", "admin-ShiftClosing", NULL, NULL),
+("admin-ShiftClosing.update", "admin-ShiftClosing", NULL, NULL),
+("admin-ShiftClosing.remove", "admin-ShiftClosing", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("admin-DailyClosing.getlist", "admin-DailyClosing", 1, "/admin-DailyClosing"),
+("admin-DailyClosing.getone", "admin-DailyClosing", NULL, NULL),
+("admin-DailyClosing.create", "admin-DailyClosing", NULL, NULL),
+("admin-DailyClosing.update", "admin-DailyClosing", NULL, NULL),
+("admin-DailyClosing.remove", "admin-DailyClosing", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("admin-ShiftClosingChecklist.getlist", "admin-ShiftClosingChecklist", 1, "/admin-ShiftClosingChecklist"),
+("admin-ShiftClosingChecklist.getone", "admin-ShiftClosingChecklist", NULL, NULL),
+("admin-ShiftClosingChecklist.create", "admin-ShiftClosingChecklist", NULL, NULL),
+("admin-ShiftClosingChecklist.update", "admin-ShiftClosingChecklist", NULL, NULL),
+("admin-ShiftClosingChecklist.remove", "admin-ShiftClosingChecklist", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("admin-StockReconciliation.getlist", "admin-StockReconciliation", 1, "/admin-StockReconciliation"),
+("admin-StockReconciliation.getone", "admin-StockReconciliation", NULL, NULL),
+("admin-StockReconciliation.create", "admin-StockReconciliation", NULL, NULL),
+("admin-StockReconciliation.update", "admin-StockReconciliation", NULL, NULL),
+("admin-StockReconciliation.remove", "admin-StockReconciliation", NULL, NULL);
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("purchase.getlist", "purchase", 1, "/purchase"),
+("purchase.getstatistics", "purchase", NULL, NULL),
+("purchase.getbyid", "purchase", NULL, NULL),
+("purchase.create", "purchase", NULL, NULL),
+("purchase.update", "purchase", NULL, NULL),
+("purchase.delete", "purchase", NULL, NULL);
+
+
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("active-deliveries.getlist", "active-deliveries", 1, "/active-deliveries"),
+("active-deliveries.getone", "active-deliveries", NULL, NULL),
+("active-deliveries.create", "active-deliveries", NULL, NULL),
+("active-deliveries.update", "active-deliveries", NULL, NULL),
+("active-deliveries.remove", "active-deliveries", NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("DeliveryReports.getlist", "DeliveryReports", 1, "/DeliveryReports"),
+("DeliveryReports.getone", "DeliveryReports", NULL, NULL),
+("DeliveryReports.create", "DeliveryReports", NULL, NULL),
+("DeliveryReports.update", "DeliveryReports", NULL, NULL),
+("DeliveryReports.remove", "DeliveryReports", NULL, NULL);
+
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("inactive_admins.getlist", "inactive_admins", 1, "/inactive_admins"),
+("inactive_admins.getone", "inactive_admins", NULL, NULL),
+("inactive_admins.create", "inactive_admins", NULL, NULL),
+("inactive_admins.update", "inactive_admins", NULL, NULL),
+("inactive_admins.remove", "inactive_admins", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("company-payment-management.getlist", "company-payment-management", 1, "/company-payment-management"),
+("company-payment-management.getone", "company-payment-management", NULL, NULL),
+("company-payment-management.create", "company-payment-management", NULL, NULL),
+("company-payment-management.update", "company-payment-management", NULL, NULL),
+("company-payment-management.remove", "company-payment-management", NULL, NULL);
+
+
+-- Permission សម្រាប់ BranchComparisonReport (Super Admin Only)
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("report_BranchComparison.getlist", "report_BranchComparison", 1, "/report_BranchComparison"),
+("report_BranchComparison.getone", "report_BranchComparison", NULL, NULL),
+("report_BranchComparison.create", "report_BranchComparison", NULL, NULL),
+("report_BranchComparison.update", "report_BranchComparison", NULL, NULL),
+("report_BranchComparison.remove", "report_BranchComparison", NULL, NULL);
+notifications/statistics
+
+
+-- Permission សម្រាប់ BranchComparisonReport (Super Admin Only)
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("notifications/statistics.getlist", "notifications/statistics", 1, "/notifications/statistics"),
+("notifications/statistics.getone", "notifications/statistics", NULL, NULL),
+("notifications/statistics.create", "notifications/statistics", NULL, NULL),
+("notifications/statistics.update", "notifications/statistics", NULL, NULL),
+("notifications/statistics.remove", "notifications/statistics", NULL, NULL);
+
+
+-- Permission សម្រាប់ BranchComparisonReport (Super Admin Only)
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("notifications.getlist", "notifications", 1, "/notifications"),
+("notifications.getone", "notifications", NULL, NULL),
+("notifications.create", "notifications", NULL, NULL),
+("notifications.update", "notifications", NULL, NULL),
+("notifications.remove", "notifications", NULL, NULL);
+
+
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+('admin_management.view', 'admin_management', 1, '/admin-management'),
+('admin_management.list', 'admin_management', NULL, NULL),
+('admin_management.create', 'admin_management', NULL, NULL),
+('admin_management.transfer', 'admin_management', NULL, NULL),
+('admin_management.deactivate', 'admin_management', NULL, NULL),
+('admin_management.reactivate', 'admin_management', NULL, NULL),
+('admin_management.details', 'admin_management', NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+('SuperAdminUserManagement.view', 'SuperAdminUserManagement', 1, '/superadmin-management'),
+('SuperAdminUserManagement.list', 'SuperAdminUserManagement', NULL, NULL),
+('SuperAdminUserManagement.create', 'SuperAdminUserManagement', NULL, NULL),
+('SuperAdminUserManagement.transfer', 'SuperAdminUserManagement', NULL, NULL),
+('SuperAdminUserManagement.deactivate', 'SuperAdminUserManagement', NULL, NULL),
+('SuperAdminUserManagement.reactivate', 'SuperAdminUserManagement', NULL, NULL),
+('SuperAdminUserManagement.details', 'SuperAdminUserManagement', NULL, NULL);
+
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("delivery-map.getdelivery-map", "delivery-map", 1, "/delivery-map"),
+("delivery-map.getone", "delivery-map", NULL, NULL),
+("delivery-map.create", "delivery-map", NULL, NULL),
+("delivery-map.update", "delivery-map", NULL, NULL),
+("delivery-map.remove", "delivery-map", NULL, NULL);
+
+
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("list.getlist", "list", 1, "/list"),
+("list.getone", "list", NULL, NULL),
+("list.create", "list", NULL, NULL),
+("list.update", "list", NULL, NULL),
+("list.remove", "list", NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("create.getcreate", "create", 1, "/create"),
+("create.getone", "create", NULL, NULL),
+("create.create", "create", NULL, NULL),
+("create.update", "create", NULL, NULL),
+("create.remove", "create", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("deactivate.getdeactivate", "deactivate", 1, "/deactivate"),
+("deactivate.getone", "deactivate", NULL, NULL),
+("deactivate.deactivate", "deactivate", NULL, NULL),
+("deactivate.update", "deactivate", NULL, NULL),
+("deactivate.remove", "deactivate", NULL, NULL);
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("reactivate.getreactivate", "reactivate", 1, "/reactivate"),
+("reactivate.getone", "reactivate", NULL, NULL),
+("reactivate.reactivate", "reactivate", NULL, NULL),
+("reactivate.update", "reactivate", NULL, NULL),
+("reactivate.remove", "reactivate", NULL, NULL);
+
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("details.getdetails", "details", 1, "/details"),
+("details.getone", "details", NULL, NULL),
+("details.details", "details", NULL, NULL),
+("details.update", "details", NULL, NULL),
+("details.remove", "details", NULL, NULL);
 
 
 INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
-("about.getlist","about",1,"/about"),
-("about.getone","about",NULL,NULL),
-("about.create","about",NULL,NULL),
-("about.update","about",NULL,NULL),
-("about.remove","about",NULL,NULL);
+("report_Stock_Status.getlist","report_Stock_Status",1,"/report_Stock_Status"),
+("report_Stock_Status.getone","report_Stock_Status",NULL,NULL),
+("report_Stock_Status.create","report_Stock_Status",NULL,NULL),
+("report_Stock_Status.update","report_Stock_Status",NULL,NULL),
+("report_Stock_Status.remove","report_Stock_Status",NULL,NULL);
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("report_Stock_Movement.getlist","report_Stock_Movement",1,"/report_Stock_Movement"),
+("report_Stock_Movement.getone","report_Stock_Movement",NULL,NULL),
+("report_Stock_Movement.create","report_Stock_Movement",NULL,NULL),
+("report_Stock_Movement.update","report_Stock_Movement",NULL,NULL),
+("report_Stock_Movement.remove","report_Stock_Movement",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("permission-management.getlist","permission-management",1,"/permission-management"),
+("permission-management.getone","permission-management",NULL,NULL),
+("permission-management.create","permission-management",NULL,NULL),
+("permission-management.update","permission-management",NULL,NULL),
+("permission-management.remove","permission-management",NULL,NULL);
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("company-payment.getlist","company-payment",1,"/company-payment"),
+("company-payment.getone","company-payment",NULL,NULL),
+("company-payment.create","company-payment",NULL,NULL),
+("company-payment.update","company-payment",NULL,NULL),
+("company-payment.remove","company-payment",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("notify-inactive.getlist","notify-inactive",1,"/notify-inactive"),
+("notify-inactive.getone","notify-inactive",NULL,NULL),
+("notify-inactive.create","notify-inactive",NULL,NULL),
+("notify-inactive.update","notify-inactive",NULL,NULL),
+("notify-inactive.remove","notify-inactive",NULL,NULL);
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("my-notifications.getlist","my-notifications",1,"/my-notifications"),
+("my-notifications.getone","my-notifications",NULL,NULL),
+("my-notifications.create","my-notifications",NULL,NULL),
+("my-notifications.update","my-notifications",NULL,NULL),
+("my-notifications.remove","my-notifications",NULL,NULL);
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("unread-count.getlist","unread-count",1,"/unread-count"),
+("unread-count.getone","unread-count",NULL,NULL),
+("unread-count.create","unread-count",NULL,NULL),
+("unread-count.update","unread-count",NULL,NULL),
+("unread-count.remove","unread-count",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("mark-read.getlist","mark-read",1,"/mark-read"),
+("mark-read.getone","mark-read",NULL,NULL),
+("mark-read.create","mark-read",NULL,NULL),
+("mark-read.update","mark-read",NULL,NULL),
+("mark-read.remove","mark-read",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("mark-all-read.getlist","mark-all-read",1,"/mark-all-read"),
+("mark-all-read.getone","mark-all-read",NULL,NULL),
+("mark-all-read.create","mark-all-read",NULL,NULL),
+("mark-all-read.update","mark-all-read",NULL,NULL),
+("mark-all-read.remove","mark-all-read",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+(":super-TelegramConfiguration.getlist",":super-TelegramConfiguration",1,"/:super-TelegramConfiguration"),
+(":super-TelegramConfiguration.getone",":super-TelegramConfiguration",NULL,NULL),
+(":super-TelegramConfiguration.create",":super-TelegramConfiguration",NULL,NULL),
+(":super-TelegramConfiguration.update",":super-TelegramConfiguration",NULL,NULL),
+(":super-TelegramConfiguration.remove",":super-TelegramConfiguration",NULL,NULL);
+
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+(":notification_id.getlist",":notification_id",1,"/:notification_id"),
+(":notification_id.getone",":notification_id",NULL,NULL),
+(":notification_id.create",":notification_id",NULL,NULL),
+(":notification_id.update",":notification_id",NULL,NULL),
+(":notification_id.remove",":notification_id",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("report_Purchase_History.getlist","report_Purchase_History",1,"/report_Purchase_History"),
+("report_Purchase_History.getone","report_Purchase_History",NULL,NULL),
+("report_Purchase_History.create","report_Purchase_History",NULL,NULL),
+("report_Purchase_History.update","report_Purchase_History",NULL,NULL),
+("report_Purchase_History.remove","report_Purchase_History",NULL,NULL);
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("report_Outstanding_Debt.getlist","report_Outstanding_Debt",1,"/report_Outstanding_Debt"),
+("report_Outstanding_Debt.getone","report_Outstanding_Debt",NULL,NULL),
+("report_Outstanding_Debt.create","report_Outstanding_Debt",NULL,NULL),
+("report_Outstanding_Debt.update","report_Outstanding_Debt",NULL,NULL),
+("report_Outstanding_Debt.remove","report_Outstanding_Debt",NULL,NULL);
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("report_Payment_History.getlist","report_Payment_History",1,"/report_Payment_History"),
+("report_Payment_History.getone","report_Payment_History",NULL,NULL),
+("report_Payment_History.create","report_Payment_History",NULL,NULL),
+("report_Payment_History.update","report_Payment_History",NULL,NULL),
+("report_Payment_History.remove","report_Payment_History",NULL,NULL);
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("report_Profit_Loss.getlist","report_Profit_Loss",1,"/report_Profit_Loss"),
+("report_Profit_Loss.getone","report_Profit_Loss",NULL,NULL),
+("report_Profit_Loss.create","report_Profit_Loss",NULL,NULL),
+("report_Profit_Loss.update","report_Profit_Loss",NULL,NULL),
+("report_Profit_Loss.remove","report_Profit_Loss",NULL,NULL);
 
 
 INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
@@ -212,14 +670,208 @@ INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
 
-(25,256),
-(1,256);
-
-
-(25,184);
-(25,185);
-(25,186);
-
+(1,372),
+(1,373),
+(1,374),
+(1,375),
+(1,376),
+(1,377),
+(1,378),
+(1,379),
+(1,380),
+(1,381),
+(1,382),
+(1,383),
+(1,384),
+(1,385),
+(1,386),
+(1,387),
+(1,388),
+(1,389),
+(1,390),
+(1,391),
+(1,392),
+(1,393),
+(1,394),
+(1,395),
+(1,396),
+(1,397),
+(1,398),
+(1,399),
+(1,400),
+(1,401),
+(1,402),
+(1,403),
+(1,404),
+(1,405),
+(1,406),
+(1,407),
+(1,408),
+(1,409),
+(1,410),
+(1,411),
+(1,412),
+(1,413),
+(1,414),
+(1,415),
+(1,416),
+(1,417),
+(1,418),
+(1,419),
+(1,420),
+(1,421),
+(1,422),
+(1,423),
+(1,424),
+(1,425),
+(1,426),
+(1,427),
+(1,428),
+(1,429),
+(1,430),
+(1,431),
+(1,432),
+(1,433),
+(1,434),
+(1,435),
+(1,436),
+(1,437),
+(1,438),
+(1,439),
+(1,440),
+(1,441),
+(1,442),
+(1,443),
+(1,444),
+(1,445),
+(1,446),
+(1,447),
+(1,448),
+(1,449),
+(1,450),
+(1,451),
+(1,452),
+(1,453),
+(1,454),
+(1,455),
+(1,456),
+(1,457),
+(1,458),
+(1,459),
+(1,460),
+(1,461),
+(1,462),
+(1,463),
+(1,464),
+(1,465),
+(1,466),
+(1,467),
+(1,468),
+(1,469),
+(1,470),
+(1,471),
+(1,472),
+(1,473),
+(1,474),
+(1,475),
+(1,476),
+(1,477),
+(1,478),
+(1,479),
+(1,480),
+(1,481),
+(1,482);
+(1,483),
+(1,484),
+(1,485),
+(1,486),
+(1,487),
+(1,488),
+(1,489),
+(1,490),
+(1,491),
+(1,492),
+(1,493),
+(1,494),
+(1,495),
+(1,496),
+(1,497),
+(1,498),
+(1,499),
+(1,500),
+(1,501),
+(1,502),
+(1,503),
+(1,504),
+(1,505),
+(1,506),
+(1,507),
+(1,508),
+(1,509),
+(1,510),
+(1,511),
+(1,512),
+(1,513),
+(1,514),
+(1,515),
+(1,516),
+(1,517),
+(1,518),
+(1,519),
+(1,520),
+(1,521),
+(1,522),
+(1,523),
+(1,524),
+(1,525),
+(1,526),
+(1,527),
+(1,528),
+(1,529),
+(1,530),
+(1,531),
+(1,532),
+(1,533),
+(1,534),
+(1,535),
+(1,536),
+(1,537),
+(1,538),
+(1,539),
+(1,540),
+(1,541),
+(1,542),
+(1,543),
+(1,544),
+(1,545),
+(1,546),
+(1,547),
+(1,548),
+(1,549),
+(1,550),
+(1,551),
+(1,552),
+(1,553),
+(1,554),
+(1,555),
+(1,556),
+(1,557),
+(1,558),
+(1,559),
+(1,560),
+(1,561),
+(1,562),
+(1,563),
+(1,564),
+(1,565),
+(1,566),
+(1,567),
+(1,568),
+(1,569),
+(1,570),
+(1,571),
+(1,572),
+(1,
 
 
      SELECT 
@@ -356,11 +1008,11 @@ INSERT INTO permission (name, `group`, is_menu_web, web_route_key) VALUES
 ("purchase_product.update","purchase_product",NULL,NULL),
 ("purchase_product.remove","purchase_product",NULL,NULL),
 
-("purchase.getlist","purchase",1,"/purchase"),
-("purchase.getone","purchase",NULL,NULL),
-("purchase.create","purchase",NULL,NULL),
-("purchase.update","purchase",NULL,NULL),
-("purchase.remove","purchase",NULL,NULL),
+("purchase-orders.getlist","purchase-orders",1,"/purchase-orders"),
+("purchase-orders.getone","purchase-orders",NULL,NULL),
+("purchase-orders.create","purchase-orders",NULL,NULL),
+("purchase-orders.update","purchase-orders",NULL,NULL),
+("purchase-orders.remove","purchase-orders",NULL,NULL),
 
 ("employee.getlist","employee",1,"/employee"),
 ("employee.getone","employee",NULL,NULL),

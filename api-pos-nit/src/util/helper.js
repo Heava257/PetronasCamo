@@ -5,7 +5,7 @@ const fs = require("fs/promises");
 const multer = require("multer");
 const axios = require('axios');
 const crypto = require('crypto');
-const rateLimit = require("express-rate-limit");
+const { rateLimit } = require("express-rate-limit");
 
 exports.db = connection;
 exports.logError = logError;
@@ -21,19 +21,6 @@ exports.toInt = () => {
 exports.isArray = (data) => {
   return true;
 };
-
-// exports.notEmpty = (value) => {
-//   if (
-//     value == "" ||
-//     value == null ||
-//     value == undefined ||
-//     value == "null" ||
-//     value == "undefined"
-//   ) {
-//     return false;
-//   }
-//   return true;
-// };
 
 exports.isEmpty = (value) => {
   if (
@@ -62,8 +49,7 @@ exports.formartDateClient = (data) => {
 
 exports.uploadFile = multer({
   storage: multer.diskStorage({
-    destination: function (req, file, callback) {
-      // image path
+    destination: function (req, file, callback) { 
       callback(null, config.image_path);
     },
     filename: function (req, file, callback) {
@@ -72,7 +58,7 @@ exports.uploadFile = multer({
     },
   }),
   limits: {
-    fileSize: 1024 * 1024 * 3, // max 3MB
+    fileSize: 1024 * 1024 * 3,
   },
   fileFilter: function (req, file, callback) {
     if (
@@ -80,7 +66,6 @@ exports.uploadFile = multer({
       file.mimetype !== "image/jpg" &&
       file.mimetype !== "image/jpeg"
     ) {
-      // not allow
       callback(null, false);
     } else {
       callback(null, true);
@@ -94,19 +79,14 @@ exports.removeFile = async (fileName) => {
     await fs.unlink(filePath);
     return "File deleted successfully";
   } catch (err) {
-    // console.error("Error deleting file:", err);
     return true;
-    // throw err;
   }
 };
 
-
 exports.sendTelegramMessage = async (messageText) => {
-  const TELEGRAM_TOKEN = "7944013925:AAGhl7BTtTaSYhODzg99xplHrJWAAuzJgnMA";
-  const CHAT_ID = "-1002627306293"; // Your chat ID
-
+  const TELEGRAM_TOKEN = "8038330594:AAGuWPsRpqZ_ewPRc5cwgZ4MQCkE1IevXSk";
+  const CHAT_ID = "-5207829142";
   const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-
   try {
     await axios.post(url, {
       chat_id: CHAT_ID,
@@ -117,16 +97,11 @@ exports.sendTelegramMessage = async (messageText) => {
     console.error("Telegram Error:", err.message);
   }
 };
-
-
-
 
 exports.sendTelegramMessagenewcustomer = async (messageText) => {
   const TELEGRAM_TOKEN = "7018630729:AAGHS8Gw2Mywc-ybLo94SHyJ0icEptdEi6sA";
-  const CHAT_ID = "-1002471746151"; // Your chat ID
-
+  const CHAT_ID = "-1002471746151";
   const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-
   try {
     await axios.post(url, {
       chat_id: CHAT_ID,
@@ -137,78 +112,53 @@ exports.sendTelegramMessagenewcustomer = async (messageText) => {
     console.error("Telegram Error:", err.message);
   }
 };
-
-
-
-
 
 exports.sendTelegramMessagenewcustomerPays = async (messageText, imageUrls = []) => {
   const TELEGRAM_TOKEN = "7918904743:AAHHcNK-R2EXcnsB3gAP-dYlYP38MwBxYT8A";
-  const CHAT_ID = "-1002658440158"; // Replace with your actual chat ID
-
+  const CHAT_ID = "-1002658440158";
   const apiBase = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
-
   try {
-    // 1. Send the text message
     await axios.post(`${apiBase}/sendMessage`, {
       chat_id: CHAT_ID,
       text: messageText,
       parse_mode: "HTML",
     });
-
-    // 2. Send each image (if any)
     for (const imageUrl of imageUrls) {
       await axios.post(`${apiBase}/sendPhoto`, {
         chat_id: CHAT_ID,
         photo: imageUrl,
       });
     }
-
   } catch (err) {
     console.error("Telegram Error:", err.response?.data || err.message);
   }
 };
-
-
 
 exports.sendTelegramMessageIvoices_fake = async (messageText, imageUrls = []) => {
   const TELEGRAM_TOKEN = "7462727466:AAFgGq_JfaqFAium8ob2cR1DV3yD7YQpMOw";
-  const CHAT_ID = "-1002829112188"; // Replace with your actual chat ID
-
+  const CHAT_ID = "-1002829112188";
   const apiBase = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
-
   try {
-    // 1. Send the text message
     await axios.post(`${apiBase}/sendMessage`, {
       chat_id: CHAT_ID,
       text: messageText,
       parse_mode: "HTML",
     });
-
-    // 2. Send each image (if any)
     for (const imageUrl of imageUrls) {
       await axios.post(`${apiBase}/sendPhoto`, {
         chat_id: CHAT_ID,
         photo: imageUrl,
       });
     }
-
   } catch (err) {
     console.error("Telegram Error:", err.response?.data || err.message);
   }
 };
 
-
-
-
-
-
 exports.sendTelegramMessagenewstock = async (messageText) => {
   const TELEGRAM_TOKEN = "8488759873:AAFNycju0r_cBBsg_Dk-SRs1r1tuBFiXPB8A";
-  const CHAT_ID = "-1003037574963"; // Your chat ID
-
+  const CHAT_ID = "-1003037574963";
   const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-
   try {
     await axios.post(url, {
       chat_id: CHAT_ID,
@@ -219,15 +169,11 @@ exports.sendTelegramMessagenewstock = async (messageText) => {
     console.error("Telegram Error:", err.message);
   }
 };
-
-
 
 exports.sendTelegramMessagenewLogin = async (messageText) => {
   const TELEGRAM_TOKEN = "8046971725:AAFt4UJ-2D9pRdwb-BOUj3we96pwL4vo3vUA";
-  const CHAT_ID = "-1002862378477"; // Your chat ID
-
+  const CHAT_ID = "-1002862378477";
   const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
-
   try {
     await axios.post(url, {
       chat_id: CHAT_ID,
@@ -238,13 +184,6 @@ exports.sendTelegramMessagenewLogin = async (messageText) => {
     console.error("Telegram Error:", err.message);
   }
 };
-
-
-
-
-
-
-
 
 exports.formatPrice = function (value) {
   return `$${Number(value || 0).toLocaleString(undefined, {
@@ -252,7 +191,6 @@ exports.formatPrice = function (value) {
     maximumFractionDigits: 2,
   })}`;
 };
-
 
 exports.formatPriceArrow = (value) => {
   return `$${Number(value || 0).toLocaleString(undefined, {
@@ -264,9 +202,7 @@ exports.formatPriceArrow = (value) => {
 exports.formatPriceSafe = (value) => {
   try {
     const num = Number(value || 0);
-    if (isNaN(num)) {
-      return '$0.00';
-    }
+    if (isNaN(num)) return '$0.00';
     return `$${num.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -280,9 +216,7 @@ exports.formatPriceSafe = (value) => {
 exports.formatPriceWithCurrency = (value, currency = '$') => {
   try {
     const num = Number(value || 0);
-    if (isNaN(num)) {
-      return `${currency}0.00`;
-    }
+    if (isNaN(num)) return `${currency}0.00`;
     return `${currency}${num.toLocaleString(undefined, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -312,15 +246,10 @@ exports.formatPriceLocale = (value, locale = 'en-US', currency = 'USD') => {
   }
 };
 
-
 exports.formatPriceRecommended = (value) => {
   try {
     const num = Number(value || 0);
-
-    if (isNaN(num)) {
-      return '$0.00';
-    }
-
+    if (isNaN(num)) return '$0.00';
     return `$${num.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
@@ -331,13 +260,8 @@ exports.formatPriceRecommended = (value) => {
   }
 };
 
-
-
-// Helper function to parse User Agent
 exports.parseUserAgent = (userAgent) => {
   const ua = userAgent.toLowerCase();
-  
-  // Detect browser
   let browser = 'Unknown';
   let version = '';
   if (ua.includes('firefox')) {
@@ -353,8 +277,7 @@ exports.parseUserAgent = (userAgent) => {
     browser = 'Edge';
     version = ua.match(/edg\/(\d+\.\d+)/)?.[1] || '';
   }
-
-  // Detect OS
+  
   let os = 'Unknown';
   if (ua.includes('windows nt 10.0')) os = 'Windows 10/11';
   else if (ua.includes('windows nt 6.3')) os = 'Windows 8.1';
@@ -365,12 +288,10 @@ exports.parseUserAgent = (userAgent) => {
   else if (ua.includes('android')) os = 'Android';
   else if (ua.includes('iphone') || ua.includes('ipad')) os = 'iOS';
 
-  // Detect device type
   let deviceType = 'Desktop';
   if (ua.includes('mobile')) deviceType = 'Mobile';
   else if (ua.includes('tablet') || ua.includes('ipad')) deviceType = 'Tablet';
-
-  // Detect platform
+  
   let platform = 'Unknown';
   if (ua.includes('win')) platform = 'Windows';
   else if (ua.includes('mac')) platform = 'MacOS';
@@ -378,127 +299,107 @@ exports.parseUserAgent = (userAgent) => {
   else if (ua.includes('android')) platform = 'Android';
   else if (ua.includes('iphone') || ua.includes('ipad')) platform = 'iOS';
 
-  return {
-    browser,
-    version,
-    os,
-    deviceType,
-    platform,
-    fullAgent: userAgent
-  };
-}
+  return { browser, version, os, deviceType, platform, fullAgent: userAgent };
+};
 
-// Helper function to get location from IP (optional - requires IP geolocation API)
 exports.getLocationFromIP = async (ip) => {
   try {
-    // Skip for localhost/private IPs
     if (ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
-      return {
-        country: 'Local Network',
-        city: 'Localhost',
-        isp: 'Local'
-      };
+      return { country: 'Local Network', city: 'Localhost', isp: 'Local' };
     }
-
-    // You can use a free IP geolocation service
-    // Example: ipapi.co, ip-api.com, ipgeolocation.io
-    // Uncomment and configure if you want to use it:
-    
-    /*
-    const fetch = require('node-fetch');
-    const response = await fetch(`http://ip-api.com/json/${ip}`);
-    const data = await response.json();
-    
-    return {
-      country: data.country || 'Unknown',
-      city: data.city || 'Unknown',
-      isp: data.isp || 'Unknown',
-      lat: data.lat,
-      lon: data.lon
-    };
-    */
-    
-    return null; // Return null if not using IP geolocation
+    return null;
   } catch (error) {
     console.error('Error getting location:', error);
     return null;
   }
-}
+};
 
+// ✅ FIXED: Custom IPv6-safe key generator
+const ipKeyGenerator = (req) => {
+  try {
+    // Get IP from various sources
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded 
+      ? forwarded.split(',')[0].trim()
+      : req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
+    
+    // ✅ Normalize IPv6 (remove ::ffff: prefix)
+    const normalizedIp = ip.replace(/^::ffff:/, '').replace(/^::1$/, '127.0.0.1');
+    
+    return normalizedIp;
+  } catch (error) {
+    console.error('Error in ipKeyGenerator:', error);
+    return 'unknown';
+  }
+};
 
+// ✅ FIXED: Login limiter with IPv6 support
 exports.loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Max 10 login attempts per IP (including successful)
-  skipSuccessfulRequests: false, // ⚠️ Count ALL attempts
-  skipFailedRequests: false, // Count failed attempts
+  windowMs: 1 * 60 * 1000,
+  max: 10,
+  skipSuccessfulRequests: false,
+  skipFailedRequests: false,
   standardHeaders: true,
   legacyHeaders: false,
   
-  keyGenerator: (req) => {
-    return req.ip || 
-           req.headers['x-forwarded-for']?.split(',')[0] || 
-           req.connection.remoteAddress || 
-           req.socket.remoteAddress || 
-           'unknown';
-  },
+  // ✅ Use custom IPv6-safe key generator
+  keyGenerator: ipKeyGenerator,
+  
+  // ✅ Skip in development
+  skip: (req) => process.env.NODE_ENV === 'development',
   
   handler: (req, res) => {
-    const retryAfter = Math.ceil(req.rateLimit.resetTime / 1000 / 60);
-    
+    const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000 / 60);
     res.status(429).json({
       error: {
-        message: `Too many login attempts from this IP. Please try again after ${retryAfter} minutes.`,
-        message_kh: `ព្យាយាមចូលច្រើនពេកពី IP នេះ។ សូមព្យាយាមម្តងទៀតក្រោយពី ${retryAfter} នាទី។`,
+        message: `Too many login attempts. Please try again after ${retryAfter} minutes.`,
+        message_kh: `ព្យាយាមចូលច្រើនពេក។ សូមព្យាយាមម្តងទៀតក្រោយពី ${retryAfter} នាទី។`,
         retry_after: retryAfter,
         limit: req.rateLimit.limit,
-        current: req.rateLimit.current,
-        reset_time: new Date(req.rateLimit.resetTime).toISOString()
+        current: req.rateLimit.current
       }
     });
   }
 });
 
+// ✅ FIXED: Failed login limiter
 exports.failedLoginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5, 
-  skipSuccessfulRequests: true, 
-  skipFailedRequests: false, 
+  windowMs: 1 * 60 * 1000,
+  max: 5,
+  skipSuccessfulRequests: true,
+  skipFailedRequests: false,
   
-  keyGenerator: (req) => {
-    return req.ip || 
-           req.headers['x-forwarded-for']?.split(',')[0] || 
-           req.connection.remoteAddress || 
-           'unknown';
-  },
+  keyGenerator: ipKeyGenerator,
+  skip: (req) => process.env.NODE_ENV === 'development',
   
   handler: (req, res) => {
-    const retryAfter = Math.ceil(req.rateLimit.resetTime / 1000 / 60);
-    
+    const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000 / 60);
     res.status(429).json({
       error: {
         message: `Too many failed login attempts. Please try again after ${retryAfter} minutes.`,
         message_kh: `ការព្យាយាមចូលបរាជ័យច្រើនពេក។ សូមព្យាយាមម្តងទៀតក្រោយពី ${retryAfter} នាទី។`,
-        retry_after: retryAfter,
-        reset_time: new Date(req.rateLimit.resetTime).toISOString()
+        retry_after: retryAfter
       }
     });
   }
 });
 
+// ✅ FIXED: Username limiter
 exports.usernameLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 5, 
+  windowMs: 1 * 60 * 1000,
+  max: 5,
   skipSuccessfulRequests: true,
   
   keyGenerator: (req) => {
     const username = req.body?.username || 'unknown';
-    const ip = req.ip || 'unknown';
+    const ip = ipKeyGenerator(req);
     return `${username}-${ip}`;
   },
   
+  skip: (req) => process.env.NODE_ENV === 'development',
+  
   handler: (req, res) => {
-    const retryAfter = Math.ceil(req.rateLimit.resetTime / 1000 / 60);
-    
+    const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000 / 60);
     res.status(429).json({
       error: {
         username: `Too many login attempts for this account. Please try again after ${retryAfter} minutes.`,
@@ -508,3 +409,142 @@ exports.usernameLimiter = rateLimit({
     });
   }
 });
+
+exports.trackUserActivity = async (req, res, next) => {
+  try {
+    if (req.current_id) {
+      const userId = req.current_id;
+      const sessionId = req.sessionID || req.headers['x-session-id'] || 'default';
+      const ipAddress = ipKeyGenerator(req);
+      const userAgent = req.get('User-Agent') || 'Unknown';
+      updateUserActivity(userId, sessionId, ipAddress, userAgent).catch(err => {
+        console.error('Failed to update user activity:', err);
+      });
+    }
+    next();
+  } catch (error) {
+    console.error('Error in trackUserActivity middleware:', error);
+    next(); 
+  }
+};
+
+async function updateUserActivity(userId) {
+  try {
+    await connection.query(`
+      UPDATE user 
+      SET is_online = 1, 
+          last_activity = NOW(), 
+          online_status = 'online'
+      WHERE id = ?
+    `, [userId]);
+  } catch (error) {
+    console.error('Failed to update user activity:', error);
+  }
+}
+
+exports.getOnlineUsers = async (req, res) => {
+  try {
+    const [onlineUsers] = await connection.query(`
+      SELECT 
+        u.id, u.name, u.username, u.profile_image, u.is_online, u.last_activity, u.online_status,
+        r.name AS role_name, r.code AS role_code,
+        TIMESTAMPDIFF(MINUTE, u.last_activity, NOW()) AS minutes_since_activity
+      FROM user u
+      INNER JOIN role r ON u.role_id = r.id
+      WHERE u.is_active = 1 AND u.is_online = 1 
+        AND u.last_activity >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
+      ORDER BY u.last_activity DESC
+    `);
+
+    res.json({
+      success: true,
+      online_users: onlineUsers,
+      total_online: onlineUsers.length,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    console.error('Error getting online users:', error);
+    res.status(500).json({ error: true, message: 'Failed to get online users' });
+  }
+};
+
+exports.getUserStatus = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    const [userStatus] = await connection.query(`
+      SELECT 
+        u.id, u.name, u.username, u.is_online, u.last_activity, u.online_status,
+        TIMESTAMPDIFF(MINUTE, u.last_activity, NOW()) AS minutes_inactive,
+        CASE
+          WHEN TIMESTAMPDIFF(MINUTE, u.last_activity, NOW()) < 3 THEN 'online'
+          WHEN TIMESTAMPDIFF(MINUTE, u.last_activity, NOW()) < 5 THEN 'away'
+          ELSE 'offline'
+        END AS computed_status
+      FROM user u WHERE u.id = ?
+    `, [user_id]);
+
+    if (userStatus.length === 0) {
+      return res.status(404).json({ error: true, message: 'User not found' });
+    }
+
+    res.json({ success: true, user: userStatus[0] });
+  } catch (error) {
+    console.error('Error getting user status:', error);
+    res.status(500).json({ error: true, message: 'Failed to get user status' });
+  }
+};
+
+exports.markUserOffline = async (userId) => {
+  try {
+    await connection.query(`
+      UPDATE user 
+      SET is_online = 0, online_status = 'offline'
+      WHERE id = ?
+    `, [userId]);
+
+    await connection.query(`
+      UPDATE user_online_status 
+      SET is_online = 0
+      WHERE user_id = ?
+    `, [userId]);
+  } catch (error) {
+    console.error('Failed to mark user offline:', error);
+  }
+};
+
+exports.getAdminActivityStats = async (req, res) => {
+  try {
+    const [stats] = await connection.query(`
+      SELECT 
+        r.name AS role_name,
+        COUNT(*) AS total_users,
+        SUM(CASE WHEN u.is_online = 1 THEN 1 ELSE 0 END) AS online_count,
+        SUM(CASE WHEN u.online_status = 'away' THEN 1 ELSE 0 END) AS away_count,
+        SUM(CASE WHEN u.is_online = 0 THEN 1 ELSE 0 END) AS offline_count
+      FROM user u
+      INNER JOIN role r ON u.role_id = r.id
+      WHERE u.is_active = 1 AND r.code IN ('ADMIN', 'SUPER_ADMIN')
+      GROUP BY r.name
+    `);
+
+    const [onlineAdmins] = await connection.query(`
+      SELECT 
+        u.id, u.name, u.username, u.profile_image, u.online_status, u.last_activity,
+        r.name AS role_name
+      FROM user u
+      INNER JOIN role r ON u.role_id = r.id
+      WHERE u.is_online = 1 AND r.code IN ('ADMIN', 'SUPER_ADMIN')
+      ORDER BY u.last_activity DESC
+    `);
+
+    res.json({
+      success: true,
+      stats: stats,
+      online_admins: onlineAdmins,
+      timestamp: new Date()
+    });
+  } catch (error) {
+    console.error('Error getting admin activity stats:', error);
+    res.status(500).json({ error: true, message: 'Failed to get admin activity stats' });
+  }
+};

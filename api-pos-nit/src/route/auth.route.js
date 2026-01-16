@@ -1,5 +1,3 @@
-
-
 const {
   getList,
   register,
@@ -16,24 +14,41 @@ const {
   googleOAuthCallback,
   appleOAuthCallback,
   appleOAuth,
+  logout,
+  changePassword,
 } = require("../controller/auth.controller");
 const { uploadFile, usernameLimiter, failedLoginLimiter } = require("../util/helper");
 
 module.exports = (app) => {
-  app.get("/api/groups/get-list", validate_token("user.getlist"), getList);
-  app.post('/api/refresh-token', refreshToken);
-  app.post("/api/auth/register", validate_token("user.create"), uploadFile.single("upload_image"), register);
-  app.delete("/api/user", validate_token("user.remove"), remove);
-  app.put("/api/auth/register", validate_token("user.update"), uploadFile.single("upload_image"), update);
   app.post("/api/auth/login", usernameLimiter, failedLoginLimiter, login);
+  app.post("/api/auth/logout", validate_token(), logout);
+  app.post('/api/refresh-token', refreshToken);
   app.post("/api/auth/profile", validate_token(), profile);
-  app.post("/api/auth/new_barcode", validate_token(), newBarcode);
-  app.get("/api/auth/user-profile/:userId", validate_token(), getuserProfile);
-  app.put("/api/user/profile/:userId", validate_token("user.update"), uploadFile.single("upload_image"), updateuserProfile);
   app.get("/api/auth/google", googleOAuth);
   app.get("/api/auth/google/callback", googleOAuthCallback);
   app.get("/api/auth/apple", appleOAuth);
   app.post("/api/auth/apple/callback", appleOAuthCallback);
-
+  app.get("/api/auth/user-profile/:userId", validate_token(), getuserProfile);
+  app.put(
+    "/api/user/profile/:userId",
+    validate_token("user.update"),
+    uploadFile.single("upload_image"),
+    updateuserProfile
+  );
+  app.get("/api/groups/get-list", validate_token("user.getlist"), getList);
+  app.post("/api/auth/new_barcode", validate_token(), newBarcode);
+  app.post(
+    "/api/auth/register",
+    validate_token(),
+    uploadFile.single("upload_image"),
+    register
+  );
+  app.put(
+    "/api/auth/register",
+    validate_token("user.update"),
+    uploadFile.single("upload_image"),
+    update
+  );
+  app.delete("/api/user", validate_token("user.remove"), remove);
+  app.put("/api/user/change-password/:userId", validate_token(), changePassword);
 };
-

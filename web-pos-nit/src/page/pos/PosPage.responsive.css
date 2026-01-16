@@ -1,37 +1,130 @@
-/* សម្រាប់អេក្រង់តូច (ទូរស័ព្ទ) */
-@media only screen and (max-width: 768px) {
-    .responsive-table-container {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-    
-    .cart-card {
-      margin-top: 16px;
-    }
-    
-    .cart-items-container {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    
-    .pageHeader {
-      padding: 8px;
-    }
-    
-    .ant-table-thead > tr > th,
-    .ant-table-tbody > tr > td {
-      padding: 8px !important;
-    }
+/* ✅ FIXED RESPONSIVE TABLE CSS */
+/* Add this to PosPage.responsive.css or PosPage.module.css */
+
+.enhanced-pos-table {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* ✅ Make table take full width */
+.enhanced-pos-table .ant-table {
+  width: 100%;
+  min-width: 100%;
+}
+
+.enhanced-pos-table .ant-table-wrapper {
+  width: 100%;
+}
+
+/* ✅ Responsive column widths */
+@media (min-width: 1024px) {
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(1) {
+    width: 30% !important;
   }
   
-  /* សម្រាប់ទូរស័ព្ទដែលមានអេក្រង់តូចជាង */
-  @media only screen and (max-width: 480px) {
-    .ant-select, .ant-input-search {
-      width: 100% !important;
-      margin-bottom: 8px;
-    }
-    
-    .pageHeader .ant-space-item {
-      width: 100%;
-    }
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(2) {
+    width: 20% !important;
   }
+  
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(3) {
+    width: 20% !important;
+  }
+  
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(4) {
+    width: 30% !important;
+  }
+}
+
+/* ✅ Tablet responsive */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(1) {
+    width: 35% !important;
+  }
+  
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(2) {
+    width: 20% !important;
+  }
+  
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(3) {
+    width: 20% !important;
+  }
+  
+  .enhanced-pos-table .ant-table-thead > tr > th:nth-child(4) {
+    width: 25% !important;
+  }
+}
+
+/* ✅ Remove fixed widths */
+.enhanced-pos-table .ant-table-thead > tr > th {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+.enhanced-pos-table .ant-table-tbody > tr > td {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+/* ✅ Full width container */
+.enhanced-pos-container {
+  width: 100%;
+  max-width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+/* ✅ Responsive padding */
+@media (max-width: 768px) {
+  .enhanced-pos-table {
+    padding: 0 8px;
+  }
+}
+
+/* ✅ Table hover effects */
+.enhanced-pos-table .ant-table-tbody > tr:hover {
+  background-color: #f8f9ff !important;
+  transform: scale(1.001);
+  transition: all 0.2s ease;
+}
+
+/* ✅ Smooth scrollbar */
+.enhanced-pos-table::-webkit-scrollbar {
+  height: 8px;
+}
+
+.enhanced-pos-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.enhanced-pos-table::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.enhanced-pos-table::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ✅ Row spacing */
+.enhanced-pos-table .ant-table-tbody > tr > td {
+  padding: 12px 16px !important;
+}
+
+.enhanced-pos-table .ant-table-thead > tr > th {
+  padding: 16px 16px !important;
+  font-weight: 600;
+}
+
+/* ✅ Mobile card view improvements */
+@media (max-width: 1023px) {
+  .customer-card {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  .customer-card-grid {
+    display: grid;
+    gap: 12px;
+  }
+}

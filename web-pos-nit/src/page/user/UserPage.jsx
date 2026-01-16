@@ -16,41 +16,104 @@ import {
   Tag,
   Tooltip,
   Upload,
+  Drawer,
+  Alert,
+  Tabs,
+  Card,
+  Statistic,
+  Divider,
+  Progress,
+  Badge
 } from "antd";
 import { configStore } from "../../store/configStore";
-import { MdDelete, MdEdit, MdOutlineCreateNewFolder } from "react-icons/md";
-import { UploadOutlined, UserOutlined } from "@ant-design/icons";
+import { 
+  MdDelete, 
+  MdEdit, 
+  MdOutlineCreateNewFolder,
+  MdOutlineAccountCircle,
+  MdOutlineEmail,
+  MdOutlinePhone,
+  MdOutlineLocationOn,
+  MdOutlineBusiness,
+  MdOutlineSecurity,
+  MdOutlineCalendarToday
+} from "react-icons/md";
+import { 
+  UploadOutlined, 
+  UserOutlined,
+  EyeOutlined,
+  TeamOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  FilterOutlined,
+  ExportOutlined,
+  ReloadOutlined,
+  MenuOutlined
+} from "@ant-design/icons";
 import { Config } from "../../util/config";
-import { IoEyeOutline } from "react-icons/io5";
+import { IoEyeOutline, IoFilter } from "react-icons/io5";
 import imageExtensions from 'image-extensions';
 import { useTranslation } from "../../locales/TranslationContext";
+import { getProfile } from "../../store/profile.store";
 import dayjs from "dayjs";
 import "./user.css";
 
-function UserPage() {
-  const { t } = useTranslation(); // Add this
+const { TabPane } = Tabs;
+
+function AdminPage() {
+  const { t } = useTranslation();
+  const profile = getProfile();
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState("");
   const [imageDefault, setImageDefault] = useState([]);
   const [form] = Form.useForm();
   const { config } = configStore();
-  const [filter, setFilter] = useState({
-    txt_search: "",
-    category_id: "",
-    brand: "",
-  });
+  
+  const [activeTab, setActiveTab] = useState("1");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [selectedRole, setSelectedRole] = useState("all");
+  const [filterDrawerVisible, setFilterDrawerVisible] = useState(false);
+
   const [state, setState] = useState({
     list: [],
+    filteredList: [],
     role: [],
     groups: [],
     loading: false,
     visible: false,
+    isSuperAdmin: false,
+    currentUserRole: null,
+    stats: {
+      total: 0,
+      active: 0,
+      inactive: 0,
+      byRole: {}
+    }
   });
+  
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     getList();
-    getGroups();
+    getRoles();
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  useEffect(() => {
+    filterUsers();
+  }, [filterStatus, selectedRole, state.list]);
+
+  useEffect(() => {
+    calculateStats();
+  }, [state.list]);
+
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768);
+  };
 
   const getBase64 = (file) => {
     return new Promise((resolve, reject) => {
@@ -61,25 +124,132 @@ function UserPage() {
     });
   };
 
+  const calculateStats = () => {
+    const stats = {
+      total: state.list.length,
+      active: state.list.filter(user => user.is_active === 1).length,
+      inactive: state.list.filter(user => user.is_active === 0).length,
+      byRole: {}
+    };
+
+    state.list.forEach(user => {
+      if (user.role_name) {
+        stats.byRole[user.role_name] = (stats.byRole[user.role_name] || 0) + 1;
+      }
+    });
+
+    setState(prev => ({ ...prev, stats }));
+  };
+
+  const filterUsers = () => {
+    let filtered = [...state.list];
+
+    if (filterStatus === "active") {
+      filtered = filtered.filter(user => user.is_active === 1);
+    } else if (filterStatus === "inactive") {
+      filtered = filtered.filter(user => user.is_active === 0);
+    }
+
+    if (selectedRole !== "all") {
+      filtered = filtered.filter(user => user.role_name === selectedRole);
+    }
+
+    setState(prev => ({ ...prev, filteredList: filtered }));
+  };
+
+  const compressImage = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          const maxSize = 800;
+          if (width > maxSize || height > maxSize) {
+            if (width > height) {
+              height = (height / width) * maxSize;
+              width = maxSize;
+            } else {
+              width = (width / height) * maxSize;
+              height = maxSize;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now()
+                });
+                resolve(compressedFile);
+              } else {
+                reject(new Error('Canvas is empty'));
+              }
+            },
+            'image/jpeg',
+            0.7
+          );
+        };
+
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
   const getList = async () => {
+    setState(prev => ({ ...prev, loading: true }));
     const res = await request("groups/get-list", "get");
     if (res && !res.error) {
       setState((pre) => ({
         ...pre,
-        list: res.list,
-        role: res.role,
-        branch_name: res.branch_name,
+        list: res.list || [],
+        filteredList: res.list || [],
+        isSuperAdmin: res.is_super_admin || false,
+        currentUserRole: profile?.role_code || null,
+        loading: false
       }));
+    } else {
+      setState(prev => ({ ...prev, loading: false }));
     }
   };
 
-  const getGroups = async () => {
-    const res = await request("groups/get-list", "get");
-    if (res && !res.error) {
-      setState((pre) => ({
-        ...pre,
-        groups: res.list || res.groups,
-      }));
+  const getRoles = async () => {
+    try {
+      const res = await request("role", "get");
+
+      if (res && res.list && Array.isArray(res.list)) {
+        const transformedRoles = res.list.map(role => ({
+          value: role.id,
+          label: role.name,
+          code: role.code,
+          id: role.id
+        }));
+
+        setState((pre) => ({
+          ...pre,
+          role: transformedRoles,
+        }));
+      } else {
+        message.error('Failed to load roles');
+      }
+    } catch (error) {
+      message.error('Failed to load roles');
     }
   };
 
@@ -110,19 +280,18 @@ function UserPage() {
 
   const clickBtnDelete = (item) => {
     Modal.confirm({
-      title: t("Delete"),
-      content: t("Are you sure you want to remove this user?"),
+      title: t("Delete User"),
+      content: `${t("Are you sure you want to delete")} ${item.name}?`,
+      okText: t("Delete"),
+      cancelText: t("Cancel"),
+      okType: "danger",
       onOk: async () => {
         const res = await request("user", "delete", { id: item.id });
         if (res && !res.error) {
           message.success(res.message);
-          const newList = state.list.filter((item1) => item1.id !== item.id);
-          setState((prev) => ({
-            ...prev,
-            list: newList,
-          }));
+          getList();
         } else {
-          message.error(res.message || t("This user cannot be deleted because they are linked to other records."));
+          message.error(res.message || t("Cannot delete user"));
         }
       },
     });
@@ -138,12 +307,17 @@ function UserPage() {
   };
 
   const handleOpenModal = () => {
+    if (!state.isSuperAdmin && profile?.branch_name) {
+      form.setFieldsValue({
+        branch_name: profile.branch_name,
+        group_id: profile.group_id,
+      });
+    }
+
     setState((pre) => ({
       ...pre,
       visible: true,
     }));
-    form.resetFields();
-    setImageDefault([]);
   };
 
   const beforeUpload = (file) => {
@@ -153,78 +327,99 @@ function UserPage() {
 
     if (!isValidExtension || !isImage) {
       message.error(t('You can only upload image files!'));
+      return false;
     }
 
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
       message.error(t('Image must be smaller than 2MB!'));
+      return false;
     }
 
-    console.log("File type:", file.type);
-    console.log("File extension:", fileExtension);
-
-    return isValidExtension && isImage && isLt2M;
+    return true;
   };
 
   const onFinish = async (items) => {
-    if (items.password !== items.confirm_password) {
-      message.error(t("ពាក្យសម្ងាត់មិនត្រូវគ្នា!"));
-      return;
-    }
+    try {
+      if (items.password !== items.confirm_password) {
+        message.error(t("Passwords do not match"));
+        return;
+      }
 
-    const currentUserId = form.getFieldValue("id");
-    const isUpdate = !!currentUserId;
+      const currentUserId = form.getFieldValue("id");
+      const isUpdate = !!currentUserId;
 
-    const isEmailExist = state.list.some(
-      (user) => user.username === items.username && user.id !== currentUserId
-    );
+      const isEmailExist = state.list.some(
+        (user) => user.username === items.username && user.id !== currentUserId
+      );
 
-    if (isEmailExist) {
-      message.error(t("Email មានរួចហើយ!"));
-      return;
-    }
+      if (isEmailExist) {
+        message.error(t("Email already exists"));
+        return;
+      }
 
-    const isTelExist = state.list.some(
-      (user) => user.tel === items.tel && user.id !== currentUserId
-    );
+      const isTelExist = state.list.some(
+        (user) => user.tel === items.tel && user.id !== currentUserId
+      );
 
-    if (isTelExist) {
-      message.error(t("លេខទូរស័ព្ទមានរួចហើយ!"));
-      return;
-    }
+      if (isTelExist) {
+        message.error(t("Phone number already exists"));
+        return;
+      }
 
-    const params = new FormData();
-    params.append("name", items.name);
-    params.append("username", items.username);
-    params.append("password", items.password);
-    params.append("role_id", items.role_id);
-    params.append("group_id", items.group_id);
-    params.append("address", items.address);
-    params.append("tel", items.tel);
-    params.append("branch_name", items.branch_name);
-    params.append("is_active", items.is_active);
+      setState(prev => ({ ...prev, loading: true }));
 
-    if (items.profile_image && items.profile_image.fileList && items.profile_image.fileList[0]) {
-      const file = items.profile_image.fileList[0].originFileObj;
-      console.log("File type:", file.type);
-      console.log("File name:", file.name);
-      console.log("File size:", file.size + " bytes");
-      params.append("upload_image", file);
-    }
+      const params = new FormData();
+      params.append("name", items.name || "");
+      params.append("username", items.username || "");
+      params.append("password", items.password || "");
+      params.append("role_id", items.role_id || "");
+      params.append("group_id", items.group_id || "");
+      params.append("address", items.address || "");
+      params.append("tel", items.tel || "");
+      params.append("is_active", items.is_active !== undefined ? items.is_active : 1);
 
-    if (isUpdate) {
-      params.append("id", currentUserId);
-    }
+      if (!state.isSuperAdmin) {
+        params.append("branch_name", profile.branch_name || "");
+      } else {
+        params.append("branch_name", items.branch_name || "");
+      }
 
-    const method = isUpdate ? "put" : "post";
-    const res = await request("auth/register", method, params);
+      if (items.profile_image?.fileList?.[0]) {
+        let file = items.profile_image.fileList[0].originFileObj;
 
-    if (res && !res.error) {
-      message.success(res.message);
-      getList();
-      handleCloseModal();
-    } else {
-      message.error(res.message || t("មានបញ្ហាកើតឡើង!"));
+        const originalSizeMB = file.size / 1024 / 1024;
+
+        if (originalSizeMB > 1) {
+          try {
+            file = await compressImage(file);
+          } catch (error) {
+            console.error('Compression failed:', error);
+          }
+        }
+
+        params.append("upload_image", file);
+      }
+
+      if (isUpdate) {
+        params.append("id", currentUserId);
+      }
+
+      const method = isUpdate ? "put" : "post";
+      const res = await request("auth/register", method, params);
+
+      setState(prev => ({ ...prev, loading: false }));
+
+      if (res && !res.error) {
+        message.success(res.message || t('User saved successfully!'));
+        getList();
+        handleCloseModal();
+      } else {
+        message.error(res.message || t("An error occurred"));
+      }
+    } catch (error) {
+      setState(prev => ({ ...prev, loading: false }));
+      message.error(t('Failed to save user'));
     }
   };
 
@@ -237,19 +432,20 @@ function UserPage() {
   };
 
   const handleChangeImageDefault = ({ fileList: newFileList }) => {
-    if (newFileList.length > 0 && newFileList[0].originFileObj) {
-      const file = newFileList[0].originFileObj;
-      console.log("Changed file type:", file.type);
-      console.log("Changed file name:", file.name);
-    }
     setImageDefault(newFileList);
   };
 
   const handleSearch = (value) => {
+    if (!value) {
+      setState(prev => ({ ...prev, filteredList: state.list }));
+      return;
+    }
+
     const filtered = state.list.filter(user =>
-      user.name.toLowerCase().includes(value.toLowerCase()) ||
-      user.username.toLowerCase().includes(value.toLowerCase()) ||
-      user.tel.includes(value)
+      user.name?.toLowerCase().includes(value.toLowerCase()) ||
+      user.username?.toLowerCase().includes(value.toLowerCase()) ||
+      user.tel?.includes(value) ||
+      user.role_name?.toLowerCase().includes(value.toLowerCase())
     );
 
     setState(prev => ({
@@ -258,537 +454,717 @@ function UserPage() {
     }));
   };
 
-  return (
-    <div className="background">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          paddingBottom: 10,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <div>{t("User")}</div>
-          <Space>
-            <Input.Search
-              style={{ marginLeft: 10 }}
-              placeholder={t("Search")}
-              onSearch={handleSearch}
-            />
-          </Space>
+  const getAvailableRoles = () => {
+    if (!state.role || !Array.isArray(state.role)) {
+      return [];
+    }
+
+    if (state.isSuperAdmin) {
+      return state.role;
+    }
+
+    const filteredRoles = state.role.filter(role => {
+      if (!role) return false;
+
+      const roleId = parseInt(role.value || role.id);
+      const roleCode = String(role.code || '').toUpperCase();
+
+      const isAdminRole = roleId === 1 || roleId === 29 ||
+        ['SUPER_ADMIN', 'ADMIN', 'BRANCH_ADMIN', 'super_admin', 'admin'].includes(roleCode);
+
+      return !isAdminRole;
+    });
+
+    return filteredRoles;
+  };
+
+  const getUniqueRoles = () => {
+    const roles = [...new Set(state.list.map(user => user.role_name).filter(Boolean))];
+    return ["all", ...roles];
+  };
+
+  const exportToExcel = () => {
+    message.info("Export function would be implemented here");
+  };
+
+  // ✅ Mobile Stats Cards - Compact Version
+  const renderStatsCards = () => (
+    <Row gutter={[8, 8]} className="mb-4">
+      <Col xs={8} sm={8} md={8}>
+        <Card 
+          size="small" 
+          className="stats-card text-center"
+          styles={{ body: { padding: isMobile ? '8px' : '16px' } }}
+        >
+          <Statistic
+            title={<span style={{ fontSize: isMobile ? '11px' : '14px' }}>Total</span>}
+            value={state.stats.total}
+            prefix={<TeamOutlined />}
+            valueStyle={{ 
+              color: '#1890ff', 
+              fontSize: isMobile ? '18px' : '24px' 
+            }}
+          />
+        </Card>
+      </Col>
+      <Col xs={8} sm={8} md={8}>
+        <Card 
+          size="small" 
+          className="stats-card text-center"
+          styles={{ body: { padding: isMobile ? '8px' : '16px' } }}
+        >
+          <Statistic
+            title={<span style={{ fontSize: isMobile ? '11px' : '14px' }}>Active</span>}
+            value={state.stats.active}
+            prefix={<CheckCircleOutlined />}
+            valueStyle={{ 
+              color: '#52c41a', 
+              fontSize: isMobile ? '18px' : '24px' 
+            }}
+          />
+        </Card>
+      </Col>
+      <Col xs={8} sm={8} md={8}>
+        <Card 
+          size="small" 
+          className="stats-card text-center"
+          styles={{ body: { padding: isMobile ? '8px' : '16px' } }}
+        >
+          <Statistic
+            title={<span style={{ fontSize: isMobile ? '11px' : '14px' }}>Inactive</span>}
+            value={state.stats.inactive}
+            prefix={<CloseCircleOutlined />}
+            valueStyle={{ 
+              color: '#ff4d4f', 
+              fontSize: isMobile ? '18px' : '24px' 
+            }}
+          />
+        </Card>
+      </Col>
+    </Row>
+  );
+
+  // ✅ Mobile Filter Drawer
+  const renderFilterDrawer = () => (
+    <Drawer
+      title="Filters"
+      placement="right"
+      onClose={() => setFilterDrawerVisible(false)}
+      open={filterDrawerVisible}
+      width={280}
+    >
+      <div className="space-y-4">
+        <div>
+          <label className="block mb-2 font-medium">Status</label>
+          <Select
+            value={filterStatus}
+            onChange={(value) => {
+              setFilterStatus(value);
+              setFilterDrawerVisible(false);
+            }}
+            style={{ width: '100%' }}
+          >
+            <Select.Option value="all">All Status</Select.Option>
+            <Select.Option value="active">Active</Select.Option>
+            <Select.Option value="inactive">Inactive</Select.Option>
+          </Select>
         </div>
-        <Button type="primary" onClick={handleOpenModal} icon={<MdOutlineCreateNewFolder />}>
-          {t("New")}
+
+        <div>
+          <label className="block mb-2 font-medium">Role</label>
+          <Select
+            value={selectedRole}
+            onChange={(value) => {
+              setSelectedRole(value);
+              setFilterDrawerVisible(false);
+            }}
+            style={{ width: '100%' }}
+          >
+            {getUniqueRoles().map(role => (
+              <Select.Option key={role} value={role}>
+                {role === "all" ? "All Roles" : role}
+              </Select.Option>
+            ))}
+          </Select>
+        </div>
+
+        <Divider />
+
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Button 
+            block
+            icon={<ReloadOutlined />} 
+            onClick={() => {
+              setFilterStatus("all");
+              setSelectedRole("all");
+              setFilterDrawerVisible(false);
+            }}
+          >
+            Reset Filters
+          </Button>
+          <Button 
+            block
+            type="primary" 
+            icon={<ExportOutlined />}
+            onClick={() => {
+              exportToExcel();
+              setFilterDrawerVisible(false);
+            }}
+          >
+            Export Excel
+          </Button>
+        </Space>
+      </div>
+    </Drawer>
+  );
+
+  // ✅ Desktop Filters - Inline
+  const renderDesktopFilters = () => (
+    <Card size="small" className="mb-4">
+      <div className="flex flex-wrap gap-3 items-center justify-between">
+        <Space wrap>
+          <FilterOutlined />
+          <Select
+            value={filterStatus}
+            onChange={setFilterStatus}
+            style={{ width: 130 }}
+          >
+            <Select.Option value="all">All Status</Select.Option>
+            <Select.Option value="active">Active</Select.Option>
+            <Select.Option value="inactive">Inactive</Select.Option>
+          </Select>
+
+          <Select
+            value={selectedRole}
+            onChange={setSelectedRole}
+            style={{ width: 150 }}
+          >
+            {getUniqueRoles().map(role => (
+              <Select.Option key={role} value={role}>
+                {role === "all" ? "All Roles" : role}
+              </Select.Option>
+            ))}
+          </Select>
+
+          <Button 
+            icon={<ReloadOutlined />} 
+            onClick={() => {
+              setFilterStatus("all");
+              setSelectedRole("all");
+            }}
+          >
+            Reset
+          </Button>
+        </Space>
+
+        <Button 
+          type="primary" 
+          icon={<ExportOutlined />}
+          onClick={exportToExcel}
+        >
+          Export
         </Button>
       </div>
+    </Card>
+  );
+
+  // ✅ Mobile User Card
+  const renderMobileUserCard = (user) => (
+    <Card 
+      key={user.id} 
+      className="mb-3"
+      size="small"
+    >
+      <div className="flex items-start gap-3">
+        {/* Avatar */}
+        <div className="flex-shrink-0">
+          {user.profile_image ? (
+            <Image
+              src={Config.getFullImagePath(user.profile_image)}
+              alt={user.name}
+              width={60}
+              height={60}
+              className="rounded-full object-cover"
+              preview={false}
+            />
+          ) : (
+            <Avatar 
+              size={60} 
+              icon={<UserOutlined />}
+              className="bg-blue-100 text-blue-600"
+            />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex-1">
+              <h4 className="font-semibold text-base mb-1 dark:text-gray-200">
+                {user.name}
+              </h4>
+              <Tag color="blue" className="text-xs mb-1">
+                {user.role_name}
+              </Tag>
+              <div>
+                <Tag color={user.is_active ? "green" : "red"} className="text-xs">
+                  {user.is_active ? "Active" : "Inactive"}
+                </Tag>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Info */}
+          <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1 mb-3">
+            <div className="flex items-center gap-1">
+              <MdOutlineEmail className="flex-shrink-0" />
+              <span className="truncate">{user.username}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <MdOutlinePhone className="flex-shrink-0" />
+              <span>{user.tel}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <MdOutlineBusiness className="flex-shrink-0" />
+              <span className="truncate">{user.branch_name}</span>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-2">
+            <Button
+              size="small"
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => onClickEdit(user)}
+              block
+            >
+              Edit
+            </Button>
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => clickBtnDelete(user)}
+              block
+            >
+              Delete
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+
+  // Desktop table columns
+  const columns = [
+    {
+      title: "User",
+      key: "user",
+      width: 250,
+      render: (_, record) => (
+        <div className="flex items-center gap-3">
+          {record.profile_image ? (
+            <Image
+              src={Config.getFullImagePath(record.profile_image)}
+              alt="Profile"
+              width={40}
+              height={40}
+              className="rounded-full object-cover"
+              preview={false}
+            />
+          ) : (
+            <Avatar
+              size={40}
+              icon={<UserOutlined />}
+              className="bg-blue-100 text-blue-600"
+            />
+          )}
+          <div>
+            <div className="font-medium dark:text-gray-200">{record.name}</div>
+            <div className="text-sm text-gray-500 dark:text-gray-400">{record.username}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      title: "Role",
+      dataIndex: "role_name",
+      key: "role",
+      width: 150,
+      render: (role) => <Tag color="blue">{role}</Tag>,
+    },
+    {
+      title: "Contact",
+      key: "contact",
+      width: 150,
+      render: (_, record) => (
+        <div className="text-sm">
+          <div className="text-gray-600 dark:text-gray-400">{record.tel}</div>
+        </div>
+      ),
+    },
+    {
+      title: "Branch",
+      dataIndex: "branch_name",
+      key: "branch",
+      width: 120,
+    },
+    {
+      title: "Status",
+      dataIndex: "is_active",
+      key: "status",
+      width: 100,
+      align: "center",
+      render: (status) => (
+        <Tag color={status ? "green" : "red"}>
+          {status ? "Active" : "Inactive"}
+        </Tag>
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 120,
+      fixed: "right",
+      render: (_, record) => (
+        <Space size="small">
+          <Button
+            size="small"
+            type="primary"
+            icon={<EditOutlined />}
+            onClick={() => onClickEdit(record)}
+          />
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => clickBtnDelete(record)}
+          />
+        </Space>
+      ),
+    },
+  ];
+
+  // ✅ Responsive Form Modal
+  const FormContent = () => (
+    <Form layout="vertical" form={form} onFinish={onFinish}>
+      {/* Profile Image */}
+      <Row gutter={[16, 16]}>
+        <Col span={24}>
+          <Form.Item
+            name="profile_image"
+            label="Profile Image"
+          >
+            <Upload
+              name="profile_image"
+              maxCount={1}
+              listType="picture-card"
+              fileList={imageDefault}
+              onPreview={handlePreview}
+              onChange={handleChangeImageDefault}
+              beforeUpload={beforeUpload}
+              accept="image/*"
+            >
+              {imageDefault.length >= 1 ? null : (
+                <div>
+                  <UserOutlined />
+                  <div className="mt-2">Upload</div>
+                </div>
+              )}
+            </Upload>
+          </Form.Item>
+        </Col>
+      </Row>
+
+      {/* Name & Email */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="name"
+            label="Name"
+            rules={[{ required: true, message: 'Please input name!' }]}
+          >
+            <Input placeholder="Full Name" size={isMobile ? "large" : "middle"} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="username"
+            label="Email"
+            rules={[
+              { required: true, message: 'Please input email!' },
+              { type: 'email', message: 'Please input valid email!' }
+            ]}
+          >
+            <Input placeholder="Email Address" size={isMobile ? "large" : "middle"} />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      {/* Phone & Role */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="tel"
+            label="Phone"
+            rules={[{ required: true, message: 'Please input phone!' }]}
+          >
+            <Input placeholder="Phone Number" size={isMobile ? "large" : "middle"} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="role_id"
+            label="Role"
+            rules={[{ required: true, message: 'Please select role!' }]}
+          >
+            <Select
+              placeholder="Select Role"
+              options={getAvailableRoles()}
+              size={isMobile ? "large" : "middle"}
+            />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      {/* Passwords */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="password"
+            label="Password"
+            rules={[{ required: !form.getFieldValue("id"), message: 'Please input password!' }]}
+          >
+            <Input.Password placeholder="Password" size={isMobile ? "large" : "middle"} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="confirm_password"
+            label="Confirm Password"
+            dependencies={['password']}
+            rules={[
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || getFieldValue('password') === value) {
+                    return Promise.resolve();
+                  }
+                  return Promise.reject(new Error('Passwords do not match'));
+                },
+              }),
+            ]}
+          >
+            <Input.Password placeholder="Confirm Password" size={isMobile ? "large" : "middle"} />
+          </Form.Item>
+        </Col>
+      </Row>
+
+      {/* Branch & Status */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="branch_name"
+            label="Branch"
+            rules={[{ required: true, message: 'Please select branch!' }]}
+          >
+            {state.isSuperAdmin ? (
+              <Select
+                placeholder="Select Branch"
+                options={config?.branch_name}
+                size={isMobile ? "large" : "middle"}
+              />
+            ) : (
+              <Input 
+                value={profile?.branch_name} 
+                disabled 
+                size={isMobile ? "large" : "middle"}
+              />
+            )}
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
+            name="is_active"
+            label="Status"
+            initialValue={1}
+          >
+            <Select size={isMobile ? "large" : "middle"}>
+              <Select.Option value={1}>Active</Select.Option>
+              <Select.Option value={0}>Inactive</Select.Option>
+            </Select>
+          </Form.Item>
+        </Col>
+      </Row>
+
+      {/* Address */}
+      <Form.Item
+        name="address"
+        label="Address"
+      >
+        <Input.TextArea 
+          rows={3} 
+          placeholder="Full Address"
+          size={isMobile ? "large" : "middle"}
+        />
+      </Form.Item>
+
+      {/* Action Buttons */}
+      <div className="flex gap-2 justify-end">
+        <Button onClick={handleCloseModal} size={isMobile ? "large" : "middle"}>
+          Cancel
+        </Button>
+        <Button 
+          type="primary" 
+          htmlType="submit" 
+          loading={state.loading}
+          size={isMobile ? "large" : "middle"}
+          block={isMobile}
+        >
+          {form.getFieldValue("id") ? "Update" : "Create"}
+        </Button>
+      </div>
+    </Form>
+  );
+
+  return (
+    <div className="min-h-screen p-2 sm:p-4 bg-gray-50 dark:bg-gray-900">
+      {/* ✅ Responsive Header */}
+      <div className="mb-4">
+        {/* Title & New Button */}
+        <div className="flex justify-between items-center gap-3 mb-4">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold dark:text-white truncate">
+              User Management
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+              Manage all users and their permissions
+            </p>
+          </div>
+          
+          <Button
+            type="primary"
+            onClick={handleOpenModal}
+            icon={<MdOutlineCreateNewFolder />}
+            size={isMobile ? "middle" : "large"}
+          >
+            {isMobile ? "New" : "New User"}
+          </Button>
+        </div>
+
+        {/* Statistics */}
+        {renderStatsCards()}
+
+        {/* Search Bar */}
+        <div className="mb-3">
+          <Input.Search
+            placeholder="Search users..."
+            onSearch={handleSearch}
+            allowClear
+            size={isMobile ? "large" : "middle"}
+            enterButton
+          />
+        </div>
+
+        {/* Filters */}
+        {isMobile ? (
+          <>
+            <Button
+              block
+              icon={<FilterOutlined />}
+              onClick={() => setFilterDrawerVisible(true)}
+              className="mb-3"
+              size="large"
+            >
+              Filters & Export
+              {(filterStatus !== "all" || selectedRole !== "all") && (
+                <Badge 
+                  count={
+                    (filterStatus !== "all" ? 1 : 0) + 
+                    (selectedRole !== "all" ? 1 : 0)
+                  }
+                  className="ml-2"
+                />
+              )}
+            </Button>
+            {renderFilterDrawer()}
+          </>
+        ) : (
+          renderDesktopFilters()
+        )}
+      </div>
+
+      {/* ✅ Main Content - Responsive */}
+      {isMobile ? (
+        /* Mobile: Card View */
+        <div>
+          <div className="mb-3 flex justify-between items-center">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {state.filteredList.length} users found
+            </span>
+          </div>
+          {state.loading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent" />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {state.filteredList.map(user => renderMobileUserCard(user))}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Desktop: Table View */
+        <Card>
+          <Table
+            dataSource={state.filteredList}
+            columns={columns}
+            rowKey="id"
+            loading={state.loading}
+            scroll={{ x: 800 }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showQuickJumper: true,
+              showTotal: (total) => `Total ${total} users`,
+              responsive: true
+            }}
+          />
+        </Card>
+      )}
+
+      {/* ✅ Responsive Modal */}
+      <Modal
+        open={state.visible}
+        onCancel={handleCloseModal}
+        title={form.getFieldValue("id") ? "Edit User" : "Create New User"}
+        footer={null}
+        width={isMobile ? "100%" : 700}
+        style={isMobile ? { top: 0, paddingBottom: 0, maxWidth: "100vw" } : {}}
+        styles={isMobile ? { 
+          body: { 
+            maxHeight: 'calc(100vh - 100px)', 
+            overflowY: 'auto' 
+          } 
+        } : {}}
+        centered={!isMobile}
+      >
+        <FormContent />
+      </Modal>
 
       {/* Image Preview Modal */}
       <Modal
         open={previewOpen}
-        title={t("Image Preview")}
+        title="Image Preview"
         footer={null}
         onCancel={() => setPreviewOpen(false)}
-      >
-        <img alt={t("Preview")} style={{ width: "100%" }} src={previewImage} />
-      </Modal>
-
-      {/* User Form Modal */}
-      <Modal
-      
-        open={state.visible}
-        onCancel={handleCloseModal}
         centered
-        footer={null}
-        title={form.getFieldValue("id") ? t("កែប្រែអ្នកប្រើប្រាស់") : t("បញ្ចូលអ្នកប្រើប្រាស់ថ្មី")}
+        width={isMobile ? "90%" : 600}
       >
-        <Form layout="vertical" form={form} onFinish={onFinish} className="custom-form">
-          <Row justify="center" align="middle">
-            <Col>
-              <Form.Item
-                name="profile_image"
-                label={
-                  <div style={{ textAlign: "center" }}>
-                    <span className="khmer-text">{t("")}</span>
-                    <br />
-                  </div>
-                }
-              >
-                <Upload
-                  name="profile_image"
-                  customRequest={({ file, onSuccess }) => {
-                    onSuccess();
-                  }}
-                  maxCount={1}
-                  listType="picture-card"
-                  fileList={imageDefault}
-                  onPreview={handlePreview}
-                  onChange={handleChangeImageDefault}
-                  beforeUpload={beforeUpload}
-                  accept="image/*"
-                >
-                  {imageDefault.length >= 1 ? null : (
-                    <div>
-                      <UserOutlined style={{ fontSize: 40, color: "#aaa" }} />
-                      <div style={{ marginTop: 8 }}>{t("Upload")}</div>
-                    </div>
-                  )}
-                </Upload>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={[16, 16]}>
-            {/* Left Column */}
-            <Col span={12}>
-              {/* Name */}
-              <Form.Item
-                name="name"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("ឈ្មោះ")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please fill in name"),
-                  },
-                ]}
-              >
-                <Input placeholder={t("Name")} className="input-field" />
-              </Form.Item>
-
-              {/* Address */}
-              <Form.Item
-                name="address"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("Address")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please fill in Address"),
-                  },
-                ]}
-              >
-                <Input placeholder={t("Address")} className="input-field" />
-              </Form.Item>
-
-              {/* Tel */}
-              <Form.Item
-                name="tel"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("Tel")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please fill in Tel"),
-                  },
-                ]}
-              >
-                <Input placeholder={t("Tel")} className="input-field" />
-              </Form.Item>
-
-              {/* Username (Email) */}
-              <Form.Item
-                name="username"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("អ៊ីម៉ែល")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please fill in email"),
-                  },
-                ]}
-              >
-                <Input placeholder={t("Email")} className="input-field" />
-              </Form.Item>
-
-              {/* Status */}
-              <Form.Item
-                name="is_active"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("ស្ថានភាព")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please select status"),
-                  },
-                ]}
-              >
-                <Select
-                  placeholder={t("Select Status")}
-                  options={[
-                    {
-                      label: t("Active"),
-                      value: 1,
-                    },
-                    {
-                      label: t("InActive"),
-                      value: 0,
-                    },
-                  ]}
-                  className="select-field"
-                />
-              </Form.Item>
-
-              {/* Group */}
-              <Form.Item
-                name="group_id"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("ក្រុម")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please select group"),
-                  },
-                ]}
-              >
-                <Select
-                  placeholder={t("Select Group")}
-                  options={config?.groupOptions}
-                  className="select-field"
-                />
-              </Form.Item>
-            </Col>
-
-            {/* Right Column */}
-            <Col span={12}>
-              {/* Password */}
-              <Form.Item
-                name="password"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("ពាក្យសម្ងាត់")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please fill in password"),
-                  },
-                ]}
-              >
-                <Input.Password placeholder={t("Password")} className="input-field" />
-              </Form.Item>
-
-              {/* Confirm Password */}
-              <Form.Item
-                name="confirm_password"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("បញ្ជាក់ពាក្យសម្ងាត់")}</span>
-                  </div>
-                }
-                dependencies={["password"]}
-                rules={[
-                  {
-                    required: true,
-                    message: t("សូមបញ្ជាក់ពាក្យសម្ងាត់"),
-                  },
-                  ({ getFieldValue }) => ({
-                    validator(_, value) {
-                      if (!value || getFieldValue("password") === value) {
-                        return Promise.resolve();
-                      }
-                      return Promise.reject(new Error(t("ពាក្យសម្ងាត់មិនត្រូវគ្នា!")));
-                    },
-                  }),
-                ]}
-              >
-                <Input.Password placeholder={t("បញ្ជាក់ពាក្យសម្ងាត់")} className="input-field" />
-              </Form.Item>
-
-              {/* Role */}
-              <Form.Item
-                name="role_id"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("តួនាទី")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please select role"),
-                  },
-                ]}
-              >
-                <Select placeholder={t("Select Role")} options={state?.role} className="select-field" />
-              </Form.Item>
-
-              {/* Branch Name */}
-              <Form.Item
-                name="branch_name"
-                label={
-                  <div>
-                    <span className="khmer-text">{t("សាខា")}</span>
-                  </div>
-                }
-                rules={[
-                  {
-                    required: true,
-                    message: t("Please select Branch"),
-                  },
-                ]}
-              >
-                <Select placeholder={t("Select Branch")} options={config?.branch_name} className="select-field" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Form Footer */}
-          <div style={{ textAlign: "right" }}>
-            <Space>
-              <Button onClick={handleCloseModal}>{t("Cancel")}</Button>
-              <Button type="primary" htmlType="submit">
-                {form.getFieldValue("id") ? t("Update") : t("Save")}
-              </Button>
-            </Space>
-          </div>
-        </Form>
+        <img alt="Preview" className="w-full rounded-lg" src={previewImage} />
       </Modal>
-
-      <Table
-        rowClassName={() => "pos-row"}
-        dataSource={state.filteredList || state.list}
-        columns={[
-          {
-            key: "profile",
-            title: (
-              <div className="profile-header-wrapper">
-                <div className="user-table-header-main">{t("រូបភាព")}</div>
-              </div>
-            ),
-            width: 140,
-            align: "center",
-            render: (_, record) => (
-              <div className="user-profile-cell-enhanced">
-                <div className="profile-image-wrapper">
-                  {record.profile_image ? (
-                    <Image
-                      src={Config.getFullImagePath(record.profile_image)}
-                      alt="Profile"
-                      width={70}
-                      height={70}
-                      className="profile-image"
-                      style={{
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                        border: "3px solid #fff",
-                        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                      }}
-                      preview={{
-                        mask: (
-                          <div className="preview-mask">
-                            <IoEyeOutline size={24} />
-                            <span style={{ fontSize: '12px', marginTop: '4px' }}>មើល</span>
-                          </div>
-                        ),
-                      }}
-                    />
-                  ) : (
-                    <div className="avatar-wrapper">
-                      <Avatar
-                        size={70}
-                        icon={<UserOutlined style={{ fontSize: '32px' }} />}
-                        className="default-avatar"
-                        style={{
-                          backgroundColor: "#4d6bb3",
-                          border: "3px solid #fff",
-                          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div className="user-code-badge-enhanced">
-                    <Tag
-                      color="blue"
-                      className="user-id-tag"
-                      style={{
-                        margin: 0,
-                        fontSize: '11px',
-                        fontWeight: '600',
-                        padding: '2px 8px',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                      }}
-                    >
-                      U{record.id}
-                    </Tag>
-                  </div>
-                </div>
-              </div>
-            ),
-          },
-          {
-            key: "name",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("ឈ្មោះ")}</div>
-              </div>
-            ),
-            width: 250,
-            render: (_, record) => (
-              <Tooltip
-                title={
-                  <div className="user-tooltip-content">
-                    <div className="user-tooltip-name">{record.name}</div>
-                    <div className="user-tooltip-details">
-                      {record.role_name}
-                    </div>
-                  </div>
-                }
-                placement="topLeft"
-              >
-                <div className="user-name-cell">
-                  <div className="user-name-main">
-                    {record.name || t("គ្មាន")}
-                  </div>
-                  <div className="user-name-details">
-                    <Tag color="purple" className="user-detail-tag">
-                      {record.role_name || t("គ្មាន")}
-                    </Tag>
-                    <span className="user-type-separator">•</span>
-
-                  </div>
-                </div>
-              </Tooltip>
-            ),
-          },
-          {
-            key: "username",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("EMAIL")}</div>
-              </div>
-            ),
-            dataIndex: "username",
-            width: 200,
-          },
-          {
-            key: "tel",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("TELEPHONE")}</div>
-              </div>
-            ),
-            dataIndex: "tel",
-            width: 130,
-          },
-          {
-            key: "branch",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("សាខា")}</div>
-              </div>
-            ),
-            dataIndex: "branch_name",
-            width: 120,
-          },
-          {
-            key: "address",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("ADDRESS")}</div>
-              </div>
-            ),
-            dataIndex: "address",
-            width: 200,
-            render: (text) => (
-              <Tooltip title={text} placement="topLeft">
-                <div className="user-address-text">
-                  {text || t("គ្មាន")}
-                </div>
-              </Tooltip>
-            ),
-          },
-          {
-            key: "is_active",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("STATUS")}</div>
-              </div>
-            ),
-            dataIndex: "is_active",
-            width: 100,
-            align: "center",
-            render: (value) =>
-              value ? (
-                <Tag color="green" className="user-status-tag">{t("សកម្ម")}</Tag>
-              ) : (
-                <Tag color="red" className="user-status-tag">{t("អសកម្ម")}</Tag>
-              ),
-          },
-          {
-            key: "create_info",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("created_by")}</div>
-              </div>
-            ),
-            width: 200,
-            render: (_, record) => (
-              <div className="user-create-info">
-                <div className="user-create-name">
-                  {record.create_by || t("គ្មាន")}
-                </div>
-                <div className="user-create-date">
-                  {record.create_at ? formatDateServer(record.create_at, "DD-MM-YYYY h:mm A") : "-"}
-                </div>
-              </div>
-            ),
-          },
-          {
-            key: "action",
-            title: (
-              <div>
-                <div className="user-table-header-main">{t("សកម្មភាព")}</div>
-              </div>
-            ),
-            align: "center",
-            width: 180,
-            fixed: "right",
-            render: (_, data) => (
-              <Space size="small">
-                <Button
-                  onClick={() => onClickEdit(data)}
-                  type="primary"
-                  size="small"
-                  icon={<MdEdit />}
-                >
-                  <span className="user-btn-text">{t("កែប្រែ")}</span>
-                </Button>
-                <Button
-                  onClick={() => clickBtnDelete(data)}
-                  danger
-                  type="primary"
-                  size="small"
-                  icon={<MdDelete />}
-                >
-                  <span className="user-btn-text">{t("លុប")}</span>
-                </Button>
-              </Space>
-            ),
-          }
-        ]}
-      />
     </div>
   );
 }
 
-export default UserPage;
+export default AdminPage;

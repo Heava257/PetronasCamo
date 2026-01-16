@@ -515,7 +515,6 @@ if (customerInfo.length > 0) {
 
   await sendTelegramMessagenewcustomer(telegramMessage); // 💬 Call helper here
 
-  console.log("✅ Telegram message sent!");
 }
 
 

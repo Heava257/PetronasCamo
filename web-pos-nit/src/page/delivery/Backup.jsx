@@ -251,8 +251,7 @@ function DeliveryNotePage() {
         };
       }));
 
-      console.log("Print data:", printData);
-      console.log("Print items:", printItems);
+
 
       // Now call print directly from the component
       if (printRef.current && printRef.current.print) {
@@ -339,10 +338,7 @@ function DeliveryNotePage() {
           const selectedCategory = categories.find(c => c.id === value);
           if (selectedCategory) {
             updatedItem.category_name = selectedCategory.name || "";
-            console.log("Selected category info:", {
-              category: selectedCategory.name,
-              id: value
-            });
+           
           }
         }
 
@@ -408,7 +404,6 @@ function DeliveryNotePage() {
       }))
     };
 
-    console.log("Submitting data:", data);
 
     const method = data.id ? "put" : "post";
     const res = await request("delivery-note", method, data);

@@ -1,9 +1,13 @@
-
-const { db, isArray, isEmpty, logError ,sendTelegramMessagenewcustomer} = require("../util/helper");
+const { db, isArray, isEmpty, logError, sendTelegramMessagenewcustomer } = require("../util/helper");
+const { sendSmartNotification } = require("../util/Telegram.helpe");
+const { createSystemNotification } = require("./System_notification.controller");
 
 exports.getListByCurrentUserGroup = async (req, res) => {
   try {
     const { txtSearch } = req.query;
+    
+    const currentUserBranch = req.auth?.branch_name;
+    const currentUserId = req.current_id;
 
     let sql = `
       SELECT 
@@ -14,6 +18,7 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.email, 
         c.address, 
         c.type, 
+        c.branch_name,
         c.create_by, 
         c.create_at, 
         c.user_id,
@@ -23,25 +28,39 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.guarantor_name,
         u.group_id,
         u.name as created_by_name,
-        u.username as created_by_username
+        u.username as created_by_username,
+        u.branch_name as creator_branch
       FROM customer c
       INNER JOIN user u ON c.user_id = u.id
       INNER JOIN user cu ON cu.group_id = u.group_id
       WHERE cu.id = :current_user_id
     `;
 
-    const params = { current_user_id: req.current_id };
+    const params = { current_user_id: currentUserId };
+
+    if (currentUserBranch) {
+      sql += " AND c.branch_name = :branch_name";
+      params.branch_name = currentUserBranch;
+    }
 
     if (txtSearch) {
       sql += " AND (c.name LIKE :txtSearch OR c.tel LIKE :txtSearch OR c.email LIKE :txtSearch)";
       params.txtSearch = `%${txtSearch}%`;
     }
 
+    sql += " ORDER BY c.create_at DESC";
+
     const [list] = await db.query(sql, params);
+
 
     res.json({
       success: true,
       list,
+      metadata: {
+        total: list.length,
+        branch: currentUserBranch || 'All branches',
+        user_id: currentUserId
+      },
       message: "Success!"
     });
   } catch (error) {
@@ -49,9 +68,11 @@ exports.getListByCurrentUserGroup = async (req, res) => {
   }
 };
 
+// ✅✅✅ FIXED: Filter by branch in detail query ✅✅✅
 exports.getDetailById = async (req, res) => {
   try {
     const { id } = req.params;
+    const currentUserBranch = req.auth?.branch_name;
 
     if (!id) {
       return res.status(400).json({
@@ -60,7 +81,7 @@ exports.getDetailById = async (req, res) => {
       });
     }
 
-    // Main customer information with detailed relationships
+    // Main customer information with branch filtering
     const customerSql = `
       SELECT 
         c.id, 
@@ -71,6 +92,7 @@ exports.getDetailById = async (req, res) => {
         c.address, 
         c.type, 
         c.status,
+        c.branch_name,
         c.create_by, 
         c.create_at,
         c.update_by,
@@ -91,6 +113,7 @@ exports.getDetailById = async (req, res) => {
         u.name as created_by_name,
         u.username as created_by_username,
         u.tel as created_by_tel,
+        u.branch_name as creator_branch,
         uu.name as updated_by_name,
         uu.username as updated_by_username,
         uu.tel as updated_by_tel,
@@ -102,13 +125,23 @@ exports.getDetailById = async (req, res) => {
       INNER JOIN user cu ON cu.group_id = u.group_id
       LEFT JOIN user uu ON c.update_by = uu.id
       LEFT JOIN user assigned_user ON c.user_id = assigned_user.id
-      WHERE cu.id = :current_user_id AND c.id = :customer_id
+      WHERE cu.id = :current_user_id 
+        AND c.id = :customer_id
     `;
 
-    const [customerResult] = await db.query(customerSql, {
+    const params = {
       current_user_id: req.current_id,
       customer_id: id
-    });
+    };
+
+    // ✅ Add branch filter
+    let finalSql = customerSql;
+    if (currentUserBranch) {
+      finalSql += " AND c.branch_name = :branch_name";
+      params.branch_name = currentUserBranch;
+    }
+
+    const [customerResult] = await db.query(finalSql, params);
 
     if (!customerResult || customerResult.length === 0) {
       return res.status(404).json({
@@ -168,7 +201,7 @@ exports.getDetailById = async (req, res) => {
 
     const [recentPayments] = await db.query(recentPaymentsSql, { customer_id: id });
 
-    // Get customer activity log (if you have audit table)
+    // Get customer activity log
     const activitySql = `
       SELECT 
         'loan_created' as activity_type,
@@ -207,7 +240,6 @@ exports.getDetailById = async (req, res) => {
     const response = {
       success: true,
       data: {
-        // Basic customer information
         ...customer,
         create_by_info: {
           id: customer.create_by,
@@ -227,8 +259,6 @@ exports.getDetailById = async (req, res) => {
           username: customer.assigned_user_username,
           tel: customer.assigned_user_tel
         },
-
-        // Financial summary
         financial_summary: {
           total_loans: loans.length,
           active_loans: activeLoansCount,
@@ -238,8 +268,6 @@ exports.getDetailById = async (req, res) => {
           average_loan_amount: loans.length > 0 ? totalLoanAmount / loans.length : 0,
           payment_history_count: recentPayments.length
         },
-
-        // Detailed relationships
         loans: loans.map(loan => ({
           ...loan,
           paid_amount: parseFloat(loan.paid_amount || 0),
@@ -248,16 +276,12 @@ exports.getDetailById = async (req, res) => {
           monthly_payment: parseFloat(loan.monthly_payment || 0),
           interest_rate: parseFloat(loan.interest_rate || 0)
         })),
-
         recent_payments: recentPayments.map(payment => ({
           ...payment,
           amount: parseFloat(payment.amount || 0),
           loan_amount: parseFloat(payment.loan_amount || 0)
         })),
-
         activities: activities,
-
-        // Additional computed fields
         customer_score: calculateCustomerScore({
           totalLoans: loans.length,
           activeLoans: activeLoansCount,
@@ -265,7 +289,6 @@ exports.getDetailById = async (req, res) => {
           totalOutstandingBalance,
           customerAge: customer.create_at
         }),
-
         risk_assessment: assessCustomerRisk({
           outstandingBalance: totalOutstandingBalance,
           monthlyIncome: customer.monthly_income,
@@ -285,9 +308,10 @@ exports.getDetailById = async (req, res) => {
 
 exports.getCustomerStatistics = async (req, res) => {
   try {
-    const { period = '30' } = req.query; // days
+    const { period = '30' } = req.query;
+    const currentUserBranch = req.auth?.branch_name;
 
-    const statsSql = `
+    let statsSql = `
       SELECT 
         COUNT(DISTINCT c.id) as total_customers,
         COUNT(DISTINCT CASE WHEN c.status = 1 THEN c.id END) as active_customers,
@@ -306,15 +330,20 @@ exports.getCustomerStatistics = async (req, res) => {
       WHERE cu.id = :current_user_id
     `;
 
-    const [statsResult] = await db.query(statsSql, {
+    const params = {
       current_user_id: req.current_id,
       period: parseInt(period)
-    });
+    };
 
+    if (currentUserBranch) {
+      statsSql += " AND c.branch_name = :branch_name";
+      params.branch_name = currentUserBranch;
+    }
+
+    const [statsResult] = await db.query(statsSql, params);
     const stats = statsResult[0] || {};
 
-    // Get monthly trend data
-    const trendSql = `
+    let trendSql = `
       SELECT 
         DATE_FORMAT(c.create_at, '%Y-%m') as month,
         COUNT(c.id) as customers_created,
@@ -326,14 +355,20 @@ exports.getCustomerStatistics = async (req, res) => {
       LEFT JOIN loan l ON c.id = l.customer_id AND DATE_FORMAT(l.create_at, '%Y-%m') = DATE_FORMAT(c.create_at, '%Y-%m')
       WHERE cu.id = :current_user_id 
         AND c.create_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+    `;
+
+    if (currentUserBranch) {
+      trendSql += " AND c.branch_name = :trend_branch_name";
+      params.trend_branch_name = currentUserBranch;
+    }
+
+    trendSql += `
       GROUP BY DATE_FORMAT(c.create_at, '%Y-%m')
       ORDER BY month DESC
       LIMIT 12
     `;
 
-    const [trendResult] = await db.query(trendSql, {
-      current_user_id: req.current_id
-    });
+    const [trendResult] = await db.query(trendSql, params);
 
     res.json({
       success: true,
@@ -355,7 +390,11 @@ exports.getCustomerStatistics = async (req, res) => {
         trends: trendResult.map(item => ({
           ...item,
           loans_amount: parseFloat(item.loans_amount) || 0
-        }))
+        })),
+        metadata: {
+          branch: currentUserBranch || 'All branches',
+          period_days: parseInt(period)
+        }
       },
       message: "Statistics retrieved successfully"
     });
@@ -365,44 +404,30 @@ exports.getCustomerStatistics = async (req, res) => {
   }
 };
 
-// Helper functions
 function calculateCustomerScore({ totalLoans, activeLoans, totalPaidAmount, totalOutstandingBalance, customerAge }) {
-  let score = 50; // Base score
-
-  // Positive factors
+  let score = 50;
   if (totalPaidAmount > 0) score += 20;
-  if (totalLoans > 0 && activeLoans === 0) score += 15; // All loans completed
+  if (totalLoans > 0 && activeLoans === 0) score += 15;
   if (totalOutstandingBalance === 0) score += 10;
-
-  // Negative factors
   if (activeLoans > 2) score -= 15;
   if (totalOutstandingBalance > totalPaidAmount) score -= 10;
-
-  // Customer age factor (longer relationship = better score)
   const monthsSinceCreation = new Date().getMonth() - new Date(customerAge).getMonth();
   if (monthsSinceCreation > 12) score += 10;
   if (monthsSinceCreation > 24) score += 5;
-
   return Math.max(0, Math.min(100, score));
 }
 
 function assessCustomerRisk({ outstandingBalance, monthlyIncome, activeLoans, paymentHistory }) {
   let riskLevel = 'low';
   let riskFactors = [];
-
-  // High outstanding balance
   if (outstandingBalance > (monthlyIncome * 3)) {
     riskLevel = 'high';
     riskFactors.push('High outstanding balance relative to income');
   }
-
-  // Too many active loans
   if (activeLoans > 2) {
     riskLevel = riskLevel === 'high' ? 'high' : 'medium';
     riskFactors.push('Multiple active loans');
   }
-
-  // Recent payment issues (if payment dates are overdue)
   const recentPayments = paymentHistory.slice(0, 3);
   if (recentPayments.length > 0) {
     const hasRecentPayments = recentPayments.some(p => {
@@ -411,13 +436,11 @@ function assessCustomerRisk({ outstandingBalance, monthlyIncome, activeLoans, pa
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       return paymentDate >= thirtyDaysAgo;
     });
-
     if (!hasRecentPayments && outstandingBalance > 0) {
       riskLevel = 'high';
       riskFactors.push('No recent payments with outstanding balance');
     }
   }
-
   return {
     level: riskLevel,
     factors: riskFactors,
@@ -425,10 +448,6 @@ function assessCustomerRisk({ outstandingBalance, monthlyIncome, activeLoans, pa
   };
 }
 
-
-
-
-// Updated create function with better debugging
 exports.create = async (req, res) => {
   try {
     const { 
@@ -447,7 +466,12 @@ exports.create = async (req, res) => {
       status = 1
     } = req.body;
 
-    // Validation
+    const branch_name = req.auth?.branch_name || null;
+    const group_id = req.auth?.group_id || null; // ✅ Get group_id
+    const createdBy = req.auth?.name || "system";
+    const userId = req.auth?.id || null;
+
+
     if (!name || !tel || !email || !type) {
       return res.status(400).json({
         success: false,
@@ -456,7 +480,6 @@ exports.create = async (req, res) => {
       });
     }
 
-    // Check duplicate phone
     const [existing] = await db.query(`SELECT id FROM customer WHERE tel = ?`, [tel]);
     if (existing.length > 0) {
       return res.status(400).json({ 
@@ -466,7 +489,6 @@ exports.create = async (req, res) => {
       });
     }
 
-    // Check duplicate email
     const [existingEmail] = await db.query(`SELECT id FROM customer WHERE email = ?`, [email]);
     if (existingEmail.length > 0) {
       return res.status(400).json({ 
@@ -476,37 +498,30 @@ exports.create = async (req, res) => {
       });
     }
 
-    // Get creator name
-    const createdBy = req.auth?.name || "system";
-    const userId = req.auth?.id || null;
-
-    // Insert customer
     const sql = `
       INSERT INTO customer 
       (name, tel, email, address, type, gender, create_by, user_id,
        id_card_number, id_card_expiry, spouse_name, spouse_tel, 
-       guarantor_name, guarantor_tel, status)
+       guarantor_name, guarantor_tel, status, branch_name)
       VALUES 
       (?, ?, ?, ?, ?, ?, ?, ?,
        ?, ?, ?, ?, 
-       ?, ?, ?)
+       ?, ?, ?, ?)
     `;
 
     const params = [
       name, tel, email, address || null, type, gender || null, createdBy, userId,
       id_card_number || null, id_card_expiry || null, spouse_name || null, spouse_tel || null, 
-      guarantor_name || null, guarantor_tel || null, status
+      guarantor_name || null, guarantor_tel || null, status, branch_name
     ];
 
     const [data] = await db.query(sql, params);
 
-    // Fetch full customer info for Telegram
     const [customerInfo] = await db.query(`SELECT * FROM customer WHERE id = ?`, [data.insertId]);
 
     if (customerInfo.length > 0) {
       const customer = customerInfo[0];
       
-      // ✅ Format date helper
       const formatDate = () => {
         const d = new Date();
         const day = String(d.getDate()).padStart(2, '0');
@@ -515,28 +530,104 @@ exports.create = async (req, res) => {
         return `${day}/${month}/${year}`;
       };
 
-      const telegramMessage = `
-🆕 <b>អតិថិជនថ្មីត្រូវបានបង្កើត!</b>
-━━━━━━━━━━━━━━━
-📅 <b>កាលបរិច្ឆេទ:</b> ${formatDate()}
-👤 <b>អតិថិជន:</b> ${customer.name}
-📞 <b>លេខទូរស័ព្ទ:</b> ${customer.tel}
-📧 <b>អ៊ីមែល:</b> ${customer.email}
-🏠 <b>អាសយដ្ឋាន:</b> ${customer.address || "-"}
-🎫 <b>អត្តសញ្ញាណ:</b> ${customer.id_card_number || "-"}
-📅 <b>ផុតកំណត់:</b> ${customer.id_card_expiry || "-"}
-👩‍❤️‍👨 <b>ឈ្មោះប្តី/ប្រពន្ធ:</b> ${customer.spouse_name || "-"}
-📞 <b>លេខទូរស័ព្ទប្តី/ប្រពន្ធ:</b> ${customer.spouse_tel || "-"}
-👥 <b>ឈ្មោះអ្នកធានា:</b> ${customer.guarantor_name || "-"}
-📞 <b>លេខទូរស័ព្ទអ្នកធានា:</b> ${customer.guarantor_tel || "-"}
-📌 <b>ប្រភេទ:</b> ${customer.type}
-⚙️ <b>ស្ថានភាព:</b> ${customer.status === 1 ? 'សកម្ម' : 'អសកម្ម'}
-━━━━━━━━━━━━━━━
-<i>បង្កើតដោយ: ${createdBy}</i>
-      `;
+      let telegramMessage = `🆕 <b>អតិថិជនថ្មីត្រូវបានបង្កើត!</b>\n`;
+      telegramMessage += `━━━━━━━━━━━━━━━\n`;
+      
+      if (branch_name) {
+        telegramMessage += `🏢 <b>Branch:</b> ${branch_name}\n`;
+      }
+      
+      telegramMessage += `📅 <b>កាលបរិច្ឆេទ:</b> ${formatDate()}\n`;
+      telegramMessage += `👤 <b>អតិថិជន:</b> ${customer.name}\n`;
+      telegramMessage += `📞 <b>លេខទូរស័ព្ទ:</b> ${customer.tel}\n`;
+      telegramMessage += `📧 <b>អ៊ីមែល:</b> ${customer.email}\n`;
+      telegramMessage += `🏠 <b>អាសយដ្ឋាន:</b> ${customer.address || "-"}\n`;
+      telegramMessage += `🎫 <b>អត្តសញ្ញាណ:</b> ${customer.id_card_number || "-"}\n`;
+      telegramMessage += `📅 <b>ផុតកំណត់:</b> ${customer.id_card_expiry || "-"}\n`;
+      telegramMessage += `👩‍❤️‍👨 <b>ឈ្មោះប្តី/ប្រពន្ធ:</b> ${customer.spouse_name || "-"}\n`;
+      telegramMessage += `📞 <b>លេខទូរស័ព្ទប្តី/ប្រពន្ធ:</b> ${customer.spouse_tel || "-"}\n`;
+      telegramMessage += `👥 <b>ឈ្មោះអ្នកធានា:</b> ${customer.guarantor_name || "-"}\n`;
+      telegramMessage += `📞 <b>លេខទូរស័ព្ទអ្នកធានា:</b> ${customer.guarantor_tel || "-"}\n`;
+      telegramMessage += `📌 <b>ប្រភេទ:</b> ${customer.type}\n`;
+      telegramMessage += `⚙️ <b>ស្ថានភាព:</b> ${customer.status === 1 ? 'សកម្ម' : 'អសកម្ម'}\n`;
+      telegramMessage += `━━━━━━━━━━━━━━━\n`;
+      telegramMessage += `<i>បង្កើតដោយ: ${createdBy}</i>`;
 
-      await sendTelegramMessagenewcustomer(telegramMessage);
-      console.log("✅ Telegram message sent!");
+      let plainMessage = `New Customer Created\n\n`;
+      
+      if (branch_name) {
+        plainMessage += `Branch: ${branch_name}\n`;
+      }
+      
+      plainMessage += `Date: ${formatDate()}\n`;
+      plainMessage += `\nCustomer Information:\n`;
+      plainMessage += `• Name: ${customer.name}\n`;
+      plainMessage += `• Phone: ${customer.tel}\n`;
+      plainMessage += `• Email: ${customer.email}\n`;
+      plainMessage += `• Address: ${customer.address || "-"}\n`;
+      plainMessage += `• ID Card: ${customer.id_card_number || "-"}\n`;
+      plainMessage += `• ID Expiry: ${customer.id_card_expiry || "-"}\n`;
+      plainMessage += `• Spouse: ${customer.spouse_name || "-"}\n`;
+      plainMessage += `• Spouse Phone: ${customer.spouse_tel || "-"}\n`;
+      plainMessage += `• Guarantor: ${customer.guarantor_name || "-"}\n`;
+      plainMessage += `• Guarantor Phone: ${customer.guarantor_tel || "-"}\n`;
+      plainMessage += `• Type: ${customer.type}\n`;
+      plainMessage += `• Status: ${customer.status === 1 ? 'Active' : 'Inactive'}\n`;
+      plainMessage += `\nCreated by: ${createdBy}`;
+
+      try {
+        await sendSmartNotification({
+          event_type: 'customer_created',
+          branch_name: branch_name,
+          message: telegramMessage,
+          severity: 'normal'
+        });
+        
+      } catch (notifError) {
+        console.error("❌ Failed to send Telegram notification:", notifError);
+      }
+
+      try {
+        await createSystemNotification({
+          notification_type: 'customer_created',
+          title: `👤 New Customer: ${customer.name}`,
+          message: plainMessage,
+          data: {
+            customer_info: {
+              id: customer.id,
+              name: customer.name,
+              tel: customer.tel,
+              email: customer.email,
+              address: customer.address,
+              type: customer.type,
+              id_card_number: customer.id_card_number,
+              spouse_name: customer.spouse_name,
+              guarantor_name: customer.guarantor_name
+            }
+          },
+          order_id: null,
+          order_no: null,
+          customer_id: customer.id,
+          customer_name: customer.name,
+          customer_address: customer.address,
+          customer_tel: customer.tel,
+          total_amount: null,
+          total_liters: null,
+          card_number: customer.id_card_number,
+          user_id: userId,
+          created_by: createdBy,
+          branch_name: branch_name,
+          group_id: group_id,
+          priority: 'normal',
+          severity: 'info',
+          icon: '👤',
+          color: 'green',
+          action_url: `/customers/${customer.id}`
+        });
+        
+      } catch (sysNotifError) {
+        console.error('❌ Failed to create system notification:', sysNotifError);
+      }
     }
 
     res.status(201).json({
@@ -545,6 +636,7 @@ exports.create = async (req, res) => {
       data: {
         id: data.insertId,
         affectedRows: data.affectedRows,
+        branch_name: branch_name
       },
       message: "អតិថិជនត្រូវបានបង្កើតដោយជោគជ័យ!",
     });
@@ -553,11 +645,8 @@ exports.create = async (req, res) => {
     logError("customer.create", error, res);
   }
 };
-// Updated update function with better debugging
 exports.update = async (req, res) => {
   try {
-
-    
     const { id } = req.params;
     const { 
       name, 
@@ -583,22 +672,27 @@ exports.update = async (req, res) => {
       });
     }
 
-    // Check if customer exists
-    const existsCheckSql = `SELECT id FROM customer WHERE id = ?`;
-    const [customerExists] = await db.query(existsCheckSql, [id]);
+    const currentUserBranch = req.auth?.branch_name;
+    let checkExistsSql = `SELECT id, branch_name FROM customer WHERE id = ?`;
+    const checkParams = [id];
+    
+    if (currentUserBranch) {
+      checkExistsSql += ` AND branch_name = ?`;
+      checkParams.push(currentUserBranch);
+    }
+    
+    const [customerExists] = await db.query(checkExistsSql, checkParams);
     
     if (!customerExists || customerExists.length === 0) {
       return res.status(404).json({
         success: false,
         error: true,
-        message: "រកមិនឃើញអតិថិជននេះទេ។",
+        message: "រកមិនឃើញអតិថិជននេះទេ ឬអ្នកមិនមានសិទ្ធិកែប្រែ។",
       });
     }
 
-    // Check if phone number already exists for other customers
     const checkSql = `SELECT id, name FROM customer WHERE tel = ? AND id != ?`;
     const [existing] = await db.query(checkSql, [tel, id]);
-    
     
     if (existing && existing.length > 0) {
       return res.status(400).json({
@@ -608,7 +702,6 @@ exports.update = async (req, res) => {
       });
     }
 
-    // Check email uniqueness for other customers
     const checkEmailSql = `SELECT id, name FROM customer WHERE email = ? AND id != ?`;
     const [existingEmail] = await db.query(checkEmailSql, [email, id]);
     
@@ -684,11 +777,11 @@ exports.update = async (req, res) => {
     });
   }
 };
+
 exports.assignCustomerToUser = async (req, res) => {
   try {
     const { customer_id, assigned_user_id } = req.body;
 
-    // Validate required fields
     if (!customer_id || !assigned_user_id) {
       return res.status(400).json({
         success: false,
@@ -696,7 +789,6 @@ exports.assignCustomerToUser = async (req, res) => {
       });
     }
 
-    // Update customer's assigned user
     const sql = `UPDATE customer SET user_id = :assigned_user_id WHERE id = :customer_id`;
     await db.query(sql, { assigned_user_id, customer_id });
 
@@ -711,9 +803,8 @@ exports.assignCustomerToUser = async (req, res) => {
 
 exports.remove = async (req, res) => {
   try {
-    const { id } = req.params; // Extract `id` from URL parameters
+    const { id } = req.params;
 
-    // Validate `id`
     if (!id) {
       return res.status(400).json({
         success: false,
@@ -721,10 +812,27 @@ exports.remove = async (req, res) => {
       });
     }
 
+    const currentUserBranch = req.auth?.branch_name;
+    let checkSql = `SELECT id, branch_name FROM customer WHERE id = ?`;
+    const checkParams = [id];
+    
+    if (currentUserBranch) {
+      checkSql += ` AND branch_name = ?`;
+      checkParams.push(currentUserBranch);
+    }
+    
+    const [customerExists] = await db.query(checkSql, checkParams);
+    
+    if (!customerExists || customerExists.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer not found or access denied!",
+      });
+    }
+
     const sql = "DELETE FROM customer WHERE id = :id";
     const [data] = await db.query(sql, { id });
 
-    // Check if any rows were affected
     if (data.affectedRows === 0) {
       return res.status(404).json({
         success: false,
@@ -742,8 +850,6 @@ exports.remove = async (req, res) => {
   }
 };
 
-
-// ក្នុង customer.controller.js បន្ថែម function នេះ
 exports.getCustomerOrderStats = async (req, res) => {
   try {
     const { customer_ids } = req.query;

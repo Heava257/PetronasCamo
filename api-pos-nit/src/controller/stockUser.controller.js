@@ -2,6 +2,8 @@ const { db, isArray, isEmpty, logError, sendTelegramMessagenewcustomerPays } = r
 const moment = require('moment');
 const { config } = require("../util/config");
 const axios = require("axios");
+const { sendSmartNotification } = require("../util/Telegram.helpe");
+const { createSystemNotification } = require("./System_notification.controller");
 exports.getStockByUser = async (req, res) => {
   try {
     const { txtSearch } = req.query;
@@ -268,6 +270,7 @@ exports.gettotal_due = async (req, res) => {
               AND cd2.category_id = cd.category_id
               AND cd2.description IS NOT NULL 
               AND cd2.description != ''
+              AND cd2.description NOT LIKE 'Product ID:%'
             ORDER BY cd2.id DESC 
             LIMIT 1
           ) AS debt_description,
@@ -276,7 +279,8 @@ exports.gettotal_due = async (req, res) => {
           MIN(cd.created_at) AS created_at,
           MAX(cd.updated_at) AS updated_at,
           SUM(cd.qty) AS quantity, 
-          AVG(cd.actual_price) AS debt_actual_price
+          AVG(cd.actual_price) AS debt_actual_price,
+          MAX(cd.pre_order_no) AS pre_order_no
         FROM customer_debt cd
         JOIN user cu ON cu.group_id = (SELECT group_id FROM user WHERE id = cd.created_by)
         WHERE cu.id = ?
@@ -286,6 +290,7 @@ exports.gettotal_due = async (req, res) => {
         ds.debt_id,
         ds.order_id,
         o.order_no,
+        o.pre_order_no,
         DATE_FORMAT(o.order_date, '%Y-%m-%d') AS order_date,
         DATE_FORMAT(o.delivery_date, '%Y-%m-%d') AS delivery_date,
         ds.customer_id,
@@ -327,9 +332,40 @@ exports.gettotal_due = async (req, res) => {
           (SELECT cat.actual_price FROM category cat WHERE cat.id = ds.category_id)
         ) AS effective_actual_price,
         
-        -- ✅ អាទិភាព: debt_description > product_details.description > order_no
+        -- ✅ អាទិភាព: pre_order_no > debt_description > inventory_transaction > product_details > order_no
         COALESCE(
+          -- Priority 1: pre_order_no from debt_summary (customer_debt)
+          NULLIF(ds.pre_order_no, ''),
+          -- Priority 2: pre_order_no from order table
+          NULLIF(o.pre_order_no, ''),
+          -- Priority 3: debt_description from customer_debt
           NULLIF(ds.debt_description, ''),
+          -- Strategy 4: From inventory_transaction.reference_no
+          (
+            SELECT it.reference_no
+            FROM inventory_transaction it
+            WHERE it.product_id = (SELECT od.product_id FROM order_detail od WHERE od.order_id = o.id AND od.qty = ds.quantity LIMIT 1) -- Best effort match
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.reference_no IS NOT NULL
+              AND it.reference_no != ''
+              AND it.reference_no != o.order_no
+              AND DATE(it.created_at) = DATE(o.order_date)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 5: From inventory_transaction.notes
+          (
+            SELECT 
+              SUBSTRING_INDEX(SUBSTRING_INDEX(it.notes, 'PO: ', -1), ')', 1)
+            FROM inventory_transaction it
+            WHERE it.product_id = (SELECT od.product_id FROM order_detail od WHERE od.order_id = o.id AND od.qty = ds.quantity LIMIT 1)
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.notes LIKE '%PO:%'
+              AND DATE(it.created_at) = DATE(o.order_date)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 6: From product_details
           (
             SELECT pd.description
             FROM product_details pd
@@ -341,6 +377,7 @@ exports.gettotal_due = async (req, res) => {
             ORDER BY pd.created_at DESC
             LIMIT 1
           ),
+          -- Final fallback: order_no
           o.order_no
         ) AS product_description,
         
@@ -519,6 +556,7 @@ exports.gettotal_due = async (req, res) => {
         c.name LIKE ? OR 
         c.tel LIKE ? OR 
         o.order_no LIKE ? OR
+        o.pre_order_no LIKE ? OR
         ds.debt_description LIKE ? OR
         EXISTS (
           SELECT 1 FROM product_details pd
@@ -531,7 +569,7 @@ exports.gettotal_due = async (req, res) => {
           )
         )
       )`);
-      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (conditions.length > 0) {
@@ -587,6 +625,7 @@ exports.gettotal_due_detail = async (req, res) => {
         cd.id AS debt_id,
         cd.order_id,
         o.order_no,
+        o.pre_order_no,
         DATE_FORMAT(o.order_date, '%Y-%m-%d') AS order_date,
         DATE_FORMAT(o.delivery_date, '%Y-%m-%d') AS delivery_date,
         c.id AS customer_id,
@@ -602,6 +641,56 @@ exports.gettotal_due_detail = async (req, res) => {
         DATE_FORMAT(cd.due_date, '%Y-%m-%d') AS due_date,
         DATE_FORMAT(cd.last_payment_date, '%Y-%m-%d') AS last_payment_date,
         cd.notes,
+        
+        -- ✅ យក description ពី robust lookup (prioritize pre_order_no)
+        COALESCE(
+          -- Priority 1: pre_order_no from customer_debt
+          NULLIF(cd.pre_order_no, ''),
+          -- Priority 2: pre_order_no from order table
+          NULLIF(o.pre_order_no, ''),
+          -- Priority 3: description from customer_debt
+          NULLIF(cd.description, ''),
+          -- Strategy 4: From inventory_transaction.reference_no
+          (
+            SELECT it.reference_no
+            FROM inventory_transaction it
+            INNER JOIN order_detail od ON it.product_id = od.product_id
+            WHERE od.order_id = o.id 
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.reference_no IS NOT NULL
+              AND it.reference_no != ''
+              AND it.reference_no != o.order_no
+              AND DATE(it.created_at) = DATE(o.create_at)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 5: From inventory_transaction.notes
+          (
+            SELECT 
+              SUBSTRING_INDEX(SUBSTRING_INDEX(it.notes, 'PO: ', -1), ')', 1)
+            FROM inventory_transaction it
+            INNER JOIN order_detail od ON it.product_id = od.product_id
+            WHERE od.order_id = o.id
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.notes LIKE '%PO:%'
+              AND DATE(it.created_at) = DATE(o.create_at)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 6: From product_details
+          (
+            SELECT pd.description
+            FROM product_details pd
+            WHERE pd.customer_id = o.customer_id
+              AND CAST(pd.category AS UNSIGNED) = cd.category_id
+              AND pd.description IS NOT NULL
+              AND pd.description != ''
+            ORDER BY pd.created_at DESC
+            LIMIT 1
+          ),
+          -- Fallback
+          o.order_no
+        ) AS product_description,
         
         -- Get unit_price from order_detail
         (
@@ -869,8 +958,11 @@ exports.updateCustomerDebt = async (req, res) => {
       qty,
       unit_price,
       actual_price,
-      description, // ✅ យក description ពី request
+      description,
     } = req.body;
+
+    // ✅ Get branch name from auth
+    const branch_name = req.auth?.branch_name || null;
 
     if (!order_id || !customer_id || !amount || !user_id) {
       await connection.rollback();
@@ -940,11 +1032,9 @@ exports.updateCustomerDebt = async (req, res) => {
     const customerAddress = customerInfo?.address || 'N/A';
     const userName = userInfo?.name || `ID: ${user_id}`;
 
-    // ✅ ប្រើ description ពី request ជាមុនសិន បើគ្មានទើបយកពី database
     let productDescription = description;
-    
+
     if (!productDescription) {
-      // Fallback: យកពី product_details
       const [productDetailsRows] = await connection.query(
         `SELECT pd.description
          FROM product_details pd
@@ -955,14 +1045,13 @@ exports.updateCustomerDebt = async (req, res) => {
          LIMIT 1`,
         [order_id]
       );
-      
+
       productDescription = productDetailsRows[0]?.description || `Order-${order_id}`;
     }
 
     const slipFiles = req.files?.["upload_image_optional"] || [];
     const slipPaths = slipFiles.map((file) => file.filename);
 
-    // ✅ Insert payment ជាមួយ description ត្រឹមត្រូវ
     const [paymentResult] = await connection.query(
       `INSERT INTO payments (
         order_id, customer_id, amount, payment_method, bank, 
@@ -978,13 +1067,12 @@ exports.updateCustomerDebt = async (req, res) => {
         payment_date || new Date().toISOString().split("T")[0],
         user_id,
         notes || "",
-        productDescription, // ✅ ប្រើ description ត្រឹមត្រូវ
+        productDescription,
         JSON.stringify(slipPaths),
         user_id,
       ]
     );
 
-    // ✅ Update customer_debt records
     let remainingPayment = paymentAmount;
     const updatedDebts = [];
     let qtyApplied = false;
@@ -1071,26 +1159,111 @@ exports.updateCustomerDebt = async (req, res) => {
       return `${day}/${month}/${year}`;
     };
 
-    let alertMessage = `✅ <b>New Payment Received</b>
-📅 <b>Date:</b> ${formatDate(payment_date)}
-`;
+    try {
 
-    if (productDescription) {
-      alertMessage += `📝 <b>Invoice Number:</b> <i>${productDescription}</i>
-`;
+
+      const notificationData = {
+        notification_type: 'payment_received',
+        title: `💰 Payment Received: ${customerName}`,
+        message: `Payment of $${paymentAmount.toFixed(2)} received from ${customerName}\n\nInvoice: ${productDescription}\nMethod: ${payment_method || 'cash'}\nBank: ${bank || 'N/A'}\nDate: ${formatDate(payment_date)}`,
+
+        data: {
+          payment_info: {
+            payment_id: paymentResult.insertId,
+            order_id: order_id,
+            invoice_number: productDescription,
+            amount: paymentAmount,
+            payment_method: payment_method || 'cash',
+            bank: bank || null,
+            payment_date: payment_date || new Date().toISOString().split("T")[0],
+            payment_date_formatted: formatDate(payment_date),
+
+            // Updated debts summary
+            total_paid: totalNewPaid.toFixed(2),
+            total_due: totalNewDue.toFixed(2),
+            debts_updated: updatedDebts.length,
+
+            // Payment details
+            updated_debts: updatedDebts.map(debt => ({
+              debt_id: debt.id,
+              payment_applied: debt.payment_applied.toFixed(2),
+              new_paid_amount: debt.new_paid_amount.toFixed(2),
+              new_due_amount: debt.new_due_amount.toFixed(2),
+              status: debt.payment_status
+            })),
+
+            // Slip images
+            slip_images: slipPaths,
+            slip_count: slipPaths.length,
+
+            // Additional info
+            notes: notes || null,
+            processed_by: userName,
+            processed_by_id: user_id
+          },
+
+          customer_info: {
+            customer_id: customer_id,
+            name: customerName,
+            phone: customerPhone,
+            address: customerAddress
+          }
+        },
+
+        // Main fields
+        order_id: order_id,
+        order_no: productDescription,
+        customer_id: null,  // ✅ NULL to avoid FK constraint
+        customer_name: customerName,
+        customer_address: customerAddress,
+        customer_tel: customerPhone,
+        total_amount: paymentAmount,
+        total_liters: null,
+        card_number: null,
+
+        user_id: user_id,
+        created_by: userName,
+        branch_name: branch_name || null,
+        group_id: null,  // ✅ NULL = visible to all Super Admins
+
+        priority: paymentAmount >= 1000 ? 'high' : 'normal',
+        severity: paymentAmount >= 5000 ? 'critical' : paymentAmount >= 1000 ? 'high' : 'normal',
+        icon: '💰',
+        color: 'green',
+        action_url: `/payments/${paymentResult.insertId}`,
+        expires_at: null
+      };
+
+
+      const notificationId = await createSystemNotification(notificationData);
+
+
+    } catch (sysNotifError) {
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('❌ FAILED TO CREATE PAYMENT NOTIFICATION');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('Payment ID:', paymentResult.insertId);
+      console.error('Order ID:', order_id);
+      console.error('Customer:', customerName);
+      console.error('Error Message:', sysNotifError.message);
+
+      if (sysNotifError.code === 'ER_NO_REFERENCED_ROW_2') {
+        console.error('⚠️ Foreign Key Constraint Error!');
+        console.error('   Solution: Make sure customer_id is set to NULL in notification data');
+      }
+
+      if (sysNotifError.sql) {
+        console.error('SQL Error:', sysNotifError.sqlMessage);
+        console.error('SQL State:', sysNotifError.sqlState);
+      }
+
+      console.error('Full Error:', sysNotifError);
+      console.error('Stack:', sysNotifError.stack);
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
     }
 
-    alertMessage += `👤 <b>Customer:</b> ${customerName}
-📞 <b>Phone:</b> ${customerPhone}
-📍 <b>Address:</b> ${customerAddress}
-💲 <b>Amount:</b> $${Number(paymentAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-💳 <b>Method:</b> ${payment_method}
-🏦 <b>Bank:</b> ${bank || 'N/A'}
-<i>Processed by: ${userName}</i>
-    `;
-
     const imageUrls = slipPaths.map(f => config.image_path + f);
-    await sendTelegramMessagenewcustomerPays(alertMessage, imageUrls);
 
     res.json({
       success: true,
@@ -1105,7 +1278,7 @@ exports.updateCustomerDebt = async (req, res) => {
         payment_date: payment_date || new Date().toISOString().split("T")[0],
         slip_images: imageUrls,
         updated_debts: updatedDebts,
-        description: productDescription, // ✅ Return correct description
+        description: productDescription,
       },
     });
 
@@ -1121,6 +1294,58 @@ exports.updateCustomerDebt = async (req, res) => {
     connection.release();
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 exports.updateDebt = async (req, res) => {
   try {
@@ -1487,25 +1712,25 @@ exports.deleteDebt = async (req, res) => {
 
     // ✅ Step 5: Delete payments
     const [deletePaymentsResult] = await connection.query(
-      `DELETE FROM payments WHERE order_id = ?`, 
+      `DELETE FROM payments WHERE order_id = ?`,
       [orderId]
     );
 
     // ✅ Step 6: Delete order_detail
     const [deleteOrderDetailResult] = await connection.query(
-      `DELETE FROM order_detail WHERE order_id = ?`, 
+      `DELETE FROM order_detail WHERE order_id = ?`,
       [orderId]
     );
 
     // ✅ Step 7: Delete customer_debt
     const [deleteDebtResult] = await connection.query(
-      `DELETE FROM customer_debt WHERE order_id = ?`, 
+      `DELETE FROM customer_debt WHERE order_id = ?`,
       [orderId]
     );
 
     // ✅ Step 8: Delete order
     const [deleteOrderResult] = await connection.query(
-      `DELETE FROM \`order\` WHERE id = ?`, 
+      `DELETE FROM \`order\` WHERE id = ?`,
       [orderId]
     );
 

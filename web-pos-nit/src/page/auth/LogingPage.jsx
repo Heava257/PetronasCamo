@@ -44,6 +44,30 @@ function LoginPage() {
     }
   }, [remainingTime]);
 
+  // ✅✅✅ NEW: Check if user is driver ✅✅✅
+  const checkIfDriver = async () => {
+    try {
+      const res = await request('driver/check-auth', 'get');
+      
+      if (res && res.success) {
+        // ✅ User IS a driver
+        
+        // Save driver info
+        localStorage.setItem('is_driver', 'true');
+        localStorage.setItem('driver_info', JSON.stringify(res.driver_info));
+        
+        return true;
+      } else {
+        // ❌ User is NOT a driver
+        localStorage.setItem('is_driver', 'false');
+        return false;
+      }
+    } catch (error) {
+      localStorage.setItem('is_driver', 'false');
+      return false;
+    }
+  };
+
   const onLogin = async (item) => {
     if (isBlocked) {
       message.warning(`សូមរង់ចាំ ${formatTime(remainingTime)}`);
@@ -65,6 +89,7 @@ function LoginPage() {
         setIsBlocked(false);
         setRemainingTime(0);
         
+        // ✅ Save tokens and profile
         setAcccessToken(res.access_token);
         setProfile(JSON.stringify(res.profile));
         setPermission(JSON.stringify(res.permission));
@@ -75,9 +100,19 @@ function LoginPage() {
         message.success("Login successful!");
         setShowWelcome(true);
 
-        setTimeout(() => {
-          navigate("/");
+        // ✅✅✅ NEW: Check if driver and redirect accordingly ✅✅✅
+        setTimeout(async () => {
+          const isDriver = await checkIfDriver();
+          
+          if (isDriver) {
+            // ✅ Redirect to Driver App
+            navigate("/driver");
+          } else {
+            // ✅ Redirect to Normal Dashboard
+            navigate("/");
+          }
         }, 2000);
+
       } else {
         // Login បរាជ័យ - Increment attempts
         const newAttemptCount = attemptCount + 1;

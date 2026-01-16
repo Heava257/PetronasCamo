@@ -1,456 +1,783 @@
-/* Base styles with improved background gradient */
+/* ProfilePage.module.css */
+
+/* Container - Force background override */
 .profileContainer {
   padding: 24px;
   min-height: 100vh;
-  background: linear-gradient(135deg, #527bb8 0%, #e4eff9 100%);
-  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+  position: relative;
+  z-index: 1;
 }
 
-/* Dark mode background for profile container */
-[data-theme='dark'] .profileContainer,
-.dark .profileContainer,
-:root[data-theme='dark'] .profileContainer {
-  background: linear-gradient(135deg, #141414 0%, #1a1a1a 100%) !important;
+/* Dark Mode Container */
+.profileContainer.darkMode {
+  background: #0f1419 !important;
 }
 
-/* Khmer font styling */
-.khmerFont {
-  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
+/* Light Mode Container */
+.profileContainer:not(.darkMode) {
+  background: #f8f9fa !important;
 }
 
-/* Card styling with improved shadow and subtle border */
-.profileCard {
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.07);
-  max-width: 800px;
-  margin: 0 auto;
-  border: 1px solid rgba(230, 235, 240, 0.8);
-  overflow: hidden;
+/* Loading State */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
 }
 
-/* Dark mode for profile card */
-[data-theme='dark'] .profileCard,
-.dark .profileCard,
-:root[data-theme='dark'] .profileCard {
-  background-color: #1f1f1f !important;
-  border: 1px solid #303030 !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+.loadingContainer {
+  background: #f8f9fa !important;
 }
 
-.profileCard :global(.ant-card-head) {
-  background: linear-gradient(to right, #f8fafc, #eef5ff);
-  border-bottom: 1px solid rgba(230, 235, 240, 0.8);
-  padding: 16px 24px;
+.profileContainer.darkMode .loadingContainer {
+  background: #0f1419 !important;
 }
 
-/* Dark mode for card header */
-[data-theme='dark'] .profileCard :global(.ant-card-head),
-.dark .profileCard :global(.ant-card-head),
-:root[data-theme='dark'] .profileCard :global(.ant-card-head) {
-  background: linear-gradient(to right, #262626, #2a2a2a) !important;
-  border-bottom: 1px solid #303030 !important;
-}
-
-.profileCard :global(.ant-card-head-title) {
+.spinner {
   font-size: 18px;
-  font-weight: 600;
-  color: #3f4e65;
+  font-family: 'Kantumruy Pro', 'Battambang', sans-serif;
 }
 
-/* Dark mode for card title */
-[data-theme='dark'] .profileCard :global(.ant-card-head-title),
-.dark .profileCard :global(.ant-card-head-title),
-:root[data-theme='dark'] .profileCard :global(.ant-card-head-title) {
-  color: #e8eaed !important;
+.profileContainer.darkMode .spinner {
+  color: #fff;
 }
 
-.profileCard :global(.ant-card-body) {
-  padding: 30px;
+.profileContainer:not(.darkMode) .spinner {
+  color: #1a1d23;
 }
 
-/* Dark mode for card body */
-[data-theme='dark'] .profileCard :global(.ant-card-body),
-.dark .profileCard :global(.ant-card-body),
-:root[data-theme='dark'] .profileCard :global(.ant-card-body) {
-  background-color: #1f1f1f !important;
-}
-
-/* Improved back button */
+/* Back Button */
 .backButton {
-  margin-bottom: 16px;
-  color: #4d6bb3;
+  margin-bottom: 24px;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 8px;
-  border: 1px solid rgba(77, 107, 179, 0.1);
-  background-color: rgba(77, 107, 179, 0.05);
   transition: all 0.2s ease;
-}
-
-/* Dark mode for back button */
-[data-theme='dark'] .backButton,
-.dark .backButton,
-:root[data-theme='dark'] .backButton {
-  color: #7293da !important;
-  border: 1px solid rgba(114, 147, 218, 0.2) !important;
-  background-color: rgba(114, 147, 218, 0.1) !important;
-}
-
-.backButton:hover {
-  background-color: rgba(77, 107, 179, 0.1);
-  color: #365197;
-  transform: translateX(-3px);
-}
-
-/* Dark mode for back button hover */
-[data-theme='dark'] .backButton:hover,
-.dark .backButton:hover,
-:root[data-theme='dark'] .backButton:hover {
-  background-color: rgba(114, 147, 218, 0.2) !important;
-  color: #8da4d8 !important;
-}
-
-.backButton .anticon {
-  font-size: 16px;
-}
-
-/* Upload component with improved aesthetics */
-.profileUpload :global(.ant-upload.ant-upload-select-picture-card) {
-  width: 140px !important;
-  height: 140px !important;
-  border-radius: 50% !important;
-  overflow: hidden;
-  border: 2px dashed #d0ddf7;
-  background-color: #f7faff;
-  transition: all 0.3s ease;
-}
-
-/* Dark mode for upload */
-[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
-.dark .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
-:root[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card) {
-  border: 2px dashed #434343 !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-.profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover) {
-  border-color: #7293da;
-  background-color: #f0f6ff;
-}
-
-/* Dark mode for upload hover */
-[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover),
-.dark .profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover),
-:root[data-theme='dark'] .profileUpload :global(.ant-upload.ant-upload-select-picture-card:hover) {
-  border-color: #7293da !important;
-  background-color: rgba(114, 147, 218, 0.1) !important;
-}
-
-.profileUpload :global(.ant-upload-list-picture-card-container) {
-  width: 140px !important;
-  height: 140px !important;
-}
-
-.profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item) {
-  padding: 0;
-  border-radius: 50% !important;
-  border: 2px solid #e1e9f8;
-  overflow: hidden;
-}
-
-/* Dark mode for upload list item */
-[data-theme='dark'] .profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item),
-.dark .profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item),
-:root[data-theme='dark'] .profileUpload :global(.ant-upload-list-picture-card .ant-upload-list-item) {
-  border: 2px solid #434343 !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-.uploadIcon {
-  font-size: 36px;
-  color: #8da4d8;
-}
-
-/* Dark mode for upload icon */
-[data-theme='dark'] .uploadIcon,
-.dark .uploadIcon,
-:root[data-theme='dark'] .uploadIcon {
-  color: #7293da !important;
-}
-
-.uploadText {
-  margin-top: 8px;
-  color: #5375bc;
   font-weight: 500;
 }
 
-/* Dark mode for upload text */
-[data-theme='dark'] .uploadText,
-.dark .uploadText,
-:root[data-theme='dark'] .uploadText {
-  color: #8da4d8 !important;
+/* Light mode back button */
+.profileContainer:not(.darkMode) .backButton {
+  color: #4b5563 !important;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
 }
 
-/* Form styling with improved spacing and colors */
-.profileForm :global(.ant-form-item) {
+.profileContainer:not(.darkMode) .backButton:hover {
+  background-color: #f3f4f6 !important;
+  color: #1a1d23 !important;
+  border-color: #9ca3af !important;
+}
+
+/* Dark mode back button */
+.profileContainer.darkMode .backButton {
+  color: #8b949e !important;
+  background-color: #21262d;
+  border: 1px solid #30363d;
+}
+
+.profileContainer.darkMode .backButton:hover {
+  background-color: #30363d !important;
+  color: #c9d1d9 !important;
+  border-color: #8b949e !important;
+}
+
+/* Main Layout */
+.profileLayout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Left Sidebar - Profile Card */
+.profileCard {
+  border-radius: 16px;
+  padding: 32px;
+  height: fit-content;
+  position: sticky;
+  top: 24px;
+  transition: all 0.3s;
+}
+
+/* Light mode card */
+.profileContainer:not(.darkMode) .profileCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark mode card */
+.profileContainer.darkMode .profileCard {
+  background: #161b22;
+  border: 1px solid #21262d;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Avatar Section */
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 24px;
 }
 
-.profileForm :global(.ant-form-item-label > label) {
-  font-weight: 600;
-  color: #3f4e65;
-  font-size: 15px;
-  margin-bottom: 6px;
+.avatarWrapper {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Dark mode for form labels */
-[data-theme='dark'] .profileForm :global(.ant-form-item-label > label),
-.dark .profileForm :global(.ant-form-item-label > label),
-:root[data-theme='dark'] .profileForm :global(.ant-form-item-label > label) {
-  color: #e8eaed !important;
+/* Light mode avatar */
+.profileContainer:not(.darkMode) .avatarWrapper {
+  border: 4px solid #e5e7eb;
+  background: #f9fafb;
 }
 
-.profileForm :global(.ant-input),
-.profileForm :global(.ant-input-password) {
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid #d9e2f0;
-  transition: all 0.25s ease;
+/* Dark mode avatar */
+.profileContainer.darkMode .avatarWrapper {
+  border: 4px solid #30363d;
+  background: #21262d;
 }
 
-/* Dark mode for inputs */
-[data-theme='dark'] .profileForm :global(.ant-input),
-.dark .profileForm :global(.ant-input),
-:root[data-theme='dark'] .profileForm :global(.ant-input) {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid #434343 !important;
-  color: #e8eaed !important;
-}
-
-[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper),
-.dark .profileForm :global(.ant-input-affix-wrapper),
-:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper) {
-  background-color: rgba(255, 255, 255, 0.08) !important;
-  border: 1px solid #434343 !important;
-}
-
-[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper input),
-.dark .profileForm :global(.ant-input-affix-wrapper input),
-:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper input) {
-  background-color: transparent !important;
-  color: #e8eaed !important;
-}
-
-.profileForm :global(.ant-input:hover),
-.profileForm :global(.ant-input-password:hover) {
-  border-color: #7293da;
-}
-
-/* Dark mode for input hover */
-[data-theme='dark'] .profileForm :global(.ant-input:hover),
-.dark .profileForm :global(.ant-input:hover),
-:root[data-theme='dark'] .profileForm :global(.ant-input:hover),
-[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper:hover),
-.dark .profileForm :global(.ant-input-affix-wrapper:hover),
-:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper:hover) {
-  border-color: #7293da !important;
-}
-
-.profileForm :global(.ant-input:focus),
-.profileForm :global(.ant-input-affix-wrapper-focused) {
-  border-color: #4d6bb3;
-  box-shadow: 0 0 0 2px rgba(77, 107, 179, 0.1);
-}
-
-/* Dark mode for input focus */
-[data-theme='dark'] .profileForm :global(.ant-input:focus),
-.dark .profileForm :global(.ant-input:focus),
-:root[data-theme='dark'] .profileForm :global(.ant-input:focus),
-[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper-focused),
-.dark .profileForm :global(.ant-input-affix-wrapper-focused),
-:root[data-theme='dark'] .profileForm :global(.ant-input-affix-wrapper-focused) {
-  border-color: #7293da !important;
-  box-shadow: 0 0 0 2px rgba(114, 147, 218, 0.2) !important;
-}
-
-.profileForm :global(.ant-input-affix-wrapper) {
-  padding: 0;
-  border-radius: 10px;
-}
-
-.profileForm :global(.ant-input-affix-wrapper input) {
-  padding: 12px 16px;
-}
-
-/* Beautiful gradient button styling */
-.saveButton {
+.avatar {
   width: 100%;
-  height: 46px;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profileContainer:not(.darkMode) .avatarPlaceholder {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.profileContainer.darkMode .avatarPlaceholder {
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+}
+
+.avatarIcon {
+  font-size: 64px;
+}
+
+.profileContainer:not(.darkMode) .avatarIcon {
+  color: #6b7280;
+}
+
+.profileContainer.darkMode .avatarIcon {
+  color: #4a5568;
+}
+
+.changeAvatarBtn {
+  padding: 8px 24px;
+  height: auto;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Light mode change button */
+.profileContainer:not(.darkMode) .changeAvatarBtn {
+  background: transparent !important;
+  color: #2563eb !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.profileContainer:not(.darkMode) .changeAvatarBtn:hover {
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border-color: #93c5fd !important;
+}
+
+/* Dark mode change button */
+.profileContainer.darkMode .changeAvatarBtn {
+  background: transparent !important;
+  color: #58a6ff !important;
+  border: 1px solid #30363d !important;
+}
+
+.profileContainer.darkMode .changeAvatarBtn:hover {
+  background: #1f6feb !important;
+  color: #fff !important;
+  border-color: #1f6feb !important;
+}
+
+/* Profile Info */
+.profileName {
+  font-size: 24px;
   font-weight: 600;
-  font-size: 16px;
-  background: linear-gradient(135deg, #4d6bb3 0%, #5481cc 100%);
-  border: none;
-  border-radius: 10px;
+  margin: 0 0 8px 0;
+  text-align: center;
+}
+
+.profileContainer:not(.darkMode) .profileName {
+  color: #1a1d23;
+}
+
+.profileContainer.darkMode .profileName {
+  color: #c9d1d9;
+}
+
+.profileEmail {
+  font-size: 14px;
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.profileContainer:not(.darkMode) .profileEmail {
+  color: #6b7280;
+}
+
+.profileContainer.darkMode .profileEmail {
+  color: #8b949e;
+}
+
+.profileInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid;
+}
+
+.profileContainer:not(.darkMode) .profileInfo {
+  border-top-color: #e5e7eb;
+}
+
+.profileContainer.darkMode .profileInfo {
+  border-top-color: #21262d;
+}
+
+.infoItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+.profileContainer:not(.darkMode) .infoItem {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.profileContainer.darkMode .infoItem {
+  background: #0d1117;
+  border: 1px solid #21262d;
+}
+
+.infoIcon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.profileContainer:not(.darkMode) .infoIcon {
+  color: #6b7280;
+}
+
+.profileContainer.darkMode .infoIcon {
+  color: #8b949e;
+}
+
+.infoContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.infoLabel {
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'Kantumruy Pro', 'Battambang', sans-serif;
+}
+
+.profileContainer:not(.darkMode) .infoLabel {
+  color: #6b7280;
+}
+
+.profileContainer.darkMode .infoLabel {
+  color: #8b949e;
+}
+
+.infoValue {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.profileContainer:not(.darkMode) .infoValue {
+  color: #374151;
+}
+
+.profileContainer.darkMode .infoValue {
+  color: #c9d1d9;
+}
+
+/* Right Content - Forms Container */
+.formsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Form Section */
+.formSection {
+  border-radius: 16px;
+  padding: 32px;
   transition: all 0.3s;
-  margin-top: 10px;
 }
 
-.saveButton:hover {
-  background: linear-gradient(135deg, #3e5b9e 0%, #4273c0 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 7px 14px rgba(77, 107, 179, 0.2);
+.profileContainer:not(.darkMode) .formSection {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.saveButton:active {
-  transform: translateY(0);
+.profileContainer.darkMode .formSection {
+  background: #161b22;
+  border: 1px solid #21262d;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-.saveButton:disabled {
-  background: linear-gradient(135deg, #a8b4d0 0%, #b8c5dc 100%);
-  color: #f0f2f5;
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 24px 0;
+}
+
+.profileContainer:not(.darkMode) .sectionTitle {
+  color: #1a1d23;
+}
+
+.profileContainer.darkMode .sectionTitle {
+  color: #c9d1d9;
+}
+
+/* Form Styles */
+.form :global(.ant-form-item) {
+  margin-bottom: 20px;
+}
+
+.form :global(.ant-form-item-label > label) {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+/* Light mode form labels */
+.profileContainer:not(.darkMode) .form :global(.ant-form-item-label > label) {
+  color: #374151;
+}
+
+/* Dark mode form labels */
+.profileContainer.darkMode .form :global(.ant-form-item-label > label) {
+  color: #c9d1d9;
+}
+
+/* Input styles */
+.form :global(.ant-input),
+.form :global(.ant-input-password) {
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+/* Light mode inputs */
+.profileContainer:not(.darkMode) .form :global(.ant-input),
+.profileContainer:not(.darkMode) .form :global(.ant-input-password) {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+  color: #1a1d23 !important;
+}
+
+.profileContainer:not(.darkMode) .form :global(.ant-input::placeholder),
+.profileContainer:not(.darkMode) .form :global(.ant-input-password input::placeholder) {
+  color: #6b7280 !important;
+}
+
+.profileContainer:not(.darkMode) .form :global(.ant-input:hover),
+.profileContainer:not(.darkMode) .form :global(.ant-input-password:hover) {
+  border-color: #2563eb !important;
+}
+
+/* Dark mode inputs */
+.profileContainer.darkMode .form :global(.ant-input),
+.profileContainer.darkMode .form :global(.ant-input-password) {
+  background: #0d1117 !important;
+  border: 1px solid #30363d !important;
+  color: #c9d1d9 !important;
+}
+
+.profileContainer.darkMode .form :global(.ant-input::placeholder),
+.profileContainer.darkMode .form :global(.ant-input-password input::placeholder) {
+  color: #6e7681 !important;
+}
+
+.profileContainer.darkMode .form :global(.ant-input:hover),
+.profileContainer.darkMode .form :global(.ant-input-password:hover) {
+  border-color: #58a6ff !important;
+}
+
+/* Focus states */
+.profileContainer:not(.darkMode) .form :global(.ant-input:focus),
+.profileContainer:not(.darkMode) .form :global(.ant-input-password:focus) {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+.profileContainer.darkMode .form :global(.ant-input:focus),
+.profileContainer.darkMode .form :global(.ant-input-password:focus) {
+  border-color: #1f6feb !important;
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.1) !important;
+}
+
+/* Password input wrapper */
+.form :global(.ant-input-affix-wrapper) {
+  border-radius: 8px;
+  padding: 0;
+}
+
+.profileContainer:not(.darkMode) .form :global(.ant-input-affix-wrapper) {
+  background: #ffffff !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.profileContainer.darkMode .form :global(.ant-input-affix-wrapper) {
+  background: #0d1117 !important;
+  border: 1px solid #30363d !important;
+}
+
+.form :global(.ant-input-affix-wrapper input) {
+  background: transparent !important;
+  border: none !important;
+  padding: 12px 16px;
+}
+
+.profileContainer:not(.darkMode) .form :global(.ant-input-affix-wrapper input) {
+  color: #1a1d23 !important;
+}
+
+.profileContainer.darkMode .form :global(.ant-input-affix-wrapper input) {
+  color: #c9d1d9 !important;
+}
+
+.form :global(.ant-input-affix-wrapper .ant-input-suffix) {
+  margin-right: 12px;
+}
+
+.profileContainer:not(.darkMode) .form :global(.ant-input-affix-wrapper .ant-input-suffix) {
+  color: #6b7280;
+}
+
+.profileContainer.darkMode .form :global(.ant-input-affix-wrapper .ant-input-suffix) {
+  color: #8b949e;
+}
+
+/* Error states */
+.profileContainer:not(.darkMode) .form :global(.ant-form-item-has-error .ant-input),
+.profileContainer:not(.darkMode) .form :global(.ant-form-item-has-error .ant-input-affix-wrapper) {
+  border-color: #dc2626 !important;
+}
+
+.profileContainer.darkMode .form :global(.ant-form-item-has-error .ant-input),
+.profileContainer.darkMode .form :global(.ant-form-item-has-error .ant-input-affix-wrapper) {
+  border-color: #f85149 !important;
+}
+
+.form :global(.ant-form-item-explain-error) {
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.profileContainer:not(.darkMode) .form :global(.ant-form-item-explain-error) {
+  color: #dc2626;
+}
+
+.profileContainer.darkMode .form :global(.ant-form-item-explain-error) {
+  color: #f85149;
+}
+
+/* Form Row - Two Column Layout */
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.formItem {
+  margin-bottom: 0 !important;
+}
+
+.formItemFull {
+  grid-column: 1 / -1;
+}
+
+/* Form Actions */
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid;
+}
+
+.profileContainer:not(.darkMode) .formActions {
+  border-top-color: #e5e7eb;
+}
+
+.profileContainer.darkMode .formActions {
+  border-top-color: #21262d;
+}
+
+/* Buttons - General */
+.saveButton,
+.updateButton,
+.cancelButton {
+  padding: 10px 24px;
+  height: auto;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+/* Save/Update Buttons */
+.saveButton,
+.updateButton {
+  color: #ffffff !important;
+}
+
+/* Light mode save button */
+.profileContainer:not(.darkMode) .saveButton,
+.profileContainer:not(.darkMode) .updateButton {
+  background: #2563eb !important;
+}
+
+.profileContainer:not(.darkMode) .saveButton:hover:not(:disabled),
+.profileContainer:not(.darkMode) .updateButton:hover:not(:disabled) {
+  background: #1d4ed8 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+/* Dark mode save button */
+.profileContainer.darkMode .saveButton,
+.profileContainer.darkMode .updateButton {
+  background: #1f6feb !important;
+}
+
+.profileContainer.darkMode .saveButton:hover:not(:disabled),
+.profileContainer.darkMode .updateButton:hover:not(:disabled) {
+  background: #1a5fd7 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(31, 111, 235, 0.3);
+}
+
+/* Disabled state */
+.saveButton:disabled,
+.updateButton:disabled {
   cursor: not-allowed;
   transform: none;
-  box-shadow: none;
 }
 
-/* Dark mode for disabled button */
-[data-theme='dark'] .saveButton:disabled,
-.dark .saveButton:disabled,
-:root[data-theme='dark'] .saveButton:disabled {
-  background: linear-gradient(135deg, #3a3a3a 0%, #454545 100%) !important;
-  color: #8c8c8c !important;
+.profileContainer:not(.darkMode) .saveButton:disabled,
+.profileContainer:not(.darkMode) .updateButton:disabled {
+  background: #d1d5db !important;
+  color: #6b7280 !important;
 }
 
-/* Preview image in modal */
+.profileContainer.darkMode .saveButton:disabled,
+.profileContainer.darkMode .updateButton:disabled {
+  background: #21262d !important;
+  color: #6e7681 !important;
+}
+
+/* Cancel Button */
+.cancelButton {
+  background: transparent !important;
+}
+
+/* Light mode cancel */
+.profileContainer:not(.darkMode) .cancelButton {
+  color: #6b7280 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.profileContainer:not(.darkMode) .cancelButton:hover {
+  background: #f9fafb !important;
+  color: #374151 !important;
+  border-color: #9ca3af !important;
+}
+
+/* Dark mode cancel */
+.profileContainer.darkMode .cancelButton {
+  color: #8b949e !important;
+  border: 1px solid #30363d !important;
+}
+
+.profileContainer.darkMode .cancelButton:hover {
+  background: #21262d !important;
+  color: #c9d1d9 !important;
+  border-color: #8b949e !important;
+}
+
+/* Modal Overrides - Only apply to our modal */
+.previewModal :global(.ant-modal-content),
+.previewModal :global(.ant-modal-header) {
+  background: #ffffff;
+}
+
+.profileContainer.darkMode .previewModal :global(.ant-modal-content),
+.profileContainer.darkMode .previewModal :global(.ant-modal-header) {
+  background: #161b22;
+}
+
+.previewModal :global(.ant-modal-title) {
+  color: #1a1d23;
+  font-family: 'Kantumruy Pro', 'Battambang', sans-serif;
+}
+
+.profileContainer.darkMode .previewModal :global(.ant-modal-title) {
+  color: #c9d1d9;
+}
+
+.previewModal :global(.ant-modal-close) {
+  color: #6b7280;
+}
+
+.profileContainer.darkMode .previewModal :global(.ant-modal-close) {
+  color: #8b949e;
+}
+
+/* Preview Image */
 .previewImage {
   width: 100%;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Message styling with improved visuals */
-.khmerMessage {
-  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
-  font-size: 14px;
+  max-height: 60vh;
+  object-fit: contain;
   border-radius: 8px;
-  padding: 8px 12px;
 }
 
-.khmerMessageSuccess {
-  background-color: #f2faf6;
-  border: 1px solid #c9edd8;
-  color: #389e0d;
-  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
-  border-radius: 8px;
-  padding: 8px 12px;
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .profileLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .profileCard {
+    position: static;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+  }
 }
 
-.khmerMessageError {
-  background-color: #fff2f0;
-  border: 1px solid #ffccc7;
-  color: #cf1322;
-  font-family: 'Kantumruy Pro', 'Battambang', 'Khmer OS', system-ui, sans-serif;
-  border-radius: 8px;
-  padding: 8px 12px;
-}
-
-/* Improved Modal styles */
-:global(.ant-modal-content) {
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-/* Dark mode for modal */
-[data-theme='dark'] :global(.ant-modal-content),
-.dark :global(.ant-modal-content),
-:root[data-theme='dark'] :global(.ant-modal-content) {
-  background-color: #1f1f1f !important;
-}
-
-:global(.ant-modal-header) {
-  background: linear-gradient(to right, #f8fafc, #eef5ff);
-  padding: 16px 24px;
-  border-bottom: 1px solid rgba(230, 235, 240, 0.8);
-}
-
-/* Dark mode for modal header */
-[data-theme='dark'] :global(.ant-modal-header),
-.dark :global(.ant-modal-header),
-:root[data-theme='dark'] :global(.ant-modal-header) {
-  background: linear-gradient(to right, #262626, #2a2a2a) !important;
-  border-bottom: 1px solid #303030 !important;
-}
-
-:global(.ant-modal-title) {
-  font-weight: 600;
-  color: #3f4e65;
-}
-
-/* Dark mode for modal title */
-[data-theme='dark'] :global(.ant-modal-title),
-.dark :global(.ant-modal-title),
-:root[data-theme='dark'] :global(.ant-modal-title) {
-  color: #e8eaed !important;
-}
-
-:global(.ant-modal-close) {
-  color: #4d6bb3;
-}
-
-/* Dark mode for modal close button */
-[data-theme='dark'] :global(.ant-modal-close),
-.dark :global(.ant-modal-close),
-:root[data-theme='dark'] :global(.ant-modal-close) {
-  color: #8da4d8 !important;
-}
-
-:global(.ant-modal-footer) {
-  border-top: 1px solid rgba(230, 235, 240, 0.8);
-}
-
-/* Dark mode for modal footer */
-[data-theme='dark'] :global(.ant-modal-footer),
-.dark :global(.ant-modal-footer),
-:root[data-theme='dark'] :global(.ant-modal-footer) {
-  border-top: 1px solid #303030 !important;
-}
-
-/* Responsive design */
 @media (max-width: 768px) {
   .profileContainer {
     padding: 16px;
   }
-  
-  .profileCard {
-    border-radius: 12px;
+
+  .profileCard,
+  .formSection {
+    padding: 24px;
   }
-  
-  .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
-  .profileUpload :global(.ant-upload-list-picture-card-container) {
-    width: 120px !important;
-    height: 120px !important;
+
+  .avatarWrapper {
+    width: 140px;
+    height: 140px;
   }
-  
-  .saveButton {
-    height: 44px;
+
+  .profileName {
+    font-size: 20px;
   }
-  
-  .profileCard :global(.ant-card-body) {
-    padding: 20px;
+
+  .sectionTitle {
+    font-size: 18px;
+  }
+
+  .formActions {
+    flex-direction: column;
+  }
+
+  .saveButton,
+  .cancelButton,
+  .updateButton {
+    width: 100%;
   }
 }
 
-/* For extra small screens */
 @media (max-width: 480px) {
-  .profileContainer {
-    padding: 10px;
+  .profileCard,
+  .formSection {
+    padding: 20px;
   }
-  
-  .profileUpload :global(.ant-upload.ant-upload-select-picture-card),
-  .profileUpload :global(.ant-upload-list-picture-card-container) {
-    width: 100px !important;
-    height: 100px !important;
+
+  .avatarWrapper {
+    width: 120px;
+    height: 120px;
   }
+
+  .changeAvatarBtn {
+    padding: 6px 20px;
+    font-size: 13px;
+  }
+}
+
+/* Dark Mode Toggle Button */
+.darkModeToggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.profileContainer:not(.darkMode) .darkModeToggle {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
+}
+
+.profileContainer.darkMode .darkModeToggle {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #c9d1d9;
+}
+
+.darkModeToggle:hover {
+  transform: scale(1.05);
+}
+
+.profileContainer:not(.darkMode) .darkModeToggle:hover {
+  background: #f3f4f6;
+}
+
+.profileContainer.darkMode .darkModeToggle:hover {
+  background: #30363d;
 }

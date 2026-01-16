@@ -1,5 +1,8 @@
 const { db, isArray, isEmpty, logError, sendTelegramMessage } = require("../util/helper");
+
 const dayjs = require('dayjs');
+const { sendSmartNotification } = require("../util/Telegram.helpe");
+const { createSystemNotification } = require("./System_notification.controller");
 
 exports.getone = async (req, res) => {
   try {
@@ -39,6 +42,232 @@ exports.getone = async (req, res) => {
     return res.status(500).json({ error: "Server error" });
   }
 };
+// order.controller.js - UPDATED create function with Smart Notification
+
+// exports.create = async (req, res) => {
+//   try {
+//     const { order, order_details = [] } = req.body;
+//     const totalLiters = order_details.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+
+//     if (!order.customer_id || !order.total_amount) {
+//       return res.status(400).json({ error: "Missing required fields" });
+//     }
+
+//     // ✅ Get branch name from auth
+//     const branch_name = req.auth?.branch_name || null;
+
+//     const [customerResult] = await db.query(
+//       "SELECT name, address, tel FROM customer WHERE id = :id",
+//       { id: order.customer_id }
+//     );
+//     const customer = customerResult.length > 0 ? customerResult[0] : {
+//       name: `ID: ${order.customer_id}`,
+//       address: "N/A",
+//       tel: "N/A"
+//     };
+
+//     const productCategories = {};
+//     const productCategoryIds = {}; 
+//     const categoryActualPrices = {};
+//     const productDescriptions = {};
+
+//     // Get product info
+//     for (const item of order_details) {
+//       const [productResult] = await db.query(
+//         `SELECT 
+//           p.id, 
+//           p.name AS product_name, 
+//           p.description AS product_description,
+//           p.category_id, 
+//           c.name AS category_name, 
+//           c.actual_price,
+//           pd.description AS details_description
+//          FROM product p 
+//          LEFT JOIN category c ON p.category_id = c.id
+//          LEFT JOIN product_details pd ON p.id = pd.product_id 
+//            AND pd.customer_id = :customer_id
+//          WHERE p.id = :id
+//          LIMIT 1`,
+//         { 
+//           id: item.product_id,
+//           customer_id: order.customer_id 
+//         }
+//       );
+
+//       if (productResult.length > 0) {
+//         const prod = productResult[0];
+//         productCategories[item.product_id] = `${prod.category_name} / ${prod.product_name}`;
+//         productCategoryIds[item.product_id] = prod.category_id; 
+//         categoryActualPrices[item.product_id] = prod.actual_price || 0;
+
+//         productDescriptions[item.product_id] = 
+//           item.description || 
+//           prod.details_description || 
+//           prod.product_description || 
+//           '';
+//       }
+//     }
+
+//     const order_no = await newOrderNo();
+//     const order_date = order.order_date || new Date().toISOString().slice(0, 10);
+//     const delivery_date = order.delivery_date || order_date;
+//     const receive_date = order.receive_date || null;
+//     const createdBy = req.auth?.name || "System";
+
+//     const sqlOrder = `
+//       INSERT INTO \`order\` 
+//         (order_no, customer_id, total_amount, paid_amount, payment_method, 
+//          remark, user_id, create_by, order_date, delivery_date, receive_date) 
+//       VALUES 
+//         (:order_no, :customer_id, :total_amount, :paid_amount, :payment_method, 
+//          :remark, :user_id, :create_by, :order_date, :delivery_date, :receive_date)
+//     `;
+
+//     // ✅ Build Telegram notification message
+//     let telegramText = `✅ <b>Order Completed!</b>\n`;
+//     telegramText += `━━━━━━━━━━━━━━━\n`;
+
+//     // Add branch info
+//     if (branch_name) {
+//       telegramText += `🏢 <b>Branch:</b> ${branch_name}\n`;
+//     }
+
+//     const formattedOrderDate = dayjs(order_date).format('DD-MM-YYYY');
+//     telegramText += `📅 <b>Date:</b> ${formattedOrderDate}\n`;
+
+//     const firstDescription = order_details
+//       .map(item => productDescriptions[item.product_id])
+//       .find(desc => desc && desc.trim() !== '');
+
+//     if (firstDescription) {
+//       telegramText += `📝 <b>Card Number:</b> <i>${firstDescription}</i>\n`;
+//     }
+
+//     telegramText += `\n👤 <b>Customer:</b> ${customer.name}\n`;
+//     telegramText += `🏠 <b>Address:</b> ${customer.address}\n`;
+//     telegramText += `📞 <b>Phone:</b> ${customer.tel}\n`;
+//     telegramText += `📝 <b>Created By:</b> ${createdBy}\n`;
+//     telegramText += `\n📦 <b>Items:</b>\n`;
+
+//     order_details.forEach((item, idx) => {
+//       let name = productCategories[item.product_id] || '';
+//       name = name.replace(/\/?\s*oil\s*\/?/i, '').trim();
+//       const qty = Number(item.qty).toLocaleString();
+//       const unitPrice = item.price;
+
+//       telegramText += `  ${idx + 1}. <b>${name}</b> - <b>${qty}L</b>\n`;
+//       telegramText += `     • Ton Price: <b>$${unitPrice}</b>\n`;
+//     });
+
+//     telegramText += `\n🔢 <b>Total Liters:</b> ${totalLiters.toLocaleString()}L\n`;
+//     telegramText += `💰 <b>Total:</b> $${parseFloat(order.total_amount).toLocaleString()}\n`;
+//     telegramText += `━━━━━━━━━━━━━━━`;
+
+//     // ✅✅✅ USE SMART NOTIFICATION ✅✅✅
+//     try {
+//       await sendSmartNotification({
+//         event_type: 'order_created',
+//         branch_name: branch_name, // ✅ Send to specific branch
+//         message: telegramText,
+//         severity: order.total_amount > 5000 ? 'critical' : 'normal'
+//       });
+
+//       console.log(`✅ Order notification sent to branch: ${branch_name || 'N/A'}`);
+//     } catch (notifError) {
+//       console.error('❌ Failed to send order notification:', notifError);
+//       // Don't fail the order creation if notification fails
+//     }
+
+//     // Create order
+//     const [orderResult] = await db.query(sqlOrder, {
+//       ...order,
+//       order_no,
+//       user_id: req.auth?.id || null,
+//       create_by: req.auth?.name || "System",
+//       order_date,
+//       delivery_date,
+//       receive_date
+//     });
+
+//     // Create order details
+//     const sqlOrderDetails = `
+//       INSERT INTO order_detail 
+//         (order_id, product_id, qty, price, discount, total) 
+//       VALUES 
+//         (:order_id, :product_id, :qty, :price, :discount, :total)
+//     `;
+
+//     await Promise.all(
+//       order_details.map(async (item) => {
+//         await db.query(sqlOrderDetails, {
+//           ...item,
+//           order_id: orderResult.insertId,
+//         });
+
+//         // Update stock
+//         if (item.product_id !== 0) {
+//           const sqlUpdateStock = `
+//             UPDATE product 
+//             SET qty = qty - :qty 
+//             WHERE id = :product_id
+//           `;
+
+//           await db.query(sqlUpdateStock, {
+//             qty: item.qty,
+//             product_id: item.product_id
+//           });
+//         }
+//       })
+//     );
+
+//     // Create customer_debt
+//     const sqlDebt = `
+//       INSERT INTO customer_debt 
+//         (customer_id, order_id, category_id, qty, unit_price, actual_price, 
+//          total_amount, paid_amount, due_date, notes, created_by, description)
+//       VALUES 
+//         (:customer_id, :order_id, :category_id, :qty, :unit_price, :actual_price, 
+//          :total_amount, :paid_amount, :due_date, :notes, :created_by, :description)
+//     `;
+
+//     await Promise.all(order_details.map(async (item) => {
+//       const actualPrice = categoryActualPrices[item.product_id] || 0;
+//       const calculatedTotal = actualPrice > 0 ? (item.qty * item.price) / actualPrice : 0;
+//       const description = productDescriptions[item.product_id] || '';
+
+//       await db.query(sqlDebt, {
+//         customer_id: order.customer_id,
+//         order_id: orderResult.insertId,
+//         category_id: productCategoryIds[item.product_id] || null, 
+//         qty: item.qty, 
+//         unit_price: item.price, 
+//         actual_price: actualPrice,
+//         total_amount: calculatedTotal, 
+//         paid_amount: 0.00,
+//         due_date: order.due_date || null,
+//         notes: `Product ID: ${item.product_id}`,
+//         created_by: req.auth?.id || null,
+//         description: description
+//       });
+//     }));
+
+//     const [currentOrder] = await db.query(
+//       "SELECT * FROM `order` WHERE id = :id",
+//       { id: orderResult.insertId }
+//     );
+
+//     res.json({
+//       order: currentOrder.length > 0 ? currentOrder[0] : null,
+//       order_details: order_details,
+//       message: "Order created successfully",
+//     });
+
+//   } catch (error) {
+//     logError("Order.create", error, res);
+//   }
+// };
+
+
 exports.create = async (req, res) => {
   try {
     const { order, order_details = [] } = req.body;
@@ -47,7 +276,34 @@ exports.create = async (req, res) => {
     if (!order.customer_id || !order.total_amount) {
       return res.status(400).json({ error: "Missing required fields" });
     }
+    if (!order.location_id) {
+      return res.status(400).json({
+        error: "Location is required",
+        message: "សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន"
+      });
+    }
 
+    // ========================================
+    // ✅ NEW: GET PRE_ORDER_NO (if order is from pre-order)
+    // ========================================
+    let pre_order_no = null;
+
+    if (order.pre_order_id) {
+      const [preOrder] = await db.query(
+        "SELECT pre_order_no FROM pre_order WHERE id = :id",
+        { id: order.pre_order_id }
+      );
+
+      if (preOrder.length > 0) {
+        pre_order_no = preOrder[0].pre_order_no;
+      }
+    }
+
+    // ✅ Get branch name and group from auth
+    const branch_name = req.auth?.branch_name || null;
+    const group_id = req.auth?.group_id || null;
+
+    // Get customer info
     const [customerResult] = await db.query(
       "SELECT name, address, tel FROM customer WHERE id = :id",
       { id: order.customer_id }
@@ -59,11 +315,11 @@ exports.create = async (req, res) => {
     };
 
     const productCategories = {};
-    const productCategoryIds = {}; 
+    const productCategoryIds = {};
     const categoryActualPrices = {};
-    const productDescriptions = {}; // ✅ Store descriptions from product
+    const productDescriptions = {};
 
-    // ✅ ជំហាន១: ទាញយក product info រួមទាំង description
+    // Get product info
     for (const item of order_details) {
       const [productResult] = await db.query(
         `SELECT 
@@ -71,8 +327,10 @@ exports.create = async (req, res) => {
           p.name AS product_name, 
           p.description AS product_description,
           p.category_id, 
+          p.qty,
+          p.actual_price AS product_actual_price,
           c.name AS category_name, 
-          c.actual_price,
+          c.actual_price AS category_actual_price,
           pd.description AS details_description
          FROM product p 
          LEFT JOIN category c ON p.category_id = c.id
@@ -80,27 +338,37 @@ exports.create = async (req, res) => {
            AND pd.customer_id = :customer_id
          WHERE p.id = :id
          LIMIT 1`,
-        { 
+        {
           id: item.product_id,
-          customer_id: order.customer_id 
+          customer_id: order.customer_id
         }
       );
-      
+
       if (productResult.length > 0) {
         const prod = productResult[0];
         productCategories[item.product_id] = `${prod.category_name} / ${prod.product_name}`;
-        productCategoryIds[item.product_id] = prod.category_id; 
-        categoryActualPrices[item.product_id] = prod.actual_price || 0;
-        
-        // ✅ អាទិភាពយក description:
-        // 1. ពី order_details (បើមានផ្ញើមក)
-        // 2. ពី product_details 
-        // 3. ពី product
-        productDescriptions[item.product_id] = 
-          item.description || 
-          prod.details_description || 
-          prod.product_description || 
+        productCategoryIds[item.product_id] = prod.category_id;
+        categoryActualPrices[item.product_id] = prod.product_actual_price || prod.category_actual_price || 0;
+
+        productDescriptions[item.product_id] =
+          item.description ||
+          prod.details_description ||
+          prod.product_description ||
           '';
+
+        // ✅ STOCK VALIDATION CHECK
+        if (item.product_id !== 0) {
+          const currentQty = Number(prod.qty || 0);
+          const requestedQty = Number(item.qty || 0);
+
+          if (requestedQty > currentQty) {
+            return res.status(400).json({
+              error: "Insufficient Stock",
+              message: `ស្តុកមិនគ្រប់គ្រាន់សម្រាប់ ${prod.product_name} (មានតែ ${currentQty.toLocaleString()}L ប៉ុណ្ណោះ)`,
+              details: `Insufficient stock for ${prod.product_name} (Only ${currentQty}L available)`
+            });
+          }
+        }
       }
     }
 
@@ -110,34 +378,90 @@ exports.create = async (req, res) => {
     const receive_date = order.receive_date || null;
     const createdBy = req.auth?.name || "System";
 
+    // ========================================
+    // ✅ UPDATED: SQL INSERT with pre_order_no
+    // ========================================
     const sqlOrder = `
-      INSERT INTO \`order\` 
-        (order_no, customer_id, total_amount, paid_amount, payment_method, 
-         remark, user_id, create_by, order_date, delivery_date, receive_date) 
+     INSERT INTO \`order\` 
+        (order_no, pre_order_no, customer_id, location_id, truck_id, total_amount, paid_amount, 
+         payment_method, remark, user_id, create_by, order_date, delivery_date, receive_date) 
       VALUES 
-        (:order_no, :customer_id, :total_amount, :paid_amount, :payment_method, 
-         :remark, :user_id, :create_by, :order_date, :delivery_date, :receive_date)
+        (:order_no, :pre_order_no, :customer_id, :location_id, :truck_id, :total_amount, :paid_amount, 
+         :payment_method, :remark, :user_id, :create_by, :order_date, :delivery_date, :receive_date)
     `;
 
-    // Telegram notification
-    let telegramText = `✅ <b>Order Completed!</b>\n`;
-    telegramText += `━━━━━━━━━━━━━━━\n`;
+    // Build notification messages
+    let notificationMessage = `Order Completed!\n\n`;
+    if (branch_name) {
+      notificationMessage += `Branch: ${branch_name}\n`;
+    }
+
+    // ✅ ADD: Pre-Order reference in notification
+    if (pre_order_no) {
+      notificationMessage += `Card Number #: ${pre_order_no}\n`;
+    }
+
     const formattedOrderDate = dayjs(order_date).format('DD-MM-YYYY');
-    telegramText += `📅 Date: <b>${formattedOrderDate}</b>\n`;
-    
+    notificationMessage += `Date: ${formattedOrderDate}\n`;
+
     const firstDescription = order_details
       .map(item => productDescriptions[item.product_id])
       .find(desc => desc && desc.trim() !== '');
-    
+
     if (firstDescription) {
-      telegramText += `📝 Card Number: <i>${firstDescription}</i>\n`;
+      notificationMessage += `Card Number: ${firstDescription}\n`;
     }
-    
-    telegramText += `👤 Customer: <b>${customer.name}</b>\n`;
-    telegramText += `🏠 Address: <b>${customer.address}</b>\n`;
-    telegramText += `📞 Phone: <b>${customer.tel}</b>\n`;
-    telegramText += `📝 Created By: <b>${createdBy}</b>\n`;
-    telegramText += `📦 <b>Items:</b>\n`;
+
+    notificationMessage += `\nCustomer: ${customer.name}\n`;
+    notificationMessage += `Address: ${customer.address}\n`;
+    notificationMessage += `Phone: ${customer.tel}\n`;
+    notificationMessage += `Created By: ${createdBy}\n`;
+    notificationMessage += `\nItems:\n`;
+
+    let items = [];
+    order_details.forEach((item, idx) => {
+      let name = productCategories[item.product_id] || '';
+      name = name.replace(/\/?\s*oil\s*\/?/i, '').trim();
+      const qty = Number(item.qty).toLocaleString();
+      const unitPrice = item.price;
+
+      notificationMessage += `  ${idx + 1}. ${name} - ${qty}L\n`;
+      notificationMessage += `     • Selling Price: $${unitPrice}\n`;
+
+      items.push({
+        name,
+        quantity: item.qty,
+        unit_price: unitPrice
+      });
+    });
+
+    notificationMessage += `\nTotal Liters: ${totalLiters.toLocaleString()}L\n`;
+    notificationMessage += `Total: $${parseFloat(order.total_amount).toLocaleString()}`;
+
+    // Build Telegram message
+    let telegramText = `✅ <b>Order Completed!</b>\n`;
+    telegramText += `━━━━━━━━━━━━━━━\n`;
+
+    if (branch_name) {
+      telegramText += `🏢 <b>Branch:</b> ${branch_name}\n`;
+    }
+
+    // ✅ ADD: Pre-Order reference in Telegram
+    if (pre_order_no) {
+      telegramText += `🔖 <b>Pre-Order #:</b> <code>${pre_order_no}</code>\n`;
+    }
+
+    telegramText += `📅 <b>Date:</b> ${formattedOrderDate}\n`;
+
+    if (firstDescription) {
+      telegramText += `📝 <b>Card Number:</b> <i>${firstDescription}</i>\n`;
+    }
+
+    telegramText += `\n👤 <b>Customer:</b> ${customer.name}\n`;
+    telegramText += `🏠 <b>Address:</b> ${customer.address}\n`;
+    telegramText += `📞 <b>Phone:</b> ${customer.tel}\n`;
+    telegramText += `📝 <b>Created By:</b> ${createdBy}\n`;
+    telegramText += `\n📦 <b>Items:</b>\n`;
 
     order_details.forEach((item, idx) => {
       let name = productCategories[item.product_id] || '';
@@ -146,25 +470,97 @@ exports.create = async (req, res) => {
       const unitPrice = item.price;
 
       telegramText += `  ${idx + 1}. <b>${name}</b> - <b>${qty}L</b>\n`;
-      telegramText += `     - Ton Price: <b>$${unitPrice}</b>\n`;
+      telegramText += `     • Selling Price: <b>$${unitPrice}</b>\n`;
     });
 
-    telegramText += `🔢 <b>Total Liters:</b> ${totalLiters.toLocaleString()}L\n`;
-    telegramText += `💰 Total: <b>$${parseFloat(order.total_amount).toLocaleString()}</b>\n`;
+    telegramText += `\n🔢 <b>Total Liters:</b> ${totalLiters.toLocaleString()}L\n`;
+    telegramText += `💰 <b>Total:</b> $${parseFloat(order.total_amount).toLocaleString()}\n`;
     telegramText += `━━━━━━━━━━━━━━━`;
 
-    await sendTelegramMessage(telegramText);
+    // Send Telegram notification (don't wait)
+    sendSmartNotification({
+      event_type: 'order_created',
+      branch_name: branch_name,
+      message: telegramText,
+      severity: order.total_amount > 5000 ? 'critical' : 'normal'
+    }).catch(err => console.error('❌ Telegram notification failed:', err));
 
-    // Create order
+    // ========================================
+    // ✅ UPDATED: Create order with pre_order_no
+    // ========================================
     const [orderResult] = await db.query(sqlOrder, {
       ...order,
       order_no,
+      pre_order_no,  // ✅ ADD THIS
+      location_id: order.location_id || null,
+      truck_id: order.truck_id || null,
       user_id: req.auth?.id || null,
       create_by: req.auth?.name || "System",
       order_date,
       delivery_date,
       receive_date
     });
+
+
+    // Create system notification
+    try {
+      await createSystemNotification({
+        notification_type: 'order_created',
+        title: `✅ Order ${order_no} Created${pre_order_no ? ` (PO: ${pre_order_no})` : ''}`,
+        message: notificationMessage,
+        data: {
+          items: items,
+          order_details: order_details,
+          pre_order_no: pre_order_no  // ✅ ADD THIS
+        },
+        order_id: orderResult.insertId,
+        order_no: order_no,
+        pre_order_no: pre_order_no,  // ✅ ADD THIS
+        customer_id: order.customer_id,
+        customer_name: customer.name,
+        customer_address: customer.address,
+        customer_tel: customer.tel,
+        total_amount: parseFloat(order.total_amount),
+        total_liters: totalLiters,
+        card_number: firstDescription || null,
+        user_id: req.auth?.id || null,
+        created_by: createdBy,
+        branch_name: branch_name,
+        group_id: group_id,
+        priority: order.total_amount > 5000 ? 'high' : 'normal',
+        severity: 'success',
+        icon: '✅',
+        color: 'green',
+        action_url: `/orders/${orderResult.insertId}`
+      });
+    } catch (notifError) {
+      console.error('❌ Failed to create system notification:', notifError);
+    }
+
+    // Create delivery tracking if truck assigned
+    if (order.truck_id) {
+      try {
+        await db.query(
+          `INSERT INTO delivery_tracking 
+            (order_id, truck_id, location_id, status, created_by, timestamp)
+           VALUES 
+            (:order_id, :truck_id, :location_id, 'preparing', :created_by, NOW())`,
+          {
+            order_id: orderResult.insertId,
+            truck_id: order.truck_id,
+            location_id: order.location_id,
+            created_by: req.auth?.id || null
+          }
+        );
+
+        await db.query(
+          `UPDATE \`order\` SET delivery_status = 'preparing' WHERE id = :order_id`,
+          { order_id: orderResult.insertId }
+        );
+      } catch (trackingError) {
+        console.error('❌ Failed to create delivery tracking:', trackingError);
+      }
+    }
 
     // Create order details
     const sqlOrderDetails = `
@@ -174,15 +570,18 @@ exports.create = async (req, res) => {
         (:order_id, :product_id, :qty, :price, :discount, :total)
     `;
 
+    // ✅ Process order details with robust PO reference lookup
     await Promise.all(
       order_details.map(async (item) => {
+        // Insert order_detail
         await db.query(sqlOrderDetails, {
           ...item,
           order_id: orderResult.insertId,
         });
 
-        // Update stock
+        // Update stock and create inventory transaction
         if (item.product_id !== 0) {
+          // Update product stock
           const sqlUpdateStock = `
             UPDATE product 
             SET qty = qty - :qty 
@@ -193,57 +592,256 @@ exports.create = async (req, res) => {
             qty: item.qty,
             product_id: item.product_id
           });
+
+          // ✅ ROBUST PO REFERENCE LOOKUP (Multiple Fallback Strategies)
+          let purchaseOrderRef = null;
+
+          // Strategy 1: Use description from frontend if provided
+          if (item.description && item.description.trim() !== '') {
+            purchaseOrderRef = item.description.trim();
+          }
+
+          // Strategy 2: Query product_details table (by customer)
+          if (!purchaseOrderRef) {
+            try {
+              const [pdResult] = await db.query(
+                `SELECT description 
+                 FROM product_details 
+                 WHERE product_id = :product_id 
+                   AND customer_id = :customer_id
+                   AND description IS NOT NULL
+                   AND description != ''
+                 ORDER BY created_at DESC
+                 LIMIT 1`,
+                {
+                  product_id: item.product_id,
+                  customer_id: order.customer_id
+                }
+              );
+
+              if (pdResult && pdResult.length > 0) {
+                purchaseOrderRef = pdResult[0].description;
+              }
+            } catch (err) {
+              console.error(`❌ Query product_details by customer failed:`, err);
+            }
+          }
+
+          // Strategy 3: Query product_details table (any customer)
+          if (!purchaseOrderRef) {
+            try {
+              const [pdResult2] = await db.query(
+                `SELECT description 
+                 FROM product_details 
+                 WHERE product_id = :product_id
+                   AND description IS NOT NULL
+                   AND description != ''
+                 ORDER BY created_at DESC
+                 LIMIT 1`,
+                {
+                  product_id: item.product_id
+                }
+              );
+
+              if (pdResult2 && pdResult2.length > 0) {
+                purchaseOrderRef = pdResult2[0].description;
+              }
+            } catch (err) {
+              console.error(`❌ Query product_details (any) failed:`, err);
+            }
+          }
+
+          // Strategy 4: Query inventory_transaction for latest PURCHASE_IN
+          if (!purchaseOrderRef) {
+            try {
+              const [itResult] = await db.query(
+                `SELECT reference_no 
+                 FROM inventory_transaction 
+                 WHERE product_id = :product_id
+                   AND transaction_type IN ('PURCHASE_IN', 'purchase_in')
+                   AND reference_no IS NOT NULL
+                   AND reference_no != ''
+                 ORDER BY created_at DESC
+                 LIMIT 1`,
+                {
+                  product_id: item.product_id
+                }
+              );
+
+              if (itResult && itResult.length > 0) {
+                purchaseOrderRef = itResult[0].reference_no;
+              }
+            } catch (err) {
+              console.error(`❌ Query inventory_transaction failed:`, err);
+            }
+          }
+
+          // ========================================
+          // ✅ NEW: Use pre_order_no if available and no PO found
+          // ========================================
+          if (!purchaseOrderRef && pre_order_no) {
+            purchaseOrderRef = pre_order_no;
+          }
+
+          // Strategy 5: Fallback to order_no if all else fails
+          if (!purchaseOrderRef) {
+            purchaseOrderRef = order_no;
+          }
+
+          // Get actual_price for this product
+          const actualPrice = categoryActualPrices[item.product_id] || 1;
+
+          // ✅ INSERT INVENTORY TRANSACTION with all required fields
+          const sqlInventory = `
+            INSERT INTO inventory_transaction (
+              product_id, 
+              transaction_type, 
+              quantity, 
+              unit_price, 
+              selling_price,
+              actual_price,
+              reference_no,
+              notes,
+              user_id,
+              created_at
+            ) VALUES (
+              :product_id, 
+              'SALE_OUT', 
+              :quantity, 
+              :unit_price, 
+              :selling_price,
+              :actual_price,
+              :reference_no,
+              :notes,
+              :user_id,
+              NOW()
+            )
+          `;
+
+          // ========================================
+          // ✅ UPDATED: Notes include pre_order_no reference
+          // ========================================
+          const notes = pre_order_no
+            ? `Sale Order ${order_no} (PO: ${pre_order_no})${purchaseOrderRef !== order_no && purchaseOrderRef !== pre_order_no ? ` - Ref: ${purchaseOrderRef}` : ''}`
+            : `Sale Order ${order_no}${purchaseOrderRef !== order_no ? ` (PO: ${purchaseOrderRef})` : ''}`;
+
+          await db.query(sqlInventory, {
+            product_id: item.product_id,
+            quantity: -item.qty,                        // Negative for sale
+            unit_price: item.price,                     // Selling price
+            selling_price: item.price,                  // ✅ Explicit selling_price
+            actual_price: actualPrice,                  // ✅ Conversion factor
+            reference_no: purchaseOrderRef,             // ✅ Uses PO number or pre_order_no!
+            notes: notes,
+            user_id: req.auth?.id || null
+          });
+
         }
       })
     );
 
-    // ✅ ជំហាន២: Create customer_debt ជាមួយ description
+    // Create customer_debt
     const sqlDebt = `
       INSERT INTO customer_debt 
-        (customer_id, order_id, category_id, qty, unit_price, actual_price, 
+        (customer_id, order_id,pre_order_no, category_id, qty, unit_price, actual_price, 
          total_amount, paid_amount, due_date, notes, created_by, description)
       VALUES 
-        (:customer_id, :order_id, :category_id, :qty, :unit_price, :actual_price, 
+        (:customer_id, :order_id, :pre_order_no, :category_id, :qty, :unit_price, :actual_price, 
          :total_amount, :paid_amount, :due_date, :notes, :created_by, :description)
     `;
 
     await Promise.all(order_details.map(async (item) => {
       const actualPrice = categoryActualPrices[item.product_id] || 0;
       const calculatedTotal = actualPrice > 0 ? (item.qty * item.price) / actualPrice : 0;
-      const description = productDescriptions[item.product_id] || ''; // ✅ យក description
+      const description = productDescriptions[item.product_id] || '';
 
       await db.query(sqlDebt, {
         customer_id: order.customer_id,
         order_id: orderResult.insertId,
-        category_id: productCategoryIds[item.product_id] || null, 
-        qty: item.qty, 
-        unit_price: item.price, 
+        pre_order_no: pre_order_no,
+        category_id: productCategoryIds[item.product_id] || null,
+        qty: item.qty,
+        unit_price: item.price,
         actual_price: actualPrice,
-        total_amount: calculatedTotal, 
+        total_amount: calculatedTotal,
         paid_amount: 0.00,
         due_date: order.due_date || null,
         notes: `Product ID: ${item.product_id}`,
         created_by: req.auth?.id || null,
-        description: description // ✅ រក្សាទុក description
+        description: description
       });
     }));
 
+    // Get final order details
     const [currentOrder] = await db.query(
       "SELECT * FROM `order` WHERE id = :id",
       { id: orderResult.insertId }
     );
 
+    // ========================================
+    // ✅ UPDATED: Return pre_order_no in response
+    // ========================================
     res.json({
       order: currentOrder.length > 0 ? currentOrder[0] : null,
       order_details: order_details,
       message: "Order created successfully",
+      pre_order_no: pre_order_no  // ✅ ADD THIS for frontend
     });
+
+    // ========================================
+    // ✅ UPDATE PRE-ORDER (if applicable)
+    // ========================================
+    if (order.pre_order_id) {
+      try {
+
+        // Update each product
+        for (const item of order_details) {
+          await db.query(`
+            UPDATE pre_order_detail
+            SET 
+              remaining_qty = GREATEST(remaining_qty - :qty, 0),
+              delivered_qty = COALESCE(delivered_qty, 0) + :qty,
+              updated_at = NOW()
+            WHERE pre_order_id = :pre_order_id
+              AND product_id = :product_id
+          `, {
+            pre_order_id: order.pre_order_id,
+            product_id: item.product_id,
+            qty: item.qty
+          });
+        }
+
+        // Check remaining
+        const [remainingCheck] = await db.query(`
+          SELECT SUM(remaining_qty) as total_remaining
+          FROM pre_order_detail
+          WHERE pre_order_id = :pre_order_id
+        `, { pre_order_id: order.pre_order_id });
+
+        const totalRemaining = parseFloat(remainingCheck[0]?.total_remaining || 0);
+        const newStatus = totalRemaining > 0 ? 'partially_delivered' : 'delivered';
+
+        // Update pre-order status
+        await db.query(`
+          UPDATE pre_order
+          SET status = :status, updated_at = NOW()
+          WHERE id = :pre_order_id
+        `, {
+          status: newStatus,
+          pre_order_id: order.pre_order_id
+        });
+
+      } catch (error) {
+        console.error("❌ Pre-Order deduction error:", error);
+      }
+    }
 
   } catch (error) {
     logError("Order.create", error, res);
   }
 };
 
+// Helper function
 const newOrderNo = async (req, res) => {
   try {
     var sql =
@@ -326,9 +924,11 @@ exports.getOrderDetail = async (req, res) => {
         (od.qty * od.price) as grand_total,
         od.qty as total_quantity,
         o.customer_id,
+        o.pre_order_no,
         
-        -- ✅ យក description ពី customer_debt ជាមុនសិន
+        -- ✅ យក description ពី robust lookup (ដូចក្នុង getList)
         COALESCE(
+          -- Strategy 1: From customer_debt.description
           (
             SELECT cd.description
             FROM customer_debt cd
@@ -337,10 +937,36 @@ exports.getOrderDetail = async (req, res) => {
               AND cd.category_id = p.category_id
               AND cd.description IS NOT NULL
               AND cd.description != ''
+              AND cd.description NOT LIKE 'Product ID:%'
             ORDER BY cd.id DESC
             LIMIT 1
           ),
-          -- បើគ្មាន ទើបយកពី product_details
+          -- Strategy 2: From inventory_transaction.reference_no
+          (
+            SELECT it.reference_no
+            FROM inventory_transaction it
+            WHERE it.product_id = od.product_id
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.reference_no IS NOT NULL
+              AND it.reference_no != ''
+              AND it.reference_no != o.order_no
+              AND DATE(it.created_at) = DATE(o.create_at)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 3: From inventory_transaction.notes
+          (
+            SELECT 
+              SUBSTRING_INDEX(SUBSTRING_INDEX(it.notes, 'PO: ', -1), ')', 1)
+            FROM inventory_transaction it
+            WHERE it.product_id = od.product_id
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.notes LIKE '%PO:%'
+              AND DATE(it.created_at) = DATE(o.create_at)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 4: From product_details
           (
             SELECT pd.description
             FROM product_details pd
@@ -398,14 +1024,16 @@ exports.getone = async (req, res) => {
         od.price,
         o.total_amount AS total_amount_price,
         o.customer_id,
+        o.pre_order_no,
         p.discount,
         p.unit,
         p.category_id,
         SUM(od.qty) AS total_quantity,
         SUM(od.qty * od.price * (1 - COALESCE(p.discount, 0)/100) / NULLIF(p.actual_price, 0)) AS grand_total,
         
-        -- ✅ បន្ថែម description
+        -- ✅ បន្ថែម robust description lookup
         COALESCE(
+          -- Strategy 1: From customer_debt.description
           (
             SELECT cd.description
             FROM customer_debt cd
@@ -414,9 +1042,36 @@ exports.getone = async (req, res) => {
               AND cd.category_id = p.category_id
               AND cd.description IS NOT NULL
               AND cd.description != ''
+              AND cd.description NOT LIKE 'Product ID:%'
             ORDER BY cd.id DESC
             LIMIT 1
           ),
+          -- Strategy 2: From inventory_transaction.reference_no
+          (
+            SELECT it.reference_no
+            FROM inventory_transaction it
+            WHERE it.product_id = od.product_id
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.reference_no IS NOT NULL
+              AND it.reference_no != ''
+              AND it.reference_no != o.order_no
+              AND DATE(it.created_at) = DATE(o.create_at)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 3: From inventory_transaction.notes
+          (
+            SELECT 
+              SUBSTRING_INDEX(SUBSTRING_INDEX(it.notes, 'PO: ', -1), ')', 1)
+            FROM inventory_transaction it
+            WHERE it.product_id = od.product_id
+              AND it.transaction_type = 'SALE_OUT'
+              AND it.notes LIKE '%PO:%'
+              AND DATE(it.created_at) = DATE(o.create_at)
+            ORDER BY it.created_at DESC
+            LIMIT 1
+          ),
+          -- Strategy 4: From product_details
           (
             SELECT pd.description
             FROM product_details pd
@@ -427,6 +1082,8 @@ exports.getone = async (req, res) => {
             ORDER BY pd.created_at DESC
             LIMIT 1
           ),
+          -- Fallback
+          o.pre_order_no,
           p.description
         ) AS product_description
         
@@ -447,9 +1104,9 @@ exports.getone = async (req, res) => {
     });
   } catch (error) {
     console.error("Error in getone.order:", error);
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: "Server error",
-      details: error.message 
+      details: error.message
     });
   }
 };
@@ -646,7 +1303,7 @@ exports.getPaymentHistory = async (req, res) => {
         DATE_FORMAT(p.payment_date, '%Y-%m-%d %H:%i:%s') AS payment_date,
         DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i:%s') AS created_at,
         DATE_FORMAT(p.updated_at, '%Y-%m-%d %H:%i:%s') AS updated_at,
-        o.order_no,
+        o.order_no, 
         c.name AS customer_name,
         c.tel AS customer_phone,
         c.email AS customer_email,
@@ -665,19 +1322,19 @@ exports.getPaymentHistory = async (req, res) => {
     const queryParams = [req.current_id];
     const conditions = [];
 
-    if (from_date) { 
-      conditions.push(`DATE(p.payment_date) >= DATE(?)`); 
-      queryParams.push(from_date); 
-    }
-    
-    if (to_date) { 
-      conditions.push(`DATE(p.payment_date) <= DATE(?)`); 
-      queryParams.push(to_date); 
+    if (from_date) {
+      conditions.push(`DATE(p.payment_date) >= DATE(?)`);
+      queryParams.push(from_date);
     }
 
-    if (payment_method) { 
-      conditions.push(`p.payment_method = ?`); 
-      queryParams.push(payment_method); 
+    if (to_date) {
+      conditions.push(`DATE(p.payment_date) <= DATE(?)`);
+      queryParams.push(to_date);
+    }
+
+    if (payment_method) {
+      conditions.push(`p.payment_method = ?`);
+      queryParams.push(payment_method);
     }
 
     if (search && search.trim() !== '') {
@@ -693,8 +1350,8 @@ exports.getPaymentHistory = async (req, res) => {
       queryParams.push(term, term, term, term, term, term);
     }
 
-    if (conditions.length) { 
-      sqlQuery += ` AND ${conditions.join(' AND ')}`; 
+    if (conditions.length) {
+      sqlQuery += ` AND ${conditions.join(' AND ')}`;
     }
 
     sqlQuery += ` ORDER BY p.payment_date DESC LIMIT ? OFFSET ?`;
@@ -1299,6 +1956,7 @@ exports.updateOrderCompletion = async (req, res) => {
     });
   }
 };
+// ✅ ENHANCED: Multiple fallback strategies for PO reference (លេខប័ណ្ណ)
 
 exports.getList = async (req, res) => {
   try {
@@ -1311,68 +1969,76 @@ exports.getList = async (req, res) => {
     let sqlWhere = " WHERE cu_user.id = ? ";
     let sqlParams = [req.current_id];
 
-    // Priority 1: Order Date filter
     if (order_date) {
       sqlWhere += " AND DATE(o.order_date) = DATE(?) ";
       sqlParams.push(order_date);
-    } 
-    // Priority 2: Delivery Date filter
-    else if (delivery_date) {
+    } else if (delivery_date) {
       sqlWhere += " AND DATE(o.delivery_date) = DATE(?) ";
       sqlParams.push(delivery_date);
-    }
-    // Priority 3: Date Range filtering
-    else if (from_date && to_date) {
+    } else if (from_date && to_date) {
       sqlWhere += " AND DATE(o.create_at) BETWEEN DATE(?) AND DATE(?) ";
       sqlParams.push(from_date, to_date);
-    } else if (from_date && !to_date) {
-      sqlWhere += " AND DATE(o.create_at) >= DATE(?) ";
-      sqlParams.push(from_date);
-    } else if (!from_date && to_date) {
-      sqlWhere += " AND DATE(o.create_at) <= DATE(?) ";
-      sqlParams.push(to_date);
     }
 
-    // Text search
     if (txtSearch) {
       sqlWhere += " AND (o.order_no LIKE ? OR c.name LIKE ?) ";
       sqlParams.push(`%${txtSearch}%`, `%${txtSearch}%`);
     }
-
-    // ✅ Step 1: Get Order-level data with description (យកតែមួយដងប៉ុណ្ណោះ)
+    // ✅ Get orders with PO reference
     const sqlOrders = `
       SELECT 
         o.id as order_id,
         o.order_no,
+        o.pre_order_no,
         o.is_completed,
-        o.updated_by,
         o.total_amount,
-        o.paid_amount,
-        o.payment_method,
-        o.remark,
         o.create_at,
         o.order_date,
         o.delivery_date,
         c.name AS customer_name, 
         c.tel AS customer_tel, 
         c.address AS customer_address,
-        u.name AS created_by_name,
-        u.username AS created_by_username,
         u.name AS create_by,
-        DATE_FORMAT(o.create_at, '%Y-%m-%d') as order_date_formatted,
-        DATE_FORMAT(o.delivery_date, '%Y-%m-%d') as delivery_date_formatted,
-        DATE_FORMAT(o.order_date, '%Y-%m-%d') as order_date,
-        DATE(o.create_at) as create_date_only,
         
-        -- ✅ យក description តែមួយដងពី customer_debt
-        (
-          SELECT cd.description
-          FROM customer_debt cd
-          WHERE cd.order_id = o.id
-            AND cd.description IS NOT NULL
-            AND cd.description != ''
-          ORDER BY cd.id ASC
-          LIMIT 1
+        -- ✅ Multiple strategies to get PO reference
+        COALESCE(
+          -- Strategy 1: From customer_debt.description
+          (SELECT cd.description 
+           FROM customer_debt cd
+           WHERE cd.order_id = o.id 
+             AND cd.description IS NOT NULL
+             AND cd.description != ''
+             AND cd.description NOT LIKE 'Product ID:%'
+           ORDER BY cd.id ASC 
+           LIMIT 1),
+          
+          -- Strategy 2: From inventory_transaction.reference_no (matching this order's products)
+          (SELECT it.reference_no
+           FROM inventory_transaction it
+           INNER JOIN order_detail od ON it.product_id = od.product_id
+           WHERE od.order_id = o.id 
+             AND it.transaction_type = 'SALE_OUT'
+             AND it.reference_no IS NOT NULL
+             AND it.reference_no != ''
+             AND it.reference_no != o.order_no
+             AND DATE(it.created_at) = DATE(o.create_at)
+           ORDER BY it.created_at DESC 
+           LIMIT 1),
+          
+          -- Strategy 3: From inventory_transaction.notes (extract PO from notes)
+          (SELECT 
+             SUBSTRING_INDEX(SUBSTRING_INDEX(it.notes, 'PO: ', -1), ')', 1)
+           FROM inventory_transaction it
+           INNER JOIN order_detail od ON it.product_id = od.product_id
+           WHERE od.order_id = o.id
+             AND it.transaction_type = 'SALE_OUT'
+             AND it.notes LIKE '%PO:%'
+             AND DATE(it.created_at) = DATE(o.create_at)
+           ORDER BY it.created_at DESC 
+           LIMIT 1),
+          
+          -- Fallback: NULL (will show as "-" in frontend)
+          NULL
         ) AS product_description
         
       FROM \`order\` o
@@ -1385,67 +2051,67 @@ exports.getList = async (req, res) => {
 
     const [orders] = await db.query(sqlOrders, sqlParams);
 
-    // ✅ Step 2: Get Order Details for each order
+
+
     const orderIds = orders.map(o => o.order_id);
-    
+
     let detailsList = [];
-    
+
     if (orderIds.length > 0) {
       const placeholders = orderIds.map(() => '?').join(',');
-      
+
       const sqlDetails = `
         SELECT 
           od.order_id,
-          od.id as id,
+          od.id,
           p.id AS product_id,
           p.name AS product_name,
-          p.company_name AS product_company_name,
           cat.name AS category_name,
           p.unit,
+          p.actual_price,
+          COALESCE(p.supplier_name, 'N/A') AS supplier_name,
           SUM(od.qty) AS total_quantity,
-          od.price,
-          p.discount,  
-          cat.actual_price,
-          SUM(od.qty * od.price) / NULLIF(cat.actual_price, 0) AS grand_total
+          od.price AS unit_price,
+          ROUND(
+            SUM(od.qty * od.price) / NULLIF(COALESCE(p.actual_price, 1190), 0),
+            2
+          ) AS grand_total
           
         FROM order_detail od
         LEFT JOIN product p ON od.product_id = p.id
         LEFT JOIN category cat ON p.category_id = cat.id
         WHERE od.order_id IN (${placeholders})
-        GROUP BY od.order_id, od.id, p.id, od.price, cat.actual_price
+        GROUP BY od.order_id, od.id, p.id, od.price, p.actual_price
         ORDER BY p.name ASC
       `;
 
       [detailsList] = await db.query(sqlDetails, orderIds);
     }
 
-    // ✅ Step 3: Merge orders with their details
+    // ✅ Merge orders with details (this passes product_description to each row)
     const finalList = [];
-    
     orders.forEach(order => {
       const orderDetails = detailsList.filter(d => d.order_id === order.order_id);
-      
       if (orderDetails.length > 0) {
         orderDetails.forEach(detail => {
           finalList.push({
-            ...order,
-            ...detail,
-            // ✅ product_description មកពី order level (មួយដងប៉ុណ្ណោះ)
-            product_description: order.product_description
+            ...order,  // ✅ This includes product_description
+            ...detail
           });
         });
       } else {
-        // Order without details
         finalList.push(order);
       }
     });
 
-    // Summary query
+    // ✅ Log merged results
+    finalList.slice(0, 2).forEach(row => {
+
+    });
+
     const sqlSummary = `
       SELECT COUNT(DISTINCT o.id) AS total_order, 
-             SUM(DISTINCT o.total_amount) AS total_amount,
-             SUM(CASE WHEN o.is_completed = 1 THEN 1 ELSE 0 END) as completed_count,
-             SUM(CASE WHEN o.is_completed = 0 THEN 1 ELSE 0 END) as incomplete_count
+             SUM(DISTINCT o.total_amount) AS total_amount
       FROM \`order\` o
       LEFT JOIN customer c ON o.customer_id = c.id
       INNER JOIN user u ON o.user_id = u.id
@@ -1455,31 +2121,17 @@ exports.getList = async (req, res) => {
 
     const [summaryResult] = await db.query(sqlSummary, sqlParams);
 
-    const summary = summaryResult?.[0] || {
-      total_order: 0,
-      total_amount: 0,
-      completed_count: 0,
-      incomplete_count: 0
-    };
-
     res.json({
       success: true,
       list: finalList,
-      summary,
-      debug: {
-        dateFilter: { from_date, to_date, order_date, delivery_date },
-        totalRecords: finalList.length,
-        totalOrders: orders.length,
-        current_user_id: req.current_id
-      }
+      summary: summaryResult[0] || {}
     });
 
   } catch (error) {
-    console.error("❌ Error in order.getList:", error);
+    console.error("❌ Error:", error);
     logError("order.getList", error, res);
   }
 };
-
 exports.bulkUpdateOrderCompletion = async (req, res) => {
   try {
     const { order_ids, is_completed } = req.body;

@@ -61,7 +61,6 @@ function AnimatedLoginPage() {
       
       if (res && !res.error) {
         // Handle successful login
-        console.log("Login successful!", res);
         // You would typically set tokens and navigate here
       } else {
         setErrors({ general: "Login failed! Please check your credentials." });
@@ -86,7 +85,6 @@ function AnimatedLoginPage() {
       });
       
       if (res && !res.error) {
-        console.log("Registration successful!");
         setIsRegistering(false);
         setFormData({ username: '', password: '', email: '' });
       } else {

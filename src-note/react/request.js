@@ -33,7 +33,6 @@ export const request = (url = "", method = "get", data = {}, new_access_token = 
       return res.data;
     })
     .catch((error) => {
-      console.log(error);
       var response = error.response;
       if (error.code === "ERR_NETWORK") {
         message.error("App under maintenance.");
@@ -43,7 +42,6 @@ export const request = (url = "", method = "get", data = {}, new_access_token = 
         if (response?.data?.error?.name === "TokenExpiredError") {
           // logout(); // case we want logout when access_token expired
           // refrehs token
-          console.log("Has call refresh token");
           const refesh_token = getRefreshToken();
           return axios({
             url: base_url + "users/refresh_token",

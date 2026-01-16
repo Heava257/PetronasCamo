@@ -1,0 +1,126 @@
+/* Pre-Order Detail CSS */
+
+.pre-order-detail-container {
+  padding: 24px;
+}
+
+@media (max-width: 768px) {
+  .pre-order-detail-container {
+    padding: 16px;
+  }
+}
+
+/* Khmer Text Styling */
+.khmer-text-product {
+  font-family: 'Khmer OS Battambang', 'Hanuman', 'Moul', sans-serif !important;
+}
+
+/* Header Section */
+.ant-page-header {
+  padding: 16px 24px;
+  background: #ffffff;
+}
+
+.dark .ant-page-header {
+  background: #1f1f1f;
+}
+
+/* Customer Info Card */
+.customer-info-card {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.dark .customer-info-card {
+  background: #2a2a2a;
+}
+
+/* Statistics Cards */
+.ant-statistic {
+  text-align: center;
+}
+
+.ant-statistic-title {
+  font-size: 13px;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.ant-statistic-content {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+@media (max-width: 768px) {
+  .ant-statistic-content {
+    font-size: 20px;
+  }
+}
+
+/* Table Styling */
+.ant-table-thead > tr > th {
+  font-weight: 600;
+  background: #fafafa;
+  font-size: 13px;
+}
+
+.dark .ant-table-thead > tr > th {
+  background: #1f1f1f;
+  color: #ffffff;
+}
+
+.ant-table-tbody > tr {
+  transition: all 0.2s;
+}
+
+.ant-table-tbody > tr:hover {
+  background: #f5f5f5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.dark .ant-table-tbody > tr:hover {
+  background: #2a2a2a;
+}
+
+/* Mobile Detail Cards */
+.mobile-detail-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dark .mobile-detail-card {
+  background: #1f1f1f;
+  border: 1px solid #434343;
+}
+
+/* Badge Styling */
+.ant-badge-status-success {
+  background-color: #52c41a;
+}
+
+.ant-badge-status-error {
+  background-color: #ff4d4f;
+}
+
+/* Dark Mode */
+.dark .ant-card {
+  background: #1f1f1f;
+  border-color: #434343;
+}
+
+.dark .ant-typography {
+  color: #ffffff;
+}
+
+.dark .text-gray-500 {
+  color: #8c8c8c;
+}
+
+.dark .font-semibold {
+  color: #ffffff;
+}

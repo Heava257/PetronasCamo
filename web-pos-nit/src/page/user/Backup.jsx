@@ -172,9 +172,7 @@ function UserPage() {
       message.error('Image must be smaller than 2MB!');
     }
 
-    // Log file type and extension for debugging
-    console.log("File type:", file.type);
-    console.log("File extension:", fileExtension);
+
 
     return isValidExtension && isImage && isLt2M;
   };
@@ -229,9 +227,6 @@ function UserPage() {
       const file = items.profile_image.fileList[0].originFileObj;
 
       // Log file info
-      console.log("File type:", file.type);
-      console.log("File name:", file.name);
-      console.log("File size:", file.size + " bytes");
 
       params.append("upload_image", file);
     }
@@ -266,8 +261,7 @@ function UserPage() {
     // Log information about the files
     if (newFileList.length > 0 && newFileList[0].originFileObj) {
       const file = newFileList[0].originFileObj;
-      console.log("Changed file type:", file.type);
-      console.log("Changed file name:", file.name);
+
     }
 
     setImageDefault(newFileList);

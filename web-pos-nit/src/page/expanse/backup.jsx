@@ -103,9 +103,7 @@ function ExpansePage() {
         };
         const method = formRef.getFieldValue("id") ? "put" : "post";
         const url = formRef.getFieldValue("id") ? `expense/${data.id}` : "expense";
-        console.log("Request URL:", url);
-        console.log("Request Method:", method);
-        console.log("Request Payload:", data);
+
         const res = await request(url, method, data);
         if (res && !res.error) {
             message.success(res.message);
