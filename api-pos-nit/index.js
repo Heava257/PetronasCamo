@@ -113,6 +113,7 @@ require("./src/route/Closing.route")(app);
 require("./src/route/Pre_order.route")(app);
 require("./src/route/Location.route")(app);
 require("./src/route/truck.route")(app);
+require("./src/route/systemLog.routes")(app);
 
 // Health check
 app.get('/health', (req, res) => {
