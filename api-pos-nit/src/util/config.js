@@ -25,11 +25,13 @@ module.exports = {
     token: {
       access_token_key:
         process.env.ACCESS_TOKEN_KEY ||
-        localConfig.token?.access_token_key,
+        localConfig.token?.access_token_key ||
+        "POS_NIT_DEFAULT_ACCESS_TOKEN_SECRET_2024", // Fallback to prevent crash
 
       refresh_token_key:
         process.env.REFRESH_TOKEN_KEY ||
-        localConfig.token?.refresh_token_key,
+        localConfig.token?.refresh_token_key ||
+        "POS_NIT_DEFAULT_REFRESH_TOKEN_SECRET_2024", // Fallback to prevent crash
     },
   },
 };
