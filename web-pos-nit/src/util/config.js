@@ -1,10 +1,10 @@
 //frontend
 
 export const Config = {
-  base_url: "http://localhost:3000/api/",
+  base_url: import.meta.env.VITE_API_URL || "http://localhost:3000/api/",
   version: "1.0",
   token: "",
-  image_path: "http://localhost/fullstack/", // This is correct
+  image_path: import.meta.env.VITE_IMAGE_PATH || "http://localhost/fullstack/",
   getFullImagePath: (imagePart) => `${Config.image_path}${imagePart}`,
 };
 

@@ -4,7 +4,7 @@ import logo from "../../assets/PETRONAS_CAMBODIA_LOGO-2.png";
 import "./fonts.css";
 import { getProfile } from "../../store/profile.store";
 import { formatDateClient } from "../../util/helper";
-import './printFont.css';
+import './Printfont.css';
 
 // Function to convert number to Khmer words (unchanged)
 const numberToKhmerWords = (number) => {

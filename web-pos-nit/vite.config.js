@@ -4,6 +4,8 @@ import { VitePWA } from "vite-plugin-pwa";
 import pkg from "./package.json";
 
 export default defineConfig({
+  base: '/', // Add this line explicitly
+  
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
@@ -16,7 +18,10 @@ export default defineConfig({
       
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}']
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Add this to handle navigation routes
+        navigateFallback: '/index.html',
+        navigateFallbackDenylist: [/^\/_/, /\/api\//]
       },
 
       includeAssets: [
@@ -32,6 +37,7 @@ export default defineConfig({
         description: "Web POS Application",
         display: "standalone",
         start_url: "/",
+        scope: "/", // Add this
         theme_color: "#ffffff",
         background_color: "#ffffff",
         icons: [
@@ -51,4 +57,11 @@ export default defineConfig({
       },
     }),
   ],
+
+  // Add build configuration
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+  },
 });
