@@ -10,25 +10,30 @@ const {
   postResponseAnalyzer
 } = require('./src/middleware/securityMonitoring.middleware');
 
-// CRITICAL: Add your Vercel domain here!
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'https://petronas-camo-online.vercel.app',  // ← YOUR VERCEL DOMAIN
-  'https://petronas-api.onrender.com'
-];
-
-// CORS Configuration - MUST BE FIRST!
+// CORS Configuration - Allow Vercel domains
 app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (mobile apps, curl, Postman)
+  origin: function (origin, callback) {
+    // Allow requests with no origin
     if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      console.log('✅ CORS allowed:', origin);
+
+    // Allow localhost
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      console.log('✅ CORS allowed (localhost):', origin);
       return callback(null, true);
     }
-    
+
+    // Allow any Vercel deployment (preview + production)
+    if (origin.includes('.vercel.app')) {
+      console.log('✅ CORS allowed (Vercel):', origin);
+      return callback(null, true);
+    }
+
+    // Allow Render
+    if (origin.includes('onrender.com')) {
+      console.log('✅ CORS allowed (Render):', origin);
+      return callback(null, true);
+    }
+
     console.log('❌ CORS blocked:', origin);
     const msg = `CORS policy: Origin ${origin} is not allowed`;
     return callback(new Error(msg), false);
@@ -37,17 +42,16 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   exposedHeaders: ['Content-Range', 'X-Content-Range'],
-  maxAge: 86400 // 24 hours
+  maxAge: 86400
 }));
 
-// Handle preflight requests
 app.options('*', cors());
 
-// Body parsing middleware
+// Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Static files with proper headers
+// Static files
 app.use('/public', express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, path) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -55,7 +59,6 @@ app.use('/public', express.static(path.join(__dirname, 'public'), {
   }
 }));
 
-// API public route (for images)
 app.use('/api/public', express.static(path.join(__dirname, 'public'), {
   setHeaders: (res, path) => {
     res.set('Access-Control-Allow-Origin', '*');
@@ -69,17 +72,16 @@ app.use('/api', rateLimitMonitoring(100, 60000));
 app.use(trackUserActivity);
 app.use(postResponseAnalyzer);
 
-// Root endpoint
+// Root
 app.get('/', (req, res) => {
   res.json({
     name: "Petronas POS API",
     version: "1.0",
-    status: "OK",
-    docs: "/health"
+    status: "OK"
   });
 });
 
-// API Routes
+// Routes
 require("./src/route/category.route")(app);
 require("./src/route/auth.route")(app);
 require("./src/route/role.route")(app);
@@ -113,54 +115,44 @@ require("./src/route/Closing.route")(app);
 require("./src/route/Pre_order.route")(app);
 require("./src/route/Location.route")(app);
 require("./src/route/truck.route")(app);
-require("./src/route/systemLog.routes")(app);
 
-// Health check
+// Only load systemLog if it exists
+try {
+  require("./src/route/systemLog.routes")(app);
+} catch (err) {
+  console.log('⚠️ systemLog.routes not found, skipping...');
+}
+
+// Health
 app.get('/health', (req, res) => {
   res.json({
     success: true,
     status: 'healthy',
     timestamp: new Date(),
-    uptime: process.uptime(),
-    security: 'AI-Powered Monitoring Active 🛡️',
-    cors: 'Enabled ✅',
-    allowed_origins: allowedOrigins,
-    features: {
-      ip_blacklist: 'Active ✅',
-      rate_limiting: 'Active ✅',
-      ai_detection: 'Active ✅',
-      post_response_analysis: 'Active ✅'
-    }
+    cors: 'Vercel wildcard enabled ✅'
   });
 });
 
-// 404 handler
+// 404
 app.use((req, res) => {
   res.status(404).json({
     error: true,
     message: 'Route not found',
-    message_kh: 'រកមិនឃើញផ្លូវនេះទេ',
     path: req.path
   });
 });
 
-// Global error handler
+// Error handler
 app.use((err, req, res, next) => {
-  console.error('❌ Global Error:', err);
-
-  const isDevelopment = process.env.NODE_ENV === 'development';
-
+  console.error('❌ Error:', err);
   res.status(err.status || 500).json({
     error: true,
-    message: isDevelopment ? err.message : 'Internal server error',
-    message_kh: 'មានបញ្ហាកើតឡើង',
-    ...(isDevelopment && { stack: err.stack })
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
 
 const PORT = process.env.PORT || 1000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔒 CORS enabled for:`, allowedOrigins);
+  console.log(`🚀 Server on port ${PORT}`);
+  console.log('🔒 CORS: Vercel wildcard enabled');
 });
