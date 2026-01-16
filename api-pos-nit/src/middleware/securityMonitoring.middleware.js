@@ -40,12 +40,50 @@ exports.checkIPBlacklist = async (req, res, next) => {
   }
 };
 
-// Helper for robust IP resolution
 const getSafeIp = (req) => {
   return req.ip ||
     (req.headers['x-forwarded-for'] ? req.headers['x-forwarded-for'].split(',')[0] : '') ||
     req.socket?.remoteAddress ||
     'Unknown';
+};
+
+// Helper to safely log to system_logs (don't block on failure)
+const safeLogToDatabase = async (logData) => {
+  try {
+    const [logResult] = await db.query(`
+      INSERT INTO system_logs (
+        user_id,
+        username,
+        ip_address,
+        user_agent,
+        action,
+        description,
+        request_data,
+        response_data,
+        status,
+        log_type,
+        created_at
+      ) VALUES (
+        :user_id,
+        :username,
+        :ip_address,
+        :user_agent,
+        :action,
+        :description,
+        :request_data,
+        :response_data,
+        :status,
+        :log_type,
+        NOW()
+      )
+    `, logData);
+
+    return logResult.insertId;
+  } catch (error) {
+    // Log to console but don't throw - table might not exist yet
+    console.warn('⚠️ Failed to log to system_logs:', error.message);
+    return null;
+  }
 };
 
 exports.rateLimitMonitoring = (maxRequests = 100, windowMs = 60000) => {
@@ -56,7 +94,6 @@ exports.rateLimitMonitoring = (maxRequests = 100, windowMs = 60000) => {
       }
 
       const clientIP = getSafeIp(req);
-
       const now = Date.now();
       const key = `${clientIP}`;
 
@@ -74,55 +111,19 @@ exports.rateLimitMonitoring = (maxRequests = 100, windowMs = 60000) => {
       record.count++;
 
       if (record.count > maxRequests) {
-
-        try {
-          const userId = req.current_id || null;
-          const username = req.auth?.username || null;
-
-          const [logResult] = await db.query(`
-            INSERT INTO system_logs (
-              user_id,
-              username,
-              ip_address,
-              user_agent,
-              action,
-              description,
-              status,
-              log_type,
-              created_at
-            ) VALUES (
-              :user_id,
-              :username,
-              :ip_address,
-              :user_agent,
-              'RATE_LIMIT_EXCEEDED',
-              :description,
-              'error',
-              'ERROR',
-              NOW()
-            )
-          `, {
-            user_id: userId,
-            username: username,
-            ip_address: clientIP,
-            user_agent: req.get('User-Agent') || 'Unknown',
-            description: `Rate limit exceeded: ${record.count} requests in ${windowMs}ms`
-          });
-
-          const logId = logResult.insertId;
-
-          const [logEntry] = await db.query(
-            'SELECT * FROM system_logs WHERE id = :log_id',
-            { log_id: logId }
-          );
-
-          if (logEntry.length > 0) {
-            await monitorLogEntry(logEntry[0]);
-          }
-
-        } catch (logError) {
-          console.error('❌ Failed to log rate limit:', logError);
-        }
+        // Try to log but don't block if it fails
+        safeLogToDatabase({
+          user_id: req.current_id || null,
+          username: req.auth?.username || null,
+          ip_address: clientIP,
+          user_agent: req.get('User-Agent') || 'Unknown',
+          action: 'RATE_LIMIT_EXCEEDED',
+          description: `Rate limit exceeded: ${record.count} requests in ${windowMs}ms`,
+          request_data: null,
+          response_data: null,
+          status: 'error',
+          log_type: 'ERROR'
+        }).catch(err => console.warn('⚠️ Rate limit log failed:', err));
 
         return res.status(429).json({
           error: true,
@@ -147,21 +148,17 @@ exports.postResponseAnalyzer = async (req, res, next) => {
       return next();
     }
 
-    // Safe IP resolution
     const clientIP = getSafeIp(req);
 
-    // Helper to safely serialize objects to simple JSON-compatible structures
     const safeSerialize = (obj) => {
       try {
         if (!obj) return {};
-        // Simple Deep Copy to break references
         return JSON.parse(JSON.stringify(obj));
       } catch (e) {
-        return {}; // Return empty object on circular reference or error
+        return {};
       }
     };
 
-    // Capture context IMMEDIATELY with safe serialization
     const context = {
       user_id: req.current_id || null,
       username: req.auth?.username || null,
@@ -169,7 +166,6 @@ exports.postResponseAnalyzer = async (req, res, next) => {
       user_agent: req.get('User-Agent') || 'Unknown',
       method: req.method,
       path: req.path,
-      // Deep copy these NOW to avoid mutation issues later
       body: safeSerialize(req.body),
       query: safeSerialize(req.query),
       params: safeSerialize(req.params),
@@ -178,68 +174,42 @@ exports.postResponseAnalyzer = async (req, res, next) => {
 
     res.on('finish', async () => {
       try {
-        // Double-check serialization for DB storage
         const requestDataString = JSON.stringify({
           body: context.body,
           query: context.query,
           params: context.params
         });
 
-        const [logResult] = await db.query(`
-          INSERT INTO system_logs (
-            user_id,
-            username,
-            ip_address,
-            user_agent,
-            action,
-            description,
-            request_data,
-            response_data,
-            status,
-            log_type,
-            created_at
-          ) VALUES (
-            :user_id,
-            :username,
-            :ip_address,
-            :user_agent,
-            :action,
-            :description,
-            :request_data,
-            :response_data,
-            :status,
-            'INFO',
-            NOW()
-          )
-        `, {
+        // Try to log but don't block application if it fails
+        const logId = await safeLogToDatabase({
           user_id: context.user_id,
           username: context.username,
           ip_address: context.ip_address,
           user_agent: context.user_agent,
           action: `${context.method} ${context.path}`,
           description: `API Request: ${context.method} ${context.path}`,
-          request_data: requestDataString, // Use the pre-calculated string
-          response_data: JSON.stringify({
-            status_code: res.statusCode
-          }),
-          status: res.statusCode >= 200 && res.statusCode < 300 ? 'success' : 'error'
+          request_data: requestDataString,
+          response_data: JSON.stringify({ status_code: res.statusCode }),
+          status: res.statusCode >= 200 && res.statusCode < 300 ? 'success' : 'error',
+          log_type: 'INFO'
         });
 
-        const logId = logResult.insertId;
+        // Only try to monitor if log was successful
+        if (logId) {
+          const [logEntry] = await db.query(
+            'SELECT * FROM system_logs WHERE id = :log_id',
+            { log_id: logId }
+          );
 
-        const [logEntry] = await db.query(
-          'SELECT * FROM system_logs WHERE id = :log_id',
-          { log_id: logId }
-        );
-
-        if (logEntry.length > 0) {
-          monitorLogEntry(logEntry[0]).catch(err => {
-            console.error('❌ Failed to analyze log:', err);
-          });
+          if (logEntry.length > 0) {
+            monitorLogEntry(logEntry[0]).catch(err => {
+              console.warn('⚠️ Failed to analyze log:', err);
+            });
+          }
         }
 
       } catch (logError) {
-        console.error('❌ Post-response logging error:', logError);
+        console.warn('⚠️ Post-response logging error:', logError.message);
       }
     });
 
@@ -261,7 +231,6 @@ setInterval(() => {
   }
 }, 60000);
 
-// ✅ FIX: Export all functions properly
 module.exports = {
   checkIPBlacklist: exports.checkIPBlacklist,
   rateLimitMonitoring: exports.rateLimitMonitoring,
