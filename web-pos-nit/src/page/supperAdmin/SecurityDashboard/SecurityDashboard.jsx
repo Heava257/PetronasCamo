@@ -10,7 +10,7 @@ import {
   Ban,
   AlertCircle
 } from 'lucide-react';
-import './SecurityDashboard.css';
+import './Securitydashboard.css';
 import { request } from '../../../util/helper';
 
 const SecurityDashboard = () => {
@@ -26,23 +26,23 @@ const SecurityDashboard = () => {
     return () => clearInterval(interval);
   }, [timeRange]);
 
-  const fetchDashboard = async () => { 
+  const fetchDashboard = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      
+
+
       const data = await request(
         `security/dashboard?timeRange=${timeRange}`,
         'get'
       );
-      
-      
+
+
       if (data) {
         // ✅ Handle different response structures
         const dashboardData = data.dashboard || data;
-        
-        
+
+
         setDashboard(dashboardData);
       } else {
         setError('No data received from server');
@@ -50,10 +50,10 @@ const SecurityDashboard = () => {
     } catch (error) {
       console.error('❌ Dashboard fetch error:', error);
       console.error('Error response:', error.response?.data);
-      
+
       setError(
-        error.response?.data?.message || 
-        error.message || 
+        error.response?.data?.message ||
+        error.message ||
         'Failed to load dashboard'
       );
     } finally {
@@ -63,13 +63,13 @@ const SecurityDashboard = () => {
 
   const blockIP = async (ipAddress) => {
     if (!window.confirm(`Block IP ${ipAddress}?`)) return;
-    
+
     try {
       await request('security/block-ip', 'post', {
         ip_address: ipAddress,
         reason: 'Blocked from security dashboard - multiple threats detected'
       });
-      
+
       alert('✅ IP blocked successfully');
       fetchDashboard();
     } catch (error) {
@@ -139,29 +139,29 @@ const SecurityDashboard = () => {
             <p>AI-Powered Threat Detection System</p>
           </div>
         </div>
-        
+
         <div className="header-right">
           <div className="time-selector">
-            <button 
+            <button
               className={timeRange === '24h' ? 'active' : ''}
               onClick={() => setTimeRange('24h')}
             >
               24 Hours
             </button>
-            <button 
+            <button
               className={timeRange === '7d' ? 'active' : ''}
               onClick={() => setTimeRange('7d')}
             >
               7 Days
             </button>
-            <button 
+            <button
               className={timeRange === '30d' ? 'active' : ''}
               onClick={() => setTimeRange('30d')}
             >
               30 Days
             </button>
           </div>
-          
+
           <button className="refresh-btn" onClick={fetchDashboard} disabled={loading}>
             <Activity size={16} className={loading ? 'spinning' : ''} />
             {loading ? 'Loading...' : 'Refresh'}
@@ -217,7 +217,7 @@ const SecurityDashboard = () => {
           <div className="stat-content">
             <h3>Avg Risk Score</h3>
             <p className="stat-number">
-              {summary.avg_risk_score 
+              {summary.avg_risk_score
                 ? Number(summary.avg_risk_score).toFixed(1)
                 : '0.0'}
             </p>
@@ -246,11 +246,11 @@ const SecurityDashboard = () => {
                 // ✅ Safely parse threats and anomalies
                 let threats = [];
                 let anomalies = [];
-                
+
                 try {
                   if (incident.threats) {
-                    threats = typeof incident.threats === 'string' 
-                      ? JSON.parse(incident.threats) 
+                    threats = typeof incident.threats === 'string'
+                      ? JSON.parse(incident.threats)
                       : incident.threats;
                   }
                   if (incident.anomalies) {
@@ -267,8 +267,8 @@ const SecurityDashboard = () => {
                 anomalies = Array.isArray(anomalies) ? anomalies : [];
 
                 return (
-                  <div 
-                    key={incident.id} 
+                  <div
+                    key={incident.id}
                     className={`incident-card ${incident.status || 'medium'} ${selectedIncident?.id === incident.id ? 'selected' : ''}`}
                     onClick={() => setSelectedIncident(incident)}
                   >
@@ -309,8 +309,8 @@ const SecurityDashboard = () => {
                         <strong>Detected Threats ({threats.length}):</strong>
                         <div className="threat-tags">
                           {threats.map((threat, idx) => (
-                            <span 
-                              key={idx} 
+                            <span
+                              key={idx}
                               className={`threat-tag ${threat.severity || 'medium'}`}
                               title={threat.description || ''}
                             >
@@ -327,8 +327,8 @@ const SecurityDashboard = () => {
                         <strong>Behavioral Anomalies ({anomalies.length}):</strong>
                         <div className="anomaly-tags">
                           {anomalies.map((anomaly, idx) => (
-                            <span 
-                              key={idx} 
+                            <span
+                              key={idx}
                               className="anomaly-tag"
                               title={anomaly.description || ''}
                             >
@@ -397,7 +397,7 @@ const SecurityDashboard = () => {
                         {formatDate(attacker.last_incident)}
                       </td>
                       <td>
-                        <button 
+                        <button
                           className="btn-block"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -424,13 +424,13 @@ const SecurityDashboard = () => {
 
       {/* Debug Info (Remove in production) */}
       {process.env.NODE_ENV === 'development' && (
-        <div style={{ 
-          position: 'fixed', 
-          bottom: 10, 
-          right: 10, 
-          background: '#000', 
-          color: '#0f0', 
-          padding: '10px', 
+        <div style={{
+          position: 'fixed',
+          bottom: 10,
+          right: 10,
+          background: '#000',
+          color: '#0f0',
+          padding: '10px',
           fontSize: '12px',
           maxWidth: '300px',
           borderRadius: '5px'
