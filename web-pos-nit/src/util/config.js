@@ -3,15 +3,14 @@ const isLocalhost =
   window.location.hostname === "127.0.0.1";
 
 export const Config = {
-  // ALWAYS use HTTPS in production
+  // IMPORTANT: Add trailing slash!
   base_url: isLocalhost 
     ? "http://localhost:8000/api/"
-    : "https://petronas-api.onrender.com/api",
+    : "https://petronas-api.onrender.com/api/",  // ← Note the trailing slash
   
   version: "1.0",
   token: "",
   
-  // ALWAYS use HTTPS for images in production
   image_path: isLocalhost 
     ? "http://localhost:8000/api/public/"
     : "https://petronas-api.onrender.com/api/public/",
