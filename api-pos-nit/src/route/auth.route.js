@@ -18,7 +18,6 @@ const {
   changePassword,
 } = require("../controller/auth.controller");
 const { uploadFile, usernameLimiter, failedLoginLimiter } = require("../util/helper");
-
 module.exports = (app) => {
   app.post("/api/auth/login", usernameLimiter, failedLoginLimiter, login);
   app.post("/api/auth/logout", validate_token(), logout);

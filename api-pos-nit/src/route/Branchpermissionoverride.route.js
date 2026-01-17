@@ -9,16 +9,17 @@ const {
 } = require("../controller/Branchpermissionoverride.controlle");
 
 module.exports = (app) => {
-app.get(
-  "/api/branch-permissions/overrides/:branch_name/:role_id",
-  validate_token(),
-  getBranchOverrides
-);
+  app.get(
+    "/api/branch-permissions/overrides/:branch_name/:role_id",
+    validate_token(),
+    getBranchOverrides
+  );
   app.post(
     "/api/branch-permissions/overrides",
     validate_token(),
     addBranchOverride
   );
+
   app.delete(
     "/api/branch-permissions/overrides/:override_id",
     validate_token(),
