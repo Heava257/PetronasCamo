@@ -1,4 +1,35 @@
 require('dotenv').config();
+const express = require('express');
+const mysql = require('mysql2');
+const cors = require('cors');
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+// --- MySQL Connection ---
+const db = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
+  port: process.env.DB_PORT
+});
+
+db.connect((err) => {
+  if (err) {
+    console.error('❌ Error connecting to MySQL:', err.message);
+    process.exit(1);
+  }
+  console.log('✅ Connected to MySQL database!');
+});
+
+// --- Test API route ---
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
+
+// --- Global error handler ---
 const express = require("express");
 const cors = require("cors");
 const app = express();
@@ -141,8 +172,6 @@ app.use((req, res) => {
     path: req.path
   });
 });
-
-// Error handler
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err);
   res.status(err.status || 500).json({
@@ -151,10 +180,17 @@ app.use((err, req, res, next) => {
   });
 });
 
+// --- Start Server ---
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`📍 Server running at http://localhost:${PORT}`);
+});
+
 const PORT = process.env.PORT || 1000;
 app.listen(PORT, async () => {
   console.log(`🚀 Server on port ${PORT}`);
   console.log('🔒 CORS: Vercel wildcard enabled');
+});
 
   // ✅ Test Database Connection on Startup
   try {
