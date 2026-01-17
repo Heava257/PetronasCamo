@@ -233,8 +233,8 @@ exports.updateuserProfile = async (req, res) => {
     let profileImage = currentUser[0].profile_image; // Keep existing image by default
 
     if (req.file) {
-      // New image uploaded
-      profileImage = req.file.filename;
+      // New image uploaded to Cloudinary
+      profileImage = req.file.path; // Store the full URL
 
       // ✅ Delete old image if exists
       if (currentUser[0].profile_image && currentUser[0].profile_image !== profileImage) {
@@ -400,7 +400,7 @@ exports.update = async (req, res) => {
     let profileImage = req.body.profile_image;
 
     if (req.file) {
-      profileImage = req.file.filename; // New image uploaded
+      profileImage = req.file.path; // New image uploaded to Cloudinary
     }
 
     if (req.body.profile_image_remove === "1") {
@@ -649,7 +649,7 @@ exports.register = async (req, res) => {
       tel: tel || null,
       branch_name: finalBranchName,
       barcode: barcode || null,
-      profile_image: req.file?.filename || null,
+      profile_image: req.file?.path || null,
       create_by: creatorName,
       create_at: new Date(),
     });

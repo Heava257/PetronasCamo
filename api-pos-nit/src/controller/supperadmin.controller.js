@@ -83,7 +83,7 @@ exports.getRoles = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Error in getRoles:", error);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to get roles",
@@ -561,7 +561,7 @@ exports.createNewAdmin = async (req, res) => {
       tel: tel || null,
       address: address || null,
       branch_name: branch_name || oldAdminInfo?.branch_name || null,
-      profile_image: req.file?.filename || null,
+      profile_image: req.file?.path || null,
       create_by: currentUser[0]?.name
     });
 
@@ -841,7 +841,7 @@ exports.createUserWithRole = async (req, res) => {
       tel: tel || null,
       address: address || null,
       branch_name: branch_name || null,
-      profile_image: req.file?.filename || null,
+      profile_image: req.file?.path || null,
       create_by: currentUser[0]?.name
     });
 
@@ -1314,15 +1314,15 @@ exports.getInactiveAdmins = async (req, res) => {
       success: true,
       inactive_admins: formattedAdmins,
       categories: {
-        never_logged_in: neverLoggedIn.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_180_plus: inactive180Plus.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_90_to_179: inactive90to179.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_60_to_89: inactive60to89.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_30_to_59: inactive30to59.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_14_to_29: inactive14to29.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_7_to_13: inactive7to13.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_3_to_6: inactive3to6.map(a => ({...a, last_activity: a.last_login_activity})),
-        inactive_2_to_3: inactive2to3.map(a => ({...a, last_activity: a.last_login_activity}))
+        never_logged_in: neverLoggedIn.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_180_plus: inactive180Plus.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_90_to_179: inactive90to179.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_60_to_89: inactive60to89.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_30_to_59: inactive30to59.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_14_to_29: inactive14to29.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_7_to_13: inactive7to13.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_3_to_6: inactive3to6.map(a => ({ ...a, last_activity: a.last_login_activity })),
+        inactive_2_to_3: inactive2to3.map(a => ({ ...a, last_activity: a.last_login_activity }))
       },
       stats: stats,
       filter: {
@@ -1756,7 +1756,7 @@ exports.createSuperAdmin = async (req, res) => {
       tel: tel || null,
       address: address || null,
       branch_name: branch_name || 'Head Office',
-      profile_image: req.file?.filename || null,
+      profile_image: req.file?.path || null,
       create_by: currentUser[0]?.name
     });
 
@@ -2133,7 +2133,7 @@ exports.updateUserBySuperAdmin = async (req, res) => {
     } else if (role_id === undefined || parseInt(role_id) === parseInt(oldUser.role_id)) {
       // ✅ No role change - check if branch changed
       if (branch_name && branch_name !== oldUser.branch_name) {
-        
+
         // If user is NOT an admin, reassign group_id based on new branch
         if (oldUser.role_code !== 'ADMIN' && oldUser.role_code !== 'SUPER_ADMIN') {
           const [adminInNewBranch] = await db.query(`
@@ -2158,7 +2158,7 @@ exports.updateUserBySuperAdmin = async (req, res) => {
 
     if (req.file) {
       updateFields.push('profile_image = :profile_image');
-      params.profile_image = req.file.filename;
+      params.profile_image = req.file.path;
     }
 
     // ✅ Add metadata

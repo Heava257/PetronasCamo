@@ -519,9 +519,9 @@ exports.update = async (req, res) => {
         INNER JOIN user u2 ON u1.group_id = u2.group_id
         WHERE dn.id = :id AND u2.id = :current_user_id
       `;
-    const [rows] = await db.query(checkSql, { 
-      id: deliveryNoteId, 
-      current_user_id: req.current_id 
+    const [rows] = await db.query(checkSql, {
+      id: deliveryNoteId,
+      current_user_id: req.current_id
     });
 
     if (rows.length === 0) {
@@ -659,7 +659,7 @@ exports.remove = async (req, res) => {
 exports.getDeliveryPerformanceReport = async (req, res) => {
   try {
     const { start_date, end_date, driver_id } = req.query;
-    
+
     let sql = `
       SELECT 
         DATE(o.delivery_date) as delivery_date,
@@ -673,28 +673,28 @@ exports.getDeliveryPerformanceReport = async (req, res) => {
       FROM \`order\` o
       WHERE o.delivery_date IS NOT NULL
     `;
-    
+
     const params = {};
-    
+
     if (start_date) {
       sql += ` AND o.delivery_date >= :start_date`;
       params.start_date = start_date;
     }
-    
+
     if (end_date) {
       sql += ` AND o.delivery_date <= :end_date`;
       params.end_date = end_date;
     }
-    
+
     if (driver_id) {
       sql += ` AND o.driver_id = :driver_id`;
       params.driver_id = driver_id;
     }
-    
+
     sql += ` GROUP BY DATE(o.delivery_date) ORDER BY delivery_date DESC`;
-    
+
     const [performance] = await db.query(sql, params);
-    
+
     // Summary query remains the same
     const summarySql = `
       SELECT 
@@ -709,16 +709,16 @@ exports.getDeliveryPerformanceReport = async (req, res) => {
         ${end_date ? 'AND delivery_date <= :end_date' : ''}
         ${driver_id ? 'AND driver_id = :driver_id' : ''}
     `;
-    
-    const [summary] = await db.query(summarySql, params); 
-    
+
+    const [summary] = await db.query(summarySql, params);
+
     res.json({
       success: true,
       performance,
       summary: summary[0] || {},
       period: { start_date, end_date }
     });
-    
+
   } catch (error) {
     logError("delivery.getDeliveryPerformanceReport", error, res);
   }
@@ -726,7 +726,7 @@ exports.getDeliveryPerformanceReport = async (req, res) => {
 exports.getVehicleUtilizationReport = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
-    
+
     const sql = `
       SELECT 
         t.id,
@@ -752,9 +752,9 @@ exports.getVehicleUtilizationReport = async (req, res) => {
       GROUP BY t.id, t.plate_number, t.truck_type, t.capacity_liters, t.driver_name, t.driver_phone
       ORDER BY total_deliveries DESC
     `;
-    
+
     const [vehicles] = await db.query(sql, { start_date, end_date });
-    
+
     // Get maintenance summary
     const maintenanceSql = `
       SELECT 
@@ -769,9 +769,9 @@ exports.getVehicleUtilizationReport = async (req, res) => {
         ${end_date ? 'AND performed_at <= :end_date' : ''}
       GROUP BY truck_id
     `;
-    
+
     const [maintenance] = await db.query(maintenanceSql, { start_date, end_date });
-    
+
     // Combine data
     const result = vehicles.map(vehicle => {
       const vehicleMaintenance = maintenance.find(m => m.truck_id === vehicle.id) || {};
@@ -780,14 +780,14 @@ exports.getVehicleUtilizationReport = async (req, res) => {
         maintenance: vehicleMaintenance
       };
     });
-    
+
     res.json({
       success: true,
       vehicles: result,
       total_vehicles: vehicles.length,
       period: { start_date, end_date }
     });
-    
+
   } catch (error) {
     logError("delivery.getVehicleUtilizationReport", error, res);
   }
@@ -796,7 +796,7 @@ exports.getVehicleUtilizationReport = async (req, res) => {
 exports.getDriverPerformanceReport = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
-    
+
     let sql = `
       SELECT 
         t.driver_name,
@@ -811,34 +811,34 @@ exports.getDriverPerformanceReport = async (req, res) => {
       LEFT JOIN \`order\` o ON t.id = o.truck_id
       WHERE t.driver_name IS NOT NULL
     `;
-    
+
     const params = {};
-    
+
     if (start_date) {
       sql += ` AND o.delivery_date >= :start_date`;
       params.start_date = start_date;
     }
-    
+
     if (end_date) {
       sql += ` AND o.delivery_date <= :end_date`;
       params.end_date = end_date;
     }
-    
+
     sql += ` 
       GROUP BY t.driver_name, t.driver_phone, t.plate_number 
       HAVING total_deliveries > 0
       ORDER BY total_deliveries DESC
     `;
-    
+
     const [drivers] = await db.query(sql, params);
-    
+
     res.json({
       success: true,
       drivers,
       total_drivers: drivers.length,
       period: { start_date, end_date }
     });
-    
+
   } catch (error) {
     console.error('Driver performance error:', error);
     logError("delivery.getDriverPerformanceReport", error, res);
@@ -847,10 +847,10 @@ exports.getDriverPerformanceReport = async (req, res) => {
 exports.getDeliveryStats = async (req, res) => {
   try {
     const { period = 'today' } = req.query; // today, week, month, year, custom
-    
+
     let dateFilter = '';
     const params = {};
-    
+
     switch (period) {
       case 'today':
         dateFilter = 'AND DATE(o.delivery_date) = CURDATE()';
@@ -873,7 +873,7 @@ exports.getDeliveryStats = async (req, res) => {
           params.end_date = end_date;
         }
     }
-    
+
     const sql = `
       SELECT 
         -- Status counts
@@ -902,11 +902,11 @@ exports.getDeliveryStats = async (req, res) => {
       WHERE 1=1 ${dateFilter}
         AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
     `;
-    
+
     params.current_user_id = req.current_id;
-    
+
     const [stats] = await db.query(sql, params);
-    
+
     // Get today's delivery schedule
     const scheduleSql = `
       SELECT 
@@ -918,16 +918,16 @@ exports.getDeliveryStats = async (req, res) => {
       WHERE DATE(o.delivery_date) = CURDATE()
         AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
     `;
-    
+
     const [todayStats] = await db.query(scheduleSql, { current_user_id: req.current_id });
-    
+
     res.json({
       success: true,
       stats: stats[0] || {},
       today_stats: todayStats[0] || {},
       period
     });
-    
+
   } catch (error) {
     logError("delivery.getDeliveryStats", error, res);
   }
@@ -939,7 +939,7 @@ exports.getDeliveryStats = async (req, res) => {
 exports.getDeliveriesToday = async (req, res) => {
   try {
     const { status, driver_id, truck_id } = req.query;
-    
+
     let sql = `
       SELECT 
         o.id,
@@ -976,28 +976,28 @@ exports.getDeliveriesToday = async (req, res) => {
       WHERE DATE(o.delivery_date) = CURDATE()
         AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
     `;
-    
+
     const params = { current_user_id: req.current_id };
-    
+
     if (status) {
       sql += ` AND o.delivery_status = :status`;
       params.status = status;
     }
-    
+
     if (driver_id) {
       sql += ` AND o.driver_id = :driver_id`;
       params.driver_id = driver_id;
     }
-    
+
     if (truck_id) {
       sql += ` AND o.truck_id = :truck_id`;
       params.truck_id = truck_id;
     }
-    
+
     sql += ` ORDER BY o.delivery_date ASC, FIELD(o.delivery_status, 'pending', 'in_transit', 'delivered', 'cancelled')`;
-    
+
     const [deliveries] = await db.query(sql, params);
-    
+
     // Get summary for today
     const summarySql = `
       SELECT 
@@ -1010,16 +1010,16 @@ exports.getDeliveriesToday = async (req, res) => {
       WHERE DATE(delivery_date) = CURDATE()
         AND user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
     `;
-    
+
     const [summary] = await db.query(summarySql, { current_user_id: req.current_id });
-    
+
     res.json({
       success: true,
       deliveries,
       summary: summary[0] || {},
       total: deliveries.length
     });
-    
+
   } catch (error) {
     logError("delivery.getDeliveriesToday", error, res);
   }
@@ -1031,7 +1031,7 @@ exports.getDeliveriesToday = async (req, res) => {
 exports.getDeliveryNoteDetail = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const sql = `
       SELECT 
         dn.*,
@@ -1064,19 +1064,19 @@ exports.getDeliveryNoteDetail = async (req, res) => {
       WHERE dn.id = :id
         AND dn.created_by IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
     `;
-    
-    const [note] = await db.query(sql, { 
-      id, 
-      current_user_id: req.current_id 
+
+    const [note] = await db.query(sql, {
+      id,
+      current_user_id: req.current_id
     });
-    
+
     if (note.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Delivery note not found or no permission"
       });
     }
-    
+
     // Get delivery note items
     const itemsSql = `
       SELECT 
@@ -1087,9 +1087,9 @@ exports.getDeliveryNoteDetail = async (req, res) => {
       WHERE dni.delivery_note_id = :delivery_note_id
       ORDER BY dni.id
     `;
-    
+
     const [items] = await db.query(itemsSql, { delivery_note_id: id });
-    
+
     // Get delivery tracking for this note
     const trackingSql = `
       SELECT 
@@ -1101,9 +1101,9 @@ exports.getDeliveryNoteDetail = async (req, res) => {
       WHERE dt.delivery_note_id = :delivery_note_id
       ORDER BY dt.timestamp ASC
     `;
-    
+
     const [tracking] = await db.query(trackingSql, { delivery_note_id: id });
-    
+
     res.json({
       success: true,
       note: note[0],
@@ -1112,7 +1112,7 @@ exports.getDeliveryNoteDetail = async (req, res) => {
       total_items: items.length,
       total_tracking: tracking.length
     });
-    
+
   } catch (error) {
     logError("delivery.getDeliveryNoteDetail", error, res);
   }
@@ -1128,7 +1128,7 @@ exports.getDeliveryNoteDetail = async (req, res) => {
 exports.getActiveDeliveries = async (req, res) => {
   try {
     const { driver_id, truck_id } = req.query;
-    
+
     let sql = `
       SELECT 
         o.id as order_id,
@@ -1187,30 +1187,30 @@ exports.getActiveDeliveries = async (req, res) => {
       WHERE o.delivery_status IN ('in_transit', 'pending')
         AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
     `;
-    
+
     const params = { current_user_id: req.current_id };
-    
+
     if (driver_id) {
       sql += ` AND o.driver_id = :driver_id`;
       params.driver_id = driver_id;
     }
-    
+
     if (truck_id) {
       sql += ` AND o.truck_id = :truck_id`;
       params.truck_id = truck_id;
     }
-    
+
     sql += ` ORDER BY o.delivery_status, o.delivery_date ASC`;
-    
+
     const [activeDeliveries] = await db.query(sql, params);
-    
+
     res.json({
       success: true,
       active_deliveries: activeDeliveries,
       total_active: activeDeliveries.length,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     logError("delivery.getActiveDeliveries", error, res);
   }
@@ -1223,9 +1223,9 @@ exports.getActiveDeliveries = async (req, res) => {
 exports.assignTruckToOrder = async (req, res) => {
   try {
     const { order_id, truck_id, driver_id } = req.body;
-    
+
     await db.query("START TRANSACTION");
-    
+
     // Check order permission
     const checkSql = `
       SELECT o.id 
@@ -1234,12 +1234,12 @@ exports.assignTruckToOrder = async (req, res) => {
       WHERE o.id = :order_id
         AND u.group_id = (SELECT group_id FROM user WHERE id = :current_user_id)
     `;
-    
+
     const [check] = await db.query(checkSql, {
       order_id,
       current_user_id: req.current_id
     });
-    
+
     if (check.length === 0) {
       await db.query("ROLLBACK");
       return res.status(403).json({
@@ -1247,7 +1247,7 @@ exports.assignTruckToOrder = async (req, res) => {
         message: "No permission to update this order"
       });
     }
-    
+
     // Update order
     const updateSql = `
       UPDATE \`order\` 
@@ -1257,26 +1257,26 @@ exports.assignTruckToOrder = async (req, res) => {
           updated_at = NOW()
       WHERE id = :order_id
     `;
-    
+
     await db.query(updateSql, {
       order_id,
       truck_id,
       driver_id
     });
-    
+
     // Create delivery tracking record
     const trackingSql = `
       INSERT INTO delivery_tracking 
         (order_id, truck_id, status, notes, created_by)
       VALUES (:order_id, :truck_id, 'in_transit', 'Truck assigned to order', :created_by)
     `;
-    
+
     await db.query(trackingSql, {
       order_id,
       truck_id,
       created_by: req.current_id
     });
-    
+
     // Update truck status if needed
     const truckSql = `
       UPDATE trucks 
@@ -1284,11 +1284,11 @@ exports.assignTruckToOrder = async (req, res) => {
           updated_at = NOW()
       WHERE id = :truck_id
     `;
-    
+
     await db.query(truckSql, { truck_id });
-    
+
     await db.query("COMMIT");
-    
+
     res.json({
       success: true,
       message: "Truck assigned successfully",
@@ -1299,7 +1299,7 @@ exports.assignTruckToOrder = async (req, res) => {
         assigned_at: new Date().toISOString()
       }
     });
-    
+
   } catch (error) {
     await db.query("ROLLBACK");
     logError("delivery.assignTruckToOrder", error, res);
@@ -1312,9 +1312,9 @@ exports.assignTruckToOrder = async (req, res) => {
 exports.updateOrderDeliveryStatus = async (req, res) => {
   try {
     const { order_id, status, latitude, longitude, notes } = req.body;
-    
+
     await db.query("START TRANSACTION");
-    
+
     // Check order permission
     const checkSql = `
       SELECT o.id, o.delivery_status
@@ -1323,12 +1323,12 @@ exports.updateOrderDeliveryStatus = async (req, res) => {
       WHERE o.id = :order_id
         AND u.group_id = (SELECT group_id FROM user WHERE id = :current_user_id)
     `;
-    
+
     const [check] = await db.query(checkSql, {
       order_id,
       current_user_id: req.current_id
     });
-    
+
     if (check.length === 0) {
       await db.query("ROLLBACK");
       return res.status(403).json({
@@ -1336,7 +1336,7 @@ exports.updateOrderDeliveryStatus = async (req, res) => {
         message: "No permission to update this order"
       });
     }
-    
+
     // Update order status
     const updateSql = `
       UPDATE \`order\` 
@@ -1345,19 +1345,19 @@ exports.updateOrderDeliveryStatus = async (req, res) => {
           updated_at = NOW()
       WHERE id = :order_id
     `;
-    
+
     await db.query(updateSql, {
       order_id,
       status
     });
-    
+
     // Create tracking record
     const trackingSql = `
       INSERT INTO delivery_tracking 
         (order_id, status, latitude, longitude, notes, created_by)
       VALUES (:order_id, :status, :latitude, :longitude, :notes, :created_by)
     `;
-    
+
     await db.query(trackingSql, {
       order_id,
       status,
@@ -1366,7 +1366,7 @@ exports.updateOrderDeliveryStatus = async (req, res) => {
       notes: notes || '',
       created_by: req.current_id
     });
-    
+
     // If delivered, update truck status back to active
     if (status === 'delivered') {
       const truckSql = `
@@ -1376,15 +1376,15 @@ exports.updateOrderDeliveryStatus = async (req, res) => {
             t.updated_at = NOW()
         WHERE o.id = :order_id
       `;
-      
+
       await db.query(truckSql, { order_id });
     }
-    
+
     await db.query("COMMIT");
-    
+
     // Send notification
     await sendDeliveryNotification(order_id, status, req.current_id);
-    
+
     res.json({
       success: true,
       message: `Delivery status updated to ${status}`,
@@ -1394,7 +1394,7 @@ exports.updateOrderDeliveryStatus = async (req, res) => {
         updated_at: new Date().toISOString()
       }
     });
-    
+
   } catch (error) {
     await db.query("ROLLBACK");
     logError("delivery.updateOrderDeliveryStatus", error, res);
@@ -1418,28 +1418,28 @@ async function sendDeliveryNotification(order_id, status, user_id) {
       LEFT JOIN user u ON o.user_id = u.id
       WHERE o.id = ?
     `, [order_id]);
-    
+
     if (!order.length) return;
-    
+
     const orderData = order[0];
-    
+
     // Create notification message
     const message = `🚚 Delivery Update: Order ${orderData.order_no} (${orderData.customer_name}) is now ${status}`;
-    
+
     // Save to notifications table if exists
     const notificationSql = `
       INSERT INTO notifications 
         (user_id, title, message, type, data, is_read, created_at)
       VALUES (?, ?, ?, 'delivery', ?, 0, NOW())
     `;
-    
+
     await db.query(notificationSql, [
       user_id,
       `Delivery Status Update - ${orderData.order_no}`,
       message,
       JSON.stringify({ order_id, status })
     ]);
-    
+
     // Send Telegram notification if configured
     if (process.env.TELEGRAM_BOT_TOKEN) {
       const telegramMessage = `
@@ -1449,11 +1449,11 @@ Customer: ${orderData.customer_name}
 Status: ${status.toUpperCase()}
 Time: ${new Date().toLocaleString()}
       `;
-      
+
       // Assuming you have a sendTelegram function
       // await sendTelegram(telegramMessage);
     }
-    
+
   } catch (error) {
     console.error('Notification error:', error);
   }
@@ -1480,9 +1480,9 @@ exports.updateDeliveryStatus = async (req, res) => {
     );
 
     if (!order || order.length === 0) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        error: 'Order not found or no permission' 
+        error: 'Order not found or no permission'
       });
     }
 
@@ -1499,7 +1499,7 @@ exports.updateDeliveryStatus = async (req, res) => {
         (order_id, driver_id, latitude, longitude, status, notes, created_by)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     await db.query(trackingSql, [
       order_id,
       user_id,
@@ -1546,9 +1546,9 @@ exports.updateDeliveryStatus = async (req, res) => {
 
   } catch (error) {
     console.error('Delivery status error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Failed to update delivery status' 
+      error: 'Failed to update delivery status'
     });
   }
 };
@@ -1559,7 +1559,7 @@ exports.updateDeliveryStatus = async (req, res) => {
 exports.getDeliveryTracking = async (req, res) => {
   try {
     const { orderId } = req.params;
-    
+
     // Check permission (FIXED: Use ? placeholders)
     const permissionSql = `
       SELECT 1 
@@ -1568,16 +1568,16 @@ exports.getDeliveryTracking = async (req, res) => {
       WHERE o.id = ?
         AND u.group_id = (SELECT group_id FROM user WHERE id = ?)
     `;
-    
+
     const [hasPermission] = await db.query(permissionSql, [orderId, req.current_id]);
-    
+
     if (!hasPermission || hasPermission.length === 0) {
       return res.status(403).json({
         success: false,
         error: "No permission to view this order's tracking"
       });
     }
-    
+
     // FIXED: Use ? placeholders
     const sql = `
       SELECT 
@@ -1611,7 +1611,7 @@ exports.getDeliveryTracking = async (req, res) => {
       LEFT JOIN trucks t ON o.truck_id = t.id
       WHERE o.id = ?
     `;
-    
+
     const [order] = await db.query(orderSql, [orderId]);
 
     res.json({
@@ -1620,12 +1620,12 @@ exports.getDeliveryTracking = async (req, res) => {
       order: order[0] || null,
       total_updates: tracking.length
     });
-    
+
   } catch (error) {
     console.error('Get tracking error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Failed to get delivery tracking' 
+      error: 'Failed to get delivery tracking'
     });
   }
 };
@@ -1636,7 +1636,7 @@ exports.getDeliveryTracking = async (req, res) => {
 exports.getDriverLocation = async (req, res) => {
   try {
     const { orderId } = req.params;
-    
+
     // Check permission (FIXED: Use ? placeholders)
     const permissionSql = `
       SELECT 1 
@@ -1645,9 +1645,9 @@ exports.getDriverLocation = async (req, res) => {
       WHERE o.id = ?
         AND u.group_id = (SELECT group_id FROM user WHERE id = ?)
     `;
-    
+
     const [hasPermission] = await db.query(permissionSql, [orderId, req.current_id]);
-    
+
     if (!hasPermission || hasPermission.length === 0) {
       return res.status(403).json({
         success: false,
@@ -1683,12 +1683,12 @@ exports.getDriverLocation = async (req, res) => {
       location: location[0] || null,
       source: 'tracking_history'
     });
-    
+
   } catch (error) {
     console.error('Get driver location error:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Failed to get driver location' 
+      error: 'Failed to get driver location'
     });
   }
 };
@@ -1698,7 +1698,7 @@ exports.getDriverLocation = async (req, res) => {
 exports.getActiveDeliveries = async (req, res) => {
   try {
     const { driver_name, truck_id } = req.query;
-    
+
     let sql = `
       SELECT 
         o.id as order_id,
@@ -1732,30 +1732,30 @@ exports.getActiveDeliveries = async (req, res) => {
       WHERE o.delivery_status IN ('pending', 'in_transit')
         AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
     `;
-    
+
     const params = { current_user_id: req.current_id };
-    
+
     if (driver_name) {
       sql += ` AND t.driver_name LIKE :driver_name`;
       params.driver_name = `%${driver_name}%`;
     }
-    
+
     if (truck_id) {
       sql += ` AND o.truck_id = :truck_id`;
       params.truck_id = truck_id;
     }
-    
+
     sql += ` ORDER BY o.delivery_status, o.delivery_date ASC`;
-    
+
     const [activeDeliveries] = await db.query(sql, params);
-    
+
     res.json({
       success: true,
       active_deliveries: activeDeliveries,
       total_active: activeDeliveries.length,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
     console.error('Get active deliveries error:', error);
     res.status(500).json({
@@ -1781,12 +1781,12 @@ exports.updateDeliveryLocation = async (req, res) => {
       WHERE o.id = :order_id
         AND u.group_id = (SELECT group_id FROM user WHERE id = :current_user_id)
     `;
-    
+
     const [checkRows] = await db.query(checkSql, {
       order_id,
       current_user_id: req.current_id
     });
-    
+
     if (checkRows.length === 0) {
       return res.status(404).json({
         success: false,
@@ -1848,7 +1848,7 @@ exports.updateDeliveryLocation = async (req, res) => {
         timestamp: new Date().toISOString()
       }
     });
-    
+
   } catch (error) {
     console.error('Update delivery location error:', error);
     res.status(500).json({
@@ -1900,20 +1900,20 @@ exports.getActiveDeliveriesWithLocation = async (req, res) => {
         AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
       ORDER BY o.delivery_date ASC
     `;
-    
+
     const [activeDeliveries] = await db.query(sql, {
       current_user_id: req.current_id
     });
-    
+
     res.json({
       success: true,
       active_deliveries: activeDeliveries,
       total_active: activeDeliveries.length,
       timestamp: new Date().toISOString()
     });
-    
+
   } catch (error) {
-    console.error('Get active deliveries error:', error); 
+    console.error('Get active deliveries error:', error);
     res.status(500).json({
       success: false,
       error: "Failed to get active deliveries"
@@ -1927,7 +1927,7 @@ exports.getActiveDeliveriesWithLocation = async (req, res) => {
 exports.trackDelivery = async (req, res) => {
   try {
     const { deliveryId } = req.params;
-    
+
     // Get delivery details
     const [delivery] = await db.query(`
       SELECT 
@@ -1941,14 +1941,14 @@ exports.trackDelivery = async (req, res) => {
       LEFT JOIN trucks t ON dn.truck_id = t.id
       WHERE dn.id = ?
     `, [deliveryId]);
-    
+
     // Get tracking history
     const [tracking] = await db.query(`
       SELECT * FROM delivery_tracking
       WHERE delivery_note_id = ?
       ORDER BY timestamp ASC
     `, [deliveryId]);
-    
+
     // Get current location (if GPS tracking available)
     const [location] = await db.query(`
       SELECT latitude, longitude, speed, timestamp
@@ -1957,7 +1957,7 @@ exports.trackDelivery = async (req, res) => {
       ORDER BY timestamp DESC
       LIMIT 1
     `, [delivery[0]?.truck_id]);
-    
+
     res.json({
       success: true,
       delivery: delivery[0] || {},
@@ -1965,7 +1965,7 @@ exports.trackDelivery = async (req, res) => {
       current_location: location[0] || null,
       estimated_arrival: calculateETA(location[0])
     });
-    
+
   } catch (error) {
     logError("delivery.trackDelivery", error, res);
   }
@@ -1975,13 +1975,13 @@ exports.trackDelivery = async (req, res) => {
 exports.updateDeliveryStatus = async (req, res) => {
   try {
     const { deliveryId, status, latitude, longitude } = req.body;
-    
+
     // Update delivery note status
     await db.query(
       'UPDATE delivery_note SET delivery_status = ? WHERE id = ?',
       [status, deliveryId]
     );
-    
+
     // Log tracking event
     await db.query(
       `INSERT INTO delivery_tracking 
@@ -1989,14 +1989,14 @@ exports.updateDeliveryStatus = async (req, res) => {
        VALUES (?, ?, ?, ?, NOW())`,
       [deliveryId, status, latitude, longitude]
     );
-    
+
     // Update GPS location if provided
     if (latitude && longitude) {
       const [delivery] = await db.query(
         'SELECT truck_id FROM delivery_note WHERE id = ?',
         [deliveryId]
       );
-      
+
       if (delivery[0]?.truck_id) {
         await db.query(
           `INSERT INTO vehicle_gps 
@@ -2006,9 +2006,9 @@ exports.updateDeliveryStatus = async (req, res) => {
         );
       }
     }
-    
+
     res.json({ success: true });
-    
+
   } catch (error) {
     logError("delivery.updateDeliveryStatus", error, res);
   }
@@ -2019,7 +2019,7 @@ exports.updateDeliveryStatus = async (req, res) => {
 exports.driverUpdateLocation = async (req, res) => {
   try {
     const { driverId, latitude, longitude, deliveryId } = req.body;
-    
+
     // Update driver's current location
     await db.query(
       `INSERT INTO driver_locations 
@@ -2027,7 +2027,7 @@ exports.driverUpdateLocation = async (req, res) => {
        VALUES (?, ?, ?, NOW())`,
       [driverId, latitude, longitude]
     );
-    
+
     // Update specific delivery location
     if (deliveryId) {
       await db.query(
@@ -2037,9 +2037,9 @@ exports.driverUpdateLocation = async (req, res) => {
         [latitude, longitude, deliveryId]
       );
     }
-    
+
     res.json({ success: true });
-    
+
   } catch (error) {
     logError("driver.updateLocation", error, res);
   }
@@ -2055,35 +2055,35 @@ exports.driverUpdateLocation = async (req, res) => {
 exports.checkDriverAuth = async (req, res) => {
   try {
     const user_id = req.current_id;
-    
-    
+
+
     // Get user info
     const [userResult] = await db.query(
       `SELECT tel, name, username, role_id, group_id FROM user WHERE id = :user_id`,
       { user_id }
     );
-    
+
     if (!userResult || userResult.length === 0) {
       return res.status(404).json({
         success: false,
         error: "User not found"
       });
     }
-    
+
     const user = userResult[0];
     const userPhone = user.tel;
-    
-    
+
+
     if (!userPhone) {
       return res.json({
         success: false,
         error: "User has no phone number"
       });
     }
-    
+
     // Clean phone number
     const cleanUserPhone = userPhone.replace(/\D/g, '');
-    
+
     const [truckResult] = await db.query(
       `SELECT 
         t.id as truck_id, 
@@ -2100,20 +2100,20 @@ exports.checkDriverAuth = async (req, res) => {
             OR REPLACE(REPLACE(REPLACE(t.driver_phone, ' ', ''), '-', ''), '+', '') LIKE :phonePattern2
             OR t.driver_phone LIKE :phonePattern3)
        LIMIT 1`,
-      { 
+      {
         phonePattern1: `%${cleanUserPhone}%`,
         phonePattern2: `%${cleanUserPhone}%`,
         phonePattern3: `%${userPhone}%`
       }
     );
-    
-    
+
+
     let driverInfo = null;
-    
+
     // If found in trucks table, user IS a driver (regardless of role_id)
     if (truckResult && truckResult.length > 0) {
       const truck = truckResult[0];
-      
+
       driverInfo = {
         // User info
         user_id: user_id,
@@ -2121,7 +2121,7 @@ exports.checkDriverAuth = async (req, res) => {
         username: user.username,
         role_id: user.role_id,
         group_id: user.group_id,
-        
+
         // Truck info
         truck_id: truck.truck_id,
         plate_number: truck.plate_number,
@@ -2131,15 +2131,15 @@ exports.checkDriverAuth = async (req, res) => {
         capacity_liters: truck.capacity_liters,
         fuel_type: truck.fuel_type,
         status: truck.status || 'active',
-        
+
         // Auth info
         authenticated_at: new Date().toISOString(),
         session_id: `driver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         is_driver: true,
         source: 'truck_assignment'
       };
-      
-      
+
+
       return res.json({
         success: true,
         driver_info: driverInfo,
@@ -2148,13 +2148,13 @@ exports.checkDriverAuth = async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     // ✅ PRIORITY 2: If not in trucks, check role_id
-    
+
     const driverRoles = [3, 4, 5]; // Your driver role IDs
     const isDriverByRole = driverRoles.includes(Number(user.role_id));
-    
-    
+
+
     if (isDriverByRole) {
       // User has driver role but no truck assigned
       driverInfo = {
@@ -2164,7 +2164,7 @@ exports.checkDriverAuth = async (req, res) => {
         user_phone: userPhone,
         role_id: user.role_id,
         group_id: user.group_id,
-        
+
         truck_id: null,
         plate_number: null,
         driver_name: user.name,
@@ -2173,13 +2173,13 @@ exports.checkDriverAuth = async (req, res) => {
         capacity_liters: null,
         fuel_type: null,
         status: 'unassigned',
-        
+
         authenticated_at: new Date().toISOString(),
         session_id: `driver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         is_driver: true,
         source: 'user_role'
       };
-      
+
       return res.json({
         success: true,
         driver_info: driverInfo,
@@ -2188,9 +2188,9 @@ exports.checkDriverAuth = async (req, res) => {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     // ❌ Not a driver
-    
+
     return res.json({
       success: false,
       error: "User is not authorized as a driver",
@@ -2208,7 +2208,7 @@ exports.checkDriverAuth = async (req, res) => {
         `Role ID: ${user.role_id} (driver roles: 3, 4, 5)`
       ]
     });
-    
+
   } catch (error) {
     console.error('❌ Driver auth error:', error);
     res.status(500).json({
@@ -2222,36 +2222,36 @@ exports.checkDriverAuth = async (req, res) => {
 exports.getMyAssignments = async (req, res) => {
   try {
     const user_id = req.current_id;
-    
-    
+
+
     // ✅ FIXED: Use 'tel' field
     const [userResult] = await db.query(
       `SELECT tel FROM user WHERE id = :user_id`,
       { user_id }
     );
-    
+
     if (!userResult || userResult.length === 0) {
       return res.json({ success: true, list: [] });
     }
-    
+
     const userPhone = userResult[0].tel;  // ✅ FIXED
-    
+
     if (!userPhone) {
       return res.json({ success: true, list: [] });
     }
-    
-    
+
+
     const [truckResult] = await db.query(
       `SELECT id as truck_id FROM trucks WHERE driver_phone = :phone LIMIT 1`,
       { phone: userPhone }
     );
-    
+
     if (!truckResult || truckResult.length === 0) {
       return res.json({ success: true, list: [] });
     }
-    
+
     const truck_id = truckResult[0].truck_id;
-    
+
     // Get all orders assigned to this truck
     const sql = `
       SELECT 
@@ -2298,10 +2298,10 @@ exports.getMyAssignments = async (req, res) => {
         FIELD(o.delivery_status, 'in_transit', 'arrived', 'pending'),
         o.delivery_date ASC
     `;
-    
+
     const [assignments] = await db.query(sql, { truck_id });
-    
-    
+
+
     // Format response
     const formattedAssignments = assignments.map(a => ({
       order_id: a.order_id,
@@ -2332,13 +2332,13 @@ exports.getMyAssignments = async (req, res) => {
         timestamp: a.last_update
       } : null
     }));
-    
+
     res.json({
       success: true,
       list: formattedAssignments,
       total: formattedAssignments.length
     });
-    
+
   } catch (error) {
     console.error('❌ Error getting assignments:', error);
     logError("driver.getMyAssignments", error, res);
@@ -2348,21 +2348,21 @@ exports.updateLocation = async (req, res) => {
   try {
     const { order_id, latitude, longitude, status, notes } = req.body;
     const user_id = req.current_id;
-    
+
     if (!order_id || !latitude || !longitude) {
       return res.status(400).json({
         success: false,
         error: "Missing required fields"
       });
     }
-    
+
     // Insert tracking record
     const trackingSql = `
       INSERT INTO delivery_tracking 
         (order_id, driver_id, latitude, longitude, status, notes, created_by)
       VALUES (:order_id, :driver_id, :latitude, :longitude, :status, :notes, :created_by)
     `;
-    
+
     await db.query(trackingSql, {
       order_id,
       driver_id: user_id,
@@ -2372,7 +2372,7 @@ exports.updateLocation = async (req, res) => {
       notes: notes || null,
       created_by: user_id
     });
-    
+
     // Update order status if provided
     if (status) {
       const updateSql = `
@@ -2382,15 +2382,15 @@ exports.updateLocation = async (req, res) => {
             updated_at = NOW()
         WHERE id = :order_id
       `;
-      
+
       await db.query(updateSql, { order_id, status });
     }
-    
+
     res.json({
       success: true,
       message: "Location updated successfully"
     });
-    
+
   } catch (error) {
     logError("driver.updateLocation", error, res);
   }
@@ -2403,9 +2403,9 @@ exports.completeDelivery = async (req, res) => {
   try {
     const { order_id, latitude, longitude, notes, photos } = req.body;
     const user_id = req.current_id;
-    
+
     await db.query("START TRANSACTION");
-    
+
     // Update delivery tracking
     await db.query(
       `INSERT INTO delivery_tracking 
@@ -2420,7 +2420,7 @@ exports.completeDelivery = async (req, res) => {
         created_by: user_id
       }
     );
-    
+
     // Update order status
     await db.query(
       `UPDATE \`order\` 
@@ -2430,7 +2430,7 @@ exports.completeDelivery = async (req, res) => {
        WHERE id = :order_id`,
       { order_id }
     );
-    
+
     // Save photos if provided
     if (photos && photos.length > 0) {
       for (const photoUrl of photos) {
@@ -2446,7 +2446,7 @@ exports.completeDelivery = async (req, res) => {
         );
       }
     }
-    
+
     // Update truck status back to active
     await db.query(
       `UPDATE trucks t
@@ -2455,14 +2455,14 @@ exports.completeDelivery = async (req, res) => {
        WHERE o.id = :order_id`,
       { order_id }
     );
-    
+
     await db.query("COMMIT");
-    
+
     res.json({
       success: true,
       message: "Delivery completed successfully"
     });
-    
+
   } catch (error) {
     await db.query("ROLLBACK");
     logError("driver.completeDelivery", error, res);
@@ -2476,17 +2476,17 @@ exports.uploadPhoto = async (req, res) => {
   try {
     const { order_id } = req.body;
     const user_id = req.current_id;
-    
+
     if (!req.file) {
       return res.status(400).json({
         success: false,
         error: "No file uploaded"
       });
     }
-    
-    // Save photo path to database
-    const photoUrl = `/uploads/delivery-photos/${req.file.filename}`;
-    
+
+    // Save Cloudinary photo path to database
+    const photoUrl = req.file.path;
+
     await db.query(
       `INSERT INTO delivery_photos 
         (order_id, photo_url, uploaded_by, uploaded_at)
@@ -2497,12 +2497,12 @@ exports.uploadPhoto = async (req, res) => {
         uploaded_by: user_id
       }
     );
-    
+
     res.json({
       success: true,
       photo_url: photoUrl
     });
-    
+
   } catch (error) {
     logError("driver.uploadPhoto", error, res);
   }
@@ -2515,7 +2515,7 @@ exports.addNote = async (req, res) => {
   try {
     const { order_id, note } = req.body;
     const user_id = req.current_id;
-    
+
     await db.query(
       `INSERT INTO delivery_tracking 
         (order_id, driver_id, status, notes, created_by)
@@ -2527,12 +2527,12 @@ exports.addNote = async (req, res) => {
         created_by: user_id
       }
     );
-    
+
     res.json({
       success: true,
       message: "Note added successfully"
     });
-    
+
   } catch (error) {
     logError("driver.addNote", error, res);
   }
@@ -2545,7 +2545,7 @@ exports.reportIssue = async (req, res) => {
   try {
     const { order_id, issue_type, description, latitude, longitude } = req.body;
     const user_id = req.current_id;
-    
+
     await db.query(
       `INSERT INTO delivery_issues 
         (order_id, reported_by, issue_type, description, latitude, longitude, reported_at)
@@ -2559,7 +2559,7 @@ exports.reportIssue = async (req, res) => {
         longitude: longitude || null
       }
     );
-    
+
     // Also add tracking record
     await db.query(
       `INSERT INTO delivery_tracking 
@@ -2572,12 +2572,12 @@ exports.reportIssue = async (req, res) => {
         created_by: user_id
       }
     );
-    
+
     res.json({
       success: true,
       message: "Issue reported successfully"
     });
-    
+
   } catch (error) {
     logError("driver.reportIssue", error, res);
   }
@@ -2590,26 +2590,26 @@ exports.getMyHistory = async (req, res) => {
   try {
     const { from_date, to_date } = req.query;
     const user_id = req.current_id;
-    
+
     // Get driver's truck
     const [userResult] = await db.query(
       `SELECT phone FROM user WHERE id = :user_id`,
       { user_id }
     );
-    
+
     if (!userResult || userResult.length === 0) {
       return res.json({ success: true, list: [] });
     }
-    
+
     const [truckResult] = await db.query(
       `SELECT id as truck_id FROM trucks WHERE driver_phone = :phone LIMIT 1`,
       { phone: userResult[0].phone }
     );
-    
+
     if (!truckResult || truckResult.length === 0) {
       return res.json({ success: true, list: [] });
     }
-    
+
     let sql = `
       SELECT 
         o.id as order_id,
@@ -2625,28 +2625,28 @@ exports.getMyHistory = async (req, res) => {
       LEFT JOIN customer_locations cl ON o.location_id = cl.id
       WHERE o.truck_id = :truck_id
     `;
-    
+
     const params = { truck_id: truckResult[0].truck_id };
-    
+
     if (from_date) {
       sql += ` AND DATE(o.delivery_date) >= :from_date`;
       params.from_date = from_date;
     }
-    
+
     if (to_date) {
       sql += ` AND DATE(o.delivery_date) <= :to_date`;
       params.to_date = to_date;
     }
-    
+
     sql += ` ORDER BY o.delivery_date DESC LIMIT 100`;
-    
+
     const [history] = await db.query(sql, params);
-    
+
     res.json({
       success: true,
       list: history
     });
-    
+
   } catch (error) {
     logError("driver.getMyHistory", error, res);
   }
@@ -2655,19 +2655,19 @@ exports.getMyHistory = async (req, res) => {
 exports.authByPhone = async (req, res) => {
   try {
     const { phone } = req.body;
-    
-    
+
+
     if (!phone) {
       return res.status(400).json({
         success: false,
         error: "Phone number is required"
       });
     }
-    
+
     // Clean phone number (remove spaces, dashes, etc.)
     const cleanPhone = phone.replace(/\D/g, '');
-    
-    
+
+
     // 步骤1: 先在 trucks 表中查找司机
     const [truckResult] = await db.query(
       `SELECT 
@@ -2683,19 +2683,19 @@ exports.authByPhone = async (req, res) => {
        WHERE t.driver_phone LIKE :phonePattern
        AND (t.status = 'active' OR t.status IS NULL)
        LIMIT 1`,
-      { 
+      {
         phonePattern: `%${cleanPhone}%`  // 使用模糊匹配
       }
     );
-    
-    
+
+
     let driverInfo = null;
     let source = 'unknown';
-    
+
     // 情况1: 在 trucks 表中找到司机
     if (truckResult && truckResult.length > 0) {
       const truck = truckResult[0];
-      
+
       // 查找对应的用户记录
       const [userResult] = await db.query(
         `SELECT id, name, username, email, role_id 
@@ -2704,7 +2704,7 @@ exports.authByPhone = async (req, res) => {
          LIMIT 1`,
         { phonePattern: `%${cleanPhone}%` }
       );
-      
+
       driverInfo = {
         // Truck info
         truck_id: truck.truck_id,
@@ -2715,25 +2715,25 @@ exports.authByPhone = async (req, res) => {
         capacity_liters: truck.capacity_liters,
         fuel_type: truck.fuel_type,
         status: truck.status || 'active',
-        
+
         // User info (如果找到)
         user_id: userResult?.[0]?.id || null,
         user_name: userResult?.[0]?.name || truck.driver_name,
         username: userResult?.[0]?.username || null,
         email: userResult?.[0]?.email || null,
         role_id: userResult?.[0]?.role_id || null,
-        
+
         // 认证信息
         authenticated_at: new Date().toISOString(),
         session_id: `driver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
       };
-      
+
       source = 'truck_database';
-      
-    } 
+
+    }
     // 情况2: 在 trucks 表中没找到，但在 users 表中找到
     else {
-      
+
       const [userResult] = await db.query(
         `SELECT 
           id, name, username, email, tel, role_id, group_id,
@@ -2744,13 +2744,13 @@ exports.authByPhone = async (req, res) => {
          LIMIT 1`,
         { phonePattern: `%${cleanPhone}%` }
       );
-      
+
       if (userResult && userResult.length > 0) {
         const user = userResult[0];
-        
+
         // 检查用户是否有司机角色（role_id 判断）
         const isDriver = user.role_id === 3 || user.role_id === 4; // 根据您的角色ID调整
-        
+
         driverInfo = {
           // User info
           user_id: user.id,
@@ -2763,7 +2763,7 @@ exports.authByPhone = async (req, res) => {
           is_active: user.is_active,
           profile_image: user.profile_image,
           branch_name: user.branch_name,
-          
+
           // Truck info (可能为空)
           truck_id: null,
           plate_number: null,
@@ -2773,21 +2773,21 @@ exports.authByPhone = async (req, res) => {
           capacity_liters: null,
           fuel_type: null,
           status: isDriver ? 'active' : 'unauthorized',
-          
+
           // 认证信息
           authenticated_at: new Date().toISOString(),
           session_id: `driver_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           is_registered_as_driver: isDriver
         };
-        
+
         source = 'user_database';
-        
+
         if (!isDriver) {
         }
       } else {
       }
     }
-    
+
     // 检查是否成功找到司机信息
     if (!driverInfo) {
       return res.status(404).json({
@@ -2796,15 +2796,15 @@ exports.authByPhone = async (req, res) => {
         message: "No driver or user found with this phone number"
       });
     }
-    
-    
+
+
     res.json({
       success: true,
       driver_info: driverInfo,
       source: source,
       message: "Driver authenticated successfully"
     });
-    
+
   } catch (error) {
     console.error('❌ authByPhone error:', error);
     res.status(500).json({
@@ -2818,15 +2818,15 @@ exports.authByPhone = async (req, res) => {
 exports.authByTruck = async (req, res) => {
   try {
     const { truck_id } = req.body;
-    
-    
+
+
     if (!truck_id) {
       return res.status(400).json({
         success: false,
         error: "Truck ID is required"
       });
     }
-    
+
     // 查找卡车信息
     const [truckResult] = await db.query(
       `SELECT 
@@ -2844,22 +2844,22 @@ exports.authByTruck = async (req, res) => {
        LIMIT 1`,
       { truck_id }
     );
-    
+
     if (!truckResult || truckResult.length === 0) {
       return res.status(404).json({
         success: false,
         error: "Truck not found"
       });
     }
-    
+
     const truck = truckResult[0];
-    
+
     let userInfo = null;
-    
+
     // 如果卡车有司机电话，查找对应的用户
     if (truck.driver_phone) {
       const cleanPhone = truck.driver_phone.replace(/\D/g, '');
-      
+
       const [userResult] = await db.query(
         `SELECT id, name, username, email, role_id, group_id
          FROM user 
@@ -2867,12 +2867,12 @@ exports.authByTruck = async (req, res) => {
          LIMIT 1`,
         { phonePattern: `%${cleanPhone}%` }
       );
-      
+
       if (userResult && userResult.length > 0) {
         userInfo = userResult[0];
       }
     }
-    
+
     const driverInfo = {
       // Truck info
       truck_id: truck.truck_id,
@@ -2883,7 +2883,7 @@ exports.authByTruck = async (req, res) => {
       capacity_liters: truck.capacity_liters,
       fuel_type: truck.fuel_type,
       status: truck.status || 'active',
-      
+
       // User info (如果找到)
       user_id: userInfo?.id || null,
       user_name: userInfo?.name || truck.driver_name,
@@ -2891,18 +2891,18 @@ exports.authByTruck = async (req, res) => {
       email: userInfo?.email || null,
       role_id: userInfo?.role_id || null,
       group_id: userInfo?.group_id || null,
-      
+
       // 认证信息
       authenticated_at: new Date().toISOString(),
       session_id: `truck_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     };
-    
+
     res.json({
       success: true,
       driver_info: driverInfo,
       message: "Truck driver authenticated successfully"
     });
-    
+
   } catch (error) {
     console.error('❌ authByTruck error:', error);
     res.status(500).json({

@@ -23,7 +23,7 @@ exports.getList = async (req, res) => {
       " FROM product p " +
       " INNER JOIN category c ON p.category_id = c.id  " +
       " WHERE true ";
-      
+
     if (txt_search) {
       sql += " AND (p.name LIKE :txt_search OR p.barcode = :barcode) ";
     }
@@ -66,7 +66,7 @@ exports.create = async (req, res) => {
       " VALUES (:category_id, :barcode, :name, :brand, :description, :qty, :price, :discount, :status, :image, :create_by ) ";
     var [data] = await db.query(sql, {
       ...req.body,
-      image: req.file?.filename,
+      image: req.file?.path,
       create_by: req.auth?.name,
     });
     res.json({
@@ -97,7 +97,7 @@ exports.update = async (req, res) => {
     var filename = req.body.image;
     /// image new
     if (req.file) {
-      filename = req.file?.filename;
+      filename = req.file?.path;
     }
 
     /// image change
@@ -108,7 +108,7 @@ exports.update = async (req, res) => {
       req.file
     ) {
       removeFile(req.body.image); // remove old image
-      filename = req.file?.filename;
+      filename = req.file?.path;
     }
 
     /// image remove

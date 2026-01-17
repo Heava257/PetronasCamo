@@ -8,6 +8,7 @@ const crypto = require('crypto');
 const { rateLimit } = require("express-rate-limit");
 const fsSync = require("fs");
 const path = require("path");
+const { storage, deleteImage } = require("../config/cloudinary");
 
 exports.db = connection;
 exports.logError = logError;
@@ -56,18 +57,9 @@ if (!fsSync.existsSync(uploadDir)) {
   console.log('✅ Created upload directory:', uploadDir);
 }
 
-// ✅ UPDATED: Better upload configuration
+// ✅ UPDATED: Cloudinary upload configuration
 exports.uploadFile = multer({
-  storage: multer.diskStorage({
-    destination: function (req, file, callback) {
-      callback(null, uploadDir);
-    },
-    filename: function (req, file, callback) {
-      const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      const ext = path.extname(file.originalname);
-      callback(null, file.fieldname + "-" + uniqueSuffix + ext);
-    },
-  }),
+  storage: storage,
   limits: {
     fileSize: 1024 * 1024 * 5, // 5MB
   },
@@ -86,17 +78,41 @@ exports.uploadFile = multer({
 
 exports.removeFile = async (fileName) => {
   if (!fileName) return true;
+
+  // ✅ New Cloudinary Deletion Logic
+  if (fileName.includes("res.cloudinary.com")) {
+    try {
+      // Extract public_id from URL: .../upload/v12345/folder/id.jpg
+      const parts = fileName.split('/');
+      const lastPart = parts[parts.length - 1]; // "id.jpg"
+      const folderPart = parts[parts.length - 2]; // "petronas-products" (if applicable)
+
+      let publicId = lastPart.split('.')[0]; // "id"
+      if (folderPart && folderPart !== 'upload') {
+        publicId = `${folderPart}/${publicId}`;
+      }
+
+      console.log('☁️ Attempting Cloudinary delete for:', publicId);
+      await deleteImage(publicId);
+      return "Cloudinary file deleted successfully";
+    } catch (err) {
+      console.error('❌ Cloudinary delete error:', err.message);
+      return true;
+    }
+  }
+
+  // Fallback to local deletion for legacy files
   const filePath = path.join(uploadDir, fileName);
   try {
     await fs.unlink(filePath);
-    console.log('✅ File deleted:', fileName);
-    return "File deleted successfully";
+    console.log('✅ Local file deleted:', fileName);
+    return "Local file deleted successfully";
   } catch (err) {
     if (err.code === 'ENOENT') {
       console.log('ℹ️ Item already removed or not found:', fileName);
       return "File not found, but that's okay";
     }
-    console.error('❌ Error deleting file:', err.message);
+    console.error('❌ Error deleting local file:', err.message);
     return true;
   }
 };
