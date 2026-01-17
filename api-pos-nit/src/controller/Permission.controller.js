@@ -116,8 +116,8 @@ exports.getUserPermissions = async (req, res) => {
         p.web_route_key
       FROM permissions p
       INNER JOIN permission_roles pr ON p.id = pr.permission_id
-      INNER JOIN user_roles ur ON pr.role_id = ur.role_id
-      WHERE ur.user_id = :user_id
+      INNER JOIN user u ON pr.role_id = u.role_id
+      WHERE u.id = :user_id
       ORDER BY p.\`group\`, p.name
     `, { user_id });
 
@@ -181,8 +181,7 @@ exports.getPermissionsByBranch = async (req, res) => {
         COUNT(DISTINCT p.id) as permission_count
       FROM user u
       INNER JOIN role r ON u.role_id = r.id
-      LEFT JOIN user_roles ur ON u.id = ur.user_id
-      LEFT JOIN permission_roles pr ON ur.role_id = pr.role_id
+      LEFT JOIN permission_roles pr ON u.role_id = pr.role_id
       LEFT JOIN permissions p ON pr.permission_id = p.id
       WHERE u.branch_name = :branch_name
       GROUP BY u.id, u.name, u.username, u.branch_name, r.name, r.code
@@ -197,16 +196,15 @@ exports.getPermissionsByBranch = async (req, res) => {
         AVG(perm_counts.perm_count) as avg_permissions_per_user
       FROM user u
       INNER JOIN role r ON u.role_id = r.id
-      LEFT JOIN user_roles ur ON u.id = ur.user_id
-      LEFT JOIN permission_roles pr ON ur.role_id = pr.role_id
+      LEFT JOIN permission_roles pr ON u.role_id = pr.role_id
       LEFT JOIN permissions p ON pr.permission_id = p.id
       LEFT JOIN (
         SELECT 
-          ur2.user_id,
+          u2.id as user_id,
           COUNT(DISTINCT pr2.permission_id) as perm_count
-        FROM user_roles ur2
-        INNER JOIN permission_roles pr2 ON ur2.role_id = pr2.role_id
-        GROUP BY ur2.user_id
+        FROM user u2
+        INNER JOIN permission_roles pr2 ON u2.role_id = pr2.role_id
+        GROUP BY u2.id
       ) as perm_counts ON u.id = perm_counts.user_id
       WHERE u.branch_name = :branch_name
     `, { branch_name });
@@ -273,7 +271,7 @@ exports.updateRolePermissions = async (req, res) => {
 
       // ✅ Insert new permissions
       if (permission_ids && permission_ids.length > 0) {
-        const values = permission_ids.map(perm_id => 
+        const values = permission_ids.map(perm_id =>
           `(${role_id}, ${perm_id})`
         ).join(', ');
 
@@ -330,10 +328,10 @@ exports.updateRolePermissions = async (req, res) => {
 ${currentUser[0]?.name} (${currentUser[0]?.username})
 
 ⏰ <b>Time:</b> ${new Date().toLocaleString('en-US', {
-  timeZone: 'Asia/Phnom_Penh',
-  dateStyle: 'full',
-  timeStyle: 'long'
-})}
+        timeZone: 'Asia/Phnom_Penh',
+        dateStyle: 'full',
+        timeStyle: 'long'
+      })}
       `;
 
       sendTelegramMessagenewLogin(alertMessage).catch(err => {
@@ -477,7 +475,7 @@ exports.cloneRolePermissions = async (req, res) => {
       );
 
       // ✅ Copy permissions
-      const values = sourcePermissions.map(p => 
+      const values = sourcePermissions.map(p =>
         `(${target_role_id}, ${p.permission_id})`
       ).join(', ');
 
@@ -594,10 +592,10 @@ exports.createPermission = async (req, res) => {
 ${currentUser[0]?.name} (${currentUser[0]?.username})
 
 ⏰ <b>Time:</b> ${new Date().toLocaleString('en-US', {
-  timeZone: 'Asia/Phnom_Penh',
-  dateStyle: 'full',
-  timeStyle: 'long'
-})}
+      timeZone: 'Asia/Phnom_Penh',
+      dateStyle: 'full',
+      timeStyle: 'long'
+    })}
     `;
 
     sendTelegramMessagenewLogin(alertMessage).catch(err => {
@@ -822,10 +820,10 @@ exports.deletePermission = async (req, res) => {
 ${currentUser[0]?.name} (${currentUser[0]?.username})
 
 ⏰ <b>Time:</b> ${new Date().toLocaleString('en-US', {
-  timeZone: 'Asia/Phnom_Penh',
-  dateStyle: 'full',
-  timeStyle: 'long'
-})}
+        timeZone: 'Asia/Phnom_Penh',
+        dateStyle: 'full',
+        timeStyle: 'long'
+      })}
       `;
 
       sendTelegramMessagenewLogin(alertMessage).catch(err => {

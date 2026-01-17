@@ -42,33 +42,32 @@ const {
   postResponseAnalyzer
 } = require('./src/middleware/securityMonitoring.middleware');
 
-// CORS Configuration - Allow Vercel domains
+// CORS Configuration - Robust Origin Checking
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin
+    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
 
-    // Allow localhost
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      console.log('✅ CORS allowed (localhost):', origin);
-      return callback(null, true);
-    }
+    const allowedOrigins = [
+      'https://petronas-camo-online.vercel.app',
+      'https://petronascamo-online.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
 
-    // Allow any Vercel deployment (preview + production)
-    if (origin.includes('.vercel.app')) {
-      console.log('✅ CORS allowed (Vercel):', origin);
-      return callback(null, true);
-    }
+    // Check if origin matches exactly or is a vercel subdomain
+    const isAllowed = allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.railway.app') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1');
 
-    // Allow Render
-    if (origin.includes('onrender.com')) {
-      console.log('✅ CORS allowed (Render):', origin);
-      return callback(null, true);
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`❌ CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
     }
-
-    console.log('❌ CORS blocked:', origin);
-    const msg = `CORS policy: Origin ${origin} is not allowed`;
-    return callback(new Error(msg), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -100,7 +99,7 @@ app.use('/api/public', express.static(path.join(__dirname, 'public'), {
 
 // Security middleware
 app.use(checkIPBlacklist);
-app.use('/api', rateLimitMonitoring(100, 60000));
+app.use('/api', rateLimitMonitoring(500, 60000));
 app.use(trackUserActivity);
 app.use(postResponseAnalyzer);
 
@@ -186,9 +185,28 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`📍 Server running at http://localhost:${PORT}`);
 });
-=======
+
 const PORT = process.env.PORT || 1000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server on port ${PORT}`);
   console.log('🔒 CORS: Vercel wildcard enabled');
+});
+
+  // ✅ Test Database Connection on Startup
+  try {
+    const { db } = require("./src/util/helper");
+    await db.query("SELECT 1");
+    console.log("✅ Database connected successfully");
+  } catch (dbErr) {
+    console.error("❌ Database Connection Failed!");
+    console.error("Error Code:", dbErr.code);
+    console.error("Error Details:", dbErr.message);
+
+    // Suggest common fixes based on error code
+    if (dbErr.code === 'ECONNREFUSED') {
+      console.error("💡 TIP: The host/port is wrong or the DB is down. Check your environment variables (MYSQLHOST/MYSQLPORT).");
+    } else if (dbErr.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error("💡 TIP: Username or password incorrect. Check MYSQLUSER/MYSQLPASSWORD.");
+    }
+  }
 });

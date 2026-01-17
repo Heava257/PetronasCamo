@@ -1092,7 +1092,20 @@ exports.getone = async (req, res) => {
       INNER JOIN category c ON p.category_id = c.id
       INNER JOIN \`order\` o ON od.order_id = o.id
       WHERE od.order_id = ?
-      GROUP BY od.order_id, p.name, c.name, od.price, p.discount, p.unit, o.total_amount, p.category_id, o.customer_id
+      GROUP BY 
+        od.order_id, 
+        p.name, 
+        c.name, 
+        od.price, 
+        p.discount, 
+        p.unit, 
+        o.total_amount, 
+        p.category_id, 
+        o.customer_id, 
+        o.pre_order_no,
+        od.product_id,
+        o.id,
+        o.create_at
       ORDER BY c.name, p.name
     `;
 

@@ -15,11 +15,11 @@ module.exports = {
     image_path: "/public/", // URL path, NOT disk path
 
     db: {
-      HOST: process.env.DB_HOST,
-      USER: process.env.DB_USER,
-      PASSWORD: process.env.DB_PASSWORD,
-      DATABASE: process.env.DB_DATABASE,
-      PORT: process.env.DB_PORT || 3306,
+      HOST: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
+      USER: process.env.DB_USER || process.env.MYSQLUSER,
+      PASSWORD: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+      DATABASE: process.env.DB_DATABASE || process.env.MYSQLDATABASE,
+      PORT: process.env.DB_PORT || process.env.MYSQLPORT || 3306,
     },
 
     token: {
@@ -35,3 +35,42 @@ module.exports = {
     },
   },
 };
+
+// --- Railway/Render URL Parsing Support ---
+const dbUrl = process.env.MYSQL_URL || process.env.DATABASE_URL;
+if (dbUrl && dbUrl.startsWith("mysql://")) {
+  try {
+    const url = new URL(dbUrl);
+    module.exports.config.db.HOST = url.hostname;
+    module.exports.config.db.USER = url.username;
+    module.exports.config.db.PASSWORD = decodeURIComponent(url.password);
+    module.exports.config.db.DATABASE = url.pathname.replace("/", "");
+    module.exports.config.db.PORT = url.port || 3306;
+    console.log("📍 Parsed database connection from MYSQL_URL/DATABASE_URL");
+  } catch (err) {
+    console.warn("⚠️ Failed to parse database URL:", err.message);
+  }
+}
+
+// --- Discovery Mode: finding available DB environment variables ---
+console.log("🔍 Environment Variable Discovery:");
+const interestingKeys = Object.keys(process.env).filter(key =>
+  key.includes("DB") || key.includes("MYSQL") || key.includes("HOST") || key.includes("USER") || key.includes("PASS")
+);
+interestingKeys.forEach(key => {
+  let val = process.env[key];
+  if (key.includes("PASS") || key.includes("URL") || key.includes("TOKEN")) {
+    val = val ? "[HIDDEN]" : "[EMPTY]";
+  }
+  console.log(`   ${key}: ${val}`);
+});
+
+// --- Debug Logging for Database (Final Config) ---
+const dbCfg = module.exports.config.db;
+console.log("🔗 Final Database Configuration:");
+console.log(`   Host: ${dbCfg.HOST}`);
+console.log(`   User: ${dbCfg.USER}`);
+console.log(`   DB:   ${dbCfg.DATABASE}`);
+console.log(`   Port: ${dbCfg.PORT}`);
+console.log(`   Password Set: ${dbCfg.PASSWORD ? "YES" : "NO"}`);
+// ----------------------------------

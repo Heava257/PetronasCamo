@@ -191,7 +191,7 @@ exports.updateuserProfile = async (req, res) => {
 
   try {
     const { name, username } = req.body;
-    
+
     // ✅ Validate required fields
     if (!name || !username) {
       return res.status(400).json({
@@ -231,7 +231,7 @@ exports.updateuserProfile = async (req, res) => {
 
     // ✅ Handle profile image
     let profileImage = currentUser[0].profile_image; // Keep existing image by default
-    
+
     if (req.file) {
       // New image uploaded
       profileImage = req.file.filename;
@@ -1059,7 +1059,7 @@ exports.changePassword = async (req, res) => {
   } catch (error) {
     console.error("Change password error:", error);
     logError("auth.changePassword", error, res);
-    
+
     return res.status(500).json({
       success: false,
       message: "Failed to change password",
@@ -1198,7 +1198,7 @@ exports.login = async (req, res) => {
     // Try to log activity (optional - don't block login)
     const clientIP = req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown';
     const userAgent = req.get('User-Agent') || 'Unknown';
-    
+
     // All logging is optional
     try {
       await exports.logLoginActivity({
@@ -1234,7 +1234,7 @@ exports.login = async (req, res) => {
 
   } catch (error) {
     console.error("❌ Login error:", error);
-    
+
     return res.status(500).json({
       error: {
         message: "Internal server error",
@@ -1616,25 +1616,21 @@ const revokeRefreshToken = async (userId, refreshToken) => {
 
 const getPermissionByUser = async (user_id) => {
   let sql =
-    "   SELECT  " +
-    " DISTINCT " +
+    " SELECT DISTINCT " +
     " p.id, " +
     " p.name, " +
     " p.group, " +
     " p.is_menu_web, " +
     " p.web_route_key " +
-    " FROM permissions  p " +
+    " FROM permissions p " +
     " INNER JOIN permission_roles pr ON p.id = pr.permission_id " +
-    " INNER JOIN `role` r ON pr.role_id = r.id " +
-    " INNER JOIN user_roles ur ON r.id = ur.role_id " +
-    " WHERE ur.user_id = :user_id; "
+    " INNER JOIN role r ON pr.role_id = r.id " +
+    " INNER JOIN user u ON r.id = u.role_id " +
+    " WHERE u.id = :user_id; ";
 
-
-  const [permission] = await db.query(sql, { user_id })
+  const [permission] = await db.query(sql, { user_id });
   return permission;
-
-
-}
+};
 
 const getAccessToken = async (userId, roleId, tokenVersion = 0) => {
   const access_token = await jwt.sign(

@@ -1,0 +1,14 @@
+@font-face {
+    font-family: 'KhmerOS';
+    src: url('/fonts/KhmerOS.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'KhmerOSSiemreap';
+    src: url('/fonts/KhmerOSSiemreap.ttf') format('truetype');
+}
+
+@font-face {
+    font-family: 'KhmerOSFasthand';
+    src: url('/fonts/KhmerOSFasthand.ttf') format('truetype');
+}
