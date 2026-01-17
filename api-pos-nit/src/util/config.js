@@ -15,11 +15,12 @@ module.exports = {
     image_path: "/public/", // URL path, NOT disk path
 
     db: {
-      HOST: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
-      USER: process.env.DB_USER || process.env.MYSQLUSER,
-      PASSWORD: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
-      DATABASE: process.env.DB_DATABASE || process.env.MYSQLDATABASE,
-      PORT: process.env.DB_PORT || process.env.MYSQLPORT || 3306,
+      // PREFER MYSQL* variables as they are auto-injected by Railway for production
+      HOST: process.env.MYSQLHOST || process.env.DB_HOST || "localhost",
+      USER: process.env.MYSQLUSER || process.env.DB_USER || "root",
+      PASSWORD: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
+      DATABASE: process.env.MYSQLDATABASE || process.env.DB_DATABASE,
+      PORT: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
     },
 
     token: {
