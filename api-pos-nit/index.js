@@ -11,9 +11,33 @@ const {
   postResponseAnalyzer
 } = require('./src/middleware/securityMonitoring.middleware');
 
-// CORS Configuration - Allow Vercel domains
+// CORS Configuration - Robust Origin Checking
 app.use(cors({
-origin: ['https://petronascamo-online.vercel.app'],
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = [
+      'https://petronas-camo-online.vercel.app',
+      'https://petronascamo-online.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
+
+    // Check if origin matches exactly or is a vercel subdomain
+    const isAllowed = allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.railway.app') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1');
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`❌ CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
