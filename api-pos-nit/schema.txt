@@ -1,0 +1,30 @@
+Field	Type	Null	Key	Default	Extra
+id	int(11)	NO	PRI	NULL	auto_increment
+notification_type	varchar(50)	YES	MUL	NULL	
+title	varchar(255)	NO		NULL	
+message	text	NO		NULL	
+data	longtext	YES		NULL	
+order_id	int(11)	YES	MUL	NULL	
+order_no	varchar(50)	YES		NULL	
+customer_id	int(11)	YES	MUL	NULL	
+customer_name	varchar(255)	YES		NULL	
+customer_address	text	YES		NULL	
+customer_tel	varchar(50)	YES		NULL	
+total_amount	decimal(15,2)	YES		NULL	
+total_liters	decimal(15,2)	YES		NULL	
+card_number	varchar(100)	YES		NULL	
+user_id	int(11)	YES	MUL	NULL	
+created_by	varchar(255)	YES		NULL	
+branch_name	varchar(255)	YES		NULL	
+group_id	int(11)	YES		NULL	
+is_read	tinyint(1)	YES	MUL	0	
+read_by	longtext	YES		NULL	
+read_at	datetime	YES		NULL	
+priority	enum('low','normal','high','critical')	YES	MUL	normal	
+severity	enum('info','success','warning','error','critical')	YES		info	
+icon	varchar(50)	YES		?	
+color	varchar(20)	YES		blue	
+action_url	varchar(255)	YES		NULL	
+expires_at	datetime	YES		NULL	
+created_at	timestamp	NO	MUL	current_timestamp()	
+updated_at	timestamp	NO		current_timestamp()	on update current_timestamp()

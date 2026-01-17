@@ -30,8 +30,7 @@ const autoAssignGroupIdByBranch = async (branch_name, user_id, role_code) => {
       return adminGroupId;
     }
 
-    // If no admin found in branch, create a new group (use user's own ID)
-    console.warn(`⚠️ No admin found in branch "${branch_name}". Creating new group for user ${user_id}`);
+    // No admin found in branch, create a new group (use user's own ID)
     return user_id;
 
   } catch (error) {
@@ -2114,8 +2113,6 @@ exports.updateUserBySuperAdmin = async (req, res) => {
               const adminGroupId = adminInBranch[0].group_id || adminInBranch[0].id;
               updateFields.push('group_id = :new_group_id');
               params.new_group_id = adminGroupId;
-            } else {
-              console.warn(`⚠️ No admin found in branch "${userBranch}". Keeping current group_id.`);
             }
           }
         }

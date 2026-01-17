@@ -3,7 +3,7 @@ import { Form, Button, message, Input, Alert } from "antd";
 import { request } from "../../util/helper";
 import { setAcccessToken, setPermission, setProfile } from "../../store/profile.store";
 import { useNavigate } from "react-router-dom";
-import logo from "../../assets/petronas.png";
+import logo from "../../assets/petronas_header.png";
 import WelcomeAnimation3D from "../../component/layout/WelcomeAnimation ";
 import { UserOutlined, LockOutlined, ArrowRightOutlined, CustomerServiceOutlined, ClockCircleOutlined, InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
 import { FaTelegramPlane, FaGoogle, FaApple } from "react-icons/fa";

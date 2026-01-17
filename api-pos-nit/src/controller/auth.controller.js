@@ -57,7 +57,6 @@ exports.getList = async (req, res) => {
 
     // ✅✅✅ AUTO-FIX: If Admin has NULL group_id, fix it NOW ✅✅✅
     if (userRoleId === 1 && (!userGroupId || userGroupId === 0)) {  // role_id = 1 is Admin
-      console.warn(`⚠️ FIXING: Admin ${currentUser[0].name} has NULL group_id. Setting to ${currentUserId}`);
 
       try {
         await db.query(
@@ -682,7 +681,7 @@ exports.register = async (req, res) => {
     }
     // Fix regular users with group_id = 0
     else if (!finalGroupId || finalGroupId === 0 || finalGroupId === '0') {
-      console.warn('⚠️ Regular user created with group_id = 0, attempting auto-assignment...');
+      // Auto-assigning regular user...
 
       // Assign to first available admin in same branch
       const [defaultAdmin] = await db.query(`

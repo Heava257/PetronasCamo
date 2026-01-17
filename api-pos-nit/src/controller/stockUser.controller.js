@@ -1050,7 +1050,7 @@ exports.updateCustomerDebt = async (req, res) => {
     }
 
     const slipFiles = req.files?.["upload_image_optional"] || [];
-    const slipPaths = slipFiles.map((file) => file.filename);
+    const slipPaths = slipFiles.map((file) => file.path || file.filename);
 
     const [paymentResult] = await connection.query(
       `INSERT INTO payments (
@@ -1226,8 +1226,8 @@ exports.updateCustomerDebt = async (req, res) => {
         branch_name: branch_name || null,
         group_id: null,  // ✅ NULL = visible to all Super Admins
 
-        priority: paymentAmount >= 1000 ? 'high' : 'normal',
-        severity: paymentAmount >= 5000 ? 'critical' : paymentAmount >= 1000 ? 'high' : 'normal',
+        priority: paymentAmount >= 5000 ? 'critical' : paymentAmount >= 1000 ? 'high' : 'normal',
+        severity: paymentAmount >= 5000 ? 'critical' : paymentAmount >= 1000 ? 'warning' : 'info',
         icon: '💰',
         color: 'green',
         action_url: `/payments/${paymentResult.insertId}`,
@@ -1263,7 +1263,7 @@ exports.updateCustomerDebt = async (req, res) => {
 
     }
 
-    const imageUrls = slipPaths.map(f => config.image_path + f);
+    const imageUrls = slipPaths.map(f => (f && f.startsWith('http')) ? f : config.image_path + f);
 
     res.json({
       success: true,
