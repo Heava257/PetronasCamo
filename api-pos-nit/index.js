@@ -26,10 +26,8 @@ app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     const allowedOrigins = [
-      'https://petronas-camo-online.vercel.app',
-      'https://petronascamo-online.vercel.app',
       'https://web-pos-nit-production.up.railway.app',
-      'https://frontend-production-063f.up.railway.app', // ✅ New Railway Frontend
+      'https://petronas-cambodia.up.railway.app', // ✅ New Railway Frontend
       'http://localhost:5173',
       'http://localhost:3000'
     ];
