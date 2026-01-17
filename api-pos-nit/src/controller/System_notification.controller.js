@@ -15,7 +15,7 @@ const isSuperAdmin = async (userId) => {
     if (!user.length) return false;
     
     // ✅ Super Admin has role_id = 29 (from role table)
-    return user[0].role_id === 29;
+    return user[0].role_id === 1;
            
   } catch (error) {
     console.error('Error checking Super Admin status:', error);
@@ -121,7 +121,7 @@ exports.getNotifications = async (req, res) => {
 
     // Check Super Admin
     const user = req.auth;
-    const isSuperAdmin = user?.role_id === 29; // Adjust if needed
+    const isSuperAdmin = user?.role_id === 1; // Adjust if needed
 
     if (!isSuperAdmin) {
       return res.status(403).json({
@@ -466,7 +466,7 @@ try {
 
     // Check Super Admin
     const user = req.auth;
-    const isSuperAdmin = user?.role_id === 29;
+    const isSuperAdmin = user?.role_id === 1;
 
     if (!isSuperAdmin) {
       return res.status(403).json({
