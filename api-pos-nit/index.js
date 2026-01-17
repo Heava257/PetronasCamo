@@ -13,32 +13,7 @@ const {
 
 // CORS Configuration - Allow Vercel domains
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin
-    if (!origin) return callback(null, true);
-
-    // Allow localhost
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      console.log('✅ CORS allowed (localhost):', origin);
-      return callback(null, true);
-    }
-
-    // Allow any Vercel deployment (preview + production)
-    if (origin.includes('.vercel.app')) {
-      console.log('✅ CORS allowed (Vercel):', origin);
-      return callback(null, true);
-    }
-
-    // Allow Render
-    if (origin.includes('onrender.com')) {
-      console.log('✅ CORS allowed (Render):', origin);
-      return callback(null, true);
-    }
-
-    console.log('❌ CORS blocked:', origin);
-    const msg = `CORS policy: Origin ${origin} is not allowed`;
-    return callback(new Error(msg), false);
-  },
+origin: ['https://petronascamo-online.vercel.app'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
