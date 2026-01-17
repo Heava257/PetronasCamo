@@ -720,12 +720,6 @@ const CleanDarkLayout = () => {
               </div>
             )}
 
-            {isPermission("customer.getlist") && (
-              <div className="header-icon">
-                <NotificationPanel />
-              </div>
-            )}
-
             <Link to="/attendance">
               <div className="header-icon" title="Attendance">
                 <HomeOutlined />
