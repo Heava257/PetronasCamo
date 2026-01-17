@@ -1,32 +1,37 @@
 let localConfig = {};
 try {
-  localConfig = require("./config.local"); // Only works locally
-} catch (err) {
-  console.warn("Local config file not found, using default settings");
+  localConfig = require("./config.local");
+} catch {
+  console.warn("Local config not found, using env variables");
 }
 
 module.exports = {
   config: {
     app_name: "POS-NIT",
     app_version: "1.0",
-    frontend_url: "http://localhost:3000",
 
-    image_path: "C:/xampp/htdocs/fullstack/",
-    db: localConfig.db || {
-      HOST: "localhost",
-      USER: "root",
-      PASSWORD: "",
-      DATABASE: "petronas_last4_full",
-      PORT: 3306,
+    frontend_url: process.env.FRONTEND_URL || "http://localhost:5173",
+
+    image_path: "/public/", // URL path, NOT disk path
+
+    db: {
+      HOST: process.env.DB_HOST,
+      USER: process.env.DB_USER,
+      PASSWORD: process.env.DB_PASSWORD,
+      DATABASE: process.env.DB_DATABASE,
+      PORT: process.env.DB_PORT || 3306,
     },
 
-    token: localConfig.token || {
-      access_token_key: "#$*%*(*234898ireiuLJEROI#@)(#)$*@#)*$(@948858839798283838jaflke",
+    token: {
+      access_token_key:
+        process.env.ACCESS_TOKEN_KEY ||
+        localConfig.token?.access_token_key ||
+        "POS_NIT_DEFAULT_ACCESS_TOKEN_SECRET_2024", // Fallback to prevent crash
+
       refresh_token_key:
-        "REFRESH#$*%*(*234898ireiuLJEROI#@)(#)$*@#)*$(@948858839798283838jaflkeREFRESH",
+        process.env.REFRESH_TOKEN_KEY ||
+        localConfig.token?.refresh_token_key ||
+        "POS_NIT_DEFAULT_REFRESH_TOKEN_SECRET_2024", // Fallback to prevent crash
     },
   },
 };
-  
-
-

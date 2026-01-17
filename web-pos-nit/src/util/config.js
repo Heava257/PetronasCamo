@@ -1,20 +1,25 @@
-//frontend
+const isLocalhost = 
+  window.location.hostname === "localhost" || 
+  window.location.hostname === "127.0.0.1";
 
 export const Config = {
-  base_url: import.meta.env.VITE_API_URL || "http://localhost:3000/api/",
+  // IMPORTANT: Add trailing slash!
+  base_url: isLocalhost 
+    ? "http://localhost:8000/api/"
+    : "https://petronas-api.onrender.com/api/",  // ← Note the trailing slash
+  
   version: "1.0",
   token: "",
-  image_path: import.meta.env.VITE_IMAGE_PATH || "http://localhost/fullstack/",
+  
+  image_path: isLocalhost 
+    ? "http://localhost:8000/api/public/"
+    : "https://petronas-api.onrender.com/api/public/",
+  
   getFullImagePath: (imagePart) => `${Config.image_path}${imagePart}`,
 };
 
-
-
-
-// export const Config = {
-//   base_url: "https://api.coredev.online/api/",
-//   version: "1.0",
-//   token: "",
-//   image_path: "https://api.coredev.online/public/", // Removed the incorrect colon after 'localhost'
-//   getFullImagePath: (imagePart) => `${Config.image_path}${imagePart}`, // Helper function
-// };
+// Debug
+console.log('🔧 API Config:', {
+  base_url: Config.base_url,
+  environment: isLocalhost ? 'localhost' : 'production'
+});

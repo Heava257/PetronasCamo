@@ -17,6 +17,7 @@ const processQueue = (error, token = null) => {
     }
   });
   
+  
   failedQueue = [];
 };
 
