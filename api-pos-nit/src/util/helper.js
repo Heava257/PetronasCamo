@@ -92,6 +92,10 @@ exports.removeFile = async (fileName) => {
     console.log('✅ File deleted:', fileName);
     return "File deleted successfully";
   } catch (err) {
+    if (err.code === 'ENOENT') {
+      console.log('ℹ️ Item already removed or not found:', fileName);
+      return "File not found, but that's okay";
+    }
     console.error('❌ Error deleting file:', err.message);
     return true;
   }
