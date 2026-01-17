@@ -2,8 +2,16 @@ require('dotenv').config();
 const express = require("express");
 const cors = require("cors");
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
+
+// ✅ Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('✅ Created uploads directory');
+}
 
 // Middlewares
 const { trackUserActivity } = require('./src/middleware/activity_tracker.middleware');
@@ -48,13 +56,21 @@ app.options('*', cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-// Static files
+// ✅ Static files configuration
 const staticOptions = {
   setHeaders: (res) => {
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.set('Cache-Control', 'public, max-age=31536000');
   }
 };
+
+// Serve uploads from multiple paths for flexibility
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), staticOptions));
+app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads'), staticOptions));
+app.use('/api/public/uploads', express.static(path.join(__dirname, 'public/uploads'), staticOptions));
+
+// Legacy support
 app.use('/public', express.static(path.join(__dirname, 'public'), staticOptions));
 app.use('/api/public', express.static(path.join(__dirname, 'public'), staticOptions));
 
@@ -66,7 +82,12 @@ app.use(postResponseAnalyzer);
 
 // Routes
 app.get('/', (req, res) => {
-  res.json({ name: "Petronas POS API", version: "1.0", status: "OK" });
+  res.json({ 
+    name: "Petronas POS API", 
+    version: "1.0", 
+    status: "OK",
+    timestamp: new Date()
+  });
 });
 
 require("./src/route/category.route")(app);
@@ -112,17 +133,29 @@ try {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ success: true, status: 'healthy', timestamp: new Date() });
+  res.json({ 
+    success: true, 
+    status: 'healthy', 
+    timestamp: new Date(),
+    uptime: process.uptime()
+  });
 });
 
 // Test API
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working!' });
+  res.json({ 
+    message: 'API is working!',
+    timestamp: new Date()
+  });
 });
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ error: true, message: 'Route not found', path: req.path });
+  res.status(404).json({ 
+    error: true, 
+    message: 'Route not found', 
+    path: req.path 
+  });
 });
 
 // Global Error Handler
@@ -135,9 +168,10 @@ app.use((err, req, res, next) => {
 });
 
 // Server Startup
-const PORT = process.env.PORT || 1000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, async () => {
-  console.log(`🚀 Server on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📁 Uploads directory: ${uploadsDir}`);
 
   // ✅ Test Database Connection on Startup
   try {
@@ -153,6 +187,8 @@ app.listen(PORT, async () => {
       console.error("💡 TIP: Host/port is wrong or DB is down. Check MYSQLHOST/MYSQLPORT.");
     } else if (dbErr.code === 'ER_ACCESS_DENIED_ERROR') {
       console.error("💡 TIP: Credentials incorrect. Check MYSQLUSER/MYSQLPASSWORD.");
+    } else if (dbErr.code === 'ER_BAD_DB_ERROR') {
+      console.error("💡 TIP: Database doesn't exist. Check MYSQLDATABASE.");
     }
   }
 });

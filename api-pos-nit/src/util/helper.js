@@ -6,6 +6,8 @@ const multer = require("multer");
 const axios = require('axios');
 const crypto = require('crypto');
 const { rateLimit } = require("express-rate-limit");
+const fsSync = require("fs");
+const path = require("path");
 
 exports.db = connection;
 exports.logError = logError;
@@ -13,6 +15,8 @@ exports.logError = logError;
 exports.generateSessionToken = () => {
   return crypto.randomBytes(64).toString('hex');
 };
+
+
 
 exports.toInt = () => {
   return true;
@@ -46,39 +50,50 @@ exports.formartDateServer = (data) => {
 exports.formartDateClient = (data) => {
   return true;
 };
+const uploadDir = path.join(__dirname, '../public/uploads');
+if (!fsSync.existsSync(uploadDir)) {
+  fsSync.mkdirSync(uploadDir, { recursive: true });
+  console.log('✅ Created upload directory:', uploadDir);
+}
 
+// ✅ UPDATED: Better upload configuration
 exports.uploadFile = multer({
   storage: multer.diskStorage({
-    destination: function (req, file, callback) { 
-      callback(null, config.image_path);
+    destination: function (req, file, callback) {
+      callback(null, uploadDir); // ✅ Use absolute path
     },
     filename: function (req, file, callback) {
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-      callback(null, file.fieldname + "-" + uniqueSuffix);
+      const ext = path.extname(file.originalname);
+      callback(null, file.fieldname + "-" + uniqueSuffix + ext);
     },
   }),
   limits: {
-    fileSize: 1024 * 1024 * 3,
+    fileSize: 1024 * 1024 * 5, // ✅ Increased to 5MB
   },
   fileFilter: function (req, file, callback) {
-    if (
-      file.mimetype != "image/png" &&
-      file.mimetype !== "image/jpg" &&
-      file.mimetype !== "image/jpeg"
-    ) {
-      callback(null, false);
-    } else {
+    const allowedTypes = /jpeg|jpg|png|gif|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    
+    if (mimetype && extname) {
       callback(null, true);
+    } else {
+      callback(new Error('Only image files (jpeg, jpg, png, gif, webp) are allowed!'), false);
     }
   },
 });
 
 exports.removeFile = async (fileName) => {
-  var filePath = config.image_path + fileName;
+  if (!fileName) return true;
+  
+  const filePath = path.join(uploadDir, fileName);
   try {
     await fs.unlink(filePath);
+    console.log('✅ File deleted:', fileName);
     return "File deleted successfully";
   } catch (err) {
+    console.error('❌ Error deleting file:', err.message);
     return true;
   }
 };
