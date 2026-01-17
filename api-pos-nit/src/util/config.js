@@ -19,6 +19,7 @@ const getDbConfig = () => {
         PASSWORD: decodeURIComponent(url.password),
         DATABASE: url.pathname.replace("/", ""),
         PORT: url.port || 3306,
+        namedPlaceholders: true, // ✅ CRITICAL for :user_id syntax
       };
     } catch (err) {
       console.warn("⚠️ Failed to parse database URL:", err.message);
@@ -38,8 +39,9 @@ const getDbConfig = () => {
     HOST: host,
     USER: user,
     PASSWORD: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
-    DATABASE: process.env.MYSQLDATABASE || process.env.DB_DATABASE,
+    DATABASE: process.env.MYSQLDATABASE || process.env.DB_DATABASE || "petronas_last4_full",
     PORT: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+    namedPlaceholders: true, // ✅ CRITICAL for :user_id syntax
   };
 };
 
@@ -50,10 +52,8 @@ module.exports = {
     app_name: "POS-NIT",
     app_version: "1.0",
     frontend_url: process.env.FRONTEND_URL || "http://localhost:5173",
-    
-    // ✅ FIXED: Use absolute path for uploads
-    image_path: path.join(__dirname, '../../public/uploads/'),
-    
+    image_path: "/public/", // URL path for frontend
+    upload_path: path.join(__dirname, '../../public/uploads/'), // Disk path for backend
     db: finalDb,
     token: {
       access_token_key: process.env.ACCESS_TOKEN_KEY || localConfig.token?.access_token_key || "POS_NIT_DEFAULT_ACCESS_TOKEN_SECRET_2024",
@@ -69,3 +69,4 @@ console.log(`   User: ${finalDb.USER}`);
 console.log(`   DB:   ${finalDb.DATABASE}`);
 console.log(`   Port: ${finalDb.PORT}`);
 console.log(`   Pass: ${finalDb.PASSWORD ? "[SET]" : "[NOT SET]"}`);
+console.log(`   NamedPlaceholders: ${finalDb.namedPlaceholders}`);

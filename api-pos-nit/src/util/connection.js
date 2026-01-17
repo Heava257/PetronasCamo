@@ -1,12 +1,14 @@
 const mysql = require('mysql2/promise');
+const { config } = require('./config');
 
-// ✅ Direct environment variable usage (most reliable for Railway)
+// ✅ Centralized MySQL Pool Configuration
 const pool = mysql.createPool({
-  host: process.env.MYSQLHOST || 'localhost',
-  user: process.env.MYSQLUSER || 'root',
-  password: process.env.MYSQLPASSWORD || '',
-  database: process.env.MYSQLDATABASE || 'petronas_camo_db',
-  port: parseInt(process.env.MYSQLPORT) || 3306,
+  host: config.db.HOST,
+  user: config.db.USER,
+  password: config.db.PASSWORD,
+  database: config.db.DATABASE,
+  port: parseInt(config.db.PORT),
+  namedPlaceholders: config.db.namedPlaceholders, // ✅ REQUIRED for :param syntax
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -14,23 +16,7 @@ const pool = mysql.createPool({
   keepAliveInitialDelay: 0
 });
 
-// ✅ Log connection details (without password)
-console.log('🔗 Database Connection Config:');
-console.log(`   Host: ${process.env.MYSQLHOST || 'localhost'}`);
-console.log(`   User: ${process.env.MYSQLUSER || 'root'}`);
-console.log(`   Database: ${process.env.MYSQLDATABASE || 'petronas_camo_db'}`);
-console.log(`   Port: ${process.env.MYSQLPORT || 3306}`);
-console.log(`   Password: ${process.env.MYSQLPASSWORD ? '[SET]' : '[NOT SET]'}`);
-
-// ✅ Test connection
-pool.getConnection()
-  .then(connection => {
-    console.log('✅ Database connected successfully');
-    connection.release();
-  })
-  .catch(err => {
-    console.error('❌ Database connection failed:', err.message);
-    console.error('Error code:', err.code);
-  });
+// ✅ Basic connection logging (detailed test occurs in index.js)
+console.log(`📡 MySQL Pool Initialized (${config.db.HOST}:${config.db.PORT})`);
 
 module.exports = pool;

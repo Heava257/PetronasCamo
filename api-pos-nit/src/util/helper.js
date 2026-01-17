@@ -16,8 +16,6 @@ exports.generateSessionToken = () => {
   return crypto.randomBytes(64).toString('hex');
 };
 
-
-
 exports.toInt = () => {
   return true;
 };
@@ -50,7 +48,9 @@ exports.formartDateServer = (data) => {
 exports.formartDateClient = (data) => {
   return true;
 };
-const uploadDir = path.join(__dirname, '../public/uploads');
+
+// ✅ Optimized Upload Directory Logic
+const uploadDir = config.upload_path;
 if (!fsSync.existsSync(uploadDir)) {
   fsSync.mkdirSync(uploadDir, { recursive: true });
   console.log('✅ Created upload directory:', uploadDir);
@@ -60,7 +60,7 @@ if (!fsSync.existsSync(uploadDir)) {
 exports.uploadFile = multer({
   storage: multer.diskStorage({
     destination: function (req, file, callback) {
-      callback(null, uploadDir); // ✅ Use absolute path
+      callback(null, uploadDir);
     },
     filename: function (req, file, callback) {
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -69,13 +69,13 @@ exports.uploadFile = multer({
     },
   }),
   limits: {
-    fileSize: 1024 * 1024 * 5, // ✅ Increased to 5MB
+    fileSize: 1024 * 1024 * 5, // 5MB
   },
   fileFilter: function (req, file, callback) {
     const allowedTypes = /jpeg|jpg|png|gif|webp/;
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
-    
+
     if (mimetype && extname) {
       callback(null, true);
     } else {
@@ -86,7 +86,6 @@ exports.uploadFile = multer({
 
 exports.removeFile = async (fileName) => {
   if (!fileName) return true;
-  
   const filePath = path.join(uploadDir, fileName);
   try {
     await fs.unlink(filePath);
@@ -292,7 +291,7 @@ exports.parseUserAgent = (userAgent) => {
     browser = 'Edge';
     version = ua.match(/edg\/(\d+\.\d+)/)?.[1] || '';
   }
-  
+
   let os = 'Unknown';
   if (ua.includes('windows nt 10.0')) os = 'Windows 10/11';
   else if (ua.includes('windows nt 6.3')) os = 'Windows 8.1';
@@ -306,7 +305,7 @@ exports.parseUserAgent = (userAgent) => {
   let deviceType = 'Desktop';
   if (ua.includes('mobile')) deviceType = 'Mobile';
   else if (ua.includes('tablet') || ua.includes('ipad')) deviceType = 'Tablet';
-  
+
   let platform = 'Unknown';
   if (ua.includes('win')) platform = 'Windows';
   else if (ua.includes('mac')) platform = 'MacOS';
@@ -329,18 +328,13 @@ exports.getLocationFromIP = async (ip) => {
   }
 };
 
-// ✅ FIXED: Custom IPv6-safe key generator
 const ipKeyGenerator = (req) => {
   try {
-    // Get IP from various sources
     const forwarded = req.headers['x-forwarded-for'];
-    const ip = forwarded 
+    const ip = forwarded
       ? forwarded.split(',')[0].trim()
       : req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress || 'unknown';
-    
-    // ✅ Normalize IPv6 (remove ::ffff: prefix)
     const normalizedIp = ip.replace(/^::ffff:/, '').replace(/^::1$/, '127.0.0.1');
-    
     return normalizedIp;
   } catch (error) {
     console.error('Error in ipKeyGenerator:', error);
@@ -348,7 +342,6 @@ const ipKeyGenerator = (req) => {
   }
 };
 
-// ✅ FIXED: Login limiter with IPv6 support
 exports.loginLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 10,
@@ -356,13 +349,8 @@ exports.loginLimiter = rateLimit({
   skipFailedRequests: false,
   standardHeaders: true,
   legacyHeaders: false,
-  
-  // ✅ Use custom IPv6-safe key generator
   keyGenerator: ipKeyGenerator,
-  
-  // ✅ Skip in development
   skip: (req) => process.env.NODE_ENV === 'development',
-  
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000 / 60);
     res.status(429).json({
@@ -370,23 +358,18 @@ exports.loginLimiter = rateLimit({
         message: `Too many login attempts. Please try again after ${retryAfter} minutes.`,
         message_kh: `ព្យាយាមចូលច្រើនពេក។ សូមព្យាយាមម្តងទៀតក្រោយពី ${retryAfter} នាទី។`,
         retry_after: retryAfter,
-        limit: req.rateLimit.limit,
-        current: req.rateLimit.current
       }
     });
   }
 });
 
-// ✅ FIXED: Failed login limiter
 exports.failedLoginLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 5,
   skipSuccessfulRequests: true,
   skipFailedRequests: false,
-  
   keyGenerator: ipKeyGenerator,
   skip: (req) => process.env.NODE_ENV === 'development',
-  
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000 / 60);
     res.status(429).json({
@@ -399,20 +382,16 @@ exports.failedLoginLimiter = rateLimit({
   }
 });
 
-// ✅ FIXED: Username limiter
 exports.usernameLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
   max: 5,
   skipSuccessfulRequests: true,
-  
   keyGenerator: (req) => {
     const username = req.body?.username || 'unknown';
     const ip = ipKeyGenerator(req);
     return `${username}-${ip}`;
   },
-  
   skip: (req) => process.env.NODE_ENV === 'development',
-  
   handler: (req, res) => {
     const retryAfter = Math.ceil((req.rateLimit.resetTime - Date.now()) / 1000 / 60);
     res.status(429).json({
@@ -439,7 +418,7 @@ exports.trackUserActivity = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Error in trackUserActivity middleware:', error);
-    next(); 
+    next();
   }
 };
 
@@ -470,7 +449,6 @@ exports.getOnlineUsers = async (req, res) => {
         AND u.last_activity >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
       ORDER BY u.last_activity DESC
     `);
-
     res.json({
       success: true,
       online_users: onlineUsers,
@@ -497,11 +475,9 @@ exports.getUserStatus = async (req, res) => {
         END AS computed_status
       FROM user u WHERE u.id = ?
     `, [user_id]);
-
     if (userStatus.length === 0) {
       return res.status(404).json({ error: true, message: 'User not found' });
     }
-
     res.json({ success: true, user: userStatus[0] });
   } catch (error) {
     console.error('Error getting user status:', error);
@@ -511,17 +487,8 @@ exports.getUserStatus = async (req, res) => {
 
 exports.markUserOffline = async (userId) => {
   try {
-    await connection.query(`
-      UPDATE user 
-      SET is_online = 0, online_status = 'offline'
-      WHERE id = ?
-    `, [userId]);
-
-    await connection.query(`
-      UPDATE user_online_status 
-      SET is_online = 0
-      WHERE user_id = ?
-    `, [userId]);
+    await connection.query(`UPDATE user SET is_online = 0, online_status = 'offline' WHERE id = ?`, [userId]);
+    await connection.query(`UPDATE user_online_status SET is_online = 0 WHERE user_id = ?`, [userId]);
   } catch (error) {
     console.error('Failed to mark user offline:', error);
   }
@@ -530,34 +497,21 @@ exports.markUserOffline = async (userId) => {
 exports.getAdminActivityStats = async (req, res) => {
   try {
     const [stats] = await connection.query(`
-      SELECT 
-        r.name AS role_name,
-        COUNT(*) AS total_users,
+      SELECT r.name AS role_name, COUNT(*) AS total_users,
         SUM(CASE WHEN u.is_online = 1 THEN 1 ELSE 0 END) AS online_count,
         SUM(CASE WHEN u.online_status = 'away' THEN 1 ELSE 0 END) AS away_count,
         SUM(CASE WHEN u.is_online = 0 THEN 1 ELSE 0 END) AS offline_count
-      FROM user u
-      INNER JOIN role r ON u.role_id = r.id
+      FROM user u INNER JOIN role r ON u.role_id = r.id
       WHERE u.is_active = 1 AND r.code IN ('ADMIN', 'SUPER_ADMIN')
       GROUP BY r.name
     `);
-
     const [onlineAdmins] = await connection.query(`
-      SELECT 
-        u.id, u.name, u.username, u.profile_image, u.online_status, u.last_activity,
-        r.name AS role_name
-      FROM user u
-      INNER JOIN role r ON u.role_id = r.id
+      SELECT u.id, u.name, u.username, u.profile_image, u.online_status, u.last_activity, r.name AS role_name
+      FROM user u INNER JOIN role r ON u.role_id = r.id
       WHERE u.is_online = 1 AND r.code IN ('ADMIN', 'SUPER_ADMIN')
       ORDER BY u.last_activity DESC
     `);
-
-    res.json({
-      success: true,
-      stats: stats,
-      online_admins: onlineAdmins,
-      timestamp: new Date()
-    });
+    res.json({ success: true, stats, online_admins: onlineAdmins, timestamp: new Date() });
   } catch (error) {
     console.error('Error getting admin activity stats:', error);
     res.status(500).json({ error: true, message: 'Failed to get admin activity stats' });
