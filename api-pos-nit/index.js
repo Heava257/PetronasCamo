@@ -152,7 +152,25 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 1000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Server on port ${PORT}`);
   console.log('🔒 CORS: Vercel wildcard enabled');
+
+  // ✅ Test Database Connection on Startup
+  try {
+    const { db } = require("./src/util/helper");
+    await db.query("SELECT 1");
+    console.log("✅ Database connected successfully");
+  } catch (dbErr) {
+    console.error("❌ Database Connection Failed!");
+    console.error("Error Code:", dbErr.code);
+    console.error("Error Details:", dbErr.message);
+
+    // Suggest common fixes based on error code
+    if (dbErr.code === 'ECONNREFUSED') {
+      console.error("💡 TIP: The host/port is wrong or the DB is down. Check your environment variables (MYSQLHOST/MYSQLPORT).");
+    } else if (dbErr.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error("💡 TIP: Username or password incorrect. Check MYSQLUSER/MYSQLPASSWORD.");
+    }
+  }
 });

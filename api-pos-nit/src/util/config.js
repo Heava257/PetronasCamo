@@ -15,11 +15,11 @@ module.exports = {
     image_path: "/public/", // URL path, NOT disk path
 
     db: {
-      HOST: process.env.DB_HOST,
-      USER: process.env.DB_USER,
-      PASSWORD: process.env.DB_PASSWORD,
-      DATABASE: process.env.DB_DATABASE,
-      PORT: process.env.DB_PORT || 3306,
+      HOST: process.env.DB_HOST || process.env.MYSQLHOST || "localhost",
+      USER: process.env.DB_USER || process.env.MYSQLUSER,
+      PASSWORD: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+      DATABASE: process.env.DB_DATABASE || process.env.MYSQLDATABASE,
+      PORT: process.env.DB_PORT || process.env.MYSQLPORT || 3306,
     },
 
     token: {
