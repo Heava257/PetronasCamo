@@ -28,6 +28,8 @@ app.use(cors({
     const allowedOrigins = [
       'https://petronas-camo-online.vercel.app',
       'https://petronascamo-online.vercel.app',
+      'https://web-pos-nit-production.up.railway.app',
+      'https://frontend-production-063f.up.railway.app', // ✅ New Railway Frontend
       'http://localhost:5173',
       'http://localhost:3000'
     ];
@@ -82,9 +84,9 @@ app.use(postResponseAnalyzer);
 
 // Routes
 app.get('/', (req, res) => {
-  res.json({ 
-    name: "Petronas POS API", 
-    version: "1.0", 
+  res.json({
+    name: "Petronas POS API",
+    version: "1.0",
     status: "OK",
     timestamp: new Date()
   });
@@ -133,9 +135,9 @@ try {
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ 
-    success: true, 
-    status: 'healthy', 
+  res.json({
+    success: true,
+    status: 'healthy',
     timestamp: new Date(),
     uptime: process.uptime()
   });
@@ -143,7 +145,7 @@ app.get('/health', (req, res) => {
 
 // Test API
 app.get('/api/test', (req, res) => {
-  res.json({ 
+  res.json({
     message: 'API is working!',
     timestamp: new Date()
   });
@@ -151,10 +153,10 @@ app.get('/api/test', (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
-  res.status(404).json({ 
-    error: true, 
-    message: 'Route not found', 
-    path: req.path 
+  res.status(404).json({
+    error: true,
+    message: 'Route not found',
+    path: req.path
   });
 });
 
