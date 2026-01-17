@@ -1,98 +1,194 @@
 require('dotenv').config();
-const express = require('express');
-const mysql = require('mysql2');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 
-/* ======================
-   BASIC MIDDLEWARE
-====================== */
+// ✅ Create uploads directory if it doesn't exist
+const uploadsDir = path.join(__dirname, 'public/uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('✅ Created uploads directory');
+}
+
+// Middlewares
+const { trackUserActivity } = require('./src/middleware/activity_tracker.middleware');
+const {
+  checkIPBlacklist,
+  rateLimitMonitoring,
+  postResponseAnalyzer
+} = require('./src/middleware/securityMonitoring.middleware');
+
+// Robust CORS Configuration
 app.use(cors({
-  origin: true,
-  credentials: true
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const allowedOrigins = [
+      'https://petronas-camo-online.vercel.app',
+      'https://petronascamo-online.vercel.app',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ];
+    const isAllowed = allowedOrigins.includes(origin) ||
+      origin.endsWith('.vercel.app') ||
+      origin.endsWith('.railway.app') ||
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1');
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      console.warn(`❌ CORS blocked for origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400
 }));
+
+app.options('*', cors());
+
+// Body parsing
 app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
-/* ======================
-   MYSQL CONNECTION
-====================== */
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  port: process.env.DB_PORT
-});
-
-db.connect((err) => {
-  if (err) {
-    console.error('❌ MySQL connection failed:', err.message);
-    process.exit(1);
+// ✅ Static files configuration
+const staticOptions = {
+  setHeaders: (res) => {
+    res.set('Access-Control-Allow-Origin', '*');
+    res.set('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.set('Cache-Control', 'public, max-age=31536000');
   }
-  console.log('✅ Connected to MySQL database!');
-});
+};
 
-/* ======================
-   STATIC FILES
-====================== */
-app.use('/public', express.static(path.join(__dirname, 'public')));
+// Serve uploads from multiple paths for flexibility
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), staticOptions));
+app.use('/public/uploads', express.static(path.join(__dirname, 'public/uploads'), staticOptions));
+app.use('/api/public/uploads', express.static(path.join(__dirname, 'public/uploads'), staticOptions));
 
-/* ======================
-   HEALTH & TEST
-====================== */
+// Legacy support
+app.use('/public', express.static(path.join(__dirname, 'public'), staticOptions));
+app.use('/api/public', express.static(path.join(__dirname, 'public'), staticOptions));
+
+// Security monitoring
+app.use(checkIPBlacklist);
+app.use('/api', rateLimitMonitoring(500, 60000));
+app.use(trackUserActivity);
+app.use(postResponseAnalyzer);
+
+// Routes
 app.get('/', (req, res) => {
-  res.json({
-    name: 'Petronas POS API',
-    status: 'OK'
-  });
-});
-
-app.get('/api/test', (req, res) => {
-  res.json({ message: 'API is working!' });
-});
-
-app.get('/health', (req, res) => {
-  res.json({
-    success: true,
+  res.json({ 
+    name: "Petronas POS API", 
+    version: "1.0", 
+    status: "OK",
     timestamp: new Date()
   });
 });
 
-/* ======================
-   ROUTES
-====================== */
 require("./src/route/category.route")(app);
 require("./src/route/auth.route")(app);
-// (keep the rest of your routes here)
+require("./src/route/role.route")(app);
+require("./src/route/supplier.route")(app);
+require("./src/route/config.route")(app);
+require("./src/route/product.route")(app);
+require("./src/route/customer.route")(app);
+require("./src/route/expanse.route")(app);
+require("./src/route/employee.route")(app);
+require("./src/route/order.route")(app);
+require("./src/route/dashbaord.route")(app);
+require("./src/route/report.route")(app);
+require("./src/route/currency.route")(app);
+require("./src/route/invoices.route")(app);
+require("./src/route/admin_stock_transfer.route")(app);
+require("./src/route/StockUser.route")(app);
+require("./src/route/expense_type.route")(app);
+require("./src/route/delivery.route")(app);
+require("./src/route/fakeinvoice.route")(app);
+require("./src/route/notification.route")(app);
+require("./src/route/online_status.route")(app);
+require("./src/route/activity_tracker.route")(app);
+require("./src/route/supperadmin.route")(app);
+require("./src/route/Permission.route")(app);
+require("./src/route/Security.route")(app);
+require("./src/route/purchase.route")(app);
+require("./src/route/Telegram.route")(app);
+require("./src/route/System_notification.route")(app);
+require("./src/route/inventory.route")(app);
+require("./src/route/Closing.route")(app);
+require("./src/route/Pre_order.route")(app);
+require("./src/route/Location.route")(app);
+require("./src/route/truck.route")(app);
 
-/* ======================
-   404 HANDLER
-====================== */
+// Optional route
+try {
+  require("./src/route/systemLog.routes")(app);
+} catch (err) {
+  console.log('⚠️ systemLog.routes not found, skipping...');
+}
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ 
+    success: true, 
+    status: 'healthy', 
+    timestamp: new Date(),
+    uptime: process.uptime()
+  });
+});
+
+// Test API
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    message: 'API is working!',
+    timestamp: new Date()
+  });
+});
+
+// 404 handler
 app.use((req, res) => {
-  res.status(404).json({
-    error: true,
-    message: 'Route not found'
+  res.status(404).json({ 
+    error: true, 
+    message: 'Route not found', 
+    path: req.path 
   });
 });
 
-/* ======================
-   ERROR HANDLER
-====================== */
+// Global Error Handler
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(500).json({
+  console.error('❌ Error:', err);
+  res.status(err.status || 500).json({
     error: true,
-    message: err.message
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
 
-/* ======================
-   START SERVER (ONCE)
-====================== */
+// Server Startup
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
+app.listen(PORT, async () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📁 Uploads directory: ${uploadsDir}`);
+
+  // ✅ Test Database Connection on Startup
+  try {
+    const { db } = require("./src/util/helper");
+    await db.query("SELECT 1");
+    console.log("✅ Database connected successfully");
+  } catch (dbErr) {
+    console.error("❌ Database Connection Failed!");
+    console.error("Error Code:", dbErr.code);
+    console.error("Error Details:", dbErr.message);
+
+    if (dbErr.code === 'ECONNREFUSED') {
+      console.error("💡 TIP: Host/port is wrong or DB is down. Check MYSQLHOST/MYSQLPORT.");
+    } else if (dbErr.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error("💡 TIP: Credentials incorrect. Check MYSQLUSER/MYSQLPASSWORD.");
+    } else if (dbErr.code === 'ER_BAD_DB_ERROR') {
+      console.error("💡 TIP: Database doesn't exist. Check MYSQLDATABASE.");
+    }
+  }
 });
