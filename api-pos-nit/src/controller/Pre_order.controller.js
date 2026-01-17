@@ -218,8 +218,8 @@ ${discount > 0 ? `• បញ្ចុះតម្លៃ: ${discount}% (-$${forma
 • សរុប: $${formatNumber(amount)}`;
         }).join('\n\n');
 
-        const remaining_products = productsWithDetails.length > 5 
-          ? `\n\n<i>... និង ${productsWithDetails.length - 5} ផលិតផលផ្សេងទៀត</i>` 
+        const remaining_products = productsWithDetails.length > 5
+          ? `\n\n<i>... និង ${productsWithDetails.length - 5} ផលិតផលផ្សេងទៀត</i>`
           : '';
 
         const totalQty = productsWithDetails.reduce((sum, i) => sum + parseFloat(i.qty || 0), 0);
@@ -312,18 +312,18 @@ ${special_instructions ? `📝 <b>Special Instructions:</b>\n${special_instructi
   }
 };
 exports.deductPreOrderQty = async (req, res) => {
-    try {
-        const { pre_order_id, delivered_items } = req.body;
+  try {
+    const { pre_order_id, delivered_items } = req.body;
 
-        if (!pre_order_id || !delivered_items || !Array.isArray(delivered_items)) {
-            return res.status(400).json({
-                success: false,
-                message: "pre_order_id and delivered_items array required"
-            });
-        }
+    if (!pre_order_id || !delivered_items || !Array.isArray(delivered_items)) {
+      return res.status(400).json({
+        success: false,
+        message: "pre_order_id and delivered_items array required"
+      });
+    }
 
-        for (const item of delivered_items) {
-            await db.query(`
+    for (const item of delivered_items) {
+      await db.query(`
         UPDATE pre_order_detail
         SET remaining_qty = remaining_qty - :qty,
             delivered_qty = delivered_qty + :qty,
@@ -332,115 +332,143 @@ exports.deductPreOrderQty = async (req, res) => {
           AND product_id = :product_id
           AND remaining_qty >= :qty
       `, {
-                pre_order_id,
-                product_id: item.product_id,
-                qty: item.qty
-            });
-        }
+        pre_order_id,
+        product_id: item.product_id,
+        qty: item.qty
+      });
+    }
 
-        const [remainingItems] = await db.query(`
+    const [remainingItems] = await db.query(`
       SELECT COUNT(*) as has_remaining
       FROM pre_order_detail
       WHERE pre_order_id = :pre_order_id
         AND remaining_qty > 0
     `, { pre_order_id });
 
-        if (remainingItems[0].has_remaining === 0) {
-            await db.query(`
+    if (remainingItems[0].has_remaining === 0) {
+      await db.query(`
         UPDATE pre_order
         SET status = 'delivered',
             updated_at = NOW()
         WHERE id = :pre_order_id
       `, { pre_order_id });
-        } else {
-            await db.query(`
+    } else {
+      await db.query(`
         UPDATE pre_order
         SET status = 'partially_delivered',
             updated_at = NOW()
         WHERE id = :pre_order_id
       `, { pre_order_id });
-        }
-
-        res.json({
-            success: true,
-            message: "Pre-order quantities updated successfully",
-            fully_delivered: remainingItems[0].has_remaining === 0
-        });
-
-    } catch (error) {
-        logError("pre_order.deductPreOrderQty", error, res);
     }
+
+    res.json({
+      success: true,
+      message: "Pre-order quantities updated successfully",
+      fully_delivered: remainingItems[0].has_remaining === 0
+    });
+
+  } catch (error) {
+    logError("pre_order.deductPreOrderQty", error, res);
+  }
 };
 
 exports.getPreOrderList = async (req, res) => {
-    try {
-        const { status, customer_id, from_date, to_date } = req.query;
+  try {
+    const { status, customer_id, from_date, to_date } = req.query;
+    const user_id = req.auth?.id;
 
-        let sql = `
+    // ✅ Get current user info for permission check
+    const [currentUser] = await db.query(
+      "SELECT role_id, branch_name FROM user WHERE id = :user_id",
+      { user_id }
+    );
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_name } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
+    // Base SQL
+    let sql = `
           SELECT
             po.*,
             (SELECT COUNT(*) FROM pre_order_detail WHERE pre_order_id = po.id) as item_count,
             (SELECT GROUP_CONCAT(product_name SEPARATOR ', ') FROM pre_order_detail WHERE pre_order_id = po.id) as products_display,
             (SELECT SUM(qty) FROM pre_order_detail WHERE pre_order_id = po.id) as total_qty,
-            (SELECT price FROM pre_order_detail WHERE pre_order_id = po.id LIMIT 1) as first_price
+            (SELECT price FROM pre_order_detail WHERE pre_order_id = po.id LIMIT 1) as first_price,
+            u_creator.branch_name as creator_branch
           FROM pre_order po
+          LEFT JOIN user u_creator ON po.created_by = u_creator.id
           WHERE 1=1
         `;
 
-        const params = {};
+    const params = {};
 
-        if (status) {
-            sql += ` AND po.status = :status`;
-            params.status = status;
-        }
-
-        if (customer_id) {
-            sql += ` AND po.customer_id = :customer_id`;
-            params.customer_id = customer_id;
-        }
-
-        if (from_date) {
-            sql += ` AND po.order_date >= :from_date`;
-            params.from_date = from_date;
-        }
-
-        if (to_date) {
-            sql += ` AND po.order_date <= :to_date`;
-            params.to_date = to_date;
-        }
-
-        sql += ` ORDER BY po.created_at DESC`;
-
-        const [list] = await db.query(sql, params);
-
-        res.json({
-            success: true,
-            list
-        });
-
-    } catch (error) {
-        logError("pre_order.getPreOrderList", error, res);
+    // ✅ Filter by branch for non-Super Admins
+    if (!isSuperAdmin) {
+      sql += ` AND u_creator.branch_name = :branch_name`;
+      params.branch_name = branch_name;
     }
+
+    if (status) {
+      sql += ` AND po.status = :status`;
+      params.status = status;
+    }
+
+    if (customer_id) {
+      sql += ` AND po.customer_id = :customer_id`;
+      params.customer_id = customer_id;
+    }
+
+    if (from_date) {
+      sql += ` AND po.order_date >= :from_date`;
+      params.from_date = from_date;
+    }
+
+    if (to_date) {
+      sql += ` AND po.order_date <= :to_date`;
+      params.to_date = to_date;
+    }
+
+    sql += ` ORDER BY po.created_at DESC`;
+
+    const [list] = await db.query(sql, params);
+
+    res.json({
+      success: true,
+      list,
+      user_context: {
+        role_id,
+        branch: branch_name,
+        is_super_admin: isSuperAdmin
+      }
+    });
+
+  } catch (error) {
+    logError("pre_order.getPreOrderList", error, res);
+  }
 };
 
 exports.getPreOrderById = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        const [preOrder] = await db.query(
-            "SELECT * FROM pre_order WHERE id = :id",
-            { id }
-        );
+    const [preOrder] = await db.query(
+      "SELECT * FROM pre_order WHERE id = :id",
+      { id }
+    );
 
-        if (preOrder.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Pre-order not found"
-            });
-        }
+    if (preOrder.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pre-order not found"
+      });
+    }
 
-        const [details] = await db.query(
-            `SELECT 
+    const [details] = await db.query(
+      `SELECT 
                 pod.*, 
                 p.actual_price as product_actual_price,
                 p.category_id,
@@ -451,154 +479,154 @@ exports.getPreOrderById = async (req, res) => {
              LEFT JOIN product p ON pod.product_id = p.id 
              LEFT JOIN category c ON p.category_id = c.id
              WHERE pod.pre_order_id = :id`,
-            { id }
-        );
+      { id }
+    );
 
-        const [payments] = await db.query(
-            "SELECT * FROM pre_order_payment WHERE pre_order_id = :id ORDER BY payment_date DESC",
-            { id }
-        );
+    const [payments] = await db.query(
+      "SELECT * FROM pre_order_payment WHERE pre_order_id = :id ORDER BY payment_date DESC",
+      { id }
+    );
 
-        const processedDetails = details.map(detail => {
-            let actual_price = 1000;
+    const processedDetails = details.map(detail => {
+      let actual_price = 1000;
 
-            if (detail.product_actual_price && detail.product_actual_price > 0) {
-                actual_price = parseFloat(detail.product_actual_price);
-            } else if (detail.category_actual_price && detail.category_actual_price > 0) {
-                actual_price = parseFloat(detail.category_actual_price);
-            }
+      if (detail.product_actual_price && detail.product_actual_price > 0) {
+        actual_price = parseFloat(detail.product_actual_price);
+      } else if (detail.category_actual_price && detail.category_actual_price > 0) {
+        actual_price = parseFloat(detail.category_actual_price);
+      }
 
-            return {
-                ...detail,
-                actual_price: actual_price
-            };
-        });
+      return {
+        ...detail,
+        actual_price: actual_price
+      };
+    });
 
-        res.json({
-            success: true,
-            data: {
-                ...preOrder[0],
-                details: processedDetails,
-                payments
-            }
-        });
+    res.json({
+      success: true,
+      data: {
+        ...preOrder[0],
+        details: processedDetails,
+        payments
+      }
+    });
 
-    } catch (error) {
-        logError("pre_order.getPreOrderById", error, res);
-    }
+  } catch (error) {
+    logError("pre_order.getPreOrderById", error, res);
+  }
 };
 exports.convertToOrder = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        const [preOrder] = await db.query(
-            "SELECT * FROM pre_order WHERE id = :id AND status IN ('confirmed', 'ready')",
-            { id }
-        );
+    const [preOrder] = await db.query(
+      "SELECT * FROM pre_order WHERE id = :id AND status IN ('confirmed', 'ready')",
+      { id }
+    );
 
-        if (preOrder.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "Pre-order not found or not ready to convert"
-            });
-        }
-
-        const [details] = await db.query(
-            "SELECT * FROM pre_order_detail WHERE pre_order_id = :id",
-            { id }
-        );
-
-        res.json({
-            success: true,
-            message: "Pre-order data ready for POS",
-            data: {
-                pre_order_id: id,
-                pre_order_no: preOrder[0].pre_order_no,
-                customer_id: preOrder[0].customer_id,
-                customer_name: preOrder[0].customer_name,
-                customer_tel: preOrder[0].customer_tel,
-                products: details.map(d => ({
-                    product_id: d.product_id,
-                    product_name: d.product_name,
-                    qty: d.remaining_qty,
-                    price: d.price,
-                    discount: d.discount,
-                    description: d.description
-                })),
-                total_amount: preOrder[0].remaining_amount || preOrder[0].total_amount
-            }
-        });
-
-    } catch (error) {
-        logError("pre_order.convertToOrder", error, res);
+    if (preOrder.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Pre-order not found or not ready to convert"
+      });
     }
+
+    const [details] = await db.query(
+      "SELECT * FROM pre_order_detail WHERE pre_order_id = :id",
+      { id }
+    );
+
+    res.json({
+      success: true,
+      message: "Pre-order data ready for POS",
+      data: {
+        pre_order_id: id,
+        pre_order_no: preOrder[0].pre_order_no,
+        customer_id: preOrder[0].customer_id,
+        customer_name: preOrder[0].customer_name,
+        customer_tel: preOrder[0].customer_tel,
+        products: details.map(d => ({
+          product_id: d.product_id,
+          product_name: d.product_name,
+          qty: d.remaining_qty,
+          price: d.price,
+          discount: d.discount,
+          description: d.description
+        })),
+        total_amount: preOrder[0].remaining_amount || preOrder[0].total_amount
+      }
+    });
+
+  } catch (error) {
+    logError("pre_order.convertToOrder", error, res);
+  }
 };
 exports.updateStatus = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status, notes } = req.body;
+  try {
+    const { id } = req.params;
+    const { status, notes } = req.body;
 
-        const validStatuses = ['pending', 'confirmed', 'in_progress', 'ready', 'delivered', 'cancelled'];
+    const validStatuses = ['pending', 'confirmed', 'in_progress', 'ready', 'delivered', 'cancelled'];
 
-        if (!validStatuses.includes(status)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid status"
-            });
-        }
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      });
+    }
 
-        const adminRoles = [1, 29];
-        const userRoleId = req.auth?.role_id;
+    const adminRoles = [1, 29];
+    const userRoleId = req.auth?.role_id;
 
-        if (['confirmed', 'ready'].includes(status) && !adminRoles.includes(userRoleId)) {
-            return res.status(403).json({
-                success: false,
-                message: "Only Administrators can approve this status",
-                message_kh: "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចបញ្ជាក់បាន"
-            });
-        }
+    if (['confirmed', 'ready'].includes(status) && !adminRoles.includes(userRoleId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Only Administrators can approve this status",
+        message_kh: "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចបញ្ជាក់បាន"
+      });
+    }
 
-        if (status === 'ready') {
-            const [details] = await db.query(`
+    if (status === 'ready') {
+      const [details] = await db.query(`
                 SELECT pod.product_id, pod.remaining_qty, p.name, p.qty as available_qty
                 FROM pre_order_detail pod
                 INNER JOIN product p ON pod.product_id = p.id
                 WHERE pod.pre_order_id = :id
             `, { id });
 
-            for (const item of details) {
-                const required = Number(item.remaining_qty || 0);
-                const available = Number(item.available_qty || 0);
-                if (required > available) {
-                    return res.status(400).json({
-                        success: false,
-                        message: `ស្តុកមិនគ្រប់គ្រាន់សម្រាប់ ${item.name} (មានតែ ${available.toLocaleString()}L ប៉ុណ្ណោះ)`,
-                        error_code: "INSUFFICIENT_STOCK"
-                    });
-                }
-            }
+      for (const item of details) {
+        const required = Number(item.remaining_qty || 0);
+        const available = Number(item.available_qty || 0);
+        if (required > available) {
+          return res.status(400).json({
+            success: false,
+            message: `ស្តុកមិនគ្រប់គ្រាន់សម្រាប់ ${item.name} (មានតែ ${available.toLocaleString()}L ប៉ុណ្ណោះ)`,
+            error_code: "INSUFFICIENT_STOCK"
+          });
         }
+      }
+    }
 
-        await db.query(`
+    await db.query(`
       UPDATE pre_order SET
         status = :status,
         notes = CONCAT(IFNULL(notes, ''), '\n', :new_notes),
         updated_at = NOW()
       WHERE id = :id
     `, {
-            id,
-            status,
-            new_notes: notes || `Status changed to ${status}`
-        });
+      id,
+      status,
+      new_notes: notes || `Status changed to ${status}`
+    });
 
-        res.json({
-            success: true,
-            message: "Status updated successfully"
-        });
+    res.json({
+      success: true,
+      message: "Status updated successfully"
+    });
 
-    } catch (error) {
-        logError("pre_order.updateStatus", error, res);
-    }
+  } catch (error) {
+    logError("pre_order.updateStatus", error, res);
+  }
 };
 
 exports.updatePreOrder = async (req, res) => {
@@ -771,57 +799,57 @@ exports.updatePreOrder = async (req, res) => {
   }
 };
 exports.deletePreOrder = async (req, res) => {
-    try {
-        const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-        const [existing] = await db.query("SELECT status FROM pre_order WHERE id = :id", { id });
-        if (existing.length === 0) return res.status(404).json({ success: false, message: "Not found" });
-        if (!['pending', 'cancelled'].includes(existing[0].status)) {
-            return res.status(400).json({ success: false, message: "Cannot delete active pre-orders" });
-        }
-
-        await db.query("DELETE FROM pre_order_detail WHERE pre_order_id = :id", { id });
-        await db.query("DELETE FROM pre_order_payment WHERE pre_order_id = :id", { id });
-        await db.query("DELETE FROM pre_order WHERE id = :id", { id });
-
-        res.json({ success: true, message: "Pre-order deleted successfully" });
-    } catch (error) {
-        logError("pre_order.deletePreOrder", error, res);
+    const [existing] = await db.query("SELECT status FROM pre_order WHERE id = :id", { id });
+    if (existing.length === 0) return res.status(404).json({ success: false, message: "Not found" });
+    if (!['pending', 'cancelled'].includes(existing[0].status)) {
+      return res.status(400).json({ success: false, message: "Cannot delete active pre-orders" });
     }
+
+    await db.query("DELETE FROM pre_order_detail WHERE pre_order_id = :id", { id });
+    await db.query("DELETE FROM pre_order_payment WHERE pre_order_id = :id", { id });
+    await db.query("DELETE FROM pre_order WHERE id = :id", { id });
+
+    res.json({ success: true, message: "Pre-order deleted successfully" });
+  } catch (error) {
+    logError("pre_order.deletePreOrder", error, res);
+  }
 };
 
 
 exports.addPayment = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { amount, payment_method, payment_type, reference_no, notes } = req.body;
+  try {
+    const { id } = req.params;
+    const { amount, payment_method, payment_type, reference_no, notes } = req.body;
 
-        // Get current pre-order
-        const [preOrder] = await db.query(
-            "SELECT * FROM pre_order WHERE id = :id",
-            { id }
-        );
+    // Get current pre-order
+    const [preOrder] = await db.query(
+      "SELECT * FROM pre_order WHERE id = :id",
+      { id }
+    );
 
-        if (preOrder.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Pre-order not found"
-            });
-        }
+    if (preOrder.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pre-order not found"
+      });
+    }
 
-        const order = preOrder[0];
-        const new_deposit = parseFloat(order.deposit_amount) + parseFloat(amount);
-        const new_remaining = parseFloat(order.total_amount) - new_deposit;
+    const order = preOrder[0];
+    const new_deposit = parseFloat(order.deposit_amount) + parseFloat(amount);
+    const new_remaining = parseFloat(order.total_amount) - new_deposit;
 
-        let payment_status = 'partial';
-        if (new_remaining <= 0) {
-            payment_status = 'paid';
-        } else if (new_deposit === 0) {
-            payment_status = 'unpaid';
-        }
+    let payment_status = 'partial';
+    if (new_remaining <= 0) {
+      payment_status = 'paid';
+    } else if (new_deposit === 0) {
+      payment_status = 'unpaid';
+    }
 
-        // Insert payment record
-        await db.query(`
+    // Insert payment record
+    await db.query(`
       INSERT INTO pre_order_payment (
         pre_order_id, payment_date, amount,
         payment_method, payment_type, reference_no, notes, created_by
@@ -830,17 +858,17 @@ exports.addPayment = async (req, res) => {
         :payment_method, :payment_type, :reference_no, :notes, :created_by
       )
     `, {
-            pre_order_id: id,
-            amount,
-            payment_method,
-            payment_type,
-            reference_no: reference_no || null,
-            notes: notes || null,
-            created_by: req.auth?.id
-        });
+      pre_order_id: id,
+      amount,
+      payment_method,
+      payment_type,
+      reference_no: reference_no || null,
+      notes: notes || null,
+      created_by: req.auth?.id
+    });
 
-        // Update pre-order
-        await db.query(`
+    // Update pre-order
+    await db.query(`
       UPDATE pre_order SET
         deposit_amount = :deposit_amount,
         remaining_amount = :remaining_amount,
@@ -848,25 +876,25 @@ exports.addPayment = async (req, res) => {
         updated_at = NOW()
       WHERE id = :id
     `, {
-            id,
-            deposit_amount: new_deposit,
-            remaining_amount: new_remaining > 0 ? new_remaining : 0,
-            payment_status
-        });
+      id,
+      deposit_amount: new_deposit,
+      remaining_amount: new_remaining > 0 ? new_remaining : 0,
+      payment_status
+    });
 
-        res.json({
-            success: true,
-            message: "Payment added successfully",
-            data: {
-                deposit_amount: new_deposit,
-                remaining_amount: new_remaining > 0 ? new_remaining : 0,
-                payment_status
-            }
-        });
+    res.json({
+      success: true,
+      message: "Payment added successfully",
+      data: {
+        deposit_amount: new_deposit,
+        remaining_amount: new_remaining > 0 ? new_remaining : 0,
+        payment_status
+      }
+    });
 
-    } catch (error) {
-        logError("pre_order.addPayment", error, res);
-    }
+  } catch (error) {
+    logError("pre_order.addPayment", error, res);
+  }
 };
 
 module.exports = exports;
