@@ -168,7 +168,6 @@ const ProfilePage = () => {
         // ✅ UPDATE TOKEN: Since password change increments token_version
         if (res.access_token) {
           localStorage.setItem("access_token", res.access_token);
-          console.log("✅ Session token updated successfully");
         }
 
         passwordForm.resetFields();

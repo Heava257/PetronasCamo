@@ -54,7 +54,6 @@ exports.formartDateClient = (data) => {
 const uploadDir = config.upload_path;
 if (!fsSync.existsSync(uploadDir)) {
   fsSync.mkdirSync(uploadDir, { recursive: true });
-  console.log('✅ Created upload directory:', uploadDir);
 }
 
 // ✅ UPDATED: Cloudinary upload configuration
@@ -92,7 +91,6 @@ exports.removeFile = async (fileName) => {
         publicId = `${folderPart}/${publicId}`;
       }
 
-      console.log('☁️ Attempting Cloudinary delete for:', publicId);
       await deleteImage(publicId);
       return "Cloudinary file deleted successfully";
     } catch (err) {
@@ -105,11 +103,9 @@ exports.removeFile = async (fileName) => {
   const filePath = path.join(uploadDir, fileName);
   try {
     await fs.unlink(filePath);
-    console.log('✅ Local file deleted:', fileName);
     return "Local file deleted successfully";
   } catch (err) {
     if (err.code === 'ENOENT') {
-      console.log('ℹ️ Item already removed or not found:', fileName);
       return "File not found, but that's okay";
     }
     console.error('❌ Error deleting local file:', err.message);

@@ -62,11 +62,3 @@ module.exports = {
   },
 };
 
-// --- Secure Logging ---
-console.log("🔗 FINAL DB CONFIG:");
-console.log(`   Host: ${finalDb.HOST}`);
-console.log(`   User: ${finalDb.USER}`);
-console.log(`   DB:   ${finalDb.DATABASE}`);
-console.log(`   Port: ${finalDb.PORT}`);
-console.log(`   Pass: ${finalDb.PASSWORD ? "[SET]" : "[NOT SET]"}`);
-console.log(`   NamedPlaceholders: ${finalDb.namedPlaceholders}`);

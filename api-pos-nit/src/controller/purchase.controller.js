@@ -238,7 +238,6 @@ exports.create = async (req, res) => {
         });
 
         if (notificationResult.success) {
-          console.log('✅ Telegram sent to', notificationResult.recipients_count, 'recipients');
         }
       } catch (notifError) {
         console.error('❌ Telegram error:', notifError);

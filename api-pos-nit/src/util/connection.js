@@ -16,7 +16,5 @@ const pool = mysql.createPool({
   keepAliveInitialDelay: 0
 });
 
-// ✅ Basic connection logging (detailed test occurs in index.js)
-console.log(`📡 MySQL Pool Initialized (${config.db.HOST}:${config.db.PORT})`);
 
 module.exports = pool;

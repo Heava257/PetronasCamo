@@ -28,5 +28,4 @@ module.exports = (app) => {
   // ✅ Cleanup old logs (Super Admin only)
   app.post('/api/logs/cleanup', validate_token(), cleanupOldLogs);
   
-  console.log('✅ System log routes loaded');
 };

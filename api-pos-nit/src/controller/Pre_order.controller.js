@@ -199,7 +199,6 @@ exports.createPreOrder = async (req, res) => {
     // ✅✅✅ SEND TELEGRAM NOTIFICATION (NON-BLOCKING) ✅✅✅
     setImmediate(async () => {
       try {
-        console.log('📤 Sending Pre-Order Telegram notification...');
 
         // ✅ Format product details with correct calculation
         const productDetails = productsWithDetails.slice(0, 5).map((item, index) => {
@@ -286,10 +285,7 @@ ${special_instructions ? `📝 <b>Special Instructions:</b>\n${special_instructi
         });
 
         if (notificationResult.success) {
-          console.log('✅ Pre-Order Telegram notification sent!');
-          console.log(`📊 Sent to ${notificationResult.recipients_count} recipients`);
         } else {
-          console.log('⚠️ Pre-Order notification not sent:', notificationResult.reason);
         }
 
       } catch (notifError) {
@@ -662,7 +658,6 @@ exports.updatePreOrder = async (req, res) => {
         `, { product_id: product.product_id });
 
         if (productInfo.length === 0) {
-          console.log(`⚠️ Product ${product.product_id} not found, skipping...`);
           continue;
         }
 
@@ -714,7 +709,6 @@ exports.updatePreOrder = async (req, res) => {
           // ✅ NO 'description' field
         });
 
-        console.log(`✅ Inserted product: ${productInfo[0].name}, amount: $${amount.toFixed(2)}`);
       }
     }
 
@@ -756,13 +750,7 @@ exports.updatePreOrder = async (req, res) => {
       payment_status: payment_status
     });
 
-    console.log('✅ Pre-order updated successfully:', {
-      id,
-      total_amount,
-      deposit,
-      remaining,
-      payment_status
-    });
+
 
     res.json({
       success: true,

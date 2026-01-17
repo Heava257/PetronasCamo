@@ -195,8 +195,6 @@ const handleEdit = (record) => {
     }
   }
   
-  console.log('📝 Edit - Original event_types:', record.event_types);
-  console.log('📝 Edit - Parsed event_types:', parsedEventTypes);
   
   form.setFieldsValue({
     ...record,

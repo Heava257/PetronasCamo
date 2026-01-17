@@ -58,15 +58,12 @@ function ReportProfitLoss() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      console.log("📊 Fetching P&L Report...");
-      console.log("Date Range:", filter.from_date.format('YYYY-MM-DD'), "to", filter.to_date.format('YYYY-MM-DD'));
 
       const res = await request('report_Income_vs_Expense', 'get', {
         from_date: filter.from_date.format('YYYY-MM-DD'),
         to_date: filter.to_date.format('YYYY-MM-DD')
       });
 
-      console.log("✅ P&L Response:", res);
 
       if (res && res.success && res.summary) {
         setData(res);

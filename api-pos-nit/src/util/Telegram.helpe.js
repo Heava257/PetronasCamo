@@ -88,7 +88,6 @@ exports.sendSmartNotification = async ({
             message: `🟡 ${branch_name.toUpperCase()} ALERT\n${message}`
           });
         } else {
-          console.log(`⏭️  Skipping ${config.config_name} - event '${event_type}' not in filter`);
         }
       });
     }
@@ -115,7 +114,6 @@ exports.sendSmartNotification = async ({
     }
 
     if (recipients.length === 0) {
-      console.log(`ℹ️  No recipients found for event '${event_type}' in branch '${branch_name}'`);
       return { 
         success: false, 
         reason: 'no_matching_recipients',
@@ -125,7 +123,6 @@ exports.sendSmartNotification = async ({
       };
     }
 
-    console.log(`📤 Sending to ${recipients.length} recipients for event '${event_type}'`);
 
     // ✅ Send to all matching recipients
     const results = [];
@@ -151,7 +148,6 @@ exports.sendSmartNotification = async ({
           message_id: response.data.result.message_id
         });
 
-        console.log(`✅ Sent to ${recipient.config_name}`);
 
         // ✅ Update last successful send
         await db.query(`

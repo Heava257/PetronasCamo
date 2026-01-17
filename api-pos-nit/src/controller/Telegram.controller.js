@@ -68,7 +68,6 @@ exports.getTelegramConfigs = async (req, res) => {
       FROM telegram_config
     `);
 
-    console.log('✅ Fetched configs:', processedConfigs.length);
 
     return res.json({
       success: true,
@@ -235,13 +234,7 @@ exports.createTelegramConfig = async (req, res) => {
       console.error("Failed to log activity:", logErr);
     }
 
-    console.log('✅ Telegram config created:', {
-      id: configId,
-      config_name,
-      config_type,
-      branch_name,
-      event_types: eventTypesJson
-    });
+
 
     return res.status(201).json({
       success: true,
@@ -396,11 +389,7 @@ exports.updateTelegramConfig = async (req, res) => {
       console.error("Failed to log activity:", logErr);
     }
 
-    console.log('✅ Telegram config updated:', {
-      id,
-      config_name,
-      branch_name
-    });
+
 
     return res.json({
       success: true,
@@ -489,11 +478,6 @@ exports.deleteTelegramConfig = async (req, res) => {
       console.error("Failed to log activity:", logErr);
     }
 
-    console.log('✅ Telegram config deleted:', {
-      id,
-      config_name: config[0].config_name,
-      branch_name: config[0].branch_name
-    });
 
     return res.json({
       success: true,
@@ -601,10 +585,6 @@ ${branch_name ? `• Branch: ${branch_name}` : ''}
         WHERE id = :id
       `, { id });
 
-      console.log('✅ Test message sent successfully:', {
-        config_name,
-        telegram_message_id: response.data.result.message_id
-      });
 
       return res.json({
         success: true,
@@ -675,13 +655,7 @@ exports.getBranches = async (req, res) => {
       ORDER BY branch_name ASC
     `);
 
-    console.log('✅ Fetched branches:', branches.length);
 
-    return res.json({
-      success: true,
-      branches: branches.map(b => b.branch_name),
-      count: branches.length
-    });
 
   } catch (error) {
     console.error('❌ Error in getBranches:', error);
@@ -750,12 +724,6 @@ exports.toggleTelegramConfig = async (req, res) => {
       updated_by: currentUser[0]?.name
     });
 
-    console.log('✅ Telegram config toggled:', {
-      id,
-      config_name: config[0].config_name,
-      old_status: config[0].is_active,
-      new_status: newStatus
-    });
 
     return res.json({
       success: true,

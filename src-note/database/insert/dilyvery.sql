@@ -808,5 +808,4 @@ app.post('/api/upload-signature', upload.single('signature'), (req, res) => {
 });
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
 });

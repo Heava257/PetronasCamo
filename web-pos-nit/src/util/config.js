@@ -30,10 +30,3 @@ export const Config = {
   getFullImagePath: getImageUrl,
 };
 
-// Debug
-console.log("🔧 Frontend Config:", {
-  api_url: rawApiUrl,
-  base_url: Config.base_url,
-  image_path: Config.image_path,
-  environment: import.meta.env.DEV ? "development" : "production"
-});

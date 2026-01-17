@@ -10,7 +10,6 @@ const app = express();
 const uploadsDir = path.join(__dirname, 'public/uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log('✅ Created uploads directory');
 }
 
 // Middlewares
@@ -129,7 +128,6 @@ require("./src/route/upload.route")(app);
 try {
   require("./src/route/systemLog.routes")(app);
 } catch (err) {
-  console.log('⚠️ systemLog.routes not found, skipping...');
 }
 
 // Health check
@@ -171,14 +169,11 @@ app.use((err, req, res, next) => {
 // Server Startup
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📁 Uploads directory: ${uploadsDir}`);
 
   // ✅ Test Database Connection on Startup
   try {
     const { db } = require("./src/util/helper");
     await db.query("SELECT 1");
-    console.log("✅ Database connected successfully");
   } catch (dbErr) {
     console.error("❌ Database Connection Failed!");
     console.error("Error Code:", dbErr.code);

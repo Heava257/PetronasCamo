@@ -514,7 +514,6 @@ exports.cleanupOldLogs = async (req, res) => {
       (loginHistoryResult.affectedRows || 0) +
       (activityLogsResult.affectedRows || 0);
 
-    console.log(`🧹 Cleaned up ${totalDeleted} old log records`);
 
     res.json({
       success: true,
