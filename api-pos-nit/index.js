@@ -123,6 +123,7 @@ require("./src/route/Closing.route")(app);
 require("./src/route/Pre_order.route")(app);
 require("./src/route/Location.route")(app);
 require("./src/route/truck.route")(app);
+require("./src/route/upload.route")(app);
 
 // Optional route
 try {
