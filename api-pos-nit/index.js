@@ -68,7 +68,7 @@ app.use('/api/public', express.static(path.join(__dirname, 'public'), {
 
 // Security middleware
 app.use(checkIPBlacklist);
-app.use('/api', rateLimitMonitoring(100, 60000));
+app.use('/api', rateLimitMonitoring(500, 60000));
 app.use(trackUserActivity);
 app.use(postResponseAnalyzer);
 
