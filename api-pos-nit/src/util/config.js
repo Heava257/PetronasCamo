@@ -21,6 +21,7 @@ module.exports = {
       PASSWORD: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
       DATABASE: process.env.MYSQLDATABASE || process.env.DB_DATABASE,
       PORT: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+
     },
 
     token: {
