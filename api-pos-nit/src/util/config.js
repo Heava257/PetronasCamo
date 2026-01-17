@@ -35,3 +35,29 @@ module.exports = {
     },
   },
 };
+
+// --- Railway/Render URL Parsing Support ---
+const dbUrl = process.env.MYSQL_URL || process.env.DATABASE_URL;
+if (dbUrl && dbUrl.startsWith("mysql://")) {
+  try {
+    const url = new URL(dbUrl);
+    module.exports.config.db.HOST = url.hostname;
+    module.exports.config.db.USER = url.username;
+    module.exports.config.db.PASSWORD = decodeURIComponent(url.password);
+    module.exports.config.db.DATABASE = url.pathname.replace("/", "");
+    module.exports.config.db.PORT = url.port || 3306;
+    console.log("📍 Parsed database connection from MYSQL_URL/DATABASE_URL");
+  } catch (err) {
+    console.warn("⚠️ Failed to parse database URL:", err.message);
+  }
+}
+
+// --- Debug Logging for Database (Safe) ---
+const dbCfg = module.exports.config.db;
+console.log("🔗 Database Configuration attempt:");
+console.log(`   Host: ${dbCfg.HOST}`);
+console.log(`   User: ${dbCfg.USER}`);
+console.log(`   DB:   ${dbCfg.DATABASE}`);
+console.log(`   Port: ${dbCfg.PORT}`);
+console.log(`   Password Set: ${dbCfg.PASSWORD ? "YES" : "NO"}`);
+// ----------------------------------
