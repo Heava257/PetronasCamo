@@ -1010,10 +1010,22 @@ exports.changePassword = async (req, res) => {
       }
     );
 
-    // Increment token_version to force re-login on other devices (optional)
+    // Increment token_version to force re-login on other devices
     await db.query(
       "UPDATE user SET token_version = COALESCE(token_version, 0) + 1 WHERE id = :userId",
       { userId }
+    );
+
+    // ✅ Fetch updated data to generate fresh token
+    const [updatedUser] = await db.query(
+      "SELECT id, role_id, token_version FROM user WHERE id = :userId",
+      { userId }
+    );
+
+    const newToken = exports.getAccessToken(
+      updatedUser[0].id,
+      updatedUser[0].role_id,
+      updatedUser[0].token_version
     );
 
     // Log password change activity
@@ -1053,7 +1065,8 @@ exports.changePassword = async (req, res) => {
     res.json({
       success: true,
       message: "Password changed successfully",
-      message_kh: "បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ"
+      message_kh: "បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ",
+      access_token: newToken // ✅ Return new token to frontend
     });
 
   } catch (error) {

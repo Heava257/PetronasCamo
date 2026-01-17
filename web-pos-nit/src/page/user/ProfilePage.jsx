@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Form, Input, Button, Upload, message, Modal } from "antd";
-import { 
-  UserOutlined, 
-  ArrowLeftOutlined, 
-  EyeInvisibleOutlined, 
+import {
+  UserOutlined,
+  ArrowLeftOutlined,
+  EyeInvisibleOutlined,
   EyeOutlined
 } from "@ant-design/icons";
 import { request } from "../../util/helper";
@@ -87,7 +87,7 @@ const ProfilePage = () => {
   const checkInfoChanged = () => {
     const values = personalInfoForm.getFieldsValue();
     const hasNewImage = fileList.length > 0 && fileList[0].originFileObj;
-    
+
     return (
       values.name !== initialValues.name ||
       values.username !== initialValues.username ||
@@ -136,12 +136,7 @@ const ProfilePage = () => {
         // ✅ Refresh profile data
         await fetchProfile();
         setIsInfoChanged(false);
-         setTimeout(() => {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          setProfile(null);
-          navigate("/login");
-        }, 2000);
+        // Removed forced logout and redirect
       } else {
         message.error(res.message || "មិនអាចរក្សាទុកបានទេ");
       }
@@ -169,19 +164,15 @@ const ProfilePage = () => {
       });
 
       if (res?.success) {
-        message.success({
-          content: "បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ! កំពុងបញ្ជូនទៅ Login...",
-          duration: 2
-        });
+        message.success("បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ!");
+        // ✅ UPDATE TOKEN: Since password change increments token_version
+        if (res.access_token) {
+          localStorage.setItem("access_token", res.access_token);
+          console.log("✅ Session token updated successfully");
+        }
 
         passwordForm.resetFields();
-
-        setTimeout(() => {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          setProfile(null);
-          navigate("/login");
-        }, 2000);
+        // Removed forced logout and redirect to maintain seamless session
       } else {
         message.error(res.message || res.message_kh || "មិនអាចផ្លាស់ប្តូរពាក្យសម្ងាត់បានទេ");
       }
