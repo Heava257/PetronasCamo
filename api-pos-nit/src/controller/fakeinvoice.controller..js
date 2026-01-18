@@ -281,10 +281,10 @@ exports.update = async (req, res) => {
     for (const item of items) {
       const quantity = safeNumber(item.quantity);
       const unitPrice = safeNumber(item.unit_price);
-      
+
       // Get actualPrice from item (frontend sends it)
       let actual_price = safeNumber(item.actual_price, 0);
-      
+
       // If not provided or 0, fetch from database
       if (actual_price === 0) {
         const [productRes] = await connection.query(
@@ -373,7 +373,22 @@ exports.update = async (req, res) => {
 
 exports.getList = async (req, res) => {
   try {
-    const query = `
+    const user_id = req.auth?.id;
+
+    // ✅ Get current user info for permission check
+    const [currentUser] = await db.query(
+      "SELECT role_id, branch_name FROM user WHERE id = :user_id",
+      { user_id }
+    );
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_name } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
       SELECT 
         f.id, f.order_no, f.customer_id,
         c.name as customer_name, c.address as customer_address, c.tel as customer_tel,
@@ -383,17 +398,27 @@ exports.getList = async (req, res) => {
         f.manual_customer_name, f.manual_customer_tel, f.manual_customer_address,
         GROUP_CONCAT(p.name SEPARATOR ', ') as product_names,
         SUM(fd.quantity) as total_quantity,
-        COUNT(fd.id) as item_count
+        COUNT(fd.id) as item_count,
+        u_creator.branch_name as creator_branch
       FROM fakeinvoice f
+      LEFT JOIN user u_creator ON f.user_id = u_creator.id
       LEFT JOIN customer c ON f.customer_id = c.id
       LEFT JOIN fakeinvoice_detail fd ON f.id = fd.invoice_id
       LEFT JOIN product p ON fd.product_id = p.id
-      WHERE f.user_id = ?
-      GROUP BY f.id
-      ORDER BY f.created_at DESC
+      WHERE 1=1
     `;
 
-    const [results] = await db.query(query, [req.user_id]);
+    const params = {};
+
+    // ✅ Filter by branch for non-Super Admins
+    if (!isSuperAdmin) {
+      sql += ` AND u_creator.branch_name = :branch_name`;
+      params.branch_name = branch_name;
+    }
+
+    sql += ` GROUP BY f.id ORDER BY f.created_at DESC`;
+
+    const [results] = await db.query(sql, params);
 
     const list = results.map(item => ({
       ...item,
@@ -403,8 +428,17 @@ exports.getList = async (req, res) => {
       product_display: item.item_count > 1 ? `${item.item_count} Products` : (item.product_names || 'No items')
     }));
 
-    res.json({ list, success: true });
-  } catch (error) { logError("getlist.fakeinvoices", error); }
+    res.json({
+      list,
+      success: true,
+      user_context: {
+        role_id,
+        branch: branch_name,
+        is_super_admin: isSuperAdmin
+      }
+    });
+
+  } catch (error) { logError("getlist.fakeinvoices", error, res); }
 };
 
 exports.getInvoiceDetails = async (req, res) => {

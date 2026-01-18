@@ -660,6 +660,13 @@ exports.getDeliveryPerformanceReport = async (req, res) => {
   try {
     const { start_date, end_date, driver_id } = req.query;
 
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+
+    if (!currentUser.length) return res.status(401).json({ error: "User not found" });
+    const { role_id, branch_name } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
     let sql = `
       SELECT 
         DATE(o.delivery_date) as delivery_date,
@@ -671,10 +678,16 @@ exports.getDeliveryPerformanceReport = async (req, res) => {
         ROUND((SUM(CASE WHEN o.delivery_status = 'delivered' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 2) as completion_rate,
         COUNT(DISTINCT o.driver_id) as drivers
       FROM \`order\` o
+      LEFT JOIN user u_creator ON o.user_id = u_creator.id
       WHERE o.delivery_date IS NOT NULL
     `;
 
     const params = {};
+
+    if (!isSuperAdmin) {
+      sql += ` AND u_creator.branch_name = :branch_name`;
+      params.branch_name = branch_name;
+    }
 
     if (start_date) {
       sql += ` AND o.delivery_date >= :start_date`;
@@ -696,18 +709,21 @@ exports.getDeliveryPerformanceReport = async (req, res) => {
     const [performance] = await db.query(sql, params);
 
     // Summary query remains the same
+    // Summary query with branch filtering
     const summarySql = `
       SELECT 
         COUNT(*) as total_orders,
-        SUM(CASE WHEN delivery_status = 'delivered' THEN 1 ELSE 0 END) as total_completed,
-        SUM(CASE WHEN delivery_status = 'in_transit' THEN 1 ELSE 0 END) as total_in_transit,
-        SUM(CASE WHEN delivery_status = 'pending' THEN 1 ELSE 0 END) as total_pending,
-        ROUND(AVG(TIMESTAMPDIFF(MINUTE, order_date, actual_delivery_time))) as avg_delivery_minutes
-      FROM \`order\`
-      WHERE delivery_date IS NOT NULL
-        ${start_date ? 'AND delivery_date >= :start_date' : ''}
-        ${end_date ? 'AND delivery_date <= :end_date' : ''}
-        ${driver_id ? 'AND driver_id = :driver_id' : ''}
+        SUM(CASE WHEN o.delivery_status = 'delivered' THEN 1 ELSE 0 END) as total_completed,
+        SUM(CASE WHEN o.delivery_status = 'in_transit' THEN 1 ELSE 0 END) as total_in_transit,
+        SUM(CASE WHEN o.delivery_status = 'pending' THEN 1 ELSE 0 END) as total_pending,
+        ROUND(AVG(TIMESTAMPDIFF(MINUTE, o.order_date, o.actual_delivery_time))) as avg_delivery_minutes
+      FROM \`order\` o
+      LEFT JOIN user u_creator ON o.user_id = u_creator.id
+      WHERE o.delivery_date IS NOT NULL
+        ${start_date ? 'AND o.delivery_date >= :start_date' : ''}
+        ${end_date ? 'AND o.delivery_date <= :end_date' : ''}
+        ${driver_id ? 'AND o.driver_id = :driver_id' : ''}
+        ${!isSuperAdmin ? 'AND u_creator.branch_name = :branch_name' : ''}
     `;
 
     const [summary] = await db.query(summarySql, params);
@@ -727,6 +743,11 @@ exports.getVehicleUtilizationReport = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
 
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
     const sql = `
       SELECT 
         t.id,
@@ -745,15 +766,17 @@ exports.getVehicleUtilizationReport = async (req, res) => {
       LEFT JOIN delivery_note dn ON t.id = dn.truck_id
         ${start_date ? 'AND dn.delivery_date >= :start_date' : ''}
         ${end_date ? 'AND dn.delivery_date <= :end_date' : ''}
+        ${!isSuperAdmin ? 'AND dn.created_by IN (SELECT id FROM user WHERE branch_name = :branch_name)' : ''}
       LEFT JOIN \`order\` o ON t.id = o.truck_id
         ${start_date ? 'AND o.delivery_date >= :start_date' : ''}
         ${end_date ? 'AND o.delivery_date <= :end_date' : ''}
+        ${!isSuperAdmin ? 'AND o.user_id IN (SELECT id FROM user WHERE branch_name = :branch_name)' : ''}
       WHERE t.status = 'active'
       GROUP BY t.id, t.plate_number, t.truck_type, t.capacity_liters, t.driver_name, t.driver_phone
       ORDER BY total_deliveries DESC
     `;
 
-    const [vehicles] = await db.query(sql, { start_date, end_date });
+    const [vehicles] = await db.query(sql, { start_date, end_date, branch_name });
 
     // Get maintenance summary
     const maintenanceSql = `
@@ -797,6 +820,11 @@ exports.getDriverPerformanceReport = async (req, res) => {
   try {
     const { start_date, end_date } = req.query;
 
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
     let sql = `
       SELECT 
         t.driver_name,
@@ -809,10 +837,16 @@ exports.getDriverPerformanceReport = async (req, res) => {
         ROUND((SUM(CASE WHEN o.delivery_status = 'delivered' THEN 1 ELSE 0 END) / COUNT(o.id)) * 100, 2) as completion_rate
       FROM trucks t
       LEFT JOIN \`order\` o ON t.id = o.truck_id
+      LEFT JOIN user u_creator ON o.user_id = u_creator.id
       WHERE t.driver_name IS NOT NULL
     `;
 
     const params = {};
+
+    if (!isSuperAdmin) {
+      sql += ` AND u_creator.branch_name = :branch_name`;
+      params.branch_name = branch_name;
+    }
 
     if (start_date) {
       sql += ` AND o.delivery_date >= :start_date`;

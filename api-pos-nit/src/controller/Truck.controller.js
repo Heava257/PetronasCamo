@@ -10,7 +10,21 @@ const { db, logError } = require("../util/helper");
 exports.getList = async (req, res) => {
   try {
     const { status, search } = req.query;
-    
+
+    const currentUserId = req.auth?.id || req.current_id;
+    // ✅ Get current user info for permission check
+    const [currentUser] = await db.query(
+      "SELECT role_id, branch_name FROM user WHERE id = :user_id",
+      { user_id: currentUserId }
+    );
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_name } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
     let sql = `
       SELECT 
         t.*,
@@ -20,26 +34,32 @@ exports.getList = async (req, res) => {
       LEFT JOIN user u ON t.created_by = u.id
       WHERE 1=1
     `;
-    
+
     const params = {};
-    
+
+    // ✅ Filter by branch for non-Super Admins
+    if (!isSuperAdmin) {
+      sql += ` AND u.branch_name = :branch_name`;
+      params.branch_name = branch_name;
+    }
+
     if (status) {
       sql += ` AND t.status = :status`;
       params.status = status;
     }
-    
+
     if (search) {
       sql += ` AND (t.plate_number LIKE :search OR t.driver_name LIKE :search OR t.driver_phone LIKE :search)`;
       params.search = `%${search}%`;
     }
-    
+
     sql += ` ORDER BY t.status ASC, t.plate_number ASC`;
-    
+
     const [list] = await db.query(sql, params);
-    
-    res.json({ 
+
+    res.json({
       success: true,
-      list 
+      list
     });
   } catch (error) {
     logError("truck.getList", error, res);
@@ -52,7 +72,7 @@ exports.getList = async (req, res) => {
 exports.getOne = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const sql = `
       SELECT 
         t.*,
@@ -61,16 +81,16 @@ exports.getOne = async (req, res) => {
       LEFT JOIN user u ON t.created_by = u.id
       WHERE t.id = :id
     `;
-    
+
     const [rows] = await db.query(sql, { id });
-    
+
     if (rows.length === 0) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: true,
-        message: "Truck not found" 
+        message: "Truck not found"
       });
     }
-    
+
     // Get recent assignments
     const assignmentsSql = `
       SELECT 
@@ -86,10 +106,10 @@ exports.getOne = async (req, res) => {
       ORDER BY da.assigned_at DESC
       LIMIT 10
     `;
-    
+
     const [assignments] = await db.query(assignmentsSql, { id });
-    
-    res.json({ 
+
+    res.json({
       success: true,
       data: {
         ...rows[0],
@@ -111,23 +131,23 @@ exports.create = async (req, res) => {
       status,
       notes
     } = req.body;
-    
+
     // Check if plate number already exists
     const [existingTruck] = await db.query(
       `SELECT id FROM trucks WHERE plate_number = :plate_number`,
       { plate_number }
     );
-    
+
     if (existingTruck.length > 0) {
       return res.status(400).json({
         error: true,
         message: "Plate number already exists"
       });
     }
-    
+
     // ✅✅✅ FIX: Ensure status always has a value ✅✅✅
     const truckStatus = status || 'active';
-    
+
     const sql = `
       INSERT INTO trucks (
         plate_number,
@@ -151,7 +171,7 @@ exports.create = async (req, res) => {
         NOW()
       )
     `;
-    
+
     const [result] = await db.query(sql, {
       plate_number,
       truck_type: truck_type || 'medium',
@@ -162,7 +182,7 @@ exports.create = async (req, res) => {
       notes: notes || null,
       created_by: req.current_id
     });
-    
+
     res.json({
       success: true,
       message: "Truck created successfully",
@@ -176,14 +196,14 @@ exports.create = async (req, res) => {
 exports.updateStatus = async (req, res) => {
   try {
     const { id, status } = req.body;
-    
+
     if (!id || !status) {
       return res.status(400).json({
         error: true,
         message: "Missing truck ID or status"
       });
     }
-    
+
     // Validate status
     const validStatuses = ['active', 'on_delivery', 'maintenance', 'inactive'];
     if (!validStatuses.includes(status)) {
@@ -192,12 +212,12 @@ exports.updateStatus = async (req, res) => {
         message: "Invalid status"
       });
     }
-    
+
     await db.query(
       `UPDATE trucks SET status = :status, updated_at = NOW() WHERE id = :id`,
       { id, status }
     );
-    
+
     res.json({
       success: true,
       message: `Truck status updated to ${status}`
@@ -219,36 +239,36 @@ exports.update = async (req, res) => {
       status,
       notes
     } = req.body;
-    
+
     // Check if truck exists
     const [existingTruck] = await db.query(
       `SELECT id FROM trucks WHERE id = :id`,
       { id }
     );
-    
+
     if (existingTruck.length === 0) {
       return res.status(404).json({
         error: true,
         message: "Truck not found"
       });
     }
-    
+
     // Check if plate number is taken by another truck
     const [plateCheck] = await db.query(
       `SELECT id FROM trucks WHERE plate_number = :plate_number AND id != :id`,
       { plate_number, id }
     );
-    
+
     if (plateCheck.length > 0) {
       return res.status(400).json({
         error: true,
         message: "Plate number already exists"
       });
     }
-    
+
     // ✅✅✅ FIX: Ensure status always has a value ✅✅✅
     const truckStatus = status || 'active';
-    
+
     const sql = `
       UPDATE trucks SET
         plate_number = :plate_number,
@@ -261,7 +281,7 @@ exports.update = async (req, res) => {
         updated_at = NOW()
       WHERE id = :id
     `;
-    
+
     await db.query(sql, {
       id,
       plate_number,
@@ -272,7 +292,7 @@ exports.update = async (req, res) => {
       status: truckStatus, // ✅ Always set status
       notes
     });
-    
+
     res.json({
       success: true,
       message: "Truck updated successfully"
@@ -285,25 +305,25 @@ exports.update = async (req, res) => {
 exports.remove = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Check if truck is being used
     const [usageCheck] = await db.query(
       `SELECT COUNT(*) as count FROM \`order\` WHERE truck_id = :id`,
       { id }
     );
-    
+
     if (usageCheck[0].count > 0) {
       return res.status(400).json({
         error: true,
         message: "Cannot delete truck that has been used in orders. Set status to inactive instead."
       });
     }
-    
+
     await db.query(
       `DELETE FROM trucks WHERE id = :id`,
       { id }
     );
-    
+
     res.json({
       success: true,
       message: "Truck deleted successfully"
@@ -319,7 +339,7 @@ exports.remove = async (req, res) => {
 exports.getAvailable = async (req, res) => {
   try {
     const { date } = req.query;
-    
+
     const sql = `
       SELECT 
         t.*,
@@ -332,14 +352,14 @@ exports.getAvailable = async (req, res) => {
       GROUP BY t.id
       ORDER BY assigned_today ASC, t.plate_number ASC
     `;
-    
+
     const [trucks] = await db.query(sql, {
       date: date || new Date().toISOString().split('T')[0]
     });
-    
-    res.json({ 
+
+    res.json({
       success: true,
-      trucks 
+      trucks
     });
   } catch (error) {
     logError("truck.getAvailable", error, res);
@@ -352,49 +372,49 @@ exports.getAvailable = async (req, res) => {
 exports.assignToOrder = async (req, res) => {
   try {
     const { truck_id, order_id, driver_name, driver_phone, notes } = req.body;
-    
+
     // Verify truck exists and is active
     const [truckCheck] = await db.query(
       `SELECT id, status, driver_name as default_driver_name, driver_phone as default_driver_phone 
        FROM trucks WHERE id = :truck_id`,
       { truck_id }
     );
-    
+
     if (truckCheck.length === 0) {
       return res.status(404).json({
         error: true,
         message: "Truck not found"
       });
     }
-    
+
     if (truckCheck[0].status !== 'active') {
       return res.status(400).json({
         error: true,
         message: "Truck is not active"
       });
     }
-    
+
     // Verify order exists and hasn't been assigned
     const [orderCheck] = await db.query(
       `SELECT id, truck_id FROM \`order\` WHERE id = :order_id`,
       { order_id }
     );
-    
+
     if (orderCheck.length === 0) {
       return res.status(404).json({
         error: true,
         message: "Order not found"
       });
     }
-    
+
     await db.query("START TRANSACTION");
-    
+
     // Update order with truck_id
     await db.query(
       `UPDATE \`order\` SET truck_id = :truck_id WHERE id = :order_id`,
       { truck_id, order_id }
     );
-    
+
     // Create driver assignment
     const assignmentSql = `
       INSERT INTO driver_assignments (
@@ -413,7 +433,7 @@ exports.assignToOrder = async (req, res) => {
         :notes
       )
     `;
-    
+
     await db.query(assignmentSql, {
       truck_id,
       order_id,
@@ -421,7 +441,7 @@ exports.assignToOrder = async (req, res) => {
       driver_phone: driver_phone || truckCheck[0].default_driver_phone,
       notes: notes || null
     });
-    
+
     // Create initial tracking entry
     await db.query(
       `INSERT INTO delivery_tracking (order_id, truck_id, status, created_by)
@@ -432,9 +452,9 @@ exports.assignToOrder = async (req, res) => {
         created_by: req.current_id
       }
     );
-    
+
     await db.query("COMMIT");
-    
+
     res.json({
       success: true,
       message: "Truck assigned successfully"
@@ -451,7 +471,7 @@ exports.assignToOrder = async (req, res) => {
 exports.getOrderDetailsForMap = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // ✅ Get order basic info with location & truck
     const orderSql = `
       SELECT 
@@ -484,28 +504,28 @@ exports.getOrderDetailsForMap = async (req, res) => {
       INNER JOIN user cu ON cu.group_id = u.group_id
       WHERE o.id = :id AND cu.id = :current_user_id
     `;
-    
+
     const [orderRows] = await db.query(orderSql, {
       id,
       current_user_id: req.current_id
     });
-    
+
     if (orderRows.length === 0) {
       return res.status(404).json({
         error: true,
         message: "Order not found"
       });
     }
-    
+
     const order = orderRows[0];
-    
+
     // ✅ Build structured response
     const customer = {
       name: order.customer_name,
       tel: order.customer_tel,
       address: order.customer_address
     };
-    
+
     let location = null;
     if (order.location_id) {
       location = {
@@ -516,7 +536,7 @@ exports.getOrderDetailsForMap = async (req, res) => {
         longitude: order.longitude
       };
     }
-    
+
     let truck = null;
     if (order.truck_id) {
       truck = {
@@ -528,7 +548,7 @@ exports.getOrderDetailsForMap = async (req, res) => {
         capacity_liters: order.capacity_liters
       };
     }
-    
+
     // ✅ Get tracking history (if table exists)
     let tracking = [];
     try {
@@ -541,16 +561,16 @@ exports.getOrderDetailsForMap = async (req, res) => {
         WHERE dt.order_id = :order_id
         ORDER BY dt.timestamp DESC
       `;
-      
+
       const [trackingRows] = await db.query(trackingSql, {
         order_id: id
       });
-      
+
       tracking = trackingRows;
     } catch (trackingError) {
       // Skip tracking if table doesn't exist yet
     }
-    
+
     // ✅ Get order items
     const itemsSql = `
       SELECT 
@@ -562,11 +582,11 @@ exports.getOrderDetailsForMap = async (req, res) => {
       LEFT JOIN category c ON p.category_id = c.id
       WHERE od.order_id = :order_id
     `;
-    
+
     const [items] = await db.query(itemsSql, {
       order_id: id
     });
-    
+
     res.json({
       success: true,
       data: {
@@ -583,7 +603,7 @@ exports.getOrderDetailsForMap = async (req, res) => {
         items
       }
     });
-    
+
   } catch (error) {
     console.error("Error in getOrderDetailsForMap:", error);
     logError("order.getOrderDetailsForMap", error, res);
@@ -596,7 +616,7 @@ exports.getOrderDetailsForMap = async (req, res) => {
 exports.getOrdersWithLocations = async (req, res) => {
   try {
     const { search, status } = req.query;
-    
+
     let sql = `
       SELECT 
         o.id,
@@ -637,30 +657,30 @@ exports.getOrdersWithLocations = async (req, res) => {
       INNER JOIN user cu ON cu.group_id = u.group_id
       WHERE cu.id = :current_user_id
     `;
-    
+
     const params = { current_user_id: req.current_id };
-    
+
     // Filter by search
     if (search) {
       sql += ` AND (o.order_no LIKE :search OR c.name LIKE :search)`;
       params.search = `%${search}%`;
     }
-    
+
     // Filter by status
     if (status) {
       sql += ` AND o.delivery_status = :status`;
       params.status = status;
     }
-    
+
     sql += ` ORDER BY o.created_at DESC`;
-    
+
     const [list] = await db.query(sql, params);
-    
+
     res.json({
       success: true,
       list
     });
-    
+
   } catch (error) {
     console.error("Error in getOrdersWithLocations:", error);
     logError("order.getOrdersWithLocations", error, res);
@@ -673,7 +693,7 @@ exports.getOrdersWithLocations = async (req, res) => {
 exports.updateDeliveryLocation = async (req, res) => {
   try {
     const { order_id, latitude, longitude, status, notes } = req.body;
-    
+
     // Verify order access
     const checkSql = `
       SELECT o.id 
@@ -682,19 +702,19 @@ exports.updateDeliveryLocation = async (req, res) => {
       INNER JOIN user cu ON u.group_id = cu.group_id
       WHERE o.id = :order_id AND cu.id = :current_user_id
     `;
-    
+
     const [checkRows] = await db.query(checkSql, {
       order_id,
       current_user_id: req.current_id
     });
-    
+
     if (checkRows.length === 0) {
       return res.status(404).json({
         error: true,
         message: "Order not found or no permission"
       });
     }
-    
+
     // Try to insert tracking record (skip if table doesn't exist)
     try {
       const sql = `
@@ -716,7 +736,7 @@ exports.updateDeliveryLocation = async (req, res) => {
           NOW()
         )
       `;
-      
+
       await db.query(sql, {
         order_id,
         latitude: latitude || null,
@@ -728,7 +748,7 @@ exports.updateDeliveryLocation = async (req, res) => {
     } catch (trackingError) {
       // Continue even if tracking fails
     }
-    
+
     // Update order delivery status if provided
     if (status) {
       await db.query(
@@ -736,12 +756,12 @@ exports.updateDeliveryLocation = async (req, res) => {
         { status, order_id }
       );
     }
-    
+
     res.json({
       success: true,
       message: "Location updated successfully"
     });
-    
+
   } catch (error) {
     console.error("Error in updateDeliveryLocation:", error);
     logError("order.updateDeliveryLocation", error, res);

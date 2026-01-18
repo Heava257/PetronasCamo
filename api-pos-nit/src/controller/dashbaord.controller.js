@@ -3,7 +3,7 @@ const { db, logError } = require("../util/helper");
 const formatCurrency = (value) => {
   const num = parseFloat(value || 0);
   if (isNaN(num)) return "$0.00";
-  
+
   // ✅ Format with 2 decimal places and dollar sign at end
   return num.toFixed(2) + "$";
 };
@@ -140,7 +140,9 @@ exports.getList = async (req, res) => {
       SELECT 
         COALESCE(SUM(p.total_amount), 0) AS total_cogs
       FROM purchase p
+      JOIN user u ON p.user_id = u.id
       WHERE p.status IN ('confirmed', 'shipped', 'delivered')
+      ${branchFilter}
       ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [cogsResult] = await db.query(cogsQuery);
@@ -256,7 +258,9 @@ exports.getList = async (req, res) => {
         SUM(p.total_amount) AS total,
         MONTH(p.order_date) as month_num
       FROM purchase p
+      JOIN user u ON p.user_id = u.id
       WHERE p.status IN ('confirmed', 'shipped', 'delivered')
+      ${branchFilter}
       ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(p.order_date, '%M'), MONTH(p.order_date)
     `;
@@ -264,7 +268,7 @@ exports.getList = async (req, res) => {
 
     // ✅ Merge monthly expense data
     const monthlyExpenseMap = {};
-    
+
     opexByMonth.forEach(item => {
       if (!monthlyExpenseMap[item.title]) {
         monthlyExpenseMap[item.title] = { total: 0, month_num: item.month_num };
@@ -294,7 +298,7 @@ exports.getList = async (req, res) => {
       const revenue = parseFloat(saleMonth.total || 0);
       const expense = parseFloat(expenseMonth?.total || 0);
       const profit = revenue - expense;
-      
+
       return {
         title: saleMonth.title,
         total: profit,

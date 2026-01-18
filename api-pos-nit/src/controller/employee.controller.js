@@ -3,48 +3,67 @@ const moment = require('moment'); // ✅ ADDED: Missing import
 
 exports.getList = async (req, res) => {
   try {
-    const { txtSearch } = req.query;
+    // ✅ Get current user info
+    const { txtSearch } = req.query; // ✅ Restored missing variable
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+
+    if (!currentUser.length) return res.status(401).json({ error: "User not found" });
+    const { role_id, branch_name } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
     let sql = `
       SELECT 
-        id,
-        code,
-        name,
+        e.id,
+        e.code,
+        e.name,
         CASE 
-          WHEN gender = 1 THEN 'Male'
-          WHEN gender = 0 THEN 'Female'
+          WHEN e.gender = 1 THEN 'Male'
+          WHEN e.gender = 0 THEN 'Female'
         END AS gender,
-        position,
-        salary,
-        tel,
-        email,
-        address,
-        website,
-        note,
-        is_active as status,
-        -- ✅ FIXED: Added work schedule fields
-        work_type,
-        work_start_time,
-        work_end_time,
-        grace_period_minutes,
-        working_days,
-        schedule_notes,
-        TIME_FORMAT(work_start_time, '%h:%i %p') as work_start_display,
-        TIME_FORMAT(work_end_time, '%h:%i %p') as work_end_display,
-        TIMESTAMPDIFF(HOUR, work_start_time, work_end_time) as daily_hours,
-        create_at
-      FROM employee
+        e.position,
+        e.salary,
+        e.tel,
+        e.email,
+        e.address,
+        e.website,
+        e.note,
+        e.is_active as status,
+        -- Work schedule fields
+        e.work_type,
+        e.work_start_time,
+        e.work_end_time,
+        e.grace_period_minutes,
+        e.working_days,
+        e.schedule_notes,
+        TIME_FORMAT(e.work_start_time, '%h:%i %p') as work_start_display,
+        TIME_FORMAT(e.work_end_time, '%h:%i %p') as work_end_display,
+        TIMESTAMPDIFF(HOUR, e.work_start_time, e.work_end_time) as daily_hours,
+        e.create_at,
+        u.name as created_by_name
+      FROM employee e
+      LEFT JOIN user u ON e.creator_id = u.id
       WHERE 1=1
     `;
 
+    const params = {
+      txtSearch: `%${txtSearch}%`
+    };
+
     if (!isEmpty(txtSearch)) {
-      sql += " AND (name LIKE :txtSearch OR tel LIKE :txtSearch OR email LIKE :txtSearch OR code LIKE :txtSearch)";
+      sql += " AND (e.name LIKE :txtSearch OR e.tel LIKE :txtSearch OR e.email LIKE :txtSearch OR e.code LIKE :txtSearch)";
     }
 
-    sql += " ORDER BY create_at DESC";
+    // ✅ Filter by branch for non-Super Admins
+    if (!isSuperAdmin) {
+      // Show employees created by branch OR where creator is NULL (Legacy data transparency)
+      sql += ` AND (u.branch_name = :branch_name OR e.creator_id IS NULL)`;
+      params.branch_name = branch_name;
+    }
 
-    const [list] = await db.query(sql, {
-      txtSearch: `%${txtSearch}%`,
-    });
+    sql += " ORDER BY e.create_at DESC";
+
+    const [list] = await db.query(sql, params);
 
     // Parse working_days JSON for each employee
     list.forEach(emp => {
@@ -69,7 +88,7 @@ exports.create = async (req, res) => {
   try {
     const {
       code, name, gender, position,
-      salary, tel, email, address, 
+      salary, tel, email, address,
       website, note, is_active,
       // Work Schedule Fields
       work_type, work_start_time, work_end_time, grace_period_minutes,
@@ -108,8 +127,8 @@ exports.create = async (req, res) => {
         website, note, is_active,
         work_type, work_start_time, work_end_time, grace_period_minutes,
         working_days, schedule_notes,
-        create_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        create_at, creator_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
       [
         code || null,
         name,
@@ -126,8 +145,9 @@ exports.create = async (req, res) => {
         work_start_time || '07:00:00',
         work_end_time || '17:00:00',
         grace_period_minutes || 30,
-        working_days ? JSON.stringify(working_days) : JSON.stringify(["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]),
-        schedule_notes || null
+        working_days ? JSON.stringify(working_days) : JSON.stringify(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]),
+        schedule_notes || null,
+        req.current_id // ✅ Added creator_id
       ]
     );
 
@@ -146,7 +166,7 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const {
-      id, code, name, gender, position, salary, tel, email, address, 
+      id, code, name, gender, position, salary, tel, email, address,
       website, note, is_active,
       work_type, work_start_time, work_end_time, grace_period_minutes,
       working_days, schedule_notes
@@ -519,7 +539,7 @@ exports.createLoginAccount = async (req, res) => {
   } catch (error) {
     console.error("Error creating login account:", error);
     logError("Employee.createLoginAccount", error, res);
-    
+
     return res.json({
       error: true,
       message: "Failed to create login account",
@@ -575,7 +595,7 @@ exports.getAllowedIPs = async (req, res) => {
     const [ips] = await db.query(
       `SELECT * FROM allowed_ips ORDER BY created_at DESC`
     );
-    
+
     res.json({
       error: false,
       ips: ips
@@ -588,10 +608,10 @@ exports.getAllowedIPs = async (req, res) => {
 // Get current user IP
 exports.getMyIP = async (req, res) => {
   try {
-    const clientIP = req.ip || 
-                    req.headers['x-forwarded-for']?.split(',')[0] || 
-                    req.connection.remoteAddress;
-    
+    const clientIP = req.ip ||
+      req.headers['x-forwarded-for']?.split(',')[0] ||
+      req.connection.remoteAddress;
+
     res.json({
       error: false,
       ip: clientIP
@@ -671,7 +691,7 @@ exports.updateAllowedIP = async (req, res) => {
 exports.diagnoseIP = async (req, res) => {
   try {
     const { ip } = req.query;
-    
+
 
 
     if (!ip) {
@@ -719,26 +739,26 @@ exports.diagnoseIP = async (req, res) => {
         ip_length: ip.length,
         trimmed_ip: trimmedIP,
         trimmed_length: trimmedIP.length,
-        
+
         exact_match: exactMatch.length > 0 ? exactMatch[0] : null,
         exact_match_count: exactMatch.length,
-        
+
         active_match: activeMatch.length > 0 ? activeMatch[0] : null,
         active_match_count: activeMatch.length,
-        
+
         trimmed_match: trimmedMatch.length > 0 ? trimmedMatch[0] : null,
         trimmed_match_count: trimmedMatch.length,
-        
+
         all_ips_in_db: allIPs,
         similar_ips: similarIPs,
-        
+
         summary: {
           is_exact_match: exactMatch.length > 0,
           is_active_match: activeMatch.length > 0,
           is_trimmed_match: trimmedMatch.length > 0,
           total_ips_in_db: allIPs.length
         },
-        
+
         recommendations: [
           !exactMatch.length > 0 && "IP not found in database",
           exactMatch.length > 0 && activeMatch.length === 0 && "IP found but is inactive",

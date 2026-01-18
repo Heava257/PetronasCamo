@@ -10,7 +10,12 @@ exports.report_Expense_Category = async (req, res) => {
   try {
     const { from_date, to_date, expense_type_id, branch_id } = req.query;
 
-    const sql = `
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
       SELECT 
         et.name AS expense_category,
         et.code AS category_code,  -- ✅ ប្រើ code
@@ -29,18 +34,30 @@ exports.report_Expense_Category = async (req, res) => {
       INNER JOIN expense_type et ON e.expense_type_id = et.id
       LEFT JOIN user u ON e.user_id = u.id
       WHERE DATE(e.expense_date) BETWEEN :from_date AND :to_date
-      ${expense_type_id ? 'AND e.expense_type_id = :expense_type_id' : ''}
-      ${branch_id ? 'AND e.user_id = :branch_id' : ''}
-      GROUP BY et.name, et.code, category_type, u.branch_name
-      ORDER BY total_amount DESC
     `;
 
-    const [list] = await db.query(sql, {
+    const params = {
       from_date,
       to_date,
       expense_type_id: expense_type_id || null,
       branch_id: branch_id || null
-    });
+    };
+
+    if (expense_type_id) sql += ' AND e.expense_type_id = :expense_type_id';
+
+    if (!isSuperAdmin) {
+      sql += ' AND u.branch_name = :user_branch_name';
+      params.user_branch_name = branch_name;
+    } else if (branch_id) {
+      sql += ' AND e.user_id = :branch_id';
+    }
+
+    sql += `
+      GROUP BY et.name, et.code, category_type, u.branch_name
+      ORDER BY total_amount DESC
+    `;
+
+    const [list] = await db.query(sql, params);
 
     // Calculate summary by category
     const cogsTotal = list
@@ -87,7 +104,20 @@ exports.report_Income_vs_Expense = async (req, res) => {
     // ========================================
     // 1. GET TOTAL REVENUE (Sales)
     // ========================================
-    const [revenueData] = await db.query(`
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    const params = { from_date, to_date, branch_id: branch_id || null };
+    if (!isSuperAdmin) {
+      params.user_branch_name = branch_name;
+    }
+
+    // ========================================
+    // 1. GET TOTAL REVENUE (Sales)
+    // ========================================
+    let revenueSql = `
       SELECT 
         COALESCE(SUM(cd.total_amount), 0) AS total_revenue,
         COALESCE(SUM(cd.paid_amount), 0) AS collected_revenue,
@@ -96,17 +126,24 @@ exports.report_Income_vs_Expense = async (req, res) => {
         COUNT(DISTINCT cd.customer_id) AS total_customers
       FROM customer_debt cd
       INNER JOIN \`order\` o ON cd.order_id = o.id
-      ${branch_id ? 'INNER JOIN user u ON o.user_id = u.id' : ''}
+      INNER JOIN user u ON o.user_id = u.id
       WHERE DATE(o.order_date) BETWEEN :from_date AND :to_date
-      ${branch_id ? 'AND u.id = :branch_id' : ''}
-    `, { from_date, to_date, branch_id: branch_id || null });
+    `;
+
+    if (!isSuperAdmin) {
+      revenueSql += ` AND u.branch_name = :user_branch_name`;
+    } else if (branch_id) {
+      revenueSql += ` AND u.id = :branch_id`;
+    }
+
+    const [revenueData] = await db.query(revenueSql, params);
 
 
     // ========================================
     // 2. GET COGS (Cost of Goods Sold)
     // ✅ CORRECT: ប្រើ purchase.total_amount ONLY
     // ========================================
-    const [cogsData] = await db.query(`
+    let cogsSql = `
       SELECT 
         COALESCE(SUM(p.total_amount), 0) AS total_cogs,
         COUNT(p.id) AS total_purchases,
@@ -114,15 +151,22 @@ exports.report_Income_vs_Expense = async (req, res) => {
         MIN(p.order_date) AS first_purchase,
         MAX(p.order_date) AS last_purchase
       FROM purchase p
+      LEFT JOIN user u ON p.user_id = u.id
       WHERE DATE(p.order_date) BETWEEN :from_date AND :to_date
         AND p.status IN ('confirmed', 'shipped', 'delivered')
-    `, { from_date, to_date });
+    `;
+
+    if (!isSuperAdmin) {
+      cogsSql += ` AND u.branch_name = :user_branch_name`;
+    }
+
+    const [cogsData] = await db.query(cogsSql, params);
 
 
     // ========================================
     // 3. GET OPERATING EXPENSES
     // ========================================
-    const [expenseData] = await db.query(`
+    let expenseSql = `
       SELECT 
         et.code AS expense_code,
         et.name AS expense_name,
@@ -135,12 +179,22 @@ exports.report_Income_vs_Expense = async (req, res) => {
         END AS category
       FROM expense e
       INNER JOIN expense_type et ON e.expense_type_id = et.id
-      ${branch_id ? 'LEFT JOIN user u ON e.user_id = u.id' : ''}
+      LEFT JOIN user u ON e.user_id = u.id
       WHERE DATE(e.expense_date) BETWEEN :from_date AND :to_date
-      ${branch_id ? 'AND (e.user_id = :branch_id OR u.id = :branch_id)' : ''}
+    `;
+
+    if (!isSuperAdmin) {
+      expenseSql += ` AND u.branch_name = :user_branch_name`;
+    } else if (branch_id) {
+      expenseSql += ` AND (e.user_id = :branch_id OR u.id = :branch_id)`;
+    }
+
+    expenseSql += `
       GROUP BY et.code, et.name, category
       ORDER BY total_amount DESC
-    `, { from_date, to_date, branch_id: branch_id || null });
+    `;
+
+    const [expenseData] = await db.query(expenseSql, params);
 
 
     // ========================================
@@ -330,7 +384,12 @@ exports.report_Expense_Details = async (req, res) => {
   try {
     const { from_date, to_date, expense_type_id, branch_id, status } = req.query;
 
-    const sql = `
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
       SELECT 
         e.id,
         e.expense_date,
@@ -352,19 +411,32 @@ exports.report_Expense_Details = async (req, res) => {
       LEFT JOIN user u_created ON e.created_by = u_created.id
       LEFT JOIN user u_approved ON e.approved_by = u_approved.id
       WHERE DATE(e.expense_date) BETWEEN :from_date AND :to_date
-      ${expense_type_id ? 'AND e.expense_type_id = :expense_type_id' : ''}
-      ${branch_id ? 'AND e.branch_id = :branch_id' : ''}
-      ${status ? 'AND e.status = :status' : ''}
-      ORDER BY e.expense_date DESC, e.created_at DESC
     `;
 
-    const [list] = await db.query(sql, {
+    const params = {
       from_date,
       to_date,
       expense_type_id: expense_type_id || null,
       branch_id: branch_id || null,
       status: status || null
-    });
+    };
+
+    if (expense_type_id) sql += ' AND e.expense_type_id = :expense_type_id';
+
+    if (status) sql += ' AND e.status = :status';
+
+    if (!isSuperAdmin) {
+      // Enforce branch filter on the branch user or creator
+      // Prioritize u_branch (from branch_id column) if used, else u_created
+      sql += ` AND (u_branch.branch_name = :user_branch_name OR u_created.branch_name = :user_branch_name)`;
+      params.user_branch_name = branch_name;
+    } else if (branch_id) {
+      sql += ' AND e.branch_id = :branch_id';
+    }
+
+    sql += ` ORDER BY e.expense_date DESC, e.created_at DESC`;
+
+    const [list] = await db.query(sql, params);
 
     const totalExpense = list.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
     const totalTransactions = list.length;
@@ -395,7 +467,12 @@ exports.report_Sale_Summary = async (req, res) => {
 
 
     // ✅ CORRECT CALCULATION with actual_price
-    const sql = `
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
       SELECT 
         DATE_FORMAT(o.order_date, '%d/%m/%Y') AS order_date,
         u.branch_name,
@@ -414,18 +491,30 @@ exports.report_Sale_Summary = async (req, res) => {
       INNER JOIN product p ON od.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
       WHERE DATE(o.order_date) BETWEEN :from_date AND :to_date
-      ${category_id ? 'AND p.category_id = :category_id' : ''}
-      ${branch_id ? 'AND u.id = :branch_id' : ''}
-      GROUP BY DATE(o.order_date), u.branch_name, u.id
-      ORDER BY o.order_date ASC
     `;
 
-    const [list] = await db.query(sql, {
+    const params = {
       from_date,
       to_date,
       category_id: category_id || null,
       branch_id: branch_id || null
-    });
+    };
+
+    if (category_id) sql += ' AND p.category_id = :category_id';
+
+    if (!isSuperAdmin) {
+      sql += ' AND u.branch_name = :user_branch_name';
+      params.user_branch_name = branch_name;
+    } else if (branch_id) {
+      sql += ' AND u.id = :branch_id';
+    }
+
+    sql += `
+      GROUP BY DATE(o.order_date), u.branch_name, u.id
+      ORDER BY o.order_date ASC
+    `;
+
+    const [list] = await db.query(sql, params);
 
 
     // Get branch list for dropdown
@@ -469,7 +558,12 @@ exports.report_Purchase_History = async (req, res) => {
   try {
     let { from_date, to_date, supplier_id } = req.query;
 
-    const sql = `
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
       SELECT 
         p.id AS purchase_id,
         p.order_no AS reference_no,        -- ✅ FIXED: order_no instead of ref
@@ -487,15 +581,24 @@ exports.report_Purchase_History = async (req, res) => {
       LEFT JOIN supplier s ON p.supplier_id = s.id
       LEFT JOIN user u ON p.user_id = u.id
       WHERE DATE(p.order_date) BETWEEN :from_date AND :to_date
-      ${supplier_id ? 'AND p.supplier_id = :supplier_id' : ''}
-      ORDER BY p.order_date DESC
     `;
 
-    const [list] = await db.query(sql, {
+    const params = {
       from_date,
       to_date,
       supplier_id: supplier_id || null
-    });
+    };
+
+    if (supplier_id) sql += ' AND p.supplier_id = :supplier_id';
+
+    if (!isSuperAdmin) {
+      sql += ' AND u.branch_name = :user_branch_name';
+      params.user_branch_name = branch_name;
+    }
+
+    sql += ' ORDER BY p.order_date DESC';
+
+    const [list] = await db.query(sql, params);
 
     // Calculate summary
     const totalPurchases = list.length;
@@ -545,45 +648,61 @@ exports.report_Outstanding_Debt = async (req, res) => {
   try {
     let { customer_id, branch_id } = req.query;
 
-    const sql = `
-      SELECT 
-        cd.id AS debt_id,
-        cd.order_id,
-        c.id AS customer_id,
+
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
+    SELECT
+    cd.id AS debt_id,
+      cd.order_id,
+      c.id AS customer_id,
         c.name AS customer_name,
-        c.tel AS customer_tel,
-        u.branch_name,
-        cd.total_amount,
-        cd.paid_amount,
-        cd.due_amount AS outstanding_amount,
-        cd.payment_status,
-        cd.created_at AS due_date,
-        cd.last_payment_date,
-        DATEDIFF(CURDATE(), cd.created_at) AS days_overdue,
-        CASE 
+          c.tel AS customer_tel,
+            u.branch_name,
+            cd.total_amount,
+            cd.paid_amount,
+            cd.due_amount AS outstanding_amount,
+              cd.payment_status,
+              cd.created_at AS due_date,
+                cd.last_payment_date,
+                DATEDIFF(CURDATE(), cd.created_at) AS days_overdue,
+                  CASE 
           WHEN DATEDIFF(CURDATE(), cd.created_at) <= 0 THEN 'Current'
           WHEN DATEDIFF(CURDATE(), cd.created_at) <= 30 THEN '1-30 Days'
           WHEN DATEDIFF(CURDATE(), cd.created_at) <= 60 THEN '31-60 Days'
           WHEN DATEDIFF(CURDATE(), cd.created_at) <= 90 THEN '61-90 Days'
           ELSE '90+ Days'
         END AS aging_category,
-        cd.notes,
-        DATE_FORMAT(cd.created_at, '%d/%m/%Y') AS formatted_date
+      cd.notes,
+      DATE_FORMAT(cd.created_at, '%d/%m/%Y') AS formatted_date
       FROM customer_debt cd
       INNER JOIN customer c ON cd.customer_id = c.id
       INNER JOIN \`order\` o ON cd.order_id = o.id
       INNER JOIN user u ON o.user_id = u.id
       WHERE cd.due_amount > 0
       AND cd.payment_status != 'Paid'
-      ${customer_id ? 'AND c.id = :customer_id' : ''}
-      ${branch_id ? 'AND u.id = :branch_id' : ''}
-      ORDER BY days_overdue DESC, cd.due_amount DESC
     `;
 
-    const [list] = await db.query(sql, {
+    const params = {
       customer_id: customer_id || null,
       branch_id: branch_id || null
-    });
+    };
+
+    if (customer_id) sql += ' AND c.id = :customer_id';
+
+    if (!isSuperAdmin) {
+      sql += ' AND u.branch_name = :user_branch_name';
+      params.user_branch_name = branch_name;
+    } else if (branch_id) {
+      sql += ' AND u.id = :branch_id';
+    }
+
+    sql += ' ORDER BY days_overdue DESC, cd.due_amount DESC';
+
+    const [list] = await db.query(sql, params);
 
     const totalOutstanding = list.reduce((sum, item) => sum + parseFloat(item.outstanding_amount || 0), 0);
     const totalDebts = list.length;
@@ -622,23 +741,29 @@ exports.report_Payment_History = async (req, res) => {
   try {
     let { from_date, to_date, customer_id, branch_id } = req.query;
 
-    const sql = `
-      SELECT 
-        pay.id AS payment_id,
-        pay.order_id,
-        c.id AS customer_id,
+
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
+    SELECT
+    pay.id AS payment_id,
+      pay.order_id,
+      c.id AS customer_id,
         c.name AS customer_name,
-        c.tel AS customer_tel,
-        u.branch_name,
-        pay.amount AS payment_amount,
-        pay.payment_method,
-        pay.bank,
-        pay.description,
-        pay.payment_date,
-        cd.total_amount AS debt_total,
-        cd.paid_amount AS total_paid,
-        cd.due_amount AS remaining_balance,
-        DATE_FORMAT(pay.payment_date, '%d/%m/%Y') AS formatted_date
+          c.tel AS customer_tel,
+            u.branch_name,
+            pay.amount AS payment_amount,
+              pay.payment_method,
+              pay.bank,
+              pay.description,
+              pay.payment_date,
+              cd.total_amount AS debt_total,
+                cd.paid_amount AS total_paid,
+                  cd.due_amount AS remaining_balance,
+                    DATE_FORMAT(pay.payment_date, '%d/%m/%Y') AS formatted_date
       FROM payments pay
       LEFT JOIN customer_debt cd ON pay.order_id = cd.order_id 
         AND pay.customer_id = cd.customer_id
@@ -646,17 +771,27 @@ exports.report_Payment_History = async (req, res) => {
       INNER JOIN \`order\` o ON pay.order_id = o.id
       INNER JOIN user u ON o.user_id = u.id
       WHERE DATE(pay.payment_date) BETWEEN :from_date AND :to_date
-      ${customer_id ? 'AND c.id = :customer_id' : ''}
-      ${branch_id ? 'AND u.id = :branch_id' : ''}
-      ORDER BY pay.payment_date DESC
     `;
 
-    const [list] = await db.query(sql, {
+    const params = {
       from_date,
       to_date,
       customer_id: customer_id || null,
       branch_id: branch_id || null
-    });
+    };
+
+    if (customer_id) sql += ' AND c.id = :customer_id';
+
+    if (!isSuperAdmin) {
+      sql += ' AND u.branch_name = :user_branch_name';
+      params.user_branch_name = branch_name;
+    } else if (branch_id) {
+      sql += ' AND u.id = :branch_id';
+    }
+
+    sql += ' ORDER BY pay.payment_date DESC';
+
+    const [list] = await db.query(sql, params);
 
     const totalPayments = list.length;
     const totalCollected = list.reduce((sum, item) => sum + parseFloat(item.payment_amount || 0), 0);
@@ -692,26 +827,32 @@ exports.report_Profit_Loss = async (req, res) => {
   try {
     let { from_date, to_date, category_id, branch_id } = req.query;
 
-    const sql = `
-      SELECT 
-        DATE_FORMAT(o.order_date, '%d/%m/%Y') AS sale_date,
-        DATE_FORMAT(o.order_date, '%Y-%m') AS month,
+
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id, branch_name } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29;
+
+    let sql = `
+    SELECT
+    DATE_FORMAT(o.order_date, '%d/%m/%Y') AS sale_date,
+      DATE_FORMAT(o.order_date, '%Y-%m') AS month,
         u.branch_name,
         cat.name AS category_name,
-        p.name AS product_name,
-        od.qty AS quantity_sold,
-        od.price AS selling_price,
-        p.actual_price AS cost_price,
-        cat.actual_price AS category_actual_price,
-        -- ✅ CORRECT revenue calculation
-        (od.qty * od.price / NULLIF(cat.actual_price, 0)) AS total_revenue,
-        (od.qty * p.actual_price) AS total_cost,
-        -- ✅ CORRECT profit calculation
-        ((od.qty * od.price / NULLIF(cat.actual_price, 0)) - (od.qty * p.actual_price)) AS gross_profit,
-        CASE 
-          WHEN ((od.qty * od.price / NULLIF(cat.actual_price, 0)) - (od.qty * p.actual_price)) > 0 
+          p.name AS product_name,
+            od.qty AS quantity_sold,
+              od.price AS selling_price,
+                p.actual_price AS cost_price,
+                  cat.actual_price AS category_actual_price,
+                    -- ✅ CORRECT revenue calculation
+                      (od.qty * od.price / NULLIF(cat.actual_price, 0)) AS total_revenue,
+                        (od.qty * p.actual_price) AS total_cost,
+                          -- ✅ CORRECT profit calculation
+                            ((od.qty * od.price / NULLIF(cat.actual_price, 0)) - (od.qty * p.actual_price)) AS gross_profit,
+                              CASE
+    WHEN((od.qty * od.price / NULLIF(cat.actual_price, 0)) - (od.qty * p.actual_price)) > 0 
           THEN 'Profit'
-          WHEN ((od.qty * od.price / NULLIF(cat.actual_price, 0)) - (od.qty * p.actual_price)) = 0 
+    WHEN((od.qty * od.price / NULLIF(cat.actual_price, 0)) - (od.qty * p.actual_price)) = 0 
           THEN 'Break Even'
           ELSE 'Loss'
         END AS profit_status
@@ -721,17 +862,27 @@ exports.report_Profit_Loss = async (req, res) => {
       INNER JOIN product p ON od.product_id = p.id
       LEFT JOIN category cat ON p.category_id = cat.id
       WHERE DATE(o.order_date) BETWEEN :from_date AND :to_date
-      ${category_id ? 'AND p.category_id = :category_id' : ''}
-      ${branch_id ? 'AND u.id = :branch_id' : ''}
-      ORDER BY o.order_date DESC
     `;
 
-    const [list] = await db.query(sql, {
+    const params = {
       from_date,
       to_date,
       category_id: category_id || null,
       branch_id: branch_id || null
-    });
+    };
+
+    if (category_id) sql += ' AND p.category_id = :category_id';
+
+    if (!isSuperAdmin) {
+      sql += ' AND u.branch_name = :user_branch_name';
+      params.user_branch_name = branch_name;
+    } else if (branch_id) {
+      sql += ' AND u.id = :branch_id';
+    }
+
+    sql += ' ORDER BY o.order_date DESC';
+
+    const [list] = await db.query(sql, params);
 
     const totalRevenue = list.reduce((sum, item) => sum + parseFloat(item.total_revenue || 0), 0);
     const totalCost = list.reduce((sum, item) => sum + parseFloat(item.total_cost || 0), 0);
@@ -813,7 +964,7 @@ exports.getBranchComparison = async (req, res) => {
 
     // Verify user is super admin
     const [currentUser] = await db.query(
-      `SELECT u.id, u.username, r.code AS role_code
+      `SELECT u.id, u.username, r.code AS role_code, r.id as role_id, u.branch_name
        FROM user u 
        INNER JOIN role r ON u.role_id = r.id 
        WHERE u.id = :user_id`,
@@ -827,16 +978,10 @@ exports.getBranchComparison = async (req, res) => {
       });
     }
 
-    const userRole = currentUser[0]?.role_code;
-    if (userRole !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Access denied. Super Admin only."
-      });
-    }
+    const { role_code, role_id, branch_name } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
 
-    // ✅ Get data from customer_debt with correct calculation
-    const [branchComparison] = await db.query(`
+    let sql = `
       SELECT 
         COALESCE(u.branch_name, 'Unknown') AS branch_name,
         COUNT(DISTINCT cd.order_id) AS total_orders,
@@ -854,9 +999,23 @@ exports.getBranchComparison = async (req, res) => {
       INNER JOIN \`order\` o ON cd.order_id = o.id
       INNER JOIN user u ON o.user_id = u.id
       WHERE o.order_date BETWEEN :from_date AND :to_date
+    `;
+
+    const params = { from_date, to_date };
+
+    if (!isSuperAdmin) {
+      // If not super admin, only show their own branch (comparison effectively becomes single branch view)
+      sql += ` AND u.branch_name = :user_branch_name`;
+      params.user_branch_name = branch_name;
+    }
+
+    sql += `
       GROUP BY u.branch_name
       ORDER BY total_revenue DESC
-    `, { from_date, to_date });
+    `;
+
+    // ✅ Get data from customer_debt with correct calculation
+    const [branchComparison] = await db.query(sql, params);
 
     // ✅ Get summary from customer_debt
     const [summary] = await db.query(`
@@ -959,20 +1118,38 @@ exports.report_Expense_Summary = async (req, res) => {
 exports.report_Customer = async (req, res) => {
   try {
     let { from_date, to_date } = req.query;
+
+    // ✅ Auth & Branch Info
+    const currentUserId = req.auth?.id;
+    const userRole = req.auth?.role_id;
+    const branch_name = req.auth?.branch_name;
+    const isSuperAdmin = userRole === 29;
+
     to_date = new Date(to_date);
     to_date.setHours(23, 59, 59, 999);
 
-    const sql = `
+    let sql = `
       SELECT 
         DATE_FORMAT(cu.create_at, '%d-%m-%Y') AS title,
         COUNT(cu.id) AS total_amount
       FROM customer cu
       WHERE cu.create_at BETWEEN :from_date AND :to_date
+    `;
+
+    const params = { from_date, to_date };
+
+    if (!isSuperAdmin) {
+      // ✅ Filter by branch for non-admins
+      sql += ` AND cu.branch_name = :branch_name`;
+      params.branch_name = branch_name;
+    }
+
+    sql += `
       GROUP BY DATE(cu.create_at)
       ORDER BY cu.create_at ASC;
     `;
 
-    const [list] = await db.query(sql, { from_date, to_date });
+    const [list] = await db.query(sql, params);
     res.json({ list });
   } catch (error) {
     logError("report.Customer", error, res);
@@ -982,6 +1159,12 @@ exports.top_sale = async (req, res) => {
   try {
     let { from_date, to_date, branch_id } = req.query;
 
+    // ✅ Auth & Branch Info
+    const currentUserId = req.auth?.id;
+    const userRole = req.auth?.role_id;
+    const branch_name = req.auth?.branch_name;
+    const isSuperAdmin = userRole === 29;
+
     // Default date range if not provided
     if (!from_date || !to_date) {
       const currentDate = new Date();
@@ -989,9 +1172,8 @@ exports.top_sale = async (req, res) => {
       from_date = `${currentDate.getFullYear()}-01-01`;
     }
 
-
     // ✅ CORRECT FORMULA: (qty × price) ÷ actual_price
-    const sql = `
+    let sql = `
       SELECT 
         p.id AS product_id,
         p.name AS product_name,
@@ -1019,18 +1201,31 @@ exports.top_sale = async (req, res) => {
       LEFT JOIN category c ON p.category_id = c.id
       LEFT JOIN user u ON o.user_id = u.id
       WHERE DATE(o.order_date) BETWEEN :from_date AND :to_date
-      ${branch_id ? 'AND u.id = :branch_id' : ''}
+    `;
+
+    const params = {
+      from_date,
+      to_date
+    };
+
+    if (isSuperAdmin) {
+      if (branch_id) {
+        sql += ` AND u.id = :branch_id`;
+        params.branch_id = branch_id;
+      }
+    } else {
+      // ✅ Filter by branch for non-admins
+      sql += ` AND u.branch_name = :user_branch_name`;
+      params.user_branch_name = branch_name;
+    }
+
+    sql += `
       GROUP BY p.id, p.name, p.barcode, c.name, c.actual_price
       ORDER BY total_sale_amount DESC
       LIMIT 10
     `;
 
-    const [list] = await db.query(sql, {
-      from_date,
-      to_date,
-      branch_id: branch_id || null
-    });
-
+    const [list] = await db.query(sql, params);
 
     // Calculate summary
     const summary = {
@@ -1039,7 +1234,6 @@ exports.top_sale = async (req, res) => {
       total_qty: list.reduce((sum, item) => sum + parseFloat(item.total_qty || 0), 0),
       total_orders: list.reduce((sum, item) => sum + parseInt(item.order_count || 0), 0)
     };
-
 
     res.json({
       list,
@@ -1083,6 +1277,24 @@ exports.report_Stock_Status = async (req, res) => {
   try {
     const { from_date, to_date, category_id, status_filter } = req.query;
 
+    // ✅ Auth & Branch Info
+    const currentUserId = req.auth?.id;
+    const userRole = req.auth?.role_id;
+    const branch_name = req.auth?.branch_name;
+    const isSuperAdmin = userRole === 29;
+
+    // ✅ Prepare filter condition for subqueries
+    let branchFilter = '';
+    const queryParams = {
+      from_date: from_date || null,
+      to_date: to_date || null
+    };
+
+    if (!isSuperAdmin) {
+      branchFilter = `AND u_it.branch_name = :branch_name`;
+      queryParams.branch_name = branch_name;
+    }
+
     const sql = `
       SELECT 
         p.id AS product_id,
@@ -1098,7 +1310,9 @@ exports.report_Stock_Status = async (req, res) => {
         COALESCE(
           (SELECT it.selling_price
            FROM inventory_transaction it
+           ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
            WHERE it.product_id = p.id
+           ${branchFilter}
            ORDER BY it.created_at DESC
            LIMIT 1
           ), 0
@@ -1115,8 +1329,10 @@ exports.report_Stock_Status = async (req, res) => {
         COALESCE(
           (SELECT SUM(ABS(it.quantity))
            FROM inventory_transaction it
+           ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
            WHERE it.product_id = p.id
            AND it.transaction_type = 'SALE_OUT'
+           ${branchFilter}
            ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN :from_date AND :to_date` : ''}
           ), 0
         ) AS total_sold,
@@ -1130,13 +1346,15 @@ exports.report_Stock_Status = async (req, res) => {
             )
           )
            FROM inventory_transaction it
+           ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
            WHERE it.product_id = p.id
            AND it.transaction_type = 'SALE_OUT'
+           ${branchFilter}
            ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN :from_date AND :to_date` : ''}
           ), 0
         ) AS total_revenue,
         
-        -- ✅ Stock Status
+        -- ✅ Stock Status (Global)
         CASE 
           WHEN p.qty = 0 THEN 'Out of Stock'
           WHEN p.qty < 100 THEN 'Low Stock'
@@ -1147,25 +1365,24 @@ exports.report_Stock_Status = async (req, res) => {
         -- ✅ Last sale date from inventory_transaction
         (SELECT MAX(it.created_at)
          FROM inventory_transaction it
+         ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
          WHERE it.product_id = p.id
          AND it.transaction_type = 'SALE_OUT'
+         ${branchFilter}
         ) AS last_sale_date,
         
         p.receive_date AS last_receive_date
         
       FROM product p
       LEFT JOIN category c ON p.category_id = c.id
+      ${isSuperAdmin ? '' : 'LEFT JOIN user u_prod ON p.user_id = u_prod.id'}
       WHERE p.status = 1
+      ${isSuperAdmin ? '' : 'AND u_prod.branch_name = :branch_name'}
       ${category_id ? `AND p.category_id = ${category_id}` : ''}
       ORDER BY p.qty ASC
     `;
 
-
-    const [list] = await db.query(sql, {
-      from_date: from_date || null,
-      to_date: to_date || null
-    });
-
+    const [list] = await db.query(sql, queryParams);
 
     // ✅ Apply status filter
     let filteredList = list;
@@ -1212,8 +1429,6 @@ exports.report_Stock_Status = async (req, res) => {
       categoryBreakdown[category].total_sold += parseFloat(item.total_sold || 0);
       categoryBreakdown[category].revenue += parseFloat(item.total_revenue || 0);
     });
-
-
 
     res.json({
       success: true,
@@ -1265,6 +1480,44 @@ exports.report_Stock_Movement = async (req, res) => {
   try {
     let { from_date, to_date, product_id, category_id } = req.query;
 
+    // ✅ Auth & Branch Info
+    const currentUserId = req.auth?.id;
+    const userRole = req.auth?.role_id;
+    const branch_name = req.auth?.branch_name;
+    const isSuperAdmin = userRole === 29;
+
+    // ✅ Prepare Branch Filter
+    let branchFilterJoin = '';
+    let branchFilterWhere = '';
+    const params = {
+      from_date,
+      to_date,
+      product_id: product_id || null,
+      category_id: category_id || null
+    };
+
+    if (!isSuperAdmin) {
+      branchFilterJoin = `LEFT JOIN user u ON TABLE_ALIAS.user_id = u.id`;
+      branchFilterWhere = `AND u.branch_name = :branch_name`;
+      params.branch_name = branch_name;
+    }
+
+    // Helper to inject filter
+    const getFilter = (alias) => {
+      if (!isSuperAdmin) {
+        return `
+          LEFT JOIN user u ON ${alias}.user_id = u.id
+          AND u.branch_name = :branch_name
+        `;
+      }
+      return '';
+    };
+
+    // Note: For UNION, we need simpler injection
+    // 1. Purchase: p.user_id
+    // 2. Sale: o.user_id
+    // 3. Inventory: it.user_id
+
     const sql = `
       SELECT 
         'Purchase' AS movement_type,
@@ -1283,8 +1536,10 @@ exports.report_Stock_Movement = async (req, res) => {
       FROM purchase p
       LEFT JOIN supplier s ON p.supplier_id = s.id
       LEFT JOIN category c ON JSON_UNQUOTE(JSON_EXTRACT(p.items, '$[0].category_id')) = c.id
+      ${isSuperAdmin ? '' : 'LEFT JOIN user u_p ON p.user_id = u_p.id'}
       WHERE DATE(p.order_date) BETWEEN :from_date AND :to_date
         AND p.status IN ('confirmed', 'shipped', 'delivered')
+        ${isSuperAdmin ? '' : 'AND u_p.branch_name = :branch_name'}
       
       UNION ALL
       
@@ -1307,9 +1562,11 @@ exports.report_Stock_Movement = async (req, res) => {
       INNER JOIN product prod ON od.product_id = prod.id
       LEFT JOIN category c ON prod.category_id = c.id
       LEFT JOIN customer cust ON o.customer_id = cust.id
+      ${isSuperAdmin ? '' : 'LEFT JOIN user u_o ON o.user_id = u_o.id'}
       WHERE DATE(o.order_date) BETWEEN :from_date AND :to_date
       ${product_id ? 'AND prod.id = :product_id' : ''}
       ${category_id ? 'AND c.id = :category_id' : ''}
+      ${isSuperAdmin ? '' : 'AND u_o.branch_name = :branch_name'}
       
       UNION ALL
       
@@ -1337,19 +1594,16 @@ exports.report_Stock_Movement = async (req, res) => {
       LEFT JOIN category c ON prod.category_id = c.id
       LEFT JOIN \`order\` o ON it.reference_no = o.order_no
       LEFT JOIN customer cust ON o.customer_id = cust.id
+      ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
       WHERE DATE(it.created_at) BETWEEN :from_date AND :to_date
       ${product_id ? 'AND prod.id = :product_id' : ''}
       ${category_id ? 'AND c.id = :category_id' : ''}
+      ${isSuperAdmin ? '' : 'AND u_it.branch_name = :branch_name'}
       
       ORDER BY movement_date DESC
     `;
 
-    const [list] = await db.query(sql, {
-      from_date,
-      to_date,
-      product_id: product_id || null,
-      category_id: category_id || null
-    });
+    const [list] = await db.query(sql, params);
 
     // Calculate summary
     const totalPurchases = list.filter(item => item.movement_type === 'Purchase').length;

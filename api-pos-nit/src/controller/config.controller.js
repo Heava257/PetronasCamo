@@ -38,8 +38,8 @@ exports.getList = async (req, res) => {
       branchFilter = `AND creator.branch_name = '${userBranch}'`;
     }
 
-    // ✅ Category with group filter
-    const [category] = await db.query(`
+    // ✅✅✅ 1. Category with Branch Filter ✅✅✅
+    let categorySql = `
       SELECT 
         c.id AS value, 
         c.name AS label, 
@@ -47,21 +47,26 @@ exports.getList = async (req, res) => {
         c.actual_price  
       FROM category c
       INNER JOIN user u ON c.user_id = u.id
-      WHERE u.group_id = (SELECT group_id FROM user WHERE id = :user_id)
-      ORDER BY c.name ASC
-    `, { user_id });
+    `;
 
-    // ✅ Expense Type with branch filter
+    // Admin sees all (or filtered by group if preferred, but usually all)
+    // Non-admin sees only their branch
+    if (userRoleId !== 29) {
+      categorySql += ` WHERE u.branch_name = :branch_name`;
+    }
+    categorySql += ` ORDER BY c.name ASC`;
+
+    const [category] = await db.query(categorySql, { branch_name: userBranch });
+
+    // ✅ Expense Type with branch filter (ALREADY IMPLEMENTED CORRECTLY)
     let expenseTypeQuery;
     if (userRoleId === 29) {
-      // Super Admin - see all expense types
       expenseTypeQuery = `
         SELECT id AS value, name AS label 
         FROM expense_type 
         ORDER BY name ASC
       `;
     } else {
-      // Regular users - see only expense types from their branch
       expenseTypeQuery = `
         SELECT DISTINCT et.id AS value, et.name AS label 
         FROM expense_type et
@@ -70,36 +75,74 @@ exports.getList = async (req, res) => {
         ORDER BY et.name ASC
       `;
     }
-
     const [expense_type] = await db.query(expenseTypeQuery);
 
-    const [expense] = await db.query(
-      "SELECT id as value, name as label FROM expense"
-    );
+    // ✅✅✅ 2. Expense with Branch Filter ✅✅✅
+    let expenseSql = `
+      SELECT e.id as value, e.name as label 
+      FROM expense e
+    `;
+    if (userRoleId !== 29) {
+      expenseSql += `
+        INNER JOIN user u ON e.user_id = u.id
+        WHERE u.branch_name = :branch_name
+      `;
+    }
+    const [expense] = await db.query(expenseSql, { branch_name: userBranch });
 
-    const [user] = await db.query(
-      `SELECT 
+    // ✅✅✅ 3. User with Branch Filter ✅✅✅
+    let userSql = `
+      SELECT 
           id AS value, 
           CONCAT(name, ' - ', branch_name, ' - ', address, ' - ', tel) AS label 
-       FROM user`
-    );
+       FROM user
+    `;
+    if (userRoleId !== 29) {
+      userSql += ` WHERE branch_name = :branch_name`;
+    }
+    const [user] = await db.query(userSql, { branch_name: userBranch });
 
-    const [customers_with_due] = await db.query(`
+    // ✅✅✅ 4. Customers with Due (Whole Branch) ✅✅✅
+    let customerDueSql = `
       SELECT 
         c.id AS value,
         c.name AS label,
-        SUM(o.total_amount - o.paid_amount) AS total_due,
-        o.user_id
+        SUM(o.total_amount - o.paid_amount) AS total_due
       FROM \`order\` o
       JOIN customer c ON o.customer_id = c.id
+      JOIN user u ON o.user_id = u.id
       WHERE (o.total_amount - o.paid_amount) > 0
-        AND o.user_id = ?
-      GROUP BY c.id, c.name, o.user_id
+    `;
+
+    // If not super admin, filter by order creator's branch
+    if (userRoleId !== 29) {
+      customerDueSql += ` AND u.branch_name = :branch_name`;
+    } else {
+      // Super admin sees all, or you could filter by current user_id if desired, 
+      // but "all debts in system" is usually preferred for admin.
+      // If admin wants to see "my orders", we can add check. 
+      // For now, let's show ALL for admin.
+    }
+
+    customerDueSql += `
+      GROUP BY c.id, c.name
       ORDER BY c.name ASC
-    `, [user_id]);
+    `;
+
+    const [customers_with_due] = await db.query(customerDueSql, { branch_name: userBranch });
 
     const [role] = await db.query("SELECT id, name, code FROM role");
-    const [supplier] = await db.query("SELECT id, name, code FROM supplier");
+
+
+    // ✅✅✅ 6. Supplier with Branch Filter ✅✅✅
+    let supplierSql = `SELECT id, name, code FROM supplier s`;
+    if (userRoleId !== 29) {
+      supplierSql += ` 
+        INNER JOIN user u ON s.user_id = u.id
+        WHERE u.branch_name = :branch_name
+      `;
+    }
+    const [supplier] = await db.query(supplierSql, { branch_name: userBranch });
 
     const purchase_status = [
       { label: "Pending", value: "Pending" },
@@ -155,6 +198,10 @@ exports.getList = async (req, res) => {
       { label: "Tboung Khmum - ត្បូងខ្មុំ", value: "Tboung Khmum" },
       { label: "Pailin - ប៉ៃលិន", value: "Pailin" },
       { label: "Banteay Meanchey - បន្ទាយមានជ័យ", value: "Banteay Meanchey" },
+      { label: "Kep - កែប", value: "Kep" },
+      { label: "Oddar Meanchey - ឧត្តរមានជ័យ", value: "Oddar Meanchey" },
+      { label: "Kampong Spue - កំពង់ស្ពឺ", value: "Kampong Spue" },
+      { label: "Kampong Chnang - កំពង់ឆ្នាំង", value: "Kampong Chnang" }
     ];
 
     const branch_select_loc = [
@@ -191,8 +238,8 @@ exports.getList = async (req, res) => {
       { label: "T", value: "T" },
     ];
 
-    // ✅ Products with group filter
-    const [product] = await db.query(`
+    // ✅✅✅ 5. Products with Branch Filter ✅✅✅
+    let productSql = `
       SELECT 
         p.id AS value, 
         p.name AS label, 
@@ -203,9 +250,15 @@ exports.getList = async (req, res) => {
       FROM product p
       LEFT JOIN category c ON p.category_id = c.id
       INNER JOIN user u ON p.user_id = u.id
-      WHERE u.group_id = (SELECT group_id FROM user WHERE id = :user_id)
-      ORDER BY p.name ASC
-    `, { user_id });
+    `;
+
+    if (userRoleId !== 29) {
+      productSql += ` WHERE u.branch_name = :branch_name`;
+    }
+
+    productSql += ` ORDER BY p.name ASC`;
+
+    const [product] = await db.query(productSql, { branch_name: userBranch });
 
     const groupOptions = [
       { label: "Admin Group", value: 1 },
@@ -220,7 +273,7 @@ exports.getList = async (req, res) => {
       purchase_status,
       brand,
       expense,
-      expense_type,  // ✅ Include expense_type
+      expense_type,
       unit,
       company_name,
       user,
