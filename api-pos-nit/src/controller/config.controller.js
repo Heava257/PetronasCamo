@@ -135,7 +135,7 @@ exports.getList = async (req, res) => {
 
 
     // ✅✅✅ 6. Supplier with Branch Filter ✅✅✅
-    let supplierSql = `SELECT id, name, code FROM supplier s`;
+    let supplierSql = `SELECT s.id, s.name, s.code FROM supplier s`;
     if (userRoleId !== 29) {
       supplierSql += ` 
         INNER JOIN user u ON s.user_id = u.id
