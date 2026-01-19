@@ -695,6 +695,19 @@ function PreOrderManagementPage() {
                     value={filter.customer_id}
                     onChange={(value) => setFilter(prev => ({ ...prev, customer_id: value }))}
                     options={customers}
+                    filterOption={(input, option) => {
+                      const search = input.toLowerCase();
+                      const name = (option?.name || "").toLowerCase();
+                      const tel = (option?.tel || "").toLowerCase();
+                      const id = String(option?.value || "").toLowerCase();
+
+                      return (
+                        name.includes(search) ||
+                        tel.includes(search) ||
+                        id.includes(search) ||
+                        (option?.label || "").toLowerCase().includes(search)
+                      );
+                    }}
                   />
                 </Form.Item>
 
@@ -795,8 +808,8 @@ function PreOrderManagementPage() {
                     label={<span className="khmer-text-product">លេខប័ណ្ណ</span>}
                     rules={[{ required: true, message: 'សូមបញ្ចូលលេខប័ណ្ណ' }]}
                   >
-                    <Input 
-                      placeholder="Ex: PO-2025-001" 
+                    <Input
+                      placeholder="Ex: PO-2025-001"
                       disabled={!!state.editRecord} // Disable when editing
                     />
                   </Form.Item>
@@ -812,6 +825,19 @@ function PreOrderManagementPage() {
                       showSearch
                       options={customers}
                       onChange={handleCustomerChange}
+                      filterOption={(input, option) => {
+                        const search = input.toLowerCase();
+                        const name = (option?.name || "").toLowerCase();
+                        const tel = (option?.tel || "").toLowerCase();
+                        const id = String(option?.value || "").toLowerCase();
+
+                        return (
+                          name.includes(search) ||
+                          tel.includes(search) ||
+                          id.includes(search) ||
+                          (option?.label || "").toLowerCase().includes(search)
+                        );
+                      }}
                     />
                   </Form.Item>
                 </Col>
@@ -826,8 +852,8 @@ function PreOrderManagementPage() {
                     <DatePicker style={{ width: '100%' }} />
                   </Form.Item>
                 </Col>
-               
-               
+
+
               </Row>
 
               <Form.Item
@@ -856,10 +882,12 @@ function PreOrderManagementPage() {
                               <Select
                                 placeholder="ជ្រើសរើសផលិតផល"
                                 showSearch
-                                options={products.map(p => ({
-                                  label: `${p.name} (${p.category_name || 'N/A'})`,
-                                  value: p.id
-                                }))}
+                                options={products
+                                  .filter(p => Number(p.actual_price) > 0)
+                                  .map(p => ({
+                                    label: `${p.name} (${p.category_name || 'N/A'})`,
+                                    value: p.id
+                                  }))}
                                 onChange={(productId) => handleProductSelect(productId, name)}
                                 filterOption={(input, option) =>
                                   (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
@@ -887,7 +915,7 @@ function PreOrderManagementPage() {
                               <InputNumber placeholder="0.00" style={{ width: '100%' }} />
                             </Form.Item>
                           </Col>
-                         
+
                           <Col span={4}>
                             <Space align="center" style={{ marginBottom: 24, height: 32 }}>
                               <Button

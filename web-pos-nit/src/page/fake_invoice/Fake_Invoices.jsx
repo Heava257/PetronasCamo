@@ -516,7 +516,7 @@ function FakeInvoicePage() {
     </Form.Item>
   );
 
-const calculateTotalAmount = useCallback(() => {
+  const calculateTotalAmount = useCallback(() => {
     const items = form.getFieldValue('items') || [];
     let totalAmount = 0;
 
@@ -682,11 +682,26 @@ const calculateTotalAmount = useCallback(() => {
                     <Select
                       placeholder={t('select_customer')}
                       showSearch
-                      optionFilterProp="children"
                       className="invoice-select"
+                      filterOption={(input, option) => {
+                        const search = input.toLowerCase();
+                        const name = (option?.name || "").toLowerCase();
+                        const tel = (option?.tel || "").toLowerCase();
+                        const id = String(option?.value || "").toLowerCase();
+                        const label = (option?.label || "").toLowerCase();
+
+                        return (
+                          name.includes(search) ||
+                          tel.includes(search) ||
+                          id.includes(search) ||
+                          label.includes(search)
+                        );
+                      }}
                       options={customers.map((customer, index) => ({
                         label: `${index + 1}. ${customer.name}`,
-                        value: customer.id
+                        value: customer.id,
+                        name: customer.name,
+                        tel: customer.tel
                       }))}
                       onChange={(id) => {
                         const customer = customers.find(c => c.id === id);
