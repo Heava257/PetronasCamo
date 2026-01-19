@@ -786,11 +786,13 @@ function PurchasePage() {
                           option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
                         }
                       >
-                        {config.product.map(prod => (
-                          <Option key={prod.value} value={prod.value}>
-                            {prod.label} ({prod.category_name})
-                          </Option>
-                        ))}
+                        {config.product
+                          .filter(prod => Number(prod.actual_price) > 0)
+                          .map(prod => (
+                            <Option key={prod.value} value={prod.value}>
+                              {prod.label} ({prod.category_name})
+                            </Option>
+                          ))}
                       </Select>
                     </Col>
                     <Col xs={8} sm={4}>
