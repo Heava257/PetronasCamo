@@ -466,201 +466,227 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
       }
     }
 
-    // 🔄 INVENTORY INTEGRATION: Update when delivered
-    if (previousStatus !== 'delivered' && status === 'delivered') {
-      try {
-        for (const item of itemsWithSupplier) {
-          let productId = null;
-          let actualPrice = 1190;
+    // 🔄 INVENTORY INTEGRATION: Update when delivered or completed
+    const validStatuses = ['delivered', 'completed'];
+    if (
+      (!validStatuses.includes(previousStatus) && validStatuses.includes(status)) ||
+      (previousStatus !== status && validStatuses.includes(status)) // Re-trigger if switching between valid statuses (rare but possible) or from others
+    ) {
+      if (!validStatuses.includes(previousStatus)) { // strict check to avoid double counting if going from delivered -> completed
+        try {
+          for (const item of itemsWithSupplier) {
+            let productId = null;
+            let actualPrice = 1190;
+            let existingProduct = [];
 
-          const [existingProduct] = await db.query(
-            "SELECT id, qty, category_id, actual_price FROM product WHERE name = :product_name LIMIT 1",
-            { product_name: item.product_name }
+            // ✅✅✅ 1. Try Find by ID first (Most reliable)
+            if (item.product_id || item.id) { // Check both fields just in case
+              const searchId = item.product_id || item.id;
+              const [byId] = await db.query(
+                "SELECT id, qty, category_id, actual_price FROM product WHERE id = :id LIMIT 1",
+                { id: searchId }
+              );
+              if (byId.length > 0) existingProduct = byId;
+            }
+
+            // ✅✅✅ 2. Fallback to Name if ID didn't work
+            if (existingProduct.length === 0 && item.product_name) {
+              const [byName] = await db.query(
+                "SELECT id, qty, category_id, actual_price FROM product WHERE name = :product_name LIMIT 1",
+                { product_name: item.product_name }
+              );
+              if (byName.length > 0) existingProduct = byName;
+            }
+
+            if (existingProduct.length > 0) {
+              productId = existingProduct[0].id;
+
+              if (existingProduct[0].actual_price && existingProduct[0].actual_price > 0) {
+                actualPrice = parseFloat(existingProduct[0].actual_price);
+              } else if (item.category_id) {
+                const [categoryInfo] = await db.query(
+                  "SELECT actual_price FROM category WHERE id = :category_id",
+                  { category_id: item.category_id }
+                );
+
+                if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
+                  actualPrice = parseFloat(categoryInfo[0].actual_price);
+                }
+              }
+            } else {
+              // If still no product, check category for new product creation
+              if (item.category_id) {
+                const [categoryInfo] = await db.query(
+                  "SELECT actual_price FROM category WHERE id = :category_id",
+                  { category_id: item.category_id }
+                );
+
+                if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
+                  actualPrice = parseFloat(categoryInfo[0].actual_price);
+                }
+              }
+            }
+
+            if (existingProduct.length > 0) {
+              productId = existingProduct[0].id; // Ensure we have the ID
+
+              await db.query(`
+                  UPDATE product 
+                  SET 
+                    qty = qty + :quantity,
+                    unit_price = :unit_price,
+                    supplier_id = :supplier_id,
+                    supplier_name = :supplier_name,
+                    actual_price = :actual_price,
+                    updated_at = CURRENT_TIMESTAMP
+                  WHERE id = :id
+                `, {
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                supplier_id: supplier.id,
+                supplier_name: supplier.name,
+                actual_price: actualPrice,
+                id: productId
+              });
+
+            } else {
+              // Create new product if it really doesn't exist
+              const insertProductSql = `
+                  INSERT INTO product (
+                    name,
+                    category_id,
+                    qty,
+                    unit_price,
+                    unit,
+                    supplier_id,
+                    supplier_name,
+                    actual_price,
+                    user_id,
+                    create_at,
+                    updated_at,
+                    status,
+                    barcode
+                  ) VALUES (
+                    :name,
+                    :category_id,
+                    :qty,
+                    :unit_price,
+                    'L',
+                    :supplier_id,
+                    :supplier_name,
+                    :actual_price,
+                    :user_id,
+                    CURRENT_TIMESTAMP,
+                    CURRENT_TIMESTAMP,
+                    1,
+                    :barcode
+                  )
+                `;
+
+              const [insertResult] = await db.query(insertProductSql, {
+                name: item.product_name,
+                category_id: item.category_id || null,
+                qty: item.quantity || 0,
+                unit_price: item.unit_price || 0,
+                supplier_id: supplier.id,
+                supplier_name: supplier.name,
+                actual_price: actualPrice,
+                user_id: req.auth?.id || 1,
+                barcode: `PO${id}-${Date.now()}`
+              });
+
+              productId = insertResult.insertId;
+            }
+
+            if (productId) {
+              const inventorySql = `
+                  INSERT INTO inventory_transaction (
+                    product_id, 
+                    purchase_id, 
+                    transaction_type, 
+                    quantity, 
+                    unit_price,
+                    selling_price,
+                    actual_price,
+                    reference_no,
+                    supplier_id,
+                    supplier_name,
+                    notes,
+                    user_id, 
+                    created_at
+                  ) VALUES (
+                    :product_id, 
+                    :purchase_id, 
+                    'PURCHASE_IN', 
+                    :quantity,
+                    :unit_price,
+                    :selling_price,
+                    :actual_price,
+                    :reference_no,
+                    :supplier_id,
+                    :supplier_name,
+                    :notes,
+                    :user_id, 
+                    CURRENT_TIMESTAMP
+                  )
+                `;
+
+              await db.query(inventorySql, {
+                product_id: productId,
+                purchase_id: id,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                selling_price: item.unit_price,
+                actual_price: actualPrice,
+                reference_no: order_no,
+                supplier_id: supplier.id,
+                supplier_name: supplier.name,
+                notes: `Purchase from ${supplier.name}`,
+                user_id: req.auth?.id || 1
+              });
+            }
+          }
+        } catch (inventoryError) {
+          console.error("❌ Inventory update error:", inventoryError);
+        }
+      }
+    }
+    // ✅✅✅ FIXED: Send DELIVERED notification with correct calculations
+    try {
+      const deliveredDetailsPromises = itemsWithSupplier.map(async (item, index) => {
+        let actualPrice = 1190;
+
+        if (item.category_id) {
+          const [categoryInfo] = await db.query(
+            "SELECT actual_price FROM category WHERE id = :category_id",
+            { category_id: item.category_id }
           );
 
-          if (existingProduct.length > 0) {
-            productId = existingProduct[0].id;
-
-            if (existingProduct[0].actual_price && existingProduct[0].actual_price > 0) {
-              actualPrice = parseFloat(existingProduct[0].actual_price);
-            } else if (item.category_id) {
-              const [categoryInfo] = await db.query(
-                "SELECT actual_price FROM category WHERE id = :category_id",
-                { category_id: item.category_id }
-              );
-
-              if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
-                actualPrice = parseFloat(categoryInfo[0].actual_price);
-              }
-            }
-          } else {
-            if (item.category_id) {
-              const [categoryInfo] = await db.query(
-                "SELECT actual_price FROM category WHERE id = :category_id",
-                { category_id: item.category_id }
-              );
-
-              if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
-                actualPrice = parseFloat(categoryInfo[0].actual_price);
-              }
-            }
-          }
-
-          if (existingProduct.length > 0) {
-            productId = existingProduct[0].id;
-
-            await db.query(`
-              UPDATE product 
-              SET 
-                qty = qty + :quantity,
-                unit_price = :unit_price,
-                supplier_id = :supplier_id,
-                supplier_name = :supplier_name,
-                actual_price = :actual_price,
-                updated_at = CURRENT_TIMESTAMP
-              WHERE id = :id
-            `, {
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              supplier_id: supplier.id,
-              supplier_name: supplier.name,
-              actual_price: actualPrice,
-              id: productId
-            });
-
-          } else {
-            const insertProductSql = `
-              INSERT INTO product (
-                name,
-                category_id,
-                qty,
-                unit_price,
-                unit,
-                supplier_id,
-                supplier_name,
-                actual_price,
-                user_id,
-                create_at,
-                updated_at,
-                status,
-                barcode
-              ) VALUES (
-                :name,
-                :category_id,
-                :qty,
-                :unit_price,
-                'L',
-                :supplier_id,
-                :supplier_name,
-                :actual_price,
-                :user_id,
-                CURRENT_TIMESTAMP,
-                CURRENT_TIMESTAMP,
-                1,
-                :barcode
-              )
-            `;
-
-            const [insertResult] = await db.query(insertProductSql, {
-              name: item.product_name,
-              category_id: item.category_id || null,
-              qty: item.quantity || 0,
-              unit_price: item.unit_price || 0,
-              supplier_id: supplier.id,
-              supplier_name: supplier.name,
-              actual_price: actualPrice,
-              user_id: req.auth?.id || 1,
-              barcode: `PO${id}-${Date.now()}`
-            });
-
-            productId = insertResult.insertId;
-          }
-
-          if (productId) {
-            const inventorySql = `
-              INSERT INTO inventory_transaction (
-                product_id, 
-                purchase_id, 
-                transaction_type, 
-                quantity, 
-                unit_price,
-                selling_price,
-                actual_price,
-                reference_no,
-                supplier_id,
-                supplier_name,
-                notes,
-                user_id, 
-                created_at
-              ) VALUES (
-                :product_id, 
-                :purchase_id, 
-                'PURCHASE_IN', 
-                :quantity,
-                :unit_price,
-                :selling_price,
-                :actual_price,
-                :reference_no,
-                :supplier_id,
-                :supplier_name,
-                :notes,
-                :user_id, 
-                CURRENT_TIMESTAMP
-              )
-            `;
-
-            await db.query(inventorySql, {
-              product_id: productId,
-              purchase_id: id,
-              quantity: item.quantity,
-              unit_price: item.unit_price,
-              selling_price: item.unit_price,
-              actual_price: actualPrice,
-              reference_no: order_no,
-              supplier_id: supplier.id,
-              supplier_name: supplier.name,
-              notes: `Purchase from ${supplier.name}`,
-              user_id: req.auth?.id || 1
-            });
+          if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
+            actualPrice = parseFloat(categoryInfo[0].actual_price);
           }
         }
 
-        // ✅✅✅ FIXED: Send DELIVERED notification with correct calculations
-        try {
-          const deliveredDetailsPromises = itemsWithSupplier.map(async (item, index) => {
-            let actualPrice = 1190;
+        // ✅ CORRECT FORMULA
+        const quantity = parseFloat(item.quantity || 0);
+        const unitPrice = parseFloat(item.unit_price || 0);
+        const itemTotal = (quantity * unitPrice) / actualPrice;
 
-            if (item.category_id) {
-              const [categoryInfo] = await db.query(
-                "SELECT actual_price FROM category WHERE id = :category_id",
-                { category_id: item.category_id }
-              );
-
-              if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
-                actualPrice = parseFloat(categoryInfo[0].actual_price);
-              }
-            }
-
-            // ✅ CORRECT FORMULA
-            const quantity = parseFloat(item.quantity || 0);
-            const unitPrice = parseFloat(item.unit_price || 0);
-            const itemTotal = (quantity * unitPrice) / actualPrice;
-
-            return `
+        return `
 🔄 ${index + 1}. <b>${item.product_name}</b>
 • ប្រភេទ: ${item.category_name || 'N/A'}
 • ចំនួនចូល: ${formatNumber(quantity)} L
 • តម្លៃក្នុងមួយលីត្រ: $${formatNumber(unitPrice)}/L
 • តម្លៃអាហ្វិក (Actual): $${formatNumber(actualPrice)}
 • តម្លៃសរុប: $${formatNumber(itemTotal)}`;
-          });
+      });
 
-          const deliveredProductDetails = (await Promise.all(deliveredDetailsPromises)).join('\n\n');
+      const deliveredProductDetails = (await Promise.all(deliveredDetailsPromises)).join('\n\n');
 
-          const totalQuantity = itemsWithSupplier.reduce((sum, i) => sum + parseFloat(i.quantity || 0), 0);
-          const totalItems = itemsWithSupplier.length;
+      const totalQuantity = itemsWithSupplier.reduce((sum, i) => sum + parseFloat(i.quantity || 0), 0);
+      const totalItems = itemsWithSupplier.length;
 
-          const inventoryMessage = `
+      const inventoryMessage = `
 📦 <b>ទទួលទំនិញបានជោគជ័យ / DELIVERY COMPLETED</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -686,49 +712,49 @@ ${deliveredProductDetails}
 
 👤 <b>Updated by:</b> ${user_name}
 🕐 <b>Date:</b> ${new Date().toLocaleString('en-US', {
-            timeZone: 'Asia/Phnom_Penh',
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true
-          })}
+        timeZone: 'Asia/Phnom_Penh',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 `;
 
-          sendSmartNotification({
-            event_type: 'purchase_delivered',
-            branch_name: branch_name,
-            message: inventoryMessage,
-            severity: 'high'
-          }).catch(err => {
-            console.error('❌ Telegram notification failed:', err);
-          });
+      sendSmartNotification({
+        event_type: 'purchase_delivered',
+        branch_name: branch_name,
+        message: inventoryMessage,
+        severity: 'high'
+      }).catch(err => {
+        console.error('❌ Telegram notification failed:', err);
+      });
 
-        } catch (notifError) {
-          console.error('❌ Notification error:', notifError);
-        }
-
-      } catch (inventoryError) {
-        console.error("❌ Inventory update error:", inventoryError);
-      }
+    } catch (notifError) {
+      console.error('❌ Notification error:', notifError);
     }
 
-    res.json({
-      success: true,
-      message: "Purchase order updated successfully",
-      data: {
-        id,
-        ...params,
-        items: itemsWithSupplier
-      }
-    });
+  } catch (inventoryError) {
+    console.error("❌ Inventory update error:", inventoryError);
+  }
+}
+
+res.json({
+  success: true,
+  message: "Purchase order updated successfully",
+  data: {
+    id,
+    ...params,
+    items: itemsWithSupplier
+  }
+});
 
   } catch (error) {
-    logError("purchase.update", error, res);
-  }
+  logError("purchase.update", error, res);
+}
 };
 exports.delete = async (req, res) => {
   try {
