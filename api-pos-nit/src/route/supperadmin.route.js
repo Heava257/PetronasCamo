@@ -26,23 +26,23 @@ module.exports = (app) => {
   // Super Admin User Management
   // ================================
   app.get("/api/superadmin/users", validate_token(), getUsers);
-  
+
   app.post(
     "/api/superadmin/create-superadmin",
     validate_token(),
     uploadFile.single("upload_image"),
     createSuperAdmin
   );
-  
+
   app.put(
     "/api/superadmin/users/:user_id",
     validate_token(),
     uploadFile.single("upload_image"),
     updateUserBySuperAdmin
   );
-  
+
   app.delete("/api/superadmin/users", validate_token(), deleteUser);
-  
+
   app.get("/api/superadmin/statistics", validate_token(), getSystemStatistics);
 
   // ================================
@@ -54,7 +54,7 @@ module.exports = (app) => {
   // Admin Management
   // ================================
   app.get("/api/admin/list", validate_token(), getAllAdmins);
-  
+
   // Admin creation (transfer mode - creates ADMIN only)
   app.post(
     "/api/admin/create",
@@ -70,24 +70,24 @@ module.exports = (app) => {
     uploadFile.single("upload_image"),
     createUserWithRole
   );
-  
+
   app.post("/api/admin/deactivate", validate_token(), deactivateAdmin);
-  
+
   app.post("/api/admin/reactivate", validate_token(), reactivateAdmin);
-  
+
   app.get("/api/admin/details/:admin_id", validate_token(), getAdminDetails);
-  
+
   app.get("/api/admin/inactive", validate_token(), getInactiveAdmins);
-  
+
   app.get("/api/admin/activity-stats", validate_token(), getAdminActivityStats);
-  
+
   app.get("/api/admin/online-status", validate_token(), getOnlineStatus);
 
   // ================================
   // System Configuration
   // ================================
   app.get("/api/config/auto-logout", validate_token(), getAutoLogoutConfig);
-  
+
   app.put("/api/config/auto-logout", validate_token(), updateAutoLogoutConfig);
 
   // ================================

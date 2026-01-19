@@ -25,23 +25,56 @@ exports.notifyInactiveAdmins = async (req, res) => {
 
     // ពិនិត្យថាជា Super Admin ទេ
     const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name, u.username
+      `SELECT r.code AS role_code, u.name, u.username, u.branch_name, u.role_id
        FROM user u 
        INNER JOIN role r ON u.role_id = r.id 
        WHERE u.id = :user_id`,
       { user_id: currentUserId }
     );
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
+    const userRole = currentUser[0]?.role_code;
+    const userBranch = currentUser[0]?.branch_name;
+    const isSuperAdmin = currentUser[0]?.role_id === 29;
+
+    // Allow Admin (Branch Admin) and Super Admin
+    if (!isSuperAdmin && userRole !== 'ADMIN') {
       return res.status(403).json({
         error: true,
-        message: "Access denied. Super Admin only.",
-        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Super Admin តែប៉ុណ្ណោះ"
+        message: "Access denied. Admin only.",
+        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Admin តែប៉ុណ្ណោះ"
       });
     }
 
+    // Identify valid recipients based on branch
+    let validRecipientIds = admin_ids;
+
+    if (!isSuperAdmin) {
+      if (!userBranch) {
+        return res.status(403).json({
+          error: true,
+          message: "Your account is not assigned to a branch"
+        });
+      }
+
+      // Verify that all recipients belong to the same branch
+      const [recipients] = await db.query(`
+        SELECT id FROM user 
+        WHERE id IN (?) AND branch_name = ?
+      `, [admin_ids, userBranch]);
+
+      validRecipientIds = recipients.map(r => r.id);
+
+      if (validRecipientIds.length === 0) {
+        return res.status(400).json({
+          error: true,
+          message: "No valid recipients found in your branch",
+          message_kh: "មិនមានអ្នកទទួលនៅក្នុងសាខារបស់អ្នកទេ"
+        });
+      }
+    }
+
     // បញ្ចូល notifications ក្នុង database
-    const notificationPromises = admin_ids.map(async (adminId) => {
+    const notificationPromises = validRecipientIds.map(async (adminId) => {
       return db.query(`
         INSERT INTO notifications (
           sender_id,
@@ -117,7 +150,7 @@ ${currentUser[0]?.name} (${currentUser[0]?.username})
     sendTelegramMessagenewLogin(alertMessage).catch(err => {
       console.error("Failed to send Telegram alert:", err.message);
     });
-     await logger.logNotification(req, admin_ids.length, message_text);
+    await logger.logNotification(req, admin_ids.length, message_text);
 
     res.json({
       success: true,
@@ -129,7 +162,7 @@ ${currentUser[0]?.name} (${currentUser[0]?.username})
   } catch (error) {
     console.error('❌ Error in notifyInactiveAdmins:', error);
     logError("admin.notifyInactiveAdmins", error, res);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to send notifications",
@@ -141,7 +174,7 @@ ${currentUser[0]?.name} (${currentUser[0]?.username})
 exports.getMyNotifications = async (req, res) => {
   try {
     const currentUserId = req.current_id;
-    
+
 
     const { unread_only = false, limit = 50 } = req.query;
 
@@ -200,7 +233,7 @@ exports.getMyNotifications = async (req, res) => {
   } catch (error) {
     console.error('❌ Error in getMyNotifications:', error);
     logError("notification.getMyNotifications", error, res);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to retrieve notifications",
@@ -290,7 +323,7 @@ exports.markAsRead = async (req, res) => {
   } catch (error) {
     console.error('❌ Error in markAsRead:', error);
     logError("notification.markAsRead", error, res);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to mark notification as read"
@@ -325,7 +358,7 @@ exports.markAllAsRead = async (req, res) => {
   } catch (error) {
     console.error('❌ Error in markAllAsRead:', error);
     logError("notification.markAllAsRead", error, res);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to mark all as read"
@@ -372,7 +405,7 @@ exports.deleteNotification = async (req, res) => {
   } catch (error) {
     console.error('❌ Error in deleteNotification:', error);
     logError("notification.deleteNotification", error, res);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to delete notification"
@@ -520,7 +553,7 @@ exports.replyToNotification = async (req, res) => {
   } catch (error) {
     console.error('❌ Error in replyToNotification:', error);
     logError("notification.replyToNotification", error, res);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to send reply",
@@ -547,7 +580,7 @@ exports.cleanupExpiredNotifications = async () => {
     const deletedCount = result.affectedRows || 0;
 
     if (deletedCount > 0) {
-      
+
       // Log cleanup activity
       try {
         await db.query(`
@@ -577,7 +610,7 @@ exports.cleanupExpiredNotifications = async () => {
 
   } catch (error) {
     console.error('❌ Error cleaning up expired notifications:', error);
-    
+
     // Log error
     try {
       await db.query(`
@@ -636,7 +669,7 @@ exports.manualCleanup = async (req, res) => {
 
     res.json({
       success: result.success,
-      message: result.success 
+      message: result.success
         ? `Successfully deleted ${result.deleted_count} expired notifications`
         : "Cleanup failed",
       ...result
@@ -703,7 +736,7 @@ Customer: ${customer_name}
 Status: ${status.toUpperCase()}
 Time: ${new Date().toLocaleString()}
       `;
-      
+
       await sendTelegramMessage(orderData.group_id, telegramMessage);
     }
 

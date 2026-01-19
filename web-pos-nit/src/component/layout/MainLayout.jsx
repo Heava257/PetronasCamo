@@ -714,11 +714,9 @@ const CleanDarkLayout = () => {
               {isFullScreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
             </div>
 
-            {isPermission("notifications.getlist") && (
-              <div className="header-icon">
+          
                 <NotificationBell />
-              </div>
-            )}
+            
 
             <Link to="/attendance">
               <div className="header-icon" title="Attendance">

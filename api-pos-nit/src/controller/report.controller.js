@@ -510,8 +510,8 @@ exports.report_Sale_Summary = async (req, res) => {
     }
 
     sql += `
-      GROUP BY DATE(o.order_date), u.branch_name, u.id
-      ORDER BY o.order_date ASC
+      GROUP BY DATE_FORMAT(o.order_date, '%d/%m/%Y'), u.branch_name, u.id
+      ORDER BY MIN(o.order_date) ASC
     `;
 
     const [list] = await db.query(sql, params);
@@ -1018,7 +1018,7 @@ exports.getBranchComparison = async (req, res) => {
     const [branchComparison] = await db.query(sql, params);
 
     // ✅ Get summary from customer_debt
-    const [summary] = await db.query(`
+    let summarySql = `
       SELECT 
         COUNT(DISTINCT cd.order_id) AS total_orders,
         COALESCE(SUM(cd.total_amount), 0) AS total_revenue,
@@ -1027,8 +1027,15 @@ exports.getBranchComparison = async (req, res) => {
         COUNT(DISTINCT cd.customer_id) AS total_customers
       FROM customer_debt cd
       INNER JOIN \`order\` o ON cd.order_id = o.id
+      INNER JOIN user u ON o.user_id = u.id
       WHERE o.order_date BETWEEN :from_date AND :to_date
-    `, { from_date, to_date });
+    `;
+
+    if (!isSuperAdmin) {
+      summarySql += ` AND u.branch_name = :user_branch_name`;
+    }
+
+    const [summary] = await db.query(summarySql, params);
 
     res.json({
       success: true,
@@ -1045,7 +1052,7 @@ exports.getBranchComparison = async (req, res) => {
         requested_by: {
           user_id: currentUserId,
           username: currentUser[0]?.username,
-          role: userRole
+          role: role_code
         },
         generated_at: new Date().toISOString()
       }
