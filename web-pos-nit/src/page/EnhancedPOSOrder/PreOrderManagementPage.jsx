@@ -281,6 +281,7 @@ function PreOrderManagementPage() {
   };
 
   const onFinish = async (values) => {
+    console.log("🚀 PreOrder Submit Values:", values);
     try {
       setState(prev => ({ ...prev, loading: true }));
       const isEdit = !!state.editRecord;
@@ -299,7 +300,8 @@ function PreOrderManagementPage() {
           product_id: p.product_id,
           qty: p.qty,
           price: p.price,
-          discount: p.discount || 0
+          discount: p.discount || 0,
+          destination: p.destination || null // ✅ Include destination
         }))
       });
 
@@ -858,7 +860,7 @@ function PreOrderManagementPage() {
 
               <Form.Item
                 name="delivery_address"
-                label={<span className="khmer-text-product">អាសយដ្ឋានដឹកជញ្ជូន</span>}
+                label={<span className="khmer-text-product">គោលដៅតែមួយ</span>}
               >
                 <Input.TextArea rows={2} placeholder="បញ្ជាក់ទីតាំងដឹកជញ្ជូន..." />
               </Form.Item>
@@ -915,9 +917,17 @@ function PreOrderManagementPage() {
                               <InputNumber placeholder="0.00" style={{ width: '100%' }} />
                             </Form.Item>
                           </Col>
-
-                          <Col span={4}>
-                            <Space align="center" style={{ marginBottom: 24, height: 32 }}>
+                          <Col span={6}>
+                            <Form.Item
+                              {...restField}
+                              name={[name, 'destination']}
+                              label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">គោលដៅពីរឬច្រើន</span> : null}
+                            >
+                              <Input placeholder="គោលដៅ" />
+                            </Form.Item>
+                          </Col>
+                          <Col span={2}>
+                            <Form.Item label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">លុប</span> : null}>
                               <Button
                                 type="text"
                                 danger
@@ -925,7 +935,7 @@ function PreOrderManagementPage() {
                                 onClick={() => remove(name)}
                                 disabled={fields.length === 1}
                               />
-                            </Space>
+                            </Form.Item>
                           </Col>
                         </Row>
                       ))}

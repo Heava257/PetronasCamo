@@ -149,9 +149,9 @@ exports.create = async (req, res) => {
 
       await connection.query(
         `INSERT INTO fakeinvoice_detail (
-          invoice_id, product_id, quantity, unit_price, actual_price, total_amount
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
-        [invoiceId, item.product_id, quantity, unitPrice, actualPrice, itemTotal]
+          invoice_id, product_id, quantity, unit_price, actual_price, total_amount, destination
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [invoiceId, item.product_id, quantity, unitPrice, actualPrice, itemTotal, item.destination || null]
       );
     }
 
@@ -353,9 +353,9 @@ exports.update = async (req, res) => {
 
       await connection.query(
         `INSERT INTO fakeinvoice_detail (
-          invoice_id, product_id, quantity, unit_price, actual_price, total_amount
-        ) VALUES (?, ?, ?, ?, ?, ?)`,
-        [id, item.product_id, quantity, unitPrice, actual_price, item_total]
+          invoice_id, product_id, quantity, unit_price, actual_price, total_amount, destination
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [id, item.product_id, quantity, unitPrice, actual_price, item_total, item.destination || null]
       );
     }
 

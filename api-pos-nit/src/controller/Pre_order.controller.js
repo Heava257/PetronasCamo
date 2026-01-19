@@ -156,13 +156,15 @@ exports.createPreOrder = async (req, res) => {
       const discount_value = parseFloat(product.discount || 0) / 100;
       const amount = (product.qty * product.price * (1 - discount_value)) / product.actual_price;
 
+      console.log("📝 DEBUG: inserting detail for product:", product.product_name, "Destination:", product.destination);
+
       await db.query(`
         INSERT INTO pre_order_detail (
           pre_order_id, product_id, product_name, category_name,
-          qty, unit, price, discount, amount, remaining_qty
+          qty, unit, price, discount, amount, remaining_qty, destination
         ) VALUES (
           :pre_order_id, :product_id, :product_name, :category_name,
-          :qty, :unit, :price, :discount, :amount, :remaining_qty
+          :qty, :unit, :price, :discount, :amount, :remaining_qty, :destination
         )
       `, {
         pre_order_id,
@@ -174,7 +176,8 @@ exports.createPreOrder = async (req, res) => {
         price: product.price,
         discount: product.discount || 0,
         amount,
-        remaining_qty: product.qty
+        remaining_qty: product.qty,
+        destination: product.destination || null
       });
     }
 
@@ -698,7 +701,7 @@ exports.updatePreOrder = async (req, res) => {
         const amount = (qty * price * (1 - discount)) / actual_price;
         total_amount += amount;
 
-        // ✅ FIXED: Insert WITHOUT 'description' column
+        // ✅ FIXED: Insert WITHOUT 'description' field, but WITH 'destination'
         await db.query(`
           INSERT INTO pre_order_detail (
             pre_order_id,
@@ -710,7 +713,8 @@ exports.updatePreOrder = async (req, res) => {
             price,
             discount,
             amount,
-            remaining_qty
+            remaining_qty,
+            destination 
           ) VALUES (
             :pre_order_id,
             :product_id,
@@ -721,7 +725,8 @@ exports.updatePreOrder = async (req, res) => {
             :price,
             :discount,
             :amount,
-            :remaining_qty
+            :remaining_qty,
+            :destination
           )
         `, {
           pre_order_id: id,
@@ -733,8 +738,8 @@ exports.updatePreOrder = async (req, res) => {
           price: price,
           discount: product.discount || 0,
           amount: amount,
-          remaining_qty: qty
-          // ✅ NO 'description' field
+          remaining_qty: qty,
+          destination: product.destination || null // ✅ Add destination
         });
 
       }

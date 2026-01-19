@@ -21,6 +21,7 @@ exports.getone = async (req, res) => {
         o.total_amount AS total_amount_price,
         p.discount,
         p.unit,
+        od.destination, 
         SUM(od.qty) AS total_quantity,
         SUM(od.qty * od.price * (1 - COALESCE(p.discount, 0)/100) / NULLIF(p.actual_price, 0)) AS grand_total
       FROM order_detail od
@@ -28,7 +29,7 @@ exports.getone = async (req, res) => {
       INNER JOIN category c ON p.category_id = c.id
       INNER JOIN \`order\` o ON od.order_id = o.id
       WHERE od.order_id = ?
-      GROUP BY od.order_id, p.name, c.name, od.price, p.discount, p.unit, o.total_amount
+      GROUP BY od.order_id, p.name, c.name, od.price, p.discount, p.unit, o.total_amount, od.destination
     `;
 
     const [rows] = await db.query(sql, [orderId]);
@@ -565,9 +566,9 @@ exports.create = async (req, res) => {
     // Create order details
     const sqlOrderDetails = `
       INSERT INTO order_detail 
-        (order_id, product_id, qty, price, discount, total) 
+        (order_id, product_id, qty, price, discount, total, destination) 
       VALUES 
-        (:order_id, :product_id, :qty, :price, :discount, :total)
+        (:order_id, :product_id, :qty, :price, :discount, :total, :destination)
     `;
 
     // ✅ Process order details with robust PO reference lookup
@@ -577,6 +578,7 @@ exports.create = async (req, res) => {
         await db.query(sqlOrderDetails, {
           ...item,
           order_id: orderResult.insertId,
+          destination: item.destination || null // ✅ Add destination
         });
 
         // Update stock and create inventory transaction

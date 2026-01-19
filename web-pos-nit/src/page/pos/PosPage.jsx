@@ -224,7 +224,8 @@ function PosPage() {
             customer_id: orderDetails.customer_id,
             customer_name: orderDetails.customer_name,
             discount: item.discount || 0,
-            description: item.description || "" // ✅ Preserve Batch Ref
+            description: item.description || "", // ✅ Preserve Batch Ref
+            destination: item.destination || ""  // ✅ Capture Destination
           };
         });
 
@@ -244,6 +245,7 @@ function PosPage() {
         }
 
         // ✅ UPDATE STATE WITH NEW CART ITEMS:
+        console.log("🔍 DEBUG: newCartItems with destinations:", newCartItems.map(i => ({ name: i.name, destination: i.destination })));
         setState(prev => ({
           ...prev,
           cart_list: newCartItems,
@@ -301,6 +303,18 @@ function PosPage() {
 
     setState(prev => ({ ...prev, cart_list: newCartList }));
   };
+
+  // ✅ Add Destination Handler
+  const handleDestinationChange = (newDest, itemId) => {
+    const newCartList = state.cart_list.map(item => {
+      if (item.id === itemId) {
+        return { ...item, destination: newDest };
+      }
+      return item;
+    });
+    setState(prev => ({ ...prev, cart_list: newCartList }));
+  };
+
 
   const handleRemoveCartItem = (index) => {
     const newCartList = [...state.cart_list];
@@ -389,6 +403,7 @@ function PosPage() {
           total: total,
           actual_price: actualPrice,
           description: item.description || '',
+          destination: item.destination || null // ✅ Add Destination Payload
         };
       });
 

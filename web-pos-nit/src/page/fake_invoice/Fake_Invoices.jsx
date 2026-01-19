@@ -336,7 +336,8 @@ function FakeInvoicePage() {
             cart_qty: quantity,
             unit_price: unit_price,
             actual_price: actual_price,
-            line_total: line_total
+            line_total: line_total,
+            destination: item.destination || "" // ✅ Include destination for printing
           };
         });
 
@@ -446,6 +447,7 @@ function FakeInvoicePage() {
           quantity: parseInt(item.quantity) || 0,
           unit_price: parseFloat(parseFloat(item.unit_price || 0).toFixed(4)),
           actual_price,
+          destination: item.destination || null // ✅ Include per-item destination
         };
       });
 
@@ -760,7 +762,7 @@ function FakeInvoicePage() {
               <>
                 {fields.map(({ key, name, ...restField }) => (
                   <Row gutter={16} key={key} style={{ marginBottom: 16 }}>
-                    <Col span={8}>
+                    <Col span={6}>
                       <Form.Item
                         {...restField}
                         name={[name, 'product_id']}
@@ -790,7 +792,17 @@ function FakeInvoicePage() {
                       </Form.Item>
                     </Col>
 
-                    <Col span={4}>
+                    <Col span={5}>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'destination']}
+                        label={t('Two_or_multiple_destinations')}
+                      >
+                        <Input placeholder={t('destination_placeholder') || "Destination"} />
+                      </Form.Item>
+                    </Col>
+
+                    <Col span={3}>
                       <Form.Item
                         {...restField}
                         name={[name, 'quantity']}
@@ -838,7 +850,7 @@ function FakeInvoicePage() {
                       </Form.Item>
                     </Col>
 
-                    <Col span={4}>
+                    <Col span={2}>
                       <Button
                         danger
                         onClick={() => {
@@ -1113,7 +1125,7 @@ function FakeInvoicePage() {
             ))}
         </div>
       </div>
-    </MainPage>
+    </MainPage >
   );
 }
 

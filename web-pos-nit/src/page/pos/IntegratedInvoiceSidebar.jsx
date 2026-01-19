@@ -745,44 +745,8 @@ const IntegratedInvoiceSidebar = ({
 
                     {/* Location & Delivery Section */}
                     <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
-                        <SectionHeader icon={MapPin} title={t("location_delivery")} />
 
                         <div className="space-y-4">
-                            {/* Manual Location Input */}
-                            <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
-                                    <MapPin className="w-3.5 h-3.5 text-green-500" />
-                                    {t("destination_location")}
-                                    {selectedLocations.length > 0 && objSummary.customer_address && (
-                                        <span className="text-xs px-2 py-0.5 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 rounded-full khmer-text flex items-center gap-1">
-                                            <span>✓</span>
-                                            <span>បានបំពេញស្វ័យប្រវត្តិ</span>
-                                        </span>
-                                    )}
-                                </label>
-                                <textarea
-                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent resize-none text-sm khmer-text transition-all"
-                                    placeholder={t("enter_locations")}
-                                    value={Array.isArray(selectedLocations) ? selectedLocations.join(', ') : selectedLocations}
-                                    onChange={(e) => {
-                                        const input = e.target.value;
-                                        if (input.trim() === '') {
-                                            setSelectedLocations([]);
-                                        } else {
-                                            const values = input.split(/[,]+/).filter(Boolean).map(v => v.trim());
-                                            setSelectedLocations(values);
-                                        }
-                                    }}
-                                    rows={2}
-                                />
-                                {selectedLocations.length > 0 && (
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1 khmer-text">
-                                        <span>📍</span>
-                                        <span>ទីតាំងចំនួន: <strong>{selectedLocations.length}</strong></span>
-                                    </p>
-                                )}
-                            </div>
-
                             {/* Location Selector Component */}
                             {objSummary.customer_id && (
                                 <div className="pt-3 border-t-2 border-gray-100 dark:border-slate-700">
