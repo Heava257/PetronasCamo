@@ -470,7 +470,7 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
     const validStatuses = ['delivered', 'completed'];
     if (
       (!validStatuses.includes(previousStatus) && validStatuses.includes(status)) ||
-      (previousStatus !== status && validStatuses.includes(status)) // Re-trigger if switching between valid statuses (rare but possible) or from others
+      (previousStatus !== status && validStatuses.includes(status))
     ) {
       if (!validStatuses.includes(previousStatus)) { // strict check to avoid double counting if going from delivered -> completed
         try {
@@ -646,52 +646,43 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
               });
             }
           }
-        } catch (inventoryError) {
-          console.error("❌ Inventory update error:", inventoryError);
-        }
-      }
-    }
-    // ✅✅✅ FIXED: Send DELIVERED notification with correct calculations
-    try {
-      const deliveredDetailsPromises = itemsWithSupplier.map(async (item, index) => {
-        let actualPrice = 1190;
 
-        if (item.category_id) {
-          const [categoryInfo] = await db.query(
-            "SELECT actual_price FROM category WHERE id = :category_id",
-            { category_id: item.category_id }
-          );
+          // ✅✅✅ FIXED: Send DELIVERED notification
+          // Logic moved INSIDE the if-block so it only triggers on successful delivery/completion logic
+          const deliveredDetailsPromises = itemsWithSupplier.map(async (item, index) => {
+            let actualPrice = 1190;
+            if (item.category_id) {
+              const [cat] = await db.query(
+                "SELECT actual_price FROM category WHERE id = :id",
+                { id: item.category_id }
+              );
+              if (cat && cat.length > 0 && cat[0].actual_price) {
+                actualPrice = parseFloat(cat[0].actual_price);
+              }
+            }
+            const quantity = parseFloat(item.quantity || 0);
+            const unitPrice = parseFloat(item.unit_price || 0);
+            const itemTotal = (quantity * unitPrice) / actualPrice;
 
-          if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
-            actualPrice = parseFloat(categoryInfo[0].actual_price);
-          }
-        }
-
-        // ✅ CORRECT FORMULA
-        const quantity = parseFloat(item.quantity || 0);
-        const unitPrice = parseFloat(item.unit_price || 0);
-        const itemTotal = (quantity * unitPrice) / actualPrice;
-
-        return `
+            return `
 🔄 ${index + 1}. <b>${item.product_name}</b>
 • ប្រភេទ: ${item.category_name || 'N/A'}
 • ចំនួនចូល: ${formatNumber(quantity)} L
 • តម្លៃក្នុងមួយលីត្រ: $${formatNumber(unitPrice)}/L
 • តម្លៃអាហ្វិក (Actual): $${formatNumber(actualPrice)}
 • តម្លៃសរុប: $${formatNumber(itemTotal)}`;
-      });
+          });
 
-      const deliveredProductDetails = (await Promise.all(deliveredDetailsPromises)).join('\n\n');
+          const deliveredProductDetails = (await Promise.all(deliveredDetailsPromises)).join('\n\n');
+          const totalQuantity = itemsWithSupplier.reduce((sum, i) => sum + parseFloat(i.quantity || 0), 0);
+          const totalItems = itemsWithSupplier.length;
 
-      const totalQuantity = itemsWithSupplier.reduce((sum, i) => sum + parseFloat(i.quantity || 0), 0);
-      const totalItems = itemsWithSupplier.length;
-
-      const inventoryMessage = `
+          const inventoryMessage = `
 📦 <b>ទទួលទំនិញបានជោគជ័យ / DELIVERY COMPLETED</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ✅ <b>Purchase Order:</b> <code>${order_no}</code>
-✅ <b>Status:</b> DELIVERED
+✅ <b>Status:</b> ${status.toUpperCase()}
 
 🏢 <b>Supplier Information:</b>
 • ឈ្មោះ: ${supplier.name}
@@ -712,49 +703,39 @@ ${deliveredProductDetails}
 
 👤 <b>Updated by:</b> ${user_name}
 🕐 <b>Date:</b> ${new Date().toLocaleString('en-US', {
-        timeZone: 'Asia/Phnom_Penh',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      })}
+            timeZone: 'Asia/Phnom_Penh',
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+          })}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 `;
 
-      sendSmartNotification({
-        event_type: 'purchase_delivered',
-        branch_name: branch_name,
-        message: inventoryMessage,
-        severity: 'high'
-      }).catch(err => {
-        console.error('❌ Telegram notification failed:', err);
-      });
+          sendSmartNotification({
+            event_type: 'purchase_delivered',
+            branch_name: branch_name,
+            message: inventoryMessage,
+            severity: 'high'
+          }).catch(err => console.error('❌ Telegram notification failed:', err));
 
-    } catch (notifError) {
-      console.error('❌ Notification error:', notifError);
+        } catch (inventoryError) {
+          console.error("❌ Inventory update error:", inventoryError);
+        }
+      }
     }
 
-  } catch (inventoryError) {
-    console.error("❌ Inventory update error:", inventoryError);
-  }
-}
-
-res.json({
-  success: true,
-  message: "Purchase order updated successfully",
-  data: {
-    id,
-    ...params,
-    items: itemsWithSupplier
-  }
-});
+    res.json({
+      success: true,
+      message: "Purchase order updated successfully",
+      data: {
+        id,
+        ...params,
+        items: itemsWithSupplier
+      }
+    });
 
   } catch (error) {
-  logError("purchase.update", error, res);
-}
+    logError("purchase.update", error, res);
+  }
 };
 exports.delete = async (req, res) => {
   try {
