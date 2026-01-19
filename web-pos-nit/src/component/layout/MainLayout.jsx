@@ -715,7 +715,7 @@ const CleanDarkLayout = () => {
             </div>
 
           
-                <NotificationBell />
+                {/* <NotificationBell /> */}
             
 
             <Link to="/attendance">
