@@ -21,7 +21,10 @@ exports.getList = async (req, res) => {
     const sqlSelect = `
       SELECT 
         p.id, p.name, p.category_id, p.barcode, p.company_name,
-        p.description, p.qty, p.unit_price, p.discount, p.actual_price, p.status,
+        p.description, 
+        -- ✅ Dynamic Qty
+        COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) as qty,
+        p.unit_price, p.discount, p.actual_price, p.status,
         p.create_by, p.create_at, p.unit, p.customer_id, p.receive_date,
         c.name AS category_name,
         c.barcode AS category_barcode,
@@ -29,10 +32,10 @@ exports.getList = async (req, res) => {
         cu.address AS customer_address,
         cu.tel AS customer_tel,
         c.actual_price AS category_actual_price,
-        (p.qty * p.unit_price) AS original_price,
+        (COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) * p.unit_price) AS original_price,
         CASE
-          WHEN p.discount > 0 THEN ((p.qty * p.unit_price) * (1 - p.discount / 100)) / c.actual_price
-          ELSE (p.qty * p.unit_price) / c.actual_price
+          WHEN p.discount > 0 THEN ((COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) * p.unit_price) * (1 - p.discount / 100)) / c.actual_price
+          ELSE (COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) * p.unit_price) / c.actual_price
         END AS total_price
     `;
 
@@ -42,7 +45,8 @@ exports.getList = async (req, res) => {
       LEFT JOIN customer cu ON p.customer_id = cu.id
     `;
 
-    let sqlWhere = `WHERE p.user_id = :user_id AND p.qty > 0`;
+    // ✅ Filter by Dynamic Qty
+    let sqlWhere = `WHERE p.user_id = :user_id AND (SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id) > 0`;
 
     if (start_date && end_date) {
       sqlWhere += ` AND DATE(p.create_at) BETWEEN :start_date AND :end_date`;
@@ -82,8 +86,8 @@ exports.getList = async (req, res) => {
       SELECT 
         SUM(
           CASE
-            WHEN p.discount > 0 THEN ((p.qty * p.unit_price) * (1 - p.discount / 100)) / c.actual_price
-            ELSE (p.qty * p.unit_price) / c.actual_price
+            WHEN p.discount > 0 THEN ((COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) * p.unit_price) * (1 - p.discount / 100)) / c.actual_price
+            ELSE (COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) * p.unit_price) / c.actual_price
           END
         ) AS grand_total
       ${sqlJoin}
@@ -278,13 +282,13 @@ exports.getCustomerProducts = async (req, res) => {
         c.id as category_id,
         c.name as category_name,
         c.barcode as category_barcode,
-        SUM(CAST(p.qty AS DECIMAL(10,2))) as total_quantity,
+        SUM(CAST(COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) AS DECIMAL(10,2))) as total_quantity,
         COUNT(p.id) as product_count,
         SUM(
           CASE
             WHEN p.discount > 0 AND p.discount IS NOT NULL 
-            THEN CAST(p.qty AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2)) * (1 - CAST(p.discount AS DECIMAL(5,2)) / 100)
-            ELSE CAST(p.qty AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2))
+            THEN CAST(COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2)) * (1 - CAST(p.discount AS DECIMAL(5,2)) / 100)
+            ELSE CAST(COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2))
           END
         ) AS total_value,
         AVG(CAST(p.unit_price AS DECIMAL(10,2))) as avg_unit_price,
@@ -310,7 +314,7 @@ exports.getCustomerProducts = async (req, res) => {
         p.barcode, 
         COALESCE(p.company_name, 'Unknown') as company_name,
         p.description, 
-        CAST(p.qty AS DECIMAL(10,2)) as qty, 
+        CAST(COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) AS DECIMAL(10,2)) as qty, 
         CAST(p.unit_price AS DECIMAL(10,2)) as unit_price, 
         CAST(COALESCE(p.discount, 0) AS DECIMAL(5,2)) as discount, 
         CAST(p.actual_price AS DECIMAL(10,2)) as actual_price,
@@ -321,11 +325,11 @@ exports.getCustomerProducts = async (req, res) => {
         p.receive_date,
         c.name AS category_name,
         c.barcode AS category_barcode,
-        (CAST(p.qty AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2))) AS original_price,
+        (CAST(COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2))) AS original_price,
         CASE
           WHEN p.discount > 0 AND p.discount IS NOT NULL 
-          THEN CAST(p.qty AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2)) * (1 - CAST(p.discount AS DECIMAL(5,2)) / 100)
-          ELSE CAST(p.qty AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2))
+          THEN CAST(COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2)) * (1 - CAST(p.discount AS DECIMAL(5,2)) / 100)
+          ELSE CAST(COALESCE((SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id), 0) AS DECIMAL(10,2)) * CAST(p.unit_price AS DECIMAL(10,2))
         END AS total_price
       FROM product p
       LEFT JOIN category c ON p.category_id = c.id

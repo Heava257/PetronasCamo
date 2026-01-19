@@ -246,8 +246,13 @@ exports.getTransactionList = async (req, res) => {
         `;
         const [statsResult] = await db.query(statsSql, statsParams);
 
-        // ✅ Get Current Stock (respecting branch but ignoring date filters)
-        let stockSql = `SELECT SUM(p.qty) as current_stock FROM product p INNER JOIN user u ON p.user_id = u.id WHERE 1=1`;
+        // ✅ Get Current Stock (from inventory_transaction)
+        let stockSql = `
+            SELECT SUM(it.quantity) as current_stock 
+            FROM inventory_transaction it
+            LEFT JOIN user u ON it.user_id = u.id
+            WHERE 1=1
+        `;
         const stockParams = [];
         if (req.auth && req.auth.role !== "admin") {
             stockSql += ` AND u.branch_name = ?`;
@@ -284,24 +289,106 @@ exports.getStatistics = async (req, res) => {
         let sql = `
             SELECT 
                 COUNT(DISTINCT p.id) as total_products,
-                COALESCE(SUM(p.qty), 0) as total_quantity,
-                -- ✅ Use converted values
-                COALESCE(SUM(p.total_cost_value), 0) as total_value,
-                COUNT(CASE WHEN p.qty <= 1000 THEN 1 END) as low_stock_count,
-                COUNT(CASE WHEN p.qty > 10000 THEN 1 END) as high_stock_count
+                
+                -- Global Total Quantity from Transactions
+                COALESCE((
+                    SELECT SUM(quantity) 
+                    FROM inventory_transaction it 
+                    LEFT JOIN user u2 ON it.user_id = u2.id
+                    WHERE 1=1 ${req.auth && req.auth.role !== "admin" ? 'AND u2.branch_name = ?' : ''}
+                ), 0) as total_quantity,
+
+                -- Global Total Value
+                (
+                    SELECT COALESCE(SUM(
+                        (stock_p.calc_qty * COALESCE(NULLIF(p.unit_price, 0), 1190)) / NULLIF(p.actual_price, 0)
+                    ), 0)
+                    FROM (
+                        SELECT product_id, SUM(quantity) as calc_qty 
+                        FROM inventory_transaction 
+                        GROUP BY product_id
+                    ) stock_p
+                    JOIN product p ON stock_p.product_id = p.id
+                    LEFT JOIN user u3 ON p.user_id = u3.id
+                    WHERE 1=1 ${req.auth && req.auth.role !== "admin" ? 'AND u3.branch_name = ?' : ''}
+                ) as total_value,
+
+                -- Low/High Stock Counts based on Calculated Quantity
+                (
+                    SELECT COUNT(*) FROM (
+                        SELECT SUM(quantity) as net_qty 
+                        FROM inventory_transaction it
+                        LEFT JOIN user u4 ON it.user_id = u4.id
+                        WHERE 1=1 ${req.auth && req.auth.role !== "admin" ? 'AND u4.branch_name = ?' : ''}
+                        GROUP BY product_id
+                        HAVING net_qty <= 1000
+                    ) as low_stock
+                ) as low_stock_count,
+
+                (
+                    SELECT COUNT(*) FROM (
+                        SELECT SUM(quantity) as net_qty 
+                        FROM inventory_transaction it
+                        LEFT JOIN user u5 ON it.user_id = u5.id
+                        WHERE 1=1 ${req.auth && req.auth.role !== "admin" ? 'AND u5.branch_name = ?' : ''}
+                        GROUP BY product_id
+                        HAVING net_qty > 10000
+                    ) as high_stock
+                ) as high_stock_count
+
             FROM product p
             LEFT JOIN user u ON p.user_id = u.id
             WHERE 1=1
         `;
 
         const params = [];
+        const branchName = req.auth && req.auth.branch_name;
 
         if (req.auth && req.auth.role !== "admin") {
             sql += ` AND u.branch_name = ?`;
-            params.push(req.auth.branch_name);
+            // Add params for all the subqueries that need branch filtering
+            params.push(branchName); // for main WHERE
+            // Note: The subqueries above technically need parameter binding if we use ? inside them.
+            // Simplified approach: We'll push the branchName multiple times for each ? in the complex query.
+            // Order: total_quantity, total_value, low_stock, high_stock, main query
+            // However, with the current string structure, it's safer to inject the params in order.
         }
 
-        const [results] = await db.query(sql, params);
+        // Re-constructing the query params correctly is distinct. 
+        // Let's simplify the SQL string construction to avoid param mismatch.
+
+        // Actually, cleaner way for `getStatistics` is to query the derived table once or use separate queries if single query is too complex.
+
+        // Let's use a simpler approach that calculates the stats from a derived table of product stocks.
+
+        const branchFilter = (req.auth && req.auth.role !== "admin") ? "AND u.branch_name = ?" : "";
+        const queryParams = (req.auth && req.auth.role !== "admin") ? [req.auth.branch_name] : [];
+
+        sql = `
+            SELECT 
+                COUNT(*) as total_products,
+                SUM(stock_data.current_stock) as total_quantity,
+                SUM(
+                    (stock_data.current_stock * COALESCE(NULLIF(p.unit_price, 0), 1190)) / NULLIF(COALESCE(p.actual_price, 1190), 0)
+                ) as total_value,
+                SUM(CASE WHEN stock_data.current_stock <= 1000 THEN 1 ELSE 0 END) as low_stock_count,
+                SUM(CASE WHEN stock_data.current_stock > 10000 THEN 1 ELSE 0 END) as high_stock_count
+            FROM product p
+            INNER JOIN (
+                SELECT product_id, SUM(quantity) as current_stock
+                FROM inventory_transaction it
+                LEFT JOIN user u ON it.user_id = u.id
+                WHERE 1=1 ${branchFilter}
+                GROUP BY product_id
+            ) stock_data ON p.id = stock_data.product_id
+            LEFT JOIN user u ON p.user_id = u.id
+            WHERE 1=1 ${branchFilter}
+        `;
+
+        // Params need to be doubled because used in subquery and main query
+        const finalParams = [...queryParams, ...queryParams];
+
+        const [results] = await db.query(sql, finalParams);
 
         res.json({
             data: results[0],
@@ -515,7 +602,13 @@ exports.getCategoryStatistics = async (req, res) => {
                 p.name as product_name,
                 c.id as category_id,
                 c.name as category_name,
-                COALESCE(p.qty, 0) as total_qty,
+                -- ✅ Dynamic Total Qty from Transactions
+                COALESCE((
+                    SELECT SUM(quantity) 
+                    FROM inventory_transaction 
+                    WHERE product_id = p.id
+                ), 0) as total_qty,
+                
                 -- ✅ Per-product movement stats
                 COALESCE((
                     SELECT SUM(quantity) 
@@ -529,9 +622,12 @@ exports.getCategoryStatistics = async (req, res) => {
                     WHERE product_id = p.id 
                       AND (transaction_type = 'SALE_OUT' OR (transaction_type = 'ADJUSTMENT' AND quantity < 0))
                 ), 0) as total_qty_out,
-                -- ✅ Ultra Robust Value: Use product's unit_price OR fallback to latest purchase price
+                
+                -- ✅ Ultra Robust Value: Use Calculated Qty * (Price / Divisor)
                 COALESCE(
-                    (p.qty * COALESCE(
+                    (
+                      (SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id) 
+                      * COALESCE(
                         NULLIF(p.unit_price, 0), 
                         (SELECT unit_price FROM inventory_transaction WHERE product_id = p.id AND transaction_type = 'PURCHASE_IN' ORDER BY created_at DESC LIMIT 1),
                         0
