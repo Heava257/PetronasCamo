@@ -631,6 +631,25 @@ exports.updateStatus = async (req, res) => {
     logError("pre_order.updateStatus", error, res);
   }
 };
+exports.checkDuplicate = async (req, res) => {
+  try {
+    const { no } = req.query;
+    if (!no) {
+      return res.json({ exists: false });
+    }
+
+    const [existing] = await db.query(
+      "SELECT id FROM pre_order WHERE pre_order_no = :no",
+      { no }
+    );
+
+    res.json({
+      exists: existing.length > 0
+    });
+  } catch (error) {
+    logError("pre_order.checkDuplicate", error, res);
+  }
+};
 
 exports.updatePreOrder = async (req, res) => {
   try {

@@ -808,7 +808,27 @@ function PreOrderManagementPage() {
                   <Form.Item
                     name="pre_order_no"
                     label={<span className="khmer-text-product">លេខប័ណ្ណ</span>}
-                    rules={[{ required: true, message: 'សូមបញ្ចូលលេខប័ណ្ណ' }]}
+                    hasFeedback
+                    validateTrigger={['onChange', 'onBlur']}
+                    rules={[
+                      { required: true, message: 'សូមបញ្ចូលលេខប័ណ្ណ' },
+                      {
+                        validator: async (_, value) => {
+                          if (!value || state.editRecord) return Promise.resolve(); // Skip check on edit or empty
+                          try {
+                            // Check duplicate via API
+                            const res = await request(`pre-order/check-duplicate?no=${value}`, "get");
+                            if (res && res.exists) {
+                              return Promise.reject(new Error("លេខកម្មង់នេះមានរួចហើយ (Duplicate)"));
+                            }
+                            return Promise.resolve();
+                          } catch (error) {
+                            console.error("Duplicate check error:", error);
+                            return Promise.resolve(); // Ignore API errors to not block user
+                          }
+                        }
+                      }
+                    ]}
                   >
                     <Input
                       placeholder="Ex: PO-2025-001"

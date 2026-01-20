@@ -12,6 +12,9 @@ module.exports = (app) => {
     // Create pre-order (បង្កើតកម្មង់ជាមុន)
     app.post("/api/pre-order/create", validate_token(), preOrderController.createPreOrder);
 
+    // Check duplicate pre-order number
+    app.get("/api/pre-order/check-duplicate", validate_token(), preOrderController.checkDuplicate);
+
     // Get pre-order list (បញ្ជីកម្មង់)
     app.get("/api/pre-order/list", validate_token(), preOrderController.getPreOrderList);
 

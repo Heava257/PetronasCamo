@@ -1,7 +1,7 @@
 // ✅ FIXED PurchasePage.jsx - With correct actual_price calculation
 
 import React, { useEffect, useState } from "react";
-import { request } from "../../util/helper";
+import { request, formatPrice } from "../../util/helper";
 import MainPage from "../../component/layout/MainPage";
 import {
   Button,
@@ -406,7 +406,7 @@ function PurchasePage() {
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-500 dark:text-gray-400">{t("total_amount")}</span>
             <span className="text-base font-semibold text-gray-900 dark:text-white">
-              ${Number(purchase.total_amount || 0).toFixed(2)}
+              {formatPrice(purchase.total_amount)}
             </span>
           </div>
           <div className="flex justify-between items-center">
@@ -502,7 +502,7 @@ function PurchasePage() {
       dataIndex: "total_amount",
       render: (amount) => (
         <span className="font-semibold text-green-600 dark:text-green-400">
-          ${Number(amount || 0).toFixed(2)}
+          {formatPrice(amount)}
         </span>
       ),
     },
@@ -633,7 +633,7 @@ function PurchasePage() {
               <Col xs={12} sm={6} md={4}>
                 <div className="text-center">
                   <div className="text-2xl sm:text-3xl font-bold text-purple-600 dark:text-purple-400">
-                    ${state.list.reduce((sum, p) => sum + Number(p.total_amount || 0), 0).toFixed(2)}
+                    {formatPrice(state.list.reduce((sum, p) => sum + Number(p.total_amount || 0), 0))}
                   </div>
                   <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {t("total_value")}
@@ -758,13 +758,6 @@ function PurchasePage() {
               </Col>
             </Row>
 
-            {/* Info Banner */}
-            <div className="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded p-3 mb-4">
-              <Text className="text-sm text-blue-800 dark:text-blue-200">
-                <InfoCircleOutlined className="mr-2" />
-                <strong>ការគណនា:</strong> សរុប = (បរិមាណ × តម្លៃ) ÷ តម្លៃបម្លែង | Total = (Qty × Price) ÷ Actual Price
-              </Text>
-            </div>
 
             {/* Order Items */}
             <Divider>{t("order_items")}</Divider>

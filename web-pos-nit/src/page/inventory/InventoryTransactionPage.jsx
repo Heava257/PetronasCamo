@@ -1,7 +1,7 @@
 // ✅ FINAL InventoryTransactionPage.jsx - Using converted_amount from backend
 
 import React, { useEffect, useState } from "react";
-import { request } from "../../util/helper";
+import { request, formatPrice } from "../../util/helper";
 import MainPage from "../../component/layout/MainPage";
 import {
     Table,
@@ -147,7 +147,7 @@ function InventoryTransactionPage() {
             const newSellingPrice = values.selling_price;
             const qty = Math.abs(Number(editingSellingPriceRecord.quantity || 0));
 
-    
+
 
             // Backend updateTransaction now accepts both unit_price and selling_price
             const res = await request("inventory/transaction", "put", {
@@ -242,7 +242,7 @@ function InventoryTransactionPage() {
                 return (
                     <div className="flex items-center justify-end gap-2 group">
                         <span className="font-bold text-blue-600 text-base">
-                            ${sellingPrice.toFixed(2)}
+                            {formatPrice(sellingPrice)}
                         </span>
                         {isAdmin && (
                             <Button
@@ -270,7 +270,7 @@ function InventoryTransactionPage() {
             render: (price, record) => (
                 <div className="flex items-center justify-end">
                     <span className="font-medium text-gray-700">
-                        ${Number(price || 0).toFixed(2)}
+                        {formatPrice(price)}
                     </span>
                 </div>
             ),
@@ -288,11 +288,15 @@ function InventoryTransactionPage() {
             dataIndex: "converted_amount",
             key: "converted_amount",
             render: (amount, record) => {
+                const numAmount = Number(amount || 0);
+                if (numAmount === 0) {
+                    return <span className="text-gray-400 font-medium">-</span>;
+                }
                 const isPositive = amount >= 0;
                 return (
                     <Tooltip title={`Calculation: (${record.quantity} × ${record.unit_price}) / ${record.actual_price || 1}`}>
                         <span className={isPositive ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}>
-                            ${Math.abs(Number(amount || 0)).toFixed(2)}
+                            {formatPrice(Math.abs(numAmount))}
                         </span>
                     </Tooltip>
                 );
@@ -415,44 +419,49 @@ function InventoryTransactionPage() {
                                     </Card>
                                 </Col>
                             ) : (
-                                state.categoryStats.map((cat, idx) => (
-                                    <Col xs={12} sm={8} md={6} lg={4} key={cat.product_id || idx}>
-                                        <Card
-                                            size="small"
-                                            className="hover:shadow-md transition-shadow cursor-default border-blue-100 bg-blue-50/30"
-                                        >
-                                            <div className="flex flex-col gap-1">
-                                                <Text strong className="text-blue-700 block truncate" title={cat.product_name}>
-                                                    {cat.product_name}
-                                                </Text>
-                                                <div className="flex justify-between items-baseline">
-                                                    <Text className="text-[10px] text-gray-500">សរុបចូល (IN):</Text>
-                                                    <Text className="text-xs text-blue-600">
-                                                        {Number(cat.total_qty_in || 0).toLocaleString()} L
+                                state.categoryStats.map((cat, idx) => {
+                                    // Skip cards with 0 total value (no actual price/stock value)
+                                    if (Number(cat.total_value || 0) === 0) return null;
+
+                                    return (
+                                        <Col xs={12} sm={8} md={6} lg={4} key={cat.product_id || idx}>
+                                            <Card
+                                                size="small"
+                                                className="hover:shadow-md transition-shadow cursor-default border-blue-100 bg-blue-50/30"
+                                            >
+                                                <div className="flex flex-col gap-1">
+                                                    <Text strong className="text-blue-700 block truncate" title={cat.product_name}>
+                                                        {cat.product_name}
                                                     </Text>
+                                                    <div className="flex justify-between items-baseline">
+                                                        <Text className="text-[10px] text-gray-500">សរុបចូល (IN):</Text>
+                                                        <Text className="text-xs text-blue-600">
+                                                            {Number(cat.total_qty_in || 0).toLocaleString()} L
+                                                        </Text>
+                                                    </div>
+                                                    <div className="flex justify-between items-baseline">
+                                                        <Text className="text-[10px] text-gray-500">សរុបចេញ (OUT):</Text>
+                                                        <Text className="text-xs text-orange-600">
+                                                            {Number(cat.total_qty_out || 0).toLocaleString()} L
+                                                        </Text>
+                                                    </div>
+                                                    <div className="flex justify-between items-baseline border-t border-gray-100 pt-1 mt-1">
+                                                        <Text className="text-xs text-gray-500">ស្តុកនៅសល់:</Text>
+                                                        <Text strong className={`text-sm ${Number(cat.total_qty || 0) <= 0 ? 'text-red-500' : 'text-blue-700'}`}>
+                                                            {Number(cat.total_qty || 0).toLocaleString()} L
+                                                        </Text>
+                                                    </div>
+                                                    <div className="flex justify-between items-baseline">
+                                                        <Text className="text-xs text-gray-500">តម្លៃសរុប:</Text>
+                                                        <Text strong className="text-sm text-green-600">
+                                                            {formatPrice(cat.total_value)}
+                                                        </Text>
+                                                    </div>
                                                 </div>
-                                                <div className="flex justify-between items-baseline">
-                                                    <Text className="text-[10px] text-gray-500">សរុបចេញ (OUT):</Text>
-                                                    <Text className="text-xs text-orange-600">
-                                                        {Number(cat.total_qty_out || 0).toLocaleString()} L
-                                                    </Text>
-                                                </div>
-                                                <div className="flex justify-between items-baseline border-t border-gray-100 pt-1 mt-1">
-                                                    <Text className="text-xs text-gray-500">ស្តុកនៅសល់:</Text>
-                                                    <Text strong className={`text-sm ${Number(cat.total_qty || 0) <= 0 ? 'text-red-500' : 'text-blue-700'}`}>
-                                                        {Number(cat.total_qty || 0).toLocaleString()} L
-                                                    </Text>
-                                                </div>
-                                                <div className="flex justify-between items-baseline">
-                                                    <Text className="text-xs text-gray-500">តម្លៃសរុប:</Text>
-                                                    <Text strong className="text-sm text-green-600">
-                                                        ${Number(cat.total_value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                    </Text>
-                                                </div>
-                                            </div>
-                                        </Card>
-                                    </Col>
-                                ))
+                                            </Card>
+                                        </Col>
+                                    );
+                                })
                             )}
                         </Row>
                         <Divider className="my-4" />
@@ -552,19 +561,19 @@ function InventoryTransactionPage() {
                                         </Table.Summary.Cell>
                                         <Table.Summary.Cell index={6} align="right">
                                             <Text strong className="text-base text-purple-600">
-                                                ${Math.abs(pageTotal).toFixed(2)}
+                                                {formatPrice(Math.abs(pageTotal))}
                                             </Text>
                                         </Table.Summary.Cell>
                                         <Table.Summary.Cell index={7} colSpan={2}>
                                             <Space split="|" size="small">
                                                 <Tooltip title="Total In (Value | Qty)">
                                                     <Text className="text-green-600 text-sm font-semibold">
-                                                        In: ${pageTotalIn.toFixed(2)} | {pageQtyIn.toFixed(2)} L
+                                                        In: {formatPrice(pageTotalIn, false)} | {Number(pageQtyIn).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
                                                     </Text>
                                                 </Tooltip>
                                                 <Tooltip title="Total Out (Value | Qty)">
                                                     <Text className="text-blue-600 text-sm font-semibold">
-                                                        Out: ${pageTotalOut.toFixed(2)} | {pageQtyOut.toFixed(2)} L
+                                                        Out: {formatPrice(pageTotalOut, false)} | {Number(pageQtyOut).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
                                                     </Text>
                                                 </Tooltip>
                                             </Space>
