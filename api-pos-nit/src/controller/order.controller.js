@@ -1680,13 +1680,16 @@ exports.updatePayment = async (req, res) => {
   }
 };
 
-exports.deletePayment = async (req, res) => {
+// exports.deletePayment = ... (Keep existing if needed, or replace)
+
+exports.voidPayment = async (req, res) => {
   const connection = await db.getConnection();
 
   try {
     await connection.beginTransaction();
 
     const { id } = req.params;
+    const { reason } = req.body;
 
     // ✅ Check if payment exists and belongs to user's group
     const [existingPayment] = await connection.query(`
@@ -1719,11 +1722,25 @@ exports.deletePayment = async (req, res) => {
     }
 
     const payment = existingPayment[0];
-    const orderId = payment.order_id;
-    const deletedAmount = parseFloat(payment.amount) || 0;
 
-    // ✅ Delete the payment record first
-    await connection.query(`DELETE FROM payments WHERE id = ?`, [id]);
+    // Check if already voided
+    if (payment.status === 'void') {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        error: "ការទូទាត់នេះត្រូវបានចាត់ទុកជាមោឃៈរួចហើយ"
+      });
+    }
+
+    const orderId = payment.order_id;
+    const voidAmount = parseFloat(payment.amount) || 0;
+
+    // ✅ Soft Delete: Update status to void
+    await connection.query(`
+      UPDATE payments 
+      SET status = 'void', void_reason = ?, void_at = NOW(), void_by = ?
+      WHERE id = ?
+    `, [reason, req.current_id, id]);
 
     // ✅ Get all debts for this order
     const [debts] = await connection.query(`
@@ -1736,11 +1753,11 @@ exports.deletePayment = async (req, res) => {
     `, [orderId]);
 
     if (debts.length > 0) {
-      // ✅ Recalculate total paid for this order (after deletion)
+      // ✅ Recalculate total paid for this order (Excluding void payments)
       const [paymentSum] = await connection.query(`
         SELECT COALESCE(SUM(amount), 0) as total_paid
         FROM payments
-        WHERE order_id = ?
+        WHERE order_id = ? AND status != 'void'
       `, [orderId]);
 
       const totalPaid = parseFloat(paymentSum[0].total_paid);
@@ -1771,7 +1788,7 @@ exports.deletePayment = async (req, res) => {
 
         remainingPaid -= debtPaidAmount;
 
-        // ✅ Update customer_debt (only paid_amount, let DB auto-calculate due_amount & payment_status)
+        // ✅ Update customer_debt
         await connection.query(`
           UPDATE customer_debt SET
             paid_amount = ?,
@@ -1789,24 +1806,26 @@ exports.deletePayment = async (req, res) => {
 
     res.json({
       success: true,
-      message: "ការទូទាត់ត្រូវបានលុបដោយជោគជ័យ",
+      message: "ការទូទាត់ត្រូវបានបោះបង់ដោយជោគជ័យ", // Payment voided successfully
       data: {
-        deleted_amount: deletedAmount,
+        void_amount: voidAmount,
         order_id: orderId
       }
     });
 
   } catch (error) {
     await connection.rollback();
-    logError("payment.deletePayment error:", error);
+    logError("payment.voidPayment error:", error);
     res.status(500).json({
       success: false,
-      error: error.message || "មានបញ្ហាក្នុងការលុបការទូទាត់"
+      error: error.message || "មានបញ្ហាក្នុងការបោះបង់ការទូទាត់"
     });
   } finally {
     connection.release();
   }
 };
+
+
 
 exports.remove = async (req, res) => {
   try {
@@ -2263,3 +2282,4 @@ exports.getOrderCompletionStats = async (req, res) => {
     logError("order.getOrderCompletionStats", error, res);
   }
 };
+exports.deletePayment = exports.voidPayment;

@@ -151,7 +151,7 @@ function ReportCustomer_Summary() {
   );
 
   return (
-    <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="report-customer-summary px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
       <Card
         className="mb-6 shadow-lg border-0 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-800 dark:to-pink-800"
@@ -427,13 +427,13 @@ function ReportCustomer_Summary() {
           }
         }
         
-        .ant-table-thead > tr > th {
+        .report-customer-summary .ant-table-thead > tr > th {
           background: linear-gradient(135deg, #a855f7 0%, #ec4899 100%) !important;
           color: #ffffff !important;
           font-weight: 600 !important;
         }
         
-        .ant-table-tbody > tr:hover > td {
+        .report-customer-summary .ant-table-tbody > tr:hover > td {
           background: #f3f4f6 !important;
         }
       `}</style>

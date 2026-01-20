@@ -1,5 +1,6 @@
 // src/contexts/DarkModeContext.jsx
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { ConfigProvider, theme } from 'antd';
 
 const DarkModeContext = createContext();
 
@@ -25,7 +26,7 @@ export const DarkModeProvider = ({ children }) => {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    
+
     // រក្សាទុកការកំណត់
     localStorage.setItem('darkMode', isDarkMode.toString());
   }, [isDarkMode]);
@@ -36,7 +37,13 @@ export const DarkModeProvider = ({ children }) => {
 
   return (
     <DarkModeContext.Provider value={{ isDarkMode, toggleDarkMode }}>
-      {children}
+      <ConfigProvider
+        theme={{
+          algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        }}
+      >
+        {children}
+      </ConfigProvider>
     </DarkModeContext.Provider>
   );
 };

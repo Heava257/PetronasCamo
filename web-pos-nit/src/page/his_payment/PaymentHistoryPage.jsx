@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { EditOutlined, DeleteOutlined, ExclamationCircleOutlined, FilterOutlined, SearchOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, ExclamationCircleOutlined, FilterOutlined, SearchOutlined, StopOutlined } from '@ant-design/icons';
 import { Form, InputNumber } from 'antd';
 
 import {
@@ -2192,6 +2192,13 @@ function PaymentHistoryPage() {
     loading: false
   });
 
+  const [voidModal, setVoidModal] = useState({
+    visible: false,
+    data: null,
+    reason: "",
+    loading: false
+  });
+
   const [form] = Form.useForm();
 
   const profile = getProfile();
@@ -2350,6 +2357,53 @@ function PaymentHistoryPage() {
       console.error('Update payment error:', error);
       message.error(error.response?.data?.error || error.message || 'មានបញ្ហាក្នុងការកែប្រែការទូទាត់');
       setEditModal(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleVoidClick = (payment) => {
+    setVoidModal({
+      visible: true,
+      data: payment,
+      reason: "",
+      loading: false
+    });
+  };
+
+  const submitVoidPayment = async () => {
+    try {
+      if (!voidModal.reason?.trim()) {
+        message.error('សូមបញ្ចូលមូលហេតុនៃការបោះបង់');
+        return;
+      }
+
+      setVoidModal(prev => ({ ...prev, loading: true }));
+
+      // Call the new PUT endpoint with reason
+      const res = await request(`payment/${voidModal.data.id}/void`, "put", {
+        reason: voidModal.reason
+      });
+
+      if (res?.success) {
+        message.success('ការទូទាត់ត្រូវបានបោះបង់ដោយជោគជ័យ');
+
+        setVoidModal({ visible: false, data: null, reason: "", loading: false });
+
+        await getPaymentHistory();
+
+        if (customerDetailModal.visible) {
+          await refreshCustomerModal();
+        }
+
+        if (paymentDetailModal.visible && paymentDetailModal.data?.id === voidModal.data.id) {
+          setPaymentDetailModal({ visible: false, data: null });
+        }
+      } else {
+        throw new Error(res?.error || "Failed to void payment");
+      }
+    } catch (error) {
+      console.error('Void payment error:', error);
+      message.error(error.message || 'មានបញ្ហាក្នុងការបោះបង់ការទូទាត់');
+      setVoidModal(prev => ({ ...prev, loading: false }));
     }
   };
 
@@ -3176,6 +3230,44 @@ function PaymentHistoryPage() {
           </Form>
         </Modal>
 
+        {/* Void Payment Modal */}
+        <Modal
+          title={<span className="modal-header">បោះបង់ការទូទាត់ (Void Payment)</span>}
+          open={voidModal.visible}
+          onCancel={() => setVoidModal({ visible: false, data: null, reason: "", loading: false })}
+          footer={[
+            <Button
+              key="cancel"
+              onClick={() => setVoidModal({ visible: false, data: null, reason: "", loading: false })}
+            >
+              {t('cancel')}
+            </Button>,
+            <Button
+              key="submit"
+              type="primary"
+              danger
+              loading={voidModal.loading}
+              onClick={submitVoidPayment}
+            >
+              បោះបង់ (Void)
+            </Button>
+          ]}
+        >
+          <div style={{ padding: '10px 0' }}>
+            <p className="mb-2"><strong>លេខប័ណ្ណ:</strong> #{voidModal.data?.product_description?.toString().padStart(4, '0')}</p>
+            <p className="mb-4"><strong>ចំនួនទឹកប្រាក់:</strong> <span style={{ color: '#dc2626' }}>{formatCurrency(voidModal.data?.amount || 0)}</span></p>
+
+            <Form.Item label="មូលហេតុនៃការបោះបង់ (Reason)" required>
+              <Input.TextArea
+                rows={4}
+                placeholder="សូមបញ្ចូលមូលហេតុនៃការបោះបង់..."
+                value={voidModal.reason}
+                onChange={(e) => setVoidModal(prev => ({ ...prev, reason: e.target.value }))}
+              />
+            </Form.Item>
+          </div>
+        </Modal>
+
         <Modal
           title={<span className="modal-header">{t('customer_details')} - {customerDetailModal.data?.customer_name || t('no_data')}</span>}
           open={customerDetailModal.visible}
@@ -3235,8 +3327,8 @@ function PaymentHistoryPage() {
                           </button>
                         )}
                         {isPermission("customer.getone") && (
-                          <button className="action-btn danger" onClick={() => deletePayment(payment.id)}>
-                            <DeleteOutlined /> {t('delete')}
+                          <button className="action-btn danger" onClick={() => handleVoidClick(payment)}>
+                            <StopOutlined /> បោះបង់
                           </button>
                         )}
                         <button className="action-btn" onClick={() => printSinglePaymentReport(payment)}>

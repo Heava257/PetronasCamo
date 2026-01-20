@@ -655,7 +655,10 @@ exports.getBranches = async (req, res) => {
       ORDER BY branch_name ASC
     `);
 
-
+    return res.json({
+      success: true,
+      branches: branches.map(b => b.branch_name)
+    });
 
   } catch (error) {
     console.error('❌ Error in getBranches:', error);
@@ -683,7 +686,7 @@ exports.toggleTelegramConfig = async (req, res) => {
       `SELECT u.name, r.code AS role_code 
        FROM user u 
        INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
+       WHERE u.id = : user_id`,
       { user_id: currentUserId }
     );
 
@@ -714,11 +717,11 @@ exports.toggleTelegramConfig = async (req, res) => {
     // ✅ Toggle status
     await db.query(`
       UPDATE telegram_config SET
-        is_active = :is_active,
-        updated_at = NOW(),
-        updated_by = :updated_by
-      WHERE id = :id
-    `, {
+        is_active = : is_active,
+      updated_at = NOW(),
+      updated_by = : updated_by
+      WHERE id = : id
+      `, {
       id,
       is_active: newStatus,
       updated_by: currentUser[0]?.name
@@ -728,7 +731,7 @@ exports.toggleTelegramConfig = async (req, res) => {
     return res.json({
       success: true,
       message: `Configuration ${newStatus === 1 ? 'activated' : 'deactivated'} successfully`,
-      message_kh: `${newStatus === 1 ? 'បើក' : 'បិទ'}ការកំណត់បានជោគជ័យ`,
+      message_kh: `${newStatus === 1 ? 'បើក' : 'បិទ'} ការកំណត់បានជោគជ័យ`,
       data: {
         id,
         is_active: newStatus

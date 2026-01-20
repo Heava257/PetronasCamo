@@ -140,8 +140,8 @@
   gap: 12px;
 }
 
-.stock-variance-table .ant-table-thead > tr > th {
-  background: #fafafa;
+.stock-variance-table .ant-table-thead>tr>th {
+  /* background: #fafafa; REMOVED for Dark Mode */
   font-weight: 700;
   color: #1a1a1a;
   border-bottom: 3px solid #e8e8e8;
@@ -150,11 +150,11 @@
   letter-spacing: 0.5px;
 }
 
-.stock-variance-table .ant-table-tbody > tr {
+.stock-variance-table .ant-table-tbody>tr {
   transition: all 0.2s ease;
 }
 
-.stock-variance-table .ant-table-tbody > tr:hover {
+.stock-variance-table .ant-table-tbody>tr:hover {
   background: #fff7e6;
 }
 
@@ -281,14 +281,14 @@
    HISTORY TABLE
    ======================================== */
 
-.stock-history-table .ant-table-thead > tr > th {
-  background: #fafafa;
+.stock-history-table .ant-table-thead>tr>th {
+  /* background: #fafafa; REMOVED */
   font-weight: 700;
   color: #1a1a1a;
   border-bottom: 3px solid #e8e8e8;
 }
 
-.stock-history-table .ant-table-tbody > tr:hover {
+.stock-history-table .ant-table-tbody>tr:hover {
   background: #e6f7ff;
 }
 
@@ -539,6 +539,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -605,6 +606,7 @@
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -632,6 +634,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -670,6 +673,7 @@
    ======================================== */
 
 @media print {
+
   .stock-action-btn,
   .stock-create-btn,
   .stock-filters-row,
@@ -690,7 +694,7 @@
     box-shadow: none;
   }
 
-  .stock-history-table .ant-table-tbody > tr:hover {
+  .stock-history-table .ant-table-tbody>tr:hover {
     background: transparent;
   }
 }

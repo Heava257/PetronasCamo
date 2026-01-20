@@ -37,6 +37,7 @@ import {
 } from "@ant-design/icons";
 import { request } from "../../../util/helper";
 import dayjs from "dayjs";
+import MainPage from "../../../component/layout/MainPage";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -455,6 +456,7 @@ const handleEdit = (record) => {
   ];
 
   return (
+      <MainPage loading={loading}>
     <div className="p-4 bg-gray-50 min-h-screen">
       {/* Header */}
       <Card className="mb-4 shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 border-0">
@@ -782,6 +784,7 @@ const handleEdit = (record) => {
         </Form>
       </Modal>
     </div>
+    </MainPage>
   );
 }
 

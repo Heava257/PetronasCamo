@@ -1,6 +1,4 @@
-@import './styles/antd-dark-mode.css';
+/* @import './styles/antd-dark-mode.css'; */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-

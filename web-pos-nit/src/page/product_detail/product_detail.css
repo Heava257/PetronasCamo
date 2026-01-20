@@ -135,7 +135,7 @@
 }
 
 /* ================== TABLE STYLING ================== */
-.dark .ant-table-wrapper {
+.dark .product-page-container-product .ant-table-wrapper {
   background: transparent !important;
   border-radius: 12px;
 }
@@ -151,7 +151,7 @@
 }
 
 /* Table Headers */
-.dark .ant-table-thead > tr > th {
+.dark .product-page-container-product .ant-table-thead>tr>th {
   background: #374151 !important;
   color: #f3f4f6 !important;
   font-weight: 700;
@@ -163,7 +163,7 @@
   border-right: 1px solid #4b5563 !important;
 }
 
-.dark .ant-table-thead > tr > th:last-child {
+.dark .ant-table-thead>tr>th:last-child {
   border-right: none !important;
 }
 
@@ -197,44 +197,44 @@
   background: transparent !important;
 }
 
-.dark .ant-table-tbody > tr {
+.dark .ant-table-tbody>tr {
   background: transparent !important;
   transition: all 0.2s ease;
 }
 
 /* Base alternating row colors for dark mode */
-.dark .ant-table-tbody > tr.even-row > td {
+.dark .ant-table-tbody>tr.even-row>td {
   background: #1f2937 !important;
 }
 
-.dark .ant-table-tbody > tr.odd-row > td {
+.dark .ant-table-tbody>tr.odd-row>td {
   background: #1f2937 !important;
 }
 
 /* Checked row styling - Yellow/Gold background when checked */
-.dark .ant-table-tbody > tr.checked-row > td {
+.dark .ant-table-tbody>tr.checked-row>td {
   background: rgba(251, 191, 36, 0.2) !important;
   border-left: 4px solid #f59e0b !important;
 }
 
 /* Hover effects */
-.dark .ant-table-tbody > tr:not(.checked-row):hover > td {
+.dark .ant-table-tbody>tr:not(.checked-row):hover>td {
   background: #374151 !important;
 }
 
-.dark .ant-table-tbody > tr.checked-row:hover > td {
+.dark .ant-table-tbody>tr.checked-row:hover>td {
   background: rgba(251, 191, 36, 0.3) !important;
   border-left: 4px solid #fbbf24 !important;
 }
 
-.dark .ant-table-tbody > tr > td {
+.dark .ant-table-tbody>tr>td {
   border-bottom: 1px solid #374151 !important;
   border-right: 1px solid #374151 !important;
   color: #e5e7eb !important;
   padding: 12px !important;
 }
 
-.dark .ant-table-tbody > tr > td:last-child {
+.dark .ant-table-tbody>tr>td:last-child {
   border-right: none !important;
 }
 
@@ -601,6 +601,7 @@
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -611,7 +612,7 @@
   animation: fadeInUp 0.5s ease-out;
 }
 
-.dark .ant-table-tbody > tr {
+.dark .ant-table-tbody>tr {
   animation: fadeInUp 0.3s ease-out;
 }
 
@@ -660,11 +661,12 @@
 .dark .ant-message-info .anticon {
   color: #3b82f6 !important;
 }
-.ant-table-tbody > tr.checked-row > td {
-  background: linear-gradient(90deg, 
-    rgba(254, 243, 199, 0.6) 0%, 
-    rgba(253, 224, 71, 0.4) 50%, 
-    rgba(254, 243, 199, 0.6) 100%) !important;
+
+.ant-table-tbody>tr.checked-row>td {
+  background: linear-gradient(90deg,
+      rgba(254, 243, 199, 0.6) 0%,
+      rgba(253, 224, 71, 0.4) 50%,
+      rgba(254, 243, 199, 0.6) 100%) !important;
   border-left: 4px solid #f59e0b !important;
   box-shadow: inset 0 0 20px rgba(251, 191, 36, 0.15);
   position: relative;
@@ -672,27 +674,27 @@
 
 
 /* Make content above the glow effect */
-.ant-table-tbody > tr.checked-row > td > * {
+.ant-table-tbody>tr.checked-row>td>* {
   position: relative;
   z-index: 2;
 }
 
 /* ================== HOVER EFFECTS (LIGHT MODE) ================== */
 /* Unchecked rows hover - subtle gray */
-.ant-table-tbody > tr:not(.checked-row):hover > td {
+.ant-table-tbody>tr:not(.checked-row):hover>td {
   background: #f5f5f5 !important;
   box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.03);
   transition: all 0.3s ease;
 }
 
 /* Checked rows hover - enhanced golden highlight */
-.ant-table-tbody > tr.checked-row:hover > td {
-  background: linear-gradient(90deg, 
-    rgba(254, 243, 199, 0.8) 0%, 
-    rgba(253, 224, 71, 0.6) 50%, 
-    rgba(254, 243, 199, 0.8) 100%) !important;
+.ant-table-tbody>tr.checked-row:hover>td {
+  background: linear-gradient(90deg,
+      rgba(254, 243, 199, 0.8) 0%,
+      rgba(253, 224, 71, 0.6) 50%,
+      rgba(254, 243, 199, 0.8) 100%) !important;
   border-left: 4px solid #fbbf24 !important;
-  box-shadow: 
+  box-shadow:
     inset 0 0 25px rgba(251, 191, 36, 0.25),
     0 0 15px rgba(251, 191, 36, 0.15);
   transform: translateX(2px);
@@ -700,19 +702,19 @@
 }
 
 /* ================== TABLE CELL BORDERS (LIGHT MODE) ================== */
-.ant-table-tbody > tr > td {
+.ant-table-tbody>tr>td {
   border-bottom: 1px solid #f0f0f0 !important;
   border-right: 1px solid #f0f0f0 !important;
   color: #262626 !important;
   padding: 12px !important;
 }
 
-.ant-table-tbody > tr > td:last-child {
+.ant-table-tbody>tr>td:last-child {
   border-right: none !important;
 }
 
 /* Enhance borders for checked rows */
-.ant-table-tbody > tr.checked-row > td {
+.ant-table-tbody>tr.checked-row>td {
   border-bottom: 1px solid rgba(251, 191, 36, 0.3) !important;
   border-right: 1px solid rgba(251, 191, 36, 0.2) !important;
 }
@@ -724,7 +726,7 @@
 }
 
 /* Enhanced text for checked rows */
-.ant-table-tbody > tr.checked-row .custom-cell-text {
+.ant-table-tbody>tr.checked-row .custom-cell-text {
   color: #78350f !important;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(251, 191, 36, 0.1);
@@ -736,7 +738,7 @@
   color: #595959 !important;
 }
 
-.ant-table-tbody > tr.checked-row .english-company-product {
+.ant-table-tbody>tr.checked-row .english-company-product {
   color: #78350f !important;
   font-weight: 600;
 }
@@ -755,7 +757,7 @@
 }
 
 /* Enhanced card number for checked rows */
-.ant-table-tbody > tr.checked-row .card-number-product {
+.ant-table-tbody>tr.checked-row .card-number-product {
   color: #d97706 !important;
   background: rgba(251, 191, 36, 0.2) !important;
   border: 1px solid rgba(251, 191, 36, 0.5);
@@ -772,8 +774,8 @@
 }
 
 /* Enhanced price display for checked rows */
-.ant-table-tbody > tr.checked-row .price-cell-product,
-.ant-table-tbody > tr.checked-row .total-price-cell-product {
+.ant-table-tbody>tr.checked-row .price-cell-product,
+.ant-table-tbody>tr.checked-row .total-price-cell-product {
   color: #d97706 !important;
   font-weight: 800;
   text-shadow: 0 1px 2px rgba(251, 191, 36, 0.2);
@@ -789,7 +791,7 @@
   color: #8c8c8c !important;
 }
 
-.ant-table-tbody > tr.checked-row .date-cell-product {
+.ant-table-tbody>tr.checked-row .date-cell-product {
   color: #92400e !important;
   font-weight: 600;
 }
@@ -800,7 +802,7 @@
   color: #595959 !important;
 }
 
-.ant-table-tbody > tr.checked-row .user-cell-product {
+.ant-table-tbody>tr.checked-row .user-cell-product {
   color: #78350f !important;
   font-weight: 600;
 }
@@ -812,7 +814,7 @@
   font-weight: 700;
 }
 
-.ant-table-tbody > tr.checked-row .status-active-product {
+.ant-table-tbody>tr.checked-row .status-active-product {
   color: #d97706 !important;
   font-weight: 800;
 }
@@ -827,7 +829,7 @@
   background: #52c41a !important;
 }
 
-.ant-table-tbody > tr.checked-row .ant-badge-status-dot {
+.ant-table-tbody>tr.checked-row .ant-badge-status-dot {
   background: #f59e0b !important;
   box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
 }
@@ -856,7 +858,7 @@
 .ant-checkbox-checked .ant-checkbox-inner {
   background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%) !important;
   border-color: #f59e0b !important;
-  box-shadow: 
+  box-shadow:
     0 2px 8px rgba(251, 191, 36, 0.4),
     inset 0 1px 3px rgba(255, 255, 255, 0.3);
 }
@@ -876,7 +878,7 @@
 /* Hover state for checked */
 .ant-checkbox-checked:hover .ant-checkbox-inner {
   background: linear-gradient(135deg, #fbbf24 0%, #fcd34d 100%) !important;
-  box-shadow: 
+  box-shadow:
     0 2px 12px rgba(251, 191, 36, 0.6),
     inset 0 1px 3px rgba(255, 255, 255, 0.4);
   transform: scale(1.05);
@@ -890,7 +892,7 @@
 }
 
 /* Checkbox wrapper in checked rows */
-.ant-table-tbody > tr.checked-row .ant-checkbox-wrapper {
+.ant-table-tbody>tr.checked-row .ant-checkbox-wrapper {
   filter: brightness(1.05);
 }
 
@@ -899,6 +901,7 @@
   0% {
     box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7);
   }
+
   100% {
     box-shadow: 0 0 0 10px rgba(251, 191, 36, 0);
   }
@@ -913,32 +916,31 @@
   0% {
     background-position: -1000px 0;
   }
+
   100% {
     background-position: 1000px 0;
   }
 }
 
 /* Add shimmer effect to checked rows on initial check */
-.ant-table-tbody > tr.checked-row.newly-checked > td::after {
+.ant-table-tbody>tr.checked-row.newly-checked>td::after {
   content: '';
   position: absolute;
   top: 0;
   left: -1000px;
   width: 1000px;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(251, 191, 36, 0.4) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(251, 191, 36, 0.4) 50%,
+      transparent 100%);
   animation: shimmer 1.5s ease-out;
   pointer-events: none;
   z-index: 1;
 }
 
 /* ================== TABLE HEADERS (LIGHT MODE) ================== */
-.ant-table-thead > tr > th {
+.ant-table-thead>tr>th {
   background: #fafafa !important;
   color: #262626 !important;
   font-weight: 700;
@@ -950,19 +952,19 @@
   border-right: 1px solid #f0f0f0 !important;
 }
 
-.ant-table-thead > tr > th:last-child {
+.ant-table-thead>tr>th:last-child {
   border-right: none !important;
 }
 
 /* ================== ANIMATION ================== */
-.ant-table-tbody > tr {
+.ant-table-tbody>tr {
   transition: all 0.3s ease;
   position: relative;
 }
 
 /* ================== VISUAL INDICATOR FOR COMPLETED ROWS ================== */
 /* Add a completion badge/indicator */
-.ant-table-tbody > tr.checked-row::after {
+.ant-table-tbody>tr.checked-row::after {
   content: '✓';
   position: absolute;
   right: 8px;
@@ -978,14 +980,15 @@
 
 /* ================== RESPONSIVE DESIGN ================== */
 @media (max-width: 768px) {
+
   /* Adjust checkbox size for mobile */
   .ant-checkbox-inner {
     width: 18px;
     height: 18px;
   }
-  
+
   /* Hide completion indicator on small screens */
-  .ant-table-tbody > tr.checked-row::after {
+  .ant-table-tbody>tr.checked-row::after {
     display: none;
   }
 }

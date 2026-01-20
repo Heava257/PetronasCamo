@@ -165,6 +165,8 @@ function App() {
               <Route path="/admin-ShiftClosingChecklist" element={<ShiftClosingChecklist />} />
               <Route path="/admin-StockReconciliation" element={<StockReconciliationPage />} />
               <Route path="/pre-order-management" element={<EnhancedPOSOrder />} />
+
+              <Route path="/pre-order-detail" element={<PreOrderDetailPage />} />
               <Route path="/pre-order-detail/:id" element={<PreOrderDetailPage />} />
 
 

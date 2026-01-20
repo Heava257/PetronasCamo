@@ -4,17 +4,19 @@
 
 /* Desktop Table - Larger font sizes */
 .customer-orders-table .ant-table {
-  font-size: 15px !important; /* Increase base font size */
+  font-size: 15px !important;
+  /* Increase base font size */
 }
 
-.customer-orders-table .ant-table-thead > tr > th {
+.customer-orders-table .ant-table-thead>tr>th {
   font-size: 16px !important;
   font-weight: 600 !important;
   padding: 12px 8px !important;
-  background-color: #f0f8ff !important; /* Light blue background for headers */
+  background-color: #f0f8ff !important;
+  /* Light blue background for headers */
 }
 
-.customer-orders-table .ant-table-tbody > tr > td {
+.customer-orders-table .ant-table-tbody>tr>td {
   font-size: 15px !important;
   padding: 10px 8px !important;
   line-height: 1.6 !important;
@@ -45,11 +47,13 @@
 }
 
 .customer-orders-table .amount-text.paid {
-  color: #1890ff !important; /* Blue for paid amount */
+  color: #1890ff !important;
+  /* Blue for paid amount */
 }
 
 .customer-orders-table .amount-text.due {
-  color: #ff4d4f !important; /* Red for due amount */
+  color: #ff4d4f !important;
+  /* Red for due amount */
 }
 
 .customer-orders-table .status-tag {
@@ -92,31 +96,31 @@
     font-size: 16px !important;
     line-height: 1.8 !important;
   }
-  
+
   .english-text {
     font-size: 15px !important;
   }
-  
+
   .ant-card-body {
     font-size: 16px !important;
   }
-  
+
   /* Mobile card specific */
   .ant-card .customer-name {
     font-size: 17px !important;
     font-weight: 600 !important;
   }
-  
+
   .ant-card .english-text {
     font-size: 16px !important;
     font-weight: 500 !important;
   }
-  
+
   .ant-card .amount-text {
     font-size: 18px !important;
     font-weight: 700 !important;
   }
-  
+
   .ant-card .status-tag {
     font-size: 14px !important;
     padding: 4px 12px !important;
@@ -124,12 +128,12 @@
 }
 
 /* Dark mode adjustments */
-[data-theme='dark'] .customer-orders-table .ant-table-thead > tr > th {
+[data-theme='dark'] .customer-orders-table .ant-table-thead>tr>th {
   background-color: rgba(30, 41, 59, 0.95) !important;
   color: #f1f5f9 !important;
 }
 
-[data-theme='dark'] .customer-orders-table .ant-table-tbody > tr > td {
+[data-theme='dark'] .customer-orders-table .ant-table-tbody>tr>td {
   color: #e2e8f0 !important;
 }
 
@@ -146,28 +150,28 @@
 }
 
 /* ========== BETTER TABLE ROW STYLING ========== */
-.customer-orders-table .ant-table-tbody > tr:hover > td {
+.customer-orders-table .ant-table-tbody>tr:hover>td {
   background-color: rgba(240, 248, 255, 0.5) !important;
 }
 
-[data-theme='dark'] .customer-orders-table .ant-table-tbody > tr:hover > td {
+[data-theme='dark'] .customer-orders-table .ant-table-tbody>tr:hover>td {
   background-color: rgba(30, 41, 59, 0.7) !important;
 }
 
 /* Alternating row colors */
-.customer-orders-table .ant-table-tbody > tr:nth-child(even) {
+.customer-orders-table .ant-table-tbody>tr:nth-child(even) {
   background-color: #f8fafc !important;
 }
 
-[data-theme='dark'] .customer-orders-table .ant-table-tbody > tr:nth-child(even) {
+[data-theme='dark'] .customer-orders-table .ant-table-tbody>tr:nth-child(even) {
   background-color: rgba(15, 23, 42, 0.3) !important;
 }
 
-.customer-orders-table .ant-table-tbody > tr:nth-child(odd) {
+.customer-orders-table .ant-table-tbody>tr:nth-child(odd) {
   background-color: #ffffff !important;
 }
 
-[data-theme='dark'] .customer-orders-table .ant-table-tbody > tr:nth-child(odd) {
+[data-theme='dark'] .customer-orders-table .ant-table-tbody>tr:nth-child(odd) {
   background-color: rgba(30, 41, 59, 0.1) !important;
 }
 
@@ -211,13 +215,21 @@
   font-size: 15px !important;
 }
 
-.ant-table-thead > tr > th {
+.ant-table-thead>tr>th {
   font-size: 16px !important;
   font-weight: 600 !important;
   padding: 14px 8px !important;
 }
 
-.ant-table-tbody > tr > td {
+/* 
+.ant-table-thead > tr > th {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  padding: 14px 8px !important;
+} 
+*/
+
+.ant-table-tbody>tr>td {
   font-size: 15px !important;
   padding: 12px 8px !important;
 }
@@ -240,13 +252,13 @@
   .customer-orders-table .ant-table {
     font-size: 14px !important;
   }
-  
-  .customer-orders-table .ant-table-thead > tr > th {
+
+  .customer-orders-table .ant-table-thead>tr>th {
     font-size: 15px !important;
     padding: 10px 6px !important;
   }
-  
-  .customer-orders-table .ant-table-tbody > tr > td {
+
+  .customer-orders-table .ant-table-tbody>tr>td {
     font-size: 14px !important;
     padding: 8px 6px !important;
   }
@@ -256,17 +268,17 @@
   .customer-orders-table .ant-table {
     font-size: 13px !important;
   }
-  
-  .customer-orders-table .ant-table-thead > tr > th {
+
+  .customer-orders-table .ant-table-thead>tr>th {
     font-size: 14px !important;
     padding: 8px 4px !important;
   }
-  
-  .customer-orders-table .ant-table-tbody > tr > td {
+
+  .customer-orders-table .ant-table-tbody>tr>td {
     font-size: 13px !important;
     padding: 6px 4px !important;
   }
-  
+
   .pay-button .khmer-text,
   .delete-button .khmer-text {
     font-size: 12px !important;

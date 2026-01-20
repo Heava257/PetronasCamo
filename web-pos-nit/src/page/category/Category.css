@@ -15,7 +15,7 @@
 
 /* Bold Khmer title style */
 .khmer-title1 {
- font-family: "Khmer", sans-serif;
+  font-family: "Khmer", sans-serif;
   font-weight: 700;
   font-size: 17px;
   line-height: 1.5;
@@ -33,8 +33,8 @@
 /* Force Khmer fonts in Ant Design components */
 .ant-select-item-option-content .khmer-title1,
 .ant-select-item-option-content .khmer-text1,
-.ant-form-item-label > label .khmer-title1,
-.ant-form-item-label > label .khmer-text1,
+.ant-form-item-label>label .khmer-title1,
+.ant-form-item-label>label .khmer-text1,
 .ant-modal-title .khmer-title1,
 .ant-modal-title .khmer-text1,
 .ant-btn span.khmer-title1,
@@ -52,17 +52,23 @@
 }
 
 /* Table styling */
+/* Table styling - REMOVED for Dark Mode Compatibility */
+/*
 .ant-table-wrapper {
   background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 8px;
 }
+*/
 
 /* Row hover effect */
+/* Row hover effect - REMOVED for Dark Mode */
+/*
 .ant-table-tbody > tr:hover > td {
   background-color: #f5f7fa !important;
 }
+*/
 
 /* Action buttons spacing */
 .ant-space-item button {

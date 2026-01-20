@@ -16,7 +16,8 @@ const {
   deletePayment,
   updateOrderCompletion,
   bulkUpdateOrderCompletion,
-  getOrderCompletionStats
+  getOrderCompletionStats,
+  voidPayment
 } = require("../controller/order.controller");
 
 module.exports = (app) => {
@@ -30,12 +31,9 @@ module.exports = (app) => {
   app.put("/api/order/:id", validate_token("order.update"), updateInvoice);
   app.delete("/api/order/:id", validate_token("order.remove"), deleteInvoice);
   app.get("/api/order_detail/:id", getone);
-  app.get("/api/order_detail/:orderId",  getOrderDetail);
+  app.get("/api/order_detail/:orderId", getOrderDetail);
   app.get("/api/payment/history/my-group", validate_token(), getPaymentHistory);
   app.put("/api/payment/:id", validate_token(), updatePayment);
+  app.put("/api/payment/:id/void", validate_token(), voidPayment);
   app.delete("/api/payment/:id", validate_token(), deletePayment);
-
-
-
-
 };
