@@ -48,14 +48,14 @@ function LoginPage() {
   const checkIfDriver = async () => {
     try {
       const res = await request('driver/check-auth', 'get');
-      
+
       if (res && res.success) {
         // ✅ User IS a driver
-        
+
         // Save driver info
         localStorage.setItem('is_driver', 'true');
         localStorage.setItem('driver_info', JSON.stringify(res.driver_info));
-        
+
         return true;
       } else {
         // ❌ User is NOT a driver
@@ -79,7 +79,7 @@ function LoginPage() {
       username: item.username,
       password: item.password,
     };
-    
+
     try {
       const res = await request("auth/login", "post", param);
 
@@ -88,7 +88,7 @@ function LoginPage() {
         setAttemptCount(0);
         setIsBlocked(false);
         setRemainingTime(0);
-        
+
         // ✅ Save tokens and profile
         setAcccessToken(res.access_token);
         setProfile(JSON.stringify(res.profile));
@@ -103,7 +103,7 @@ function LoginPage() {
         // ✅✅✅ NEW: Check if driver and redirect accordingly ✅✅✅
         setTimeout(async () => {
           const isDriver = await checkIfDriver();
-          
+
           if (isDriver) {
             // ✅ Redirect to Driver App
             navigate("/driver");
@@ -122,7 +122,7 @@ function LoginPage() {
         if (res.retryAfter) {
           // Server បាន return retry time
           const seconds = parseInt(res.retryAfter);
-          
+
           // ✅ ពិនិត្យថាជា number ត្រឹមត្រូវឬទេ
           if (!isNaN(seconds) && seconds > 0) {
             setRemainingTime(seconds);
@@ -145,15 +145,15 @@ function LoginPage() {
       }
     } catch (error) {
       console.error("Login error:", error);
-      
+
       // ពិនិត្យ error response ពី server
       if (error.response?.status === 429) {
         // Too Many Requests
         const retryAfterFromError = error.response?.data?.retryAfter;
-        
+
         // ✅ គណនា retry time ត្រឹមត្រូវ
         let seconds = 900; // default 15 នាទី
-        
+
         if (retryAfterFromError) {
           // ប្រសិនបើជា string រូបមន្ត "15 នាទី"
           if (typeof retryAfterFromError === 'string') {
@@ -162,20 +162,20 @@ function LoginPage() {
               const minutes = parseInt(match[1]);
               seconds = minutes * 60;
             }
-          } 
+          }
           // ប្រសិនបើជា number
           else if (typeof retryAfterFromError === 'number') {
             seconds = retryAfterFromError;
           }
         }
-        
+
         setRemainingTime(seconds);
         setIsBlocked(true);
         message.error(`អ្នកត្រូវបានទប់ស្កាត់! សូមរង់ចាំ ${formatTime(seconds)}`);
       } else {
         const newAttemptCount = attemptCount + 1;
         setAttemptCount(newAttemptCount);
-        
+
         if (newAttemptCount >= 5) {
           setRemainingTime(900);
           setIsBlocked(true);
@@ -221,6 +221,12 @@ function LoginPage() {
 
   return (
     <div className="login-container">
+      {/* Abstract Header Art */}
+      <div className="login-header-art">
+        <div className="abstract-blob"></div>
+        <div className="abstract-blob-small"></div>
+      </div>
+
       {/* Beautiful Notification Toast */}
       {notification && (
         <div style={{
@@ -269,7 +275,7 @@ function LoginPage() {
                 margin: 0,
                 lineHeight: '1.5'
               }}>
-                {notification === 'google' ? 'Google' : 'Apple'} sign-in will be available shortly. We're working hard to bring you this feature.
+                {notification === 'google' ? 'Google' : notification === 'facebook' ? 'Facebook' : 'Twitter'} sign-in will be available shortly.
               </p>
             </div>
             <button
@@ -310,26 +316,8 @@ function LoginPage() {
 
       <div className="login-card">
         <div className="login-content">
-          {/* Logo */}
-          <div className="logo-container">
-            <div className="logo-wrapper">
-              <img src={logo} alt="Petronas Logo" />
-            </div>
-          </div>
-
-          {/* Auth Tabs */}
-          <div className="auth-tabs">
-            <div 
-              className={`auth-tab ${activeTab === 'signin' ? 'active' : ''}`}
-              onClick={() => setActiveTab('signin')}
-            >
-              Sign in
-            </div>
-          </div>
-
           {/* Welcome Title */}
           <h1 className="welcome-title">Welcome Back</h1>
-          <p className="welcome-subtitle">Please enter your details to continue</p>
 
           {/* Blocked Alert */}
           {isBlocked && (
@@ -363,50 +351,48 @@ function LoginPage() {
               form={form}
               onFinish={onLogin}
             >
-              {/* Username Field */}
+              {/* Email/Username Field */}
               <Form.Item
-                label={
-                  <span>
-                    <span className="required-star">*</span>
-                    Username
-                  </span>
-                }
+                label="Email"
                 name="username"
-                rules={[{ required: true, message: "Please enter your username!" }]}
+                rules={[{ required: true, message: "Please enter your email!" }]}
               >
-                <div className="form-field">
-                  <UserOutlined className="field-icon" />
-                  <Input
-                    placeholder="Enter your username"
-                    className="login-input"
-                    disabled={isBlocked}
-                  />
-                </div>
+                <Input
+                  placeholder="Enter Email"
+                  className="login-input"
+                  disabled={isBlocked}
+                />
               </Form.Item>
 
               {/* Password Field */}
               <Form.Item
-                label={
-                  <span>
-                    <span className="required-star">*</span>
-                    Password
-                  </span>
-                }
+                label="Password"
                 name="password"
                 rules={[{ required: true, message: "Please enter your password!" }]}
               >
-                <div className="form-field">
-                  <LockOutlined className="field-icon" />
-                  <Input.Password
-                    placeholder="Enter your password"
-                    className="login-input"
-                    disabled={isBlocked}
-                  />
-                </div>
+                <Input.Password
+                  placeholder="Enter Password"
+                  className="login-input"
+                  disabled={isBlocked}
+                />
               </Form.Item>
 
+              {/* Remember Me & Forgot Password */}
+              <div className="remember-forgot-row">
+                <label className="remember-me">
+                  <input type="checkbox" style={{
+                    width: '20px',
+                    height: '20px',
+                    accentColor: '#4f46e5',
+                    borderRadius: '4px'
+                  }} />
+                  Remember me
+                </label>
+                <a href="#" className="forgot-password">Forgot Password?</a>
+              </div>
+
               {/* Submit Button */}
-              <Form.Item>
+              <Form.Item style={{ marginBottom: 0 }}>
                 <Button
                   type="primary"
                   htmlType="submit"
@@ -415,7 +401,7 @@ function LoginPage() {
                   disabled={isBlocked}
                   className="login-button"
                 >
-                  LOG IN NOW
+                  Sign in
                   <ArrowRightOutlined />
                 </Button>
               </Form.Item>
@@ -423,51 +409,41 @@ function LoginPage() {
 
             {/* Social Login Divider */}
             <div className="social-login-divider">
-              <span>or sign in with</span>
+              <span>sign in with</span>
             </div>
 
             {/* Social Buttons */}
             <div className="social-buttons">
-              <div 
-                className="social-button" 
+              <div
+                className="social-button"
                 onClick={handleGoogleSignIn}
                 title="Sign in with Google"
               >
-                <FaGoogle style={{ fontSize: '20px', color: '#DB4437' }} />
+                <FaGoogle style={{ fontSize: '18px', color: '#DB4437' }} />
               </div>
-              <div 
+              <div
                 className="social-button"
-                onClick={handleAppleSignIn} 
-                title="Sign in with Apple"
+                onClick={() => showNotification('facebook')}
+                title="Sign in with Facebook"
               >
-                <FaApple style={{ fontSize: '22px', color: '#ffffff' }} />
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                </svg>
+              </div>
+              <div
+                className="social-button"
+                onClick={() => showNotification('twitter')}
+                title="Sign in with Twitter"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1DA1F2">
+                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                </svg>
               </div>
             </div>
 
-            {/* Terms */}
-            <div className="terms-text">
-              By creating an account, you agree to our <a href="#">Terms & Service</a>
-            </div>
-          </div>
-
-          {/* Support Section */}
-          <div className="support-section">
-            <div className="support-title">Need Help?</div>
-            <div className="support-icons">
-              <div
-                className="support-icon"
-                onClick={handleTelegramSupport}
-                title="Contact us on Telegram"
-              >
-                <FaTelegramPlane className="telegram-icon" />
-              </div>
-              <div
-                className="support-icon"
-                onClick={abouthere}
-                title="General Support"
-              >
-                <CustomerServiceOutlined className="support-icon-general" />
-              </div>
+            {/* Sign Up Link */}
+            <div className="signup-link">
+              Don't have an account? <a href="#">Sign in</a>
             </div>
           </div>
         </div>

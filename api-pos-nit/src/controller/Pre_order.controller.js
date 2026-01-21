@@ -401,9 +401,11 @@ exports.getPreOrderList = async (req, res) => {
             (SELECT GROUP_CONCAT(product_name SEPARATOR ', ') FROM pre_order_detail WHERE pre_order_id = po.id) as products_display,
             (SELECT SUM(qty) FROM pre_order_detail WHERE pre_order_id = po.id) as total_qty,
             (SELECT price FROM pre_order_detail WHERE pre_order_id = po.id LIMIT 1) as first_price,
-            u_creator.branch_name as creator_branch
+            u_creator.branch_name as creator_branch,
+            u_confirmed.name as confirmed_by_name
           FROM pre_order po
           LEFT JOIN user u_creator ON po.created_by = u_creator.id
+          LEFT JOIN user u_confirmed ON po.confirmed_by = u_confirmed.id
           WHERE 1=1
         `;
 
@@ -610,17 +612,34 @@ exports.updateStatus = async (req, res) => {
       }
     }
 
-    await db.query(`
+    let sql = `
       UPDATE pre_order SET
         status = :status,
         notes = CONCAT(IFNULL(notes, ''), '\n', :new_notes),
         updated_at = NOW()
-      WHERE id = :id
-    `, {
+    `;
+
+    const params = {
       id,
       status,
       new_notes: notes || `Status changed to ${status}`
-    });
+    };
+
+    // ✅ If confirming, save who did it
+    if (status === 'confirmed') {
+      sql = `
+        UPDATE pre_order SET
+          status = :status,
+          confirmed_by = :confirmed_by,
+          notes = CONCAT(IFNULL(notes, ''), '\n', :new_notes),
+          updated_at = NOW()
+      `;
+      params.confirmed_by = req.auth?.id;
+    }
+
+    sql += ` WHERE id = :id`;
+
+    await db.query(sql, params);
 
     res.json({
       success: true,

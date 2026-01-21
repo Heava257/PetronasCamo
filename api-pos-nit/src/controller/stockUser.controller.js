@@ -365,88 +365,103 @@ exports.gettotal_due = async (req, res) => {
             ORDER BY it.created_at DESC
             LIMIT 1
           ),
-          -- Strategy 6: From product_details
-          (
-            SELECT pd.description
-            FROM product_details pd
-            WHERE pd.customer_id = ds.customer_id 
-            AND CAST(pd.category AS UNSIGNED) = ds.category_id
-            AND DATE(pd.created_at) <= DATE(o.order_date)
-            AND pd.description IS NOT NULL
-            AND pd.description != ''
-            ORDER BY pd.created_at DESC
-            LIMIT 1
-          ),
           -- Final fallback: order_no
           o.order_no
         ) AS product_description,
         
-        -- ✅ យក description ទាំងអស់ ប៉ុន្តែ DISTINCT
+        -- ✅ យក description ទាំងអស់ ប៉ុន្តែ DISTINCT (Fixed to use order_detail + product)
         (
-          SELECT GROUP_CONCAT(DISTINCT pd.description ORDER BY pd.created_at DESC SEPARATOR ' | ')
-          FROM product_details pd
-          WHERE pd.customer_id = ds.customer_id 
-          AND CAST(pd.category AS UNSIGNED) = ds.category_id
-          AND DATE(pd.created_at) <= DATE(o.order_date)
-          AND pd.description IS NOT NULL
-          AND pd.description != ''
+          SELECT GROUP_CONCAT(DISTINCT p.name ORDER BY o2.create_at DESC SEPARATOR ' | ')
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          JOIN \`order\` o2 ON od.order_id = o2.id
+          WHERE o2.customer_id = ds.customer_id 
+          -- Note: We map product category to debt category
+          AND p.category_id = ds.category_id
+          AND DATE(o2.order_date) <= DATE(o.order_date)
+          AND p.name IS NOT NULL
+          AND p.name != ''
         ) AS all_product_descriptions,
         
-        -- ✅ PURCHASE AMOUNT
+        -- ✅ PURCHASE AMOUNT (Fixed for Pre-Orders & Normal Orders)
         COALESCE(
+          -- Strategy 1: From pre_order_detail (Pre-Orders) - Priority
           (
-            SELECT SUM(DISTINCT pd.total_price)
-            FROM product_details pd
-            WHERE pd.customer_id = ds.customer_id 
-            AND CAST(pd.category AS UNSIGNED) = ds.category_id
-            AND DATE(pd.created_at) <= DATE(o.order_date)
+             SELECT SUM(pod.qty * p.actual_price)
+             FROM pre_order_detail pod
+             JOIN product p ON pod.product_id = p.id
+             JOIN pre_order po ON pod.pre_order_id = po.id
+             WHERE po.pre_order_no = o.pre_order_no
+          ),
+          -- Strategy 2: From order_detail * product.unit_price (Normal Orders - Fallback)
+          (
+            SELECT SUM(od.qty * p.unit_price)
+            FROM order_detail od
+            JOIN product p ON od.product_id = p.id
+            WHERE od.order_id = o.id
+            AND p.category_id = ds.category_id
           ), 
           0
         ) AS purchase_amount,
         
+        -- ✅ PURCHASE QTY
         COALESCE(
+          -- Strategy 1: From pre_order_detail
           (
-            SELECT SUM(DISTINCT pd.qty)
-            FROM product_details pd
-            WHERE pd.customer_id = ds.customer_id 
-            AND CAST(pd.category AS UNSIGNED) = ds.category_id
-            AND DATE(pd.created_at) <= DATE(o.order_date)
+             SELECT SUM(pod.qty)
+             FROM pre_order_detail pod
+             JOIN pre_order po ON pod.pre_order_id = po.id
+             WHERE po.pre_order_no = o.pre_order_no
+          ),
+          -- Strategy 2: From order_detail
+          (
+            SELECT SUM(od.qty)
+            FROM order_detail od
+            JOIN product p ON od.product_id = p.id
+            WHERE od.order_id = o.id
+            AND p.category_id = ds.category_id
           ), 
           0
         ) AS purchase_qty,
         
+        -- ✅ AVG PURCHASE PRICE
         COALESCE(
+          -- Strategy 1: From pre_order_detail
           (
-            SELECT AVG(DISTINCT pd.unit_price)
-            FROM product_details pd
-            WHERE pd.customer_id = ds.customer_id 
-            AND CAST(pd.category AS UNSIGNED) = ds.category_id
-            AND DATE(pd.created_at) <= DATE(o.order_date)
+             SELECT AVG(p.actual_price)
+             FROM pre_order_detail pod
+             JOIN product p ON pod.product_id = p.id
+             JOIN pre_order po ON pod.pre_order_id = po.id
+             WHERE po.pre_order_no = o.pre_order_no
+          ),
+          -- Strategy 2: From product (Current Unit Price)
+          (
+            SELECT AVG(p.unit_price)
+            FROM order_detail od
+            JOIN product p ON od.product_id = p.id
+            WHERE od.order_id = o.id
+            AND p.category_id = ds.category_id
           ), 
           0
         ) AS avg_purchase_price,
         
         -- ✅ យក barcode តែមួយ
         (
-          SELECT pd.barcode
-          FROM product_details pd
-          WHERE pd.customer_id = ds.customer_id 
-          AND CAST(pd.category AS UNSIGNED) = ds.category_id
-          AND DATE(pd.created_at) <= DATE(o.order_date)
-          AND pd.barcode IS NOT NULL
-          ORDER BY pd.created_at DESC
+          SELECT p.barcode
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id
+          AND p.category_id = ds.category_id
           LIMIT 1
         ) AS product_barcode,
         
         -- ✅ យក name តែមួយ
         (
-          SELECT pd.name
-          FROM product_details pd
-          WHERE pd.customer_id = ds.customer_id 
-          AND CAST(pd.category AS UNSIGNED) = ds.category_id
-          AND DATE(pd.created_at) <= DATE(o.order_date)
-          AND pd.name IS NOT NULL
-          ORDER BY pd.created_at DESC
+          SELECT p.name
+          FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id
+          AND p.category_id = ds.category_id
           LIMIT 1
         ) AS product_name,
         
@@ -559,13 +574,14 @@ exports.gettotal_due = async (req, res) => {
         o.pre_order_no LIKE ? OR
         ds.debt_description LIKE ? OR
         EXISTS (
-          SELECT 1 FROM product_details pd
-          WHERE pd.customer_id = ds.customer_id 
-          AND CAST(pd.category AS UNSIGNED) = ds.category_id
+          SELECT 1 FROM order_detail od
+          JOIN product p ON od.product_id = p.id
+          WHERE od.order_id = o.id
+          AND p.category_id = ds.category_id
           AND (
-            pd.name LIKE ? OR
-            pd.description LIKE ? OR
-            pd.barcode LIKE ?
+            p.name LIKE ? OR
+            p.description LIKE ? OR
+            p.barcode LIKE ?
           )
         )
       )`);
@@ -675,17 +691,6 @@ exports.gettotal_due_detail = async (req, res) => {
               AND it.notes LIKE '%PO:%'
               AND DATE(it.created_at) = DATE(o.create_at)
             ORDER BY it.created_at DESC
-            LIMIT 1
-          ),
-          -- Strategy 6: From product_details
-          (
-            SELECT pd.description
-            FROM product_details pd
-            WHERE pd.customer_id = o.customer_id
-              AND CAST(pd.category AS UNSIGNED) = cd.category_id
-              AND pd.description IS NOT NULL
-              AND pd.description != ''
-            ORDER BY pd.created_at DESC
             LIMIT 1
           ),
           -- Fallback

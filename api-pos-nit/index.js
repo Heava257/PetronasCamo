@@ -98,6 +98,7 @@ require("./src/route/customer.route")(app);
 require("./src/route/expanse.route")(app);
 require("./src/route/employee.route")(app);
 require("./src/route/order.route")(app);
+require("./src/route/customer_payment.route")(app);
 require("./src/route/dashbaord.route")(app);
 require("./src/route/report.route")(app);
 require("./src/route/currency.route")(app);
@@ -122,6 +123,8 @@ require("./src/route/Pre_order.route")(app);
 require("./src/route/Location.route")(app);
 require("./src/route/truck.route")(app);
 require("./src/route/upload.route")(app);
+require("./src/route/supplier_payment.route")(app); // ✅ Supplier Payment Ledger
+require("./src/route/ocr.route")(app); // ✅ OCR Bank Slips
 
 // Optional route
 try {

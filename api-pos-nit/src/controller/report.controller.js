@@ -1308,7 +1308,7 @@ exports.report_Stock_Status = async (req, res) => {
         p.name AS product_name,
         p.barcode,
         c.name AS category_name,
-        p.qty AS current_stock,
+        COALESCE(stock.total_qty, 0) AS current_stock,
         p.unit,
         
         -- ✅ Get prices
@@ -1328,7 +1328,7 @@ exports.report_Stock_Status = async (req, res) => {
         
         -- ✅ Calculate Stock Value: (qty × unit_price) ÷ actual_price
         ROUND(
-          p.qty * p.unit_price / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0),
+          COALESCE(stock.total_qty, 0) * p.unit_price / NULLIF(p.actual_price, 0),
           2
         ) AS stock_value,
         
@@ -1363,9 +1363,9 @@ exports.report_Stock_Status = async (req, res) => {
         
         -- ✅ Stock Status (Global)
         CASE 
-          WHEN p.qty = 0 THEN 'Out of Stock'
-          WHEN p.qty < 100 THEN 'Low Stock'
-          WHEN p.qty < 500 THEN 'Medium Stock'
+          WHEN COALESCE(stock.total_qty, 0) = 0 THEN 'Out of Stock'
+          WHEN COALESCE(stock.total_qty, 0) < 100 THEN 'Low Stock'
+          WHEN COALESCE(stock.total_qty, 0) < 500 THEN 'Medium Stock'
           ELSE 'In Stock'
         END AS stock_status,
         
@@ -1383,10 +1383,19 @@ exports.report_Stock_Status = async (req, res) => {
       FROM product p
       LEFT JOIN category c ON p.category_id = c.id
       ${isSuperAdmin ? '' : 'LEFT JOIN user u_prod ON p.user_id = u_prod.id'}
+      LEFT JOIN (
+        SELECT 
+           it.product_id, 
+           SUM(it.quantity) as total_qty
+        FROM inventory_transaction it
+        ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
+        WHERE 1=1 ${branchFilter}
+        GROUP BY it.product_id
+      ) stock ON stock.product_id = p.id
       WHERE p.status = 1
       ${isSuperAdmin ? '' : 'AND u_prod.branch_name = :branch_name'}
       ${category_id ? `AND p.category_id = ${category_id}` : ''}
-      ORDER BY p.qty ASC
+      ORDER BY COALESCE(stock.total_qty, 0) ASC
     `;
 
     const [list] = await db.query(sql, queryParams);
@@ -1505,7 +1514,7 @@ exports.report_Stock_Movement = async (req, res) => {
 
     if (!isSuperAdmin) {
       branchFilterJoin = `LEFT JOIN user u ON TABLE_ALIAS.user_id = u.id`;
-      branchFilterWhere = `AND u.branch_name = :branch_name`;
+      branchFilterWhere = `AND u.branch_name = : branch_name`;
       params.branch_name = branch_name;
     }
 
@@ -1514,8 +1523,8 @@ exports.report_Stock_Movement = async (req, res) => {
       if (!isSuperAdmin) {
         return `
           LEFT JOIN user u ON ${alias}.user_id = u.id
-          AND u.branch_name = :branch_name
-        `;
+          AND u.branch_name = : branch_name
+  `;
       }
       return '';
     };
@@ -1526,44 +1535,44 @@ exports.report_Stock_Movement = async (req, res) => {
     // 3. Inventory: it.user_id
 
     const sql = `
-      SELECT 
-        'Purchase' AS movement_type,
-        p.order_no AS reference_no,
-        JSON_UNQUOTE(JSON_EXTRACT(p.items, '$[0].product_name')) AS product_name,
-        JSON_UNQUOTE(JSON_EXTRACT(p.items, '$[0].barcode')) AS barcode,
+SELECT
+'Purchase' AS movement_type,
+  p.order_no AS reference_no,
+    JSON_UNQUOTE(JSON_EXTRACT(p.items, '$[0].product_name')) AS product_name,
+      JSON_UNQUOTE(JSON_EXTRACT(p.items, '$[0].barcode')) AS barcode,
         c.name AS category_name,
-        NULL AS quantity_in,
-        NULL AS quantity_out,
-        p.total_amount AS amount,
-        s.name AS related_party,
-        p.order_date AS movement_date,
-        DATE_FORMAT(p.order_date, '%d/%m/%Y') AS formatted_date,
-        p.status,
-        p.payment_terms
+          NULL AS quantity_in,
+            NULL AS quantity_out,
+              p.total_amount AS amount,
+                s.name AS related_party,
+                  p.order_date AS movement_date,
+                    DATE_FORMAT(p.order_date, '%d/%m/%Y') AS formatted_date,
+                      p.status,
+                      p.payment_terms
       FROM purchase p
       LEFT JOIN supplier s ON p.supplier_id = s.id
       LEFT JOIN category c ON JSON_UNQUOTE(JSON_EXTRACT(p.items, '$[0].category_id')) = c.id
       ${isSuperAdmin ? '' : 'LEFT JOIN user u_p ON p.user_id = u_p.id'}
       WHERE DATE(p.order_date) BETWEEN :from_date AND :to_date
-        AND p.status IN ('confirmed', 'shipped', 'delivered')
+        AND p.status IN('confirmed', 'shipped', 'delivered')
         ${isSuperAdmin ? '' : 'AND u_p.branch_name = :branch_name'}
       
       UNION ALL
-      
-      SELECT 
-        'Sale' AS movement_type,
-        o.order_no AS reference_no,
-        prod.name AS product_name,
-        prod.barcode,
-        c.name AS category_name,
+
+SELECT
+'Sale' AS movement_type,
+  o.order_no AS reference_no,
+    prod.name AS product_name,
+      prod.barcode,
+      c.name AS category_name,
         NULL AS quantity_in,
-        od.qty AS quantity_out,
-        (od.qty * od.price / NULLIF(COALESCE(prod.actual_price, c.actual_price, 1), 0)) AS amount,
-        cust.name AS related_party,
-        o.order_date AS movement_date,
-        DATE_FORMAT(o.order_date, '%d/%m/%Y') AS formatted_date,
-        NULL AS status,
-        NULL AS payment_terms
+          od.qty AS quantity_out,
+            (od.qty * od.price / NULLIF(COALESCE(prod.actual_price, c.actual_price, 1), 0)) AS amount,
+              cust.name AS related_party,
+                o.order_date AS movement_date,
+                  DATE_FORMAT(o.order_date, '%d/%m/%Y') AS formatted_date,
+                    NULL AS status,
+                      NULL AS payment_terms
       FROM \`order\` o
       INNER JOIN order_detail od ON o.id = od.order_id
       INNER JOIN product prod ON od.product_id = prod.id

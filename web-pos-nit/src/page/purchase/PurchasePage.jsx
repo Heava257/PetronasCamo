@@ -36,8 +36,10 @@ import {
   SearchOutlined,
   PlusOutlined,
   MinusCircleOutlined,
-  InfoCircleOutlined
+  InfoCircleOutlined,
+  CheckCircleOutlined
 } from '@ant-design/icons';
+
 import { useTranslation } from "../../locales/TranslationContext";
 import { configStore } from "../../store/configStore";
 
@@ -61,6 +63,52 @@ function PurchasePage() {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [orderItems, setOrderItems] = useState([]);
+
+  // ✅ New State for Receive Modal
+  const [isReceiveModalVisible, setIsReceiveModalVisible] = useState(false);
+  const [receivingOrder, setReceivingOrder] = useState(null);
+  const [receiverName, setReceiverName] = useState("");
+
+  const handleOpenReceive = (order) => {
+    setReceivingOrder(order);
+    setReceiverName(""); // clear previous
+    setIsReceiveModalVisible(true);
+  };
+
+  const handleConfirmReceive = async () => {
+    if (!receiverName) {
+      message.error(t("Please enter receiver name"));
+      return;
+    }
+
+    if (!receivingOrder) return;
+
+    setState((p) => ({ ...p, loading: true }));
+    setIsReceiveModalVisible(false);
+
+    try {
+      const purchaseData = {
+        ...receivingOrder, // keep existing data
+        status: 'delivered',
+        received_by: receiverName,
+        items: receivingOrder.items
+      };
+
+      const res = await request("purchase/" + receivingOrder.id, "put", purchaseData);
+
+      if (res && !res.error) {
+        message.success("Order marked as Delivered & Stock Updated!");
+        getList();
+      } else {
+        message.error(res.message || "Failed to update order");
+      }
+    } catch (error) {
+      message.error("An error occurred");
+    } finally {
+      setState((p) => ({ ...p, loading: false }));
+      setReceivingOrder(null);
+    }
+  };
 
   useEffect(() => {
     getList();
@@ -532,6 +580,19 @@ function PurchasePage() {
       width: 200,
       render: (value, data) => (
         <Space>
+          {/* ✅ Add Receive Button if not delivered */}
+          {data.status !== 'delivered' && data.status !== 'completed' && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<CheckCircleOutlined />}
+              className="bg-green-600 hover:bg-green-700 border-green-600"
+              onClick={() => handleOpenReceive(data)}
+            >
+              Receive
+            </Button>
+          )}
+
           <Button
             type="primary"
             size="small"
@@ -645,6 +706,26 @@ function PurchasePage() {
         </div>
 
         {/* Form Modal */}
+        <Modal
+          title="Confirm Receipt & Stock In"
+          open={isReceiveModalVisible}
+          onOk={handleConfirmReceive}
+          onCancel={() => setIsReceiveModalVisible(false)}
+          okText="Confirm Received"
+          cancelText="Cancel"
+        >
+          <p>This will mark the order as <b>Delivered</b> and update inventory.</p>
+          <div className="mt-4">
+            <Typography.Text strong>Received By (Name):</Typography.Text>
+            <Input
+              placeholder="Enter receiver name (e.g. Driver Name)"
+              value={receiverName}
+              onChange={(e) => setReceiverName(e.target.value)}
+              className="mt-1"
+            />
+          </div>
+        </Modal>
+
         <Modal
           open={state.visible}
           title={

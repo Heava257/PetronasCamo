@@ -161,37 +161,48 @@ exports.getList = async (req, res) => {
       total_expense: parseInt(opexResult[0]?.total_expense || 0)
     }];
 
-    // ✅✅✅ PRODUCT QUERY ✅✅✅
+    // ✅✅✅ PRODUCT QUERY - Value & Qty from inventory_transaction ✅✅✅
     const productQuery = `
       SELECT 
-        -- ✅ Current Stock Value using same logic as Stock Status Report
-        -- Formula: (qty × unit_price) ÷ actual_price
+        -- ✅ Stock Value = (IT.total_qty × p.unit_price) ÷ p.actual_price
         COALESCE(
           SUM(
             ROUND(
-              p.qty * p.unit_price / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0),
-              2
+              COALESCE(stock.total_qty, 0) * p.unit_price / NULLIF(p.actual_price, 0), 2
             )
           ), 0
         ) AS total_stock_value,
         
-        -- Total Active Products
-        COUNT(p.id) AS total_products,
-        
-        -- Total Quantity in Stock
-        COALESCE(SUM(p.qty), 0) AS total_quantity,
+        -- Total Active Products (with stock > 0)
+        COUNT(CASE WHEN COALESCE(stock.total_qty, 0) > 0 THEN 1 END) AS total_products,
         
         -- Low Stock Alert (< 100 units)
-        COUNT(CASE WHEN p.qty > 0 AND p.qty < 100 THEN 1 END) AS low_stock_count
+        COUNT(CASE WHEN COALESCE(stock.total_qty, 0) > 0 AND COALESCE(stock.total_qty, 0) < 100 THEN 1 END) AS low_stock_count
         
       FROM product p
-      LEFT JOIN category c ON p.category_id = c.id
-      JOIN user u ON p.user_id = u.id
+      LEFT JOIN (
+        SELECT 
+          it.product_id, 
+          SUM(it.quantity) as total_qty
+        FROM inventory_transaction it
+        LEFT JOIN user u ON it.user_id = u.id
+        WHERE 1=1 ${branchFilter}
+        GROUP BY it.product_id
+      ) stock ON stock.product_id = p.id
       WHERE p.status = 1
-        AND p.qty > 0  -- Only products with stock
-        ${branchFilter}
     `;
     const [product] = await db.query(productQuery);
+
+    // ✅✅✅ Get Total Quantity from inventory_transaction (Simplified) ✅✅✅
+    const inventoryQtyQuery = `
+      SELECT 
+        COALESCE(SUM(it.quantity), 0) AS total_quantity
+      FROM inventory_transaction it
+      LEFT JOIN user u ON it.user_id = u.id
+      WHERE 1=1
+        ${branchFilter}
+    `;
+    const [inventoryQty] = await db.query(inventoryQtyQuery);
 
     // ✅✅✅ SALE QUERY (for backward compatibility) ✅✅✅
     const saleQuery = `
@@ -378,7 +389,7 @@ exports.getList = async (req, res) => {
         }
       },
       {
-        title: "ប្រព័ន្ធចំណាយទូទៅ",
+        title: "ចំណាយលើប្រេង",
         Summary: {
           "ចំណាយ": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
           "សរុប": formatCurrency(totalExpense),  // ✅ $7,394.96
@@ -387,12 +398,12 @@ exports.getList = async (req, res) => {
         }
       },
       {
-        title: "ផលិតផល",
+        title: "ផលិតផលក្នុងស្តុក",
         Summary: {
           "ស្តុក": "Current Stock",
           "តម្លៃ": formatCurrency(product[0]?.total_stock_value),  // ✅ $7,394.96
           "ចំនួនផលិតផល": formatNumber(product[0]?.total_products) + " items",
-          "ចំនួនស្តុកសរុប": formatNumber(product[0]?.total_quantity) + " L"
+          "ចំនួនស្តុកសរុប": formatNumber(inventoryQty[0]?.total_quantity) + " L"  // ✅ From inventory_transaction
         }
       },
       {

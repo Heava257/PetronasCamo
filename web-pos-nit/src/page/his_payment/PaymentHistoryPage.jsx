@@ -1389,425 +1389,204 @@ const formatCurrency = (value) => {
     currency: "USD",
   }).format(value || 0);
 };
-const printCustomerPaymentReport = (customerData) => {
-  const { customer_name, customer_phone, customer_email, payments } = customerData;
+const printCustomerPaymentReport = (data) => {
+  const { payments } = data;
   const totalAmount = payments.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
 
   const printContent = `
     <html>
       <head>
-        <title>របាយការណ៍ការទូទាត់អតិថិជន</title>
+        <title>តារាងបញ្ជីការទូទាត់</title>
         <style>
+          @import url('https://fonts.googleapis.com/css2?family=Khmer+OS+Siemreap&family=Khmer+OS+Moul&display=swap');
+          
           * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Khmer OS Siemreap', 'Segoe UI', sans-serif;
           }
           
           body { 
-            font-family: 'Khmer OS Siemreap', 'Khmer OS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            line-height: 1.4;
-            color: #333;
             background: white !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            font-size: 11pt;
+            color: #000;
           }
 
           .print-container {
-            max-width: 800px;
-            margin: 0 auto;
+            width: 100%;
             padding: 20px;
-            background: white !important;
+            margin: 0 auto;
           }
 
-          .header { 
-            text-align: center; 
-            border-bottom: 3px solid #2c3e50;
-            padding-bottom: 20px; 
-            margin-bottom: 30px;
-            background: white !important;
-          }
-
-          .header h1 {
-            font-size: 28px;
-            color: #2c3e50;
-            margin-bottom: 8px;
-            font-weight: 600;
-          }
-
-          .header .subtitle {
-            font-size: 14px;
-            color: #7f8c8d;
+          /* Header Styles */
+          .header-title-kh {
+            font-family: 'Khmer OS Moul', cursive;
+            font-size: 16pt;
+            text-align: center;
+            margin-bottom: 5px;
             font-weight: normal;
           }
-
-          .customer-section {
-            margin-bottom: 30px;
-            background: white !important;
+          
+          .header-subtitle {
+             text-align: center;
+             margin-bottom: 20px;
+             font-size: 11pt;
           }
-
-          .section-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #ecf0f1;
-          }
-
-          .customer-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+          
+          /* Table Styles */
+          table {
+            width: 100%;
+            border-collapse: collapse;
             margin-bottom: 20px;
-          }
-
-          .info-item {
-            display: flex;
-            align-items: center;
-          }
-
-          .info-label {
-            font-weight: 600;
-            color: #34495e;
-            min-width: 120px;
-            margin-right: 10px;
-          }
-
-          .info-value {
-            color: #2c3e50;
-            flex: 1;
-          }
-
-          .payments-section {
-            margin-top: 30px;
-            background: white !important;
-          }
-
-          .payment-card {
-            border: 1px solid #ddd;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-            background: white !important;
-            box-shadow: none !important;
-          }
-
-          .payment-header {
-            background: #34495e !important;
-            color: white !important;
-            padding: 12px 16px;
-            font-weight: 600;
-            font-size: 14px;
-          }
-
-          .payment-body {
-            padding: 16px;
-            background: white !important;
-          }
-
-          .payment-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 12px;
-          }
-
-          .payment-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px dotted #ddd;
-          }
-
-          .payment-row:last-child {
-            border-bottom: none;
-            margin-top: 8px;
-            padding-top: 12px;
-          }
-
-          .payment-label {
-            font-weight: 500;
-            color: #7f8c8d;
-            font-size: 13px;
-          }
-
-          .payment-value {
-            font-weight: 500;
-            color: #2c3e50;
-            text-align: right;
-          }
-
-          .amount-highlight {
-            font-size: 16px !important;
-            font-weight: 700 !important;
-            color: #27ae60 !important;
-          }
-
-          .method-tag {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-          }
-
-          .method-cash { 
-            background: #d5f4e6 !important; 
-            color: #27ae60 !important; 
-            border: 1px solid #27ae60;
+            font-size: 10pt;
           }
           
-          .method-card { 
-            background: #dae8fc !important; 
-            color: #3498db !important; 
-            border: 1px solid #3498db;
-          }
-          
-          .method-transfer { 
-            background: #fdeaa7 !important; 
-            color: #f39c12 !important; 
-            border: 1px solid #f39c12;
-          }
-          
-          .method-mobile { 
-            background: #e9d5ff !important; 
-            color: #8b5cf6 !important; 
-            border: 1px solid #8b5cf6;
-          }
-          
-          .method-debenture { 
-            background: #fecaca !important; 
-            color: #ef4444 !important; 
-            border: 1px solid #ef4444;
-          }
-
-          .summary-section {
-            margin-top: 30px;
-            padding: 20px;
-            border: 2px solid #34495e;
-            border-radius: 8px;
-            background: white !important;
-          }
-
-          .summary-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-          }
-
-          .summary-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-          }
-
-          .summary-label {
-            font-weight: 600;
-            color: #34495e;
-          }
-
-          .summary-value {
-            font-weight: 700;
-            color: #2c3e50;
-          }
-
-          .total-amount {
-            font-size: 20px !important;
-            color: #27ae60 !important;
-          }
-
-          .footer {
-            margin-top: 40px;
+          th {
+            background-color: #f2f2f2 !important;
+            border: 1px solid #000;
+            padding: 8px 4px;
             text-align: center;
-            color: #95a5a6;
-            font-size: 12px;
-            border-top: 1px solid #ecf0f1;
-            padding-top: 20px;
+            font-weight: bold;
+            font-family: 'Khmer OS Moul', cursive;
+          }
+          
+          td {
+            border: 1px solid #000;
+            padding: 6px 4px;
+            vertical-align: middle;
+          }
+          
+          .col-center { text-align: center; }
+          .col-right { text-align: right; }
+          .col-left { text-align: left; }
+          
+          /* Footer/Signature Styles */
+          .footer-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 50px;
+          }
+          
+          .signature-block {
+            text-align: center;
+            width: 200px;
+          }
+          
+          .signature-title {
+            font-family: 'Khmer OS Moul', cursive;
+            font-weight: bold;
+            margin-bottom: 80px;
+            font-size: 11pt;
+          }
+
+          .printed-info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 8pt;
+            color: #666;
           }
 
           @media print {
-            body { 
-              margin: 0 !important;
-              background: white !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
+            body { margin: 0; padding: 0.5cm; }
+            .no-print { display: none; }
             
-            * {
-              background: white !important;
-              box-shadow: none !important;
-            }
+            /* Ensure table headers repeat on new pages */
+            thead { display: table-header-group; }
+            tfoot { display: table-footer-group; }
             
-            .print-container {
-              max-width: none;
-              margin: 0;
-              padding: 15px;
-            }
-            
-            .payment-header {
-              background: #34495e !important;
-              color: white !important;
-            }
-            
-            .method-cash { 
-              background: #d5f4e6 !important; 
-              color: #27ae60 !important; 
-            }
-            
-            .method-card { 
-              background: #dae8fc !important; 
-              color: #3498db !important; 
-            }
-            
-            .method-transfer { 
-              background: #fdeaa7 !important; 
-              color: #f39c12 !important; 
-            }
-            
-            .method-mobile { 
-              background: #e9d5ff !important; 
-              color: #8b5cf6 !important; 
-            }
-            
-            .method-debenture { 
-              background: #fecaca !important; 
-              color: #ef4444 !important; 
-            }
-
-            .no-print { 
-              display: none !important; 
-            }
-
-            .page-break {
-              page-break-before: always;
-            }
-          }
-
-          @page {
-            margin: 1cm;
-            size: A4;
+            /* Ensure background colors print */
+            th { -webkit-print-color-adjust: exact; }
           }
         </style>
       </head>
       <body>
         <div class="print-container">
-          <div class="header">
-            <h1>របាយការណ៍ការទូទាត់អតិថិជន</h1>
-            <div class="subtitle">បង្កើតនៅថ្ងៃទី ${moment().format('DD/MM/YYYY HH:mm')}</div>
-          </div>
-          
-          <div class="customer-section">
-            <div class="section-title">ព័ត៌មានអតិថិជន</div>
-            <div class="customer-grid">
-              <div class="info-item">
-                <span class="info-label">ឈ្មោះ៖</span>
-                <span class="info-value">${customer_name || 'មិនមាន'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">លេខទូរស័ព្ទ៖</span>
-                <span class="info-value">${customer_phone || 'មិនមាន'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">អ៊ីមែល៖</span>
-                <span class="info-value">${customer_email || 'មិនមាន'}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">ចំនួនទូទាត់៖</span>
-                <span class="info-value">${payments.length} ប្រតិបត្តិការ</span>
-              </div>
-            </div>
+          <h1 class="header-title-kh">តារាងបញ្ជីការទូទាត់ប្រាក់${data.customer_name ? ' - ' + data.customer_name : ''}</h1>
+          <div class="header-subtitle">
+            ថ្ងៃទី ${moment().format('DD/MM/YYYY')}
           </div>
 
-          <div class="payments-section">
-            <div class="section-title">ប្រវត្តិការទូទាត់ (${payments.length} ការទូទាត់)</div>
-            
-            ${payments.map((payment, index) => {
-    const methodClass = getPaymentMethodClassForPrint(payment.payment_method);
-    const methodText = getPaymentMethodTextForPrint(payment.payment_method, 'km');
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 50px;">ល.រ</th>
+                <th style="width: 100px;">កាលបរិច្ឆេទ</th>
+                <th style="width: 120px;">លេខវិក្កយប័ត្រ</th>
+                <th style="width: 150px;">ឈ្មោះអតិថិជន</th>
+                <th style="width: 100px;">ប្រភេទ</th>
+                <th style="width: 120px;">ទឹកប្រាក់</th>
+                <th style="width: 100px;">តាមរយៈ</th>
+                <th>ផ្សេងៗ</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${payments.map((p, index) => {
+    let methodKh = p.payment_method;
+    if (methodKh === 'cash') methodKh = 'សាច់ប្រាក់';
+    else if (methodKh === 'bank_transfer') methodKh = 'ផ្ទេរប្រាក់';
+    else if (methodKh?.includes('mobile')) methodKh = 'ធនាគារចល័ត';
+    else if (methodKh?.toLowerCase() === 'debenture') methodKh = 'ជំពាក់';
 
     return `
-              <div class="payment-card">
-                <div class="payment-header">
-                  ការទូទាត់ #${index + 1} - លេខប័ណ្ណ ${payment.product_description ? payment.product_description.toString().padStart(4, '0') : 'មិនមាន'}
-                </div>
-                <div class="payment-body">
-                  <div class="payment-grid">
-                    <div class="payment-row">
-                      <span class="payment-label">កាលបរិច្ឆេទ៖</span>
-                      <span class="payment-value">${formatDateClient(payment.payment_date)}</span>
-                    </div>
-                    <div class="payment-row">
-                      <span class="payment-label">ចំនួនទឹកប្រាក់៖</span>
-                      <span class="payment-value amount-highlight">${formatCurrency(payment.amount)}</span>
-                    </div>
-                    <div class="payment-row">
-                      <span class="payment-label">វិធីសាស្ត្រ៖</span>
-                      <span class="payment-value">
-                        <span class="method-tag method-${methodClass}">
-                          ${methodText}
-                        </span>
-                      </span>
-                    </div>
-                    <div class="payment-row">
-                      <span class="payment-label">ប្រមូលដោយ៖</span>
-                      <span class="payment-value">${payment.collected_by || 'មិនមាន'}</span>
-                    </div>
-                    <div class="payment-row">
-                      <span class="payment-label">ប្រភេទ៖</span>
-                      <span class="payment-value">${payment.category_name || 'មិនមាន'}</span>
-                    </div>
-                    ${payment.notes ? `
-                      <div class="payment-row">
-                        <span class="payment-label">កំណត់ចំណាំ៖</span>
-                        <span class="payment-value">${payment.notes}</span>
-                      </div>
-                    ` : ''}
-                  </div>
-                </div>
-              </div>
-            `}).join('')}
-          </div>
+                <tr>
+                  <td class="col-center">${index + 1}</td>
+                  <td class="col-center">${moment(p.payment_date).format('DD/MM/YYYY')}</td>
+                  <td class="col-center">${p.product_description || '-'}</td>
+                  <td class="col-left">${p.customer_name || '-'}</td>
+                  <td class="col-left">${p.category_name || '-'}</td>
+                  <td class="col-center" style="font-weight: bold;">${formatCurrency(p.amount)}</td>
+                  <td class="col-center">${methodKh}</td>
+                  <td class="col-left">${p.notes || ''}</td>
+                </tr>
+              `}).join('')}
+            </tbody>
+            <tfoot>
+              <tr style="background-color: #f2f2f2; font-weight: bold;">
+                <td colspan="5" class="col-right" style="padding-right: 15px;">សរុបទឹកប្រាក់រួម (Grand Total):</td>
+                <td class="col-center" style="font-size: 11pt;">${formatCurrency(totalAmount)}</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
 
-          <div class="summary-section">
-            <div class="section-title">សង្ខេប</div>
-            <div class="summary-grid">
-              <div class="summary-item">
-                <span class="summary-label">ការទូទាត់សរុប៖</span>
-                <span class="summary-value">${payments.length}</span>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">ចំនួនទឹកប្រាក់សរុប៖</span>
-                <span class="summary-value total-amount">${formatCurrency(totalAmount)}</span>
-              </div>
+          <div class="footer-section">
+            <div class="signature-block">
+              <div class="signature-title">ហត្ថលេខាអតិថិជន</div>
+              <div>..........................</div>
+            </div>
+            
+             <div class="signature-block">
+              <div class="signature-title">ប្រធានសាខា</div>
+              <div>..........................</div>
+            </div>
+            
+            <div class="signature-block">
+              <div class="signature-title">គណនេយ្យ</div>
+              <div>..........................</div>
             </div>
           </div>
 
-          <div class="footer">
-            <p>សូមអរគុណសម្រាប់ការធ្វើអាជីវកម្មរបស់អ្នក!</p>
-            <p>នេះជារបាយការណ៍ដែលបង្កើតដោយកុំព្យូទ័រ។</p>
+          <div class="printed-info">
+            Invoiced by: Admin System | Date: ${moment().format('DD/MM/YYYY HH:mm:ss')}
           </div>
         </div>
       </body>
+      <script>
+        window.onload = function() { window.print(); }
+      </script>
     </html>
   `;
 
   const printWindow = window.open('', '_blank');
-  printWindow.document.open();
   printWindow.document.write(printContent);
   printWindow.document.close();
-
-  printWindow.onload = () => {
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-  };
 };
+
 
 
 const getPaymentMethodTextForPrint = (method, language = 'km') => {
@@ -1847,7 +1626,7 @@ const printSinglePaymentReport = (payment) => {
   const methodText = getPaymentMethodTextForPrint(payment.payment_method, 'km');
 
   const printContent = `
-      <html>
+  < html >
         <head>
           <title>បង្កាន់ដៃការទូទាត់</title>
           <style>
@@ -2140,8 +1919,8 @@ const printSinglePaymentReport = (payment) => {
             </div>
           </div>
         </body>
-      </html>
-    `;
+      </html >
+  `;
 
   const printWindow = window.open('', '_blank');
   printWindow.document.open();
@@ -2279,7 +2058,7 @@ function PaymentHistoryPage() {
       okType: 'danger',
       onOk: async () => {
         try {
-          const res = await request(`payment/${paymentId}`, "delete");
+          const res = await request(`payment / ${paymentId} `, "delete");
           if (res?.success) {
             message.success('ការទូទាត់ត្រូវបានលុបដោយជោគជ័យ');
             await getPaymentHistory();
@@ -2327,7 +2106,7 @@ function PaymentHistoryPage() {
         notes: values.notes || ''
       };
 
-      const res = await request(`payment/${editModal.data.id}`, "put", updateData);
+      const res = await request(`payment / ${editModal.data.id} `, "put", updateData);
 
       if (res?.success) {
         message.success('ការទូទាត់ត្រូវបានកែប្រែដោយជោគជ័យ');
@@ -2335,7 +2114,7 @@ function PaymentHistoryPage() {
         if (res.data?.difference !== 0) {
           const diffAmount = Math.abs(res.data.difference);
           const diffType = res.data.difference > 0 ? 'បន្ថែម' : 'កាត់បន្ថយ';
-          message.info(`បានកែប្រែចំនួនទឹកប្រាក់ ${diffType} ${formatCurrency(diffAmount)}`);
+          message.info(`បានកែប្រែចំនួនទឹកប្រាក់ ${diffType} ${formatCurrency(diffAmount)} `);
         }
 
         setEditModal({ visible: false, data: null, loading: false });
@@ -2379,7 +2158,7 @@ function PaymentHistoryPage() {
       setVoidModal(prev => ({ ...prev, loading: true }));
 
       // Call the new PUT endpoint with reason
-      const res = await request(`payment/${voidModal.data.id}/void`, "put", {
+      const res = await request(`payment / ${voidModal.data.id}/void`, "put", {
         reason: voidModal.reason
       });
 
@@ -2932,9 +2711,22 @@ function PaymentHistoryPage() {
 
               <div className="filter-item">
                 <label style={{ visibility: 'hidden' }}>{t('actions')}</label>
-                <button className="btn-reset" onClick={handleReset}>
-                  {t('clear')}
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button className="btn-reset" onClick={handleReset} style={{ flex: 1 }}>
+                    {t('clear')}
+                  </button>
+                  <button
+                    className="btn-reset"
+                    onClick={() => printCustomerPaymentReport(
+                      viewMode === 'customer'
+                        ? { payments: state.payments } // Print all filtered payments
+                        : { payments: state.payments }
+                    )}
+                    style={{ flex: 1, borderColor: '#667eea', color: '#667eea', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                  >
+                    <PrinterOutlined /> Print
+                  </button>
+                </div>
               </div>
             </div>
           </div>

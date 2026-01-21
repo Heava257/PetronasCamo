@@ -145,7 +145,7 @@ exports.getTransactionList = async (req, res) => {
         let whereClause = "WHERE 1=1";
         const params = [];
 
-        if (req.auth && req.auth.role !== "admin") {
+        if (req.auth && req.auth.role?.toLowerCase() !== "admin" && req.auth.role?.toLowerCase() !== "super_admin") {
             whereClause += ` AND u.branch_name = ?`;
             params.push(req.auth.branch_name);
         }
@@ -211,7 +211,7 @@ exports.getTransactionList = async (req, res) => {
         let statsWhereClause = "WHERE 1=1";
         const statsParams = [];
 
-        if (req.auth && req.auth.role !== "admin") {
+        if (req.auth && req.auth.role?.toLowerCase() !== "admin" && req.auth.role?.toLowerCase() !== "super_admin") {
             statsWhereClause += ` AND u.branch_name = ?`;
             statsParams.push(req.auth.branch_name);
         }
@@ -254,7 +254,7 @@ exports.getTransactionList = async (req, res) => {
             WHERE 1=1
         `;
         const stockParams = [];
-        if (req.auth && req.auth.role !== "admin") {
+        if (req.auth && req.auth.role?.toLowerCase() !== "admin" && req.auth.role?.toLowerCase() !== "super_admin") {
             stockSql += ` AND u.branch_name = ?`;
             stockParams.push(req.auth.branch_name);
         }
@@ -639,14 +639,14 @@ exports.getCategoryStatistics = async (req, res) => {
             LEFT JOIN user u ON p.user_id = u.id
             WHERE p.status != 'deleted'
               AND (
-                c.name LIKE '%Gas%' OR c.name LIKE '%Fuel%' OR c.name LIKE '%សាំង%' OR c.name LIKE '%ម៉ាស៊ូត%'
-                OR p.name LIKE '%Gas%' OR p.name LIKE '%Fuel%' OR p.name LIKE '%សាំង%' OR p.name LIKE '%ម៉ាស៊ូត%'
+                c.name LIKE '%Gas%' OR c.name LIKE '%Fuel%' OR c.name LIKE '%LPG%' OR c.name LIKE '%សាំង%' OR c.name LIKE '%ម៉ាស៊ូត%' OR c.name LIKE '%ហ្គាស%' OR c.name LIKE '%ឥន្ធនៈ%'
+                OR p.name LIKE '%Gas%' OR p.name LIKE '%Fuel%' OR p.name LIKE '%LPG%' OR p.name LIKE '%សាំង%' OR p.name LIKE '%ម៉ាស៊ូត%' OR p.name LIKE '%ហ្គាស%' OR p.name LIKE '%P501%'
                 OR p.name LIKE '%Diesel%' OR p.name LIKE '%Benzine%'
               )
         `;
 
         const params = [];
-        if (req.auth && req.auth.role !== "admin") {
+        if (req.auth && req.auth.role?.toLowerCase() !== "admin" && req.auth.role?.toLowerCase() !== "super_admin") {
             sql += ` AND (u.branch_name = ? OR u.branch_name IS NULL)`;
             params.push(req.auth.branch_name);
         }

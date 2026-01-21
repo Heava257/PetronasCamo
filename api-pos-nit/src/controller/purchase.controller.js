@@ -272,7 +272,8 @@ exports.update = async (req, res) => {
       payment_terms,
       items,
       total_amount,
-      notes
+      notes,
+      received_by // ✅ Extract received_by
     } = req.body;
 
     // Get previous status and data
@@ -343,6 +344,7 @@ exports.update = async (req, res) => {
         items = :items,
         total_amount = :total_amount,
         notes = :notes,
+        received_by = :received_by,  -- ✅ Update received_by
         updated_at = CURRENT_TIMESTAMP
       WHERE id = :id
     `;
@@ -357,7 +359,8 @@ exports.update = async (req, res) => {
       payment_terms,
       items: JSON.stringify(itemsWithSupplier),
       total_amount: calculatedTotal,
-      notes
+      notes,
+      received_by: received_by || previousOrder[0]?.received_by || null // ✅ Persist or update
     };
 
     await db.query(sql, params);
@@ -416,6 +419,11 @@ exports.update = async (req, res) => {
         const totalQuantity = itemsWithSupplier.reduce((sum, i) => sum + parseFloat(i.quantity || 0), 0);
         const totalItems = itemsWithSupplier.length;
 
+        // ✅ Include Receiver in Notification if delivered
+        const receiverInfo = (status === 'delivered' && received_by)
+          ? `\n👤 <b>Received By:</b> ${received_by}`
+          : '';
+
         const telegramMessage = `
 ${statusEmoji[status] || '📋'} <b>ស្ថានភាពការទិញប្រែប្រួល / Purchase Status Changed</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -423,7 +431,7 @@ ${statusEmoji[status] || '📋'} <b>ស្ថានភាពការទិញ�
 📋 <b>Order Info:</b>
 • លេខបញ្ជាទិញ: <code>${order_no}</code>
 • ស្ថានភាពចាស់: ${statusEmoji[previousStatus] || '❓'} ${statusText[previousStatus] || previousStatus}
-• ស្ថានភាពថ្មី: ${statusEmoji[status] || '❓'} <b>${statusText[status] || status}</b>
+• ស្ថានភាពថ្មី: ${statusEmoji[status] || '❓'} <b>${statusText[status] || status}</b>${receiverInfo}
 
 🏢 <b>Supplier Information:</b>
 • ឈ្មោះ: ${supplier.name}

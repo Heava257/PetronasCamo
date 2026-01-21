@@ -16,7 +16,7 @@ import {
   Tooltip,
 } from "antd";
 import { CiSearch } from "react-icons/ci";
-import { MdOutlineCreateNewFolder, MdSecurity, MdDelete, MdEdit, MdFullscreen, MdFullscreenExit, MdLocationOn } from "react-icons/md";
+import { MdOutlineCreateNewFolder, MdSecurity, MdDelete, MdEdit, MdFullscreen, MdFullscreenExit, MdLocationOn, MdFormatListBulleted, MdGridView } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
 import { LuUserRoundSearch } from "react-icons/lu";
 import { FiPhone, FiMail } from "react-icons/fi";
@@ -44,7 +44,7 @@ function CustomerPage() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [tableContainerRef, setTableContainerRef] = useState(null);
-   const [locationModalVisible, setLocationModalVisible] = useState(false);
+  const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem("customer_font_size");
@@ -71,6 +71,7 @@ function CustomerPage() {
     isEditing: false,
     visibleAssignModal: false,
     customerTypeFilter: null,
+    viewMode: "table", // "table" or "grid"
   });
 
   useEffect(() => {
@@ -166,7 +167,7 @@ function CustomerPage() {
 
   const toggleFullscreen = () => {
     if (!tableContainerRef) return;
-    
+
     if (!document.fullscreenElement) {
       tableContainerRef.requestFullscreen().then(() => {
         setIsFullscreen(true);
@@ -188,7 +189,7 @@ function CustomerPage() {
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement);
     };
-    
+
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -367,58 +368,58 @@ function CustomerPage() {
   // Function to detect phone carrier and return appropriate icon/color
   const getPhoneCarrierInfo = (phoneNumber) => {
     if (!phoneNumber) return { icon: null, color: '#666', carrier: '', bgColor: '#F5F5F5' };
-    
+
     const phone = phoneNumber.toString().replace(/\s+/g, '');
-    
+
     // Smart Axiata
     if (phone.match(/^(010|015|016|069|070|081|085|086|087|093|096|098)/)) {
-      return { 
+      return {
         logo: 'https://goldzonemedia.com.kh/wp-content/uploads/2023/05/346613115_4921066671351995_2477302429196727443_n-900x550.jpg',
-        color: '#00A651', 
+        color: '#00A651',
         carrier: 'Smart',
         bgColor: '#E6F7EE'
       };
     }
     // Cellcard
     if (phone.match(/^(011|012|014|017|061|076|077|078|079|089|092)/)) {
-      return { 
+      return {
         logo: 'https://www.khmertimeskh.com/wp-content/uploads/2021/06/cellcard-002.jpg',
-        color: '#0066CC', 
+        color: '#0066CC',
         carrier: 'Cellcard',
         bgColor: '#E6F2FF'
       };
     }
     // Metfone
     if (phone.match(/^(031|060|066|067|068|071|088|090|097)/)) {
-      return { 
+      return {
         logo: 'https://b2b-cambodia.com/storage/uploads/articles/large/eCD1qa1PSRIqYhK5wLbXbRMDOVnpzNDlaN5QUgdP.png',
-        color: '#E30613', 
+        color: '#E30613',
         carrier: 'Metfone',
         bgColor: '#FFE6E8'
       };
     }
     // Seatel
     if (phone.match(/^(018|084|095)/)) {
-      return { 
+      return {
         logo: 'https://www.khmertimeskh.com/wp-content/uploads/2018/09/41474040_1968319579910358_3351402894199881728_n.jpg',
-        color: '#FF6B00', 
+        color: '#FF6B00',
         carrier: 'Seatel',
         bgColor: '#FFF0E6'
       };
     }
     // CooTel
     if (phone.match(/^(038|099)/)) {
-      return { 
+      return {
         logo: 'https://kbcambodia.com/wp-content/uploads/2016/12/CooTel-Cambodia-1.png',
-        color: '#9933CC', 
+        color: '#9933CC',
         carrier: 'CooTel',
         bgColor: '#F2E6F7'
       };
     }
-    
-    return { 
+
+    return {
       logo: null,
-      color: '#666', 
+      color: '#666',
       carrier: 'Other',
       bgColor: '#F5F5F5'
     };
@@ -430,7 +431,7 @@ function CustomerPage() {
     const male = filteredList.filter(c => c.gender === 'Male').length;
     const female = filteredList.filter(c => c.gender === 'Female').length;
     const other = total - male - female;
-    
+
     return { total, male, female, other };
   };
 
@@ -475,12 +476,12 @@ function CustomerPage() {
             )}
         </Space>
       </div>
-      
+
       <div className="space-y-2 border-t border-gray-200 pt-3">
         <div className="flex items-start">
           <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("email")}:</span>
           {record.email ? (
-            <a 
+            <a
               href={`mailto:${record.email}`}
               className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 transition-colors"
               onClick={(e) => e.stopPropagation()}
@@ -495,11 +496,11 @@ function CustomerPage() {
         <div className="flex items-start">
           <span className="text-xs font-medium text-gray-500 w-28 flex-shrink-0">{t("ទូរស័ព្ទ")}:</span>
           {record.tel ? (
-            <a 
+            <a
               href={`tel:${record.tel}`}
               className="text-sm hover:opacity-80 flex items-center gap-1 transition-all"
               onClick={(e) => e.stopPropagation()}
-              style={{ 
+              style={{
                 backgroundColor: getPhoneCarrierInfo(record.tel).bgColor,
                 padding: '4px 8px',
                 borderRadius: '6px',
@@ -508,8 +509,8 @@ function CustomerPage() {
               }}
             >
               {getPhoneCarrierInfo(record.tel).logo ? (
-                <img 
-                  src={getPhoneCarrierInfo(record.tel).logo} 
+                <img
+                  src={getPhoneCarrierInfo(record.tel).logo}
                   alt={getPhoneCarrierInfo(record.tel).carrier}
                   style={{ width: '16px', height: '16px', objectFit: 'contain' }}
                 />
@@ -572,19 +573,6 @@ function CustomerPage() {
       render: (_, __, index) => index + 1,
     },
     {
-      key: "id",
-      title: (
-        <div>
-          <div className="khmer-text">{t("customer_id")}</div>
-        </div>
-      ),
-      dataIndex: "id",
-      width: 80,
-      fixed: 'left',
-      hidden:true
-      
-    },
-    {
       key: "name",
       title: (
         <div>
@@ -595,73 +583,38 @@ function CustomerPage() {
       width: 250,
       fixed: 'left',
       render: (text, record) => (
-        <Tooltip
-          title={
-            <div className="customer-tooltip-content">
-              <div className="customer-tooltip-name">
-                {text || t("គ្មាន")}
-              </div>
-              <div className="customer-tooltip-details">
-                {record.gender || t("គ្មាន")} • {record.type === "special" ? t("Special Customer") : t("Regular Customer")}
-              </div>
-            </div>
-          }
-          placement="topLeft"
-          overlayStyle={{ maxWidth: '320px' }}
-        >
-          <div className="customer-name-cell">
-            <div className="customer-name-main">
-              {text || t("គ្មាន")}
-            </div>
-            <div className="customer-name-details">
-              <span className="customer-gender-text">
-                {record.gender || t("គ្មាន")}
-              </span>
-              <span className="customer-type-separator">•</span>
-              <Tag
-                color={record.type === "special" ? "blue" : "green"}
-                className="customer-type-tag"
-              >
-                {record.type === "special" ? t("ពិសេស") : t("ធម្មតា")}
-              </Tag>
-            </div>
+        <div className="customer-name-cell">
+          <div className="customer-name-main">
+            {text || t("គ្មាន")}
           </div>
-        </Tooltip>
-      ),
-    },
-    {
-      key: "email",
-      title: (
-        <div>
-          <div className="customer-table-header-main">{t("email")}</div>
+          <div className="customer-name-details">
+            <span className="customer-gender-text">
+              {record.gender || t("គ្មាន")}
+            </span>
+            <span className="customer-type-separator">•</span>
+            <Tag
+              color={record.type === "special" ? "blue" : "green"}
+              className="customer-type-tag"
+            >
+              {record.type === "special" ? t("ពិសេស") : t("ធម្មតា")}
+            </Tag>
+          </div>
         </div>
       ),
-      dataIndex: "email",
-      width: 220,
-      render: (email) => email ? (
-        <a 
-          href={`mailto:${email}`}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <FiMail className="text-sm flex-shrink-0" />
-          <span className="truncate">{email}</span>
-        </a>
-      ) : "-",
     },
     {
       key: "tel",
       title: (
         <div>
-          <div className="customer-table-header-main">{t("telephone")}</div>
+          <div className="customer-table-header-main">{t("Telephone")}</div>
         </div>
       ),
       dataIndex: "tel",
-      width: 180,
+      width: 200,
       render: (tel) => {
         const carrierInfo = getPhoneCarrierInfo(tel);
         return tel ? (
-          <a 
+          <a
             href={`tel:${tel}`}
             className="flex items-center gap-2 transition-all hover:opacity-80"
             onClick={(e) => e.stopPropagation()}
@@ -674,8 +627,8 @@ function CustomerPage() {
             }}
           >
             {carrierInfo.logo ? (
-              <img 
-                src={carrierInfo.logo} 
+              <img
+                src={carrierInfo.logo}
                 alt={carrierInfo.carrier}
                 style={{ width: '20px', height: '20px', objectFit: 'contain' }}
               />
@@ -683,15 +636,15 @@ function CustomerPage() {
               <span style={{ fontSize: '18px' }}>📞</span>
             )}
             <div className="flex flex-col">
-              <span style={{ 
-                color: carrierInfo.color, 
+              <span style={{
+                color: carrierInfo.color,
                 fontWeight: '600',
                 fontSize: '13px'
               }}>
                 {tel}
               </span>
-              <span style={{ 
-                fontSize: '9px', 
+              <span style={{
+                fontSize: '9px',
                 color: carrierInfo.color,
                 opacity: 0.7,
                 fontWeight: '500',
@@ -706,73 +659,6 @@ function CustomerPage() {
       }
     },
     {
-      key: "address",
-      title: (
-        <div>
-          <div className="customer-table-header-main">{t("address")}</div>
-        </div>
-      ),
-      dataIndex: "address",
-      width: 250,
-      render: (text) => (
-        <Tooltip title={text} placement="topLeft">
-          <div className="customer-address-text">
-            {text || t("គ្មាន")}
-          </div>
-        </Tooltip>
-      ),
-    },
-    {
-      key: "id_card_number",
-      title: (
-        <div>
-          <div className="customer-table-header-main">{t("id_card_number")}</div>
-        </div>
-      ),
-      dataIndex: "id_card_number",
-      width: 160,
-    },
-    {
-      key: "spouse_name",
-      title: (
-        <div>
-          <div className="customer-table-header-main">{t("spouse_name")}</div>
-        </div>
-      ),
-      dataIndex: "spouse_name",
-      width: 150,
-    },
-    {
-      key: "guarantor_name",
-      title: (
-        <div>
-          <div className="customer-table-header-main">{t("guarantor_name")}</div>
-        </div>
-      ),
-      dataIndex: "guarantor_name",
-      width: 150,
-    },
-    {
-      key: "create_by",
-      title: (
-        <div>
-          <div className="customer-table-header-main">{t("create_by")}</div>
-        </div>
-      ),
-      dataIndex: "create_by",
-      width: 200,
-      render: (text, record) => (
-        <div className="customer-create-info">
-          <div className="customer-create-name">
-            {text || t("គ្មាន")}
-          </div>
-          <div className="customer-create-date">
-            {record.create_at ? dayjs(record.create_at).format("DD-MM-YYYY h:mm A") : "-"}
-          </div>
-        </div>
-      ),
-    },
-    {
       key: "action",
       title: (
         <div>
@@ -780,7 +666,7 @@ function CustomerPage() {
         </div>
       ),
       align: "center",
-      width: 120,
+      width: 140,
       fixed: "right",
       render: (_, record) => (
         <Space size="small">
@@ -816,12 +702,40 @@ function CustomerPage() {
                 onClick={() => onClickDelete(record)}
                 size="small"
               />
-            )
-          }
+            )}
         </Space>
       ),
     }
   ];
+
+  const renderExpandableContent = (record) => (
+    <div className="p-6 bg-blue-50/30 rounded-xl border border-blue-100/50 flex flex-wrap gap-8 mx-4 my-2">
+      <div className="flex-1 min-w-[200px]">
+        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-wider mb-3 leading-none">{t("Contact Info")}</h4>
+        <div className="space-y-2">
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("Email")}:</span> <span className="font-semibold">{record.email || '-'}</span></p>
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("ID Card")}:</span> <span className="font-semibold">{record.id_card_number || '-'}</span></p>
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("Expiry")}:</span> <span className="font-semibold">{record.id_card_expiry ? dayjs(record.id_card_expiry).format("DD/MM/YYYY") : '-'}</span></p>
+        </div>
+      </div>
+      <div className="flex-1 min-w-[200px]">
+        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-wider mb-3 leading-none">{t("Family Info")}</h4>
+        <div className="space-y-2">
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("Spouse")}:</span> <span className="font-semibold">{record.spouse_name || '-'}</span     ></p>
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("Spouse Tel")}:</span> <span className="font-semibold">{record.spouse_tel || '-'}</span   ></p>
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("Guarantor")}:</span> <span className="font-semibold">{record.guarantor_name || '-'}</      span></p>
+        </div>
+      </div>
+      <div className="flex-1 min-w-[250px]">
+        <h4 className="text-[10px] font-black text-blue-500 uppercase tracking-wider mb-3 leading-none">{t("Address & Origins")}</h4>
+        <div className="space-y-2">
+          <p className="text-sm flex flex-col border-b border-blue-50 pb-1"><span className="text-gray-500 text-[10px]">{t("Address")}:</span> <span className="font-semibold mt-1">{record.address || '-'}</span     ></p>
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("Created By")}:</span> <span className="font-semibold">{record.create_by || '-'}</span      ></p>
+          <p className="text-sm flex justify-between border-b border-blue-50 pb-1"><span className="text-gray-500">{t("Created At")}:</span> <span className="font-semibold">{record.create_at ? dayjs(record.create_at).format("DD-MM-YYYY h:mm A") : '-'}</span  ></p>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderCustomerForm = () => (
     <Form form={form} layout="vertical">
@@ -1050,7 +964,7 @@ function CustomerPage() {
               )}
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
             <Input.Search
               className="customer-search-input w-full sm:w-48"
@@ -1061,7 +975,7 @@ function CustomerPage() {
               onSearch={getList}
               placeholder={t("Search by name")}
             />
-            
+
             <Select
               className="customer-type-filter w-full sm:w-44"
               placeholder={t("customer_type")}
@@ -1078,11 +992,11 @@ function CustomerPage() {
                 <span className="customer-btn-text">{t("អតិថិជនពិសេស")}</span>
               </Select.Option>
             </Select>
-            
-            <Button 
-              className="customer-btn-text w-full sm:w-auto" 
-              type="primary" 
-              onClick={getList} 
+
+            <Button
+              className="customer-btn-text w-full sm:w-auto"
+              type="primary"
+              onClick={getList}
               icon={<CiSearch />}
             >
               <span className="hidden sm:inline">{t("Search")}</span>
@@ -1098,7 +1012,28 @@ function CustomerPage() {
                 {isFullscreen ? t("Exit Fullscreen") : t("Enter Fullscreen")}
               </span>
             </Button>
-            
+
+            <div className="flex bg-gray-100 p-1 rounded-lg border border-gray-200">
+              <Button
+                type={state.viewMode === "table" ? "primary" : "text"}
+                size="small"
+                onClick={() => setState(prev => ({ ...prev, viewMode: "table" }))}
+                className={state.viewMode === "table" ? "shadow-sm" : ""}
+                icon={<MdFormatListBulleted size={18} />}
+              >
+                {t("Table")}
+              </Button>
+              <Button
+                type={state.viewMode === "grid" ? "primary" : "text"}
+                size="small"
+                onClick={() => setState(prev => ({ ...prev, viewMode: "grid" }))}
+                className={state.viewMode === "grid" ? "shadow-sm" : ""}
+                icon={<MdGridView size={18} />}
+              >
+                {t("Grid")}
+              </Button>
+            </div>
+
             {permissionsLoaded && isPermission("customer.getone") && (
               <Button
                 className="customer-btn-text w-full sm:w-auto"
@@ -1143,10 +1078,10 @@ function CustomerPage() {
             </div>
           ) : filteredList.length > 0 ? (
             filteredList.map((record, index) => (
-              <MobileCustomerCard 
-                key={record.id} 
-                record={record} 
-                index={index} 
+              <MobileCustomerCard
+                key={record.id}
+                record={record}
+                index={index}
               />
             ))
           ) : (
@@ -1156,7 +1091,7 @@ function CustomerPage() {
           )}
         </div>
       ) : (
-        <div 
+        <div
           ref={setTableContainerRef}
           className={`customer-table-container ${isFullscreen ? 'fullscreen-table' : ''}`}
           style={{
@@ -1253,20 +1188,118 @@ function CustomerPage() {
             </div>
           )}
           <div className="overflow-x-auto">
-            <Table
-              rowClassName={() => "customer-table-row"}
-              rowKey="id"
-              dataSource={filteredList}
-              columns={columns}
-              pagination={false}
-              scroll={{
-                x: 1800,
-                y: isFullscreen ? 'calc(100vh - 220px)' : 'calc(100vh - 350px)'
-              }}
-              sticky={{
-                offsetHeader: 0
-              }}
-            />
+            {state.viewMode === "table" ? (
+              <Table
+                className="customer-table-modern"
+                rowClassName={() => "customer-table-row"}
+                rowKey="id"
+                dataSource={filteredList}
+                columns={columns}
+                pagination={false}
+                expandable={{
+                  expandedRowRender: renderExpandableContent,
+                  expandRowByClick: true,
+                  columnTitle: "",
+                  columnWidth: 40,
+                }}
+                scroll={{
+                  x: 1000,
+                  y: isFullscreen ? 'calc(100vh - 220px)' : 'calc(100vh - 350px)'
+                }}
+                sticky={{
+                  offsetHeader: 0
+                }}
+              />
+            ) : (
+              <Row gutter={[20, 20]} className="p-2 sm:p-4">
+                {filteredList.map((record, index) => (
+                  <Col key={record.id} xs={24} sm={12} md={12} lg={8} xl={6}>
+                    <div
+                      className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full group"
+                      onClick={() => onClickEdit(record)}
+                    >
+                      {/* Card Header with Status and Actions */}
+                      <div className="p-4 pb-2 flex justify-between items-start">
+                        <Tag
+                          color={record.type === "special" ? "blue" : "green"}
+                          className="m-0 px-2 py-0 text-[10px] font-bold uppercase rounded-full"
+                        >
+                          {record.type === "special" ? t("Special") : t("Regular")}
+                        </Tag>
+                        <Space className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            type="text"
+                            icon={<MdLocationOn className="text-blue-500" />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedCustomer(record);
+                              setLocationModalVisible(true);
+                            }}
+                            size="small"
+                          />
+                          <Button
+                            type="text"
+                            danger
+                            icon={<MdDelete />}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onClickDelete(record);
+                            }}
+                            size="small"
+                          />
+                        </Space>
+                      </div>
+
+                      {/* Card Content */}
+                      <div className="p-4 pt-0 flex-1">
+                        <h3 className="text-lg font-extrabold text-gray-900 mb-0 leading-tight">
+                          {record.name || t("No Name")}
+                        </h3>
+                        <p className="text-xs font-medium text-gray-500 mb-4">{record.gender || '-'}</p>
+
+                        <div className="space-y-3">
+                          {record.tel && (
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <FiPhone className="text-blue-500 text-xs" />
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-sm font-bold text-gray-800">{record.tel}</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">
+                                  {getPhoneCarrierInfo(record.tel).carrier}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          {record.email && (
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <FiMail className="text-blue-500 text-xs" />
+                              </div>
+                              <span className="text-sm font-medium text-gray-600 truncate">{record.email}</span>
+                            </div>
+                          )}
+                          <div className="flex items-start gap-3 mt-2">
+                            <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
+                              <MdLocationOn className="text-gray-400 text-xs" />
+                            </div>
+                            <p className="text-xs text-gray-500 line-clamp-2 mt-1 italic">
+                              {record.address || t("No address available")}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Card Footer - Create Info */}
+                      <div className="px-4 py-3 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between mt-auto">
+                        <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{t("Added By")}</span>
+                        <span className="text-[11px] font-bold text-gray-600">{record.create_by || '-'}</span>
+                      </div>
+                    </div>
+                  </Col>
+                ))}
+              </Row>
+            )}
           </div>
         </div>
       )}
@@ -1343,7 +1376,7 @@ function CustomerPage() {
         {renderAssignForm()}
       </Modal>
 
-       <CustomerLocationsModal
+      <CustomerLocationsModal
         visible={locationModalVisible}
         onClose={() => {
           setLocationModalVisible(false);

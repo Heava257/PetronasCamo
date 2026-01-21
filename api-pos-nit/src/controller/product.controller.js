@@ -1385,35 +1385,8 @@ exports.createSingleProduct = async (productData, req) => {
 
   const totalPrice = ((qtyAdded * unit_price) * (1 - (discount || 0) / 100)) / resolvedActualPrice;
 
-  const [productDetailResult] = await db.query(`
-    INSERT INTO product_details (
-      product_id, user_id, customer_id, name, description, category, company_name,
-      qty, unit, unit_price, total_price, status, created_at, created_date, created_by, receive_date
-    )
-    VALUES (
-      :product_id, :user_id, :customer_id, :name, :description, :category, :company_name,
-      :qty, :unit, :unit_price, :total_price, :status, :created_at, :created_date, :created_by, :receive_date
-    )
-  `, {
-    product_id: productId,
-    user_id,
-    customer_id,
-    name,
-    description: description || '',
-    category: category_id,
-    company_name: company_name || '',
-    qty: qtyAdded,
-    unit: unit || '',
-    unit_price,
-    total_price: totalPrice,
-    status: status || 1,
-    created_at: finalCreateAt,
-    created_date: finalCreatedDate,
-    created_by: req.auth?.name || 'system',
-    receive_date: finalReceiveDate
-  });
-
-  const productDetailId = productDetailResult.insertId;
+  // Removed product_details insertion as table does not exist
+  const productDetailId = null;
 
   let payableId = null;
   let payableItemId = null;

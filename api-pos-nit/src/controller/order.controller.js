@@ -331,12 +331,9 @@ exports.create = async (req, res) => {
           p.qty,
           p.actual_price AS product_actual_price,
           c.name AS category_name, 
-          c.actual_price AS category_actual_price,
-          pd.description AS details_description
+          c.actual_price AS category_actual_price
          FROM product p 
          LEFT JOIN category c ON p.category_id = c.id
-         LEFT JOIN product_details pd ON p.id = pd.product_id 
-           AND pd.customer_id = :customer_id
          WHERE p.id = :id
          LIMIT 1`,
         {
@@ -353,7 +350,6 @@ exports.create = async (req, res) => {
 
         productDescriptions[item.product_id] =
           item.description ||
-          prod.details_description ||
           prod.product_description ||
           '';
 
@@ -595,7 +591,7 @@ exports.create = async (req, res) => {
             product_id: item.product_id
           });
 
-          // ✅ ROBUST PO REFERENCE LOOKUP (Multiple Fallback Strategies)
+          // ✅ Lookup Purchase Order Reference (Simplified - No product_details)
           let purchaseOrderRef = null;
 
           // Strategy 1: Use description from frontend if provided
@@ -603,57 +599,7 @@ exports.create = async (req, res) => {
             purchaseOrderRef = item.description.trim();
           }
 
-          // Strategy 2: Query product_details table (by customer)
-          if (!purchaseOrderRef) {
-            try {
-              const [pdResult] = await db.query(
-                `SELECT description 
-                 FROM product_details 
-                 WHERE product_id = :product_id 
-                   AND customer_id = :customer_id
-                   AND description IS NOT NULL
-                   AND description != ''
-                 ORDER BY created_at DESC
-                 LIMIT 1`,
-                {
-                  product_id: item.product_id,
-                  customer_id: order.customer_id
-                }
-              );
-
-              if (pdResult && pdResult.length > 0) {
-                purchaseOrderRef = pdResult[0].description;
-              }
-            } catch (err) {
-              console.error(`❌ Query product_details by customer failed:`, err);
-            }
-          }
-
-          // Strategy 3: Query product_details table (any customer)
-          if (!purchaseOrderRef) {
-            try {
-              const [pdResult2] = await db.query(
-                `SELECT description 
-                 FROM product_details 
-                 WHERE product_id = :product_id
-                   AND description IS NOT NULL
-                   AND description != ''
-                 ORDER BY created_at DESC
-                 LIMIT 1`,
-                {
-                  product_id: item.product_id
-                }
-              );
-
-              if (pdResult2 && pdResult2.length > 0) {
-                purchaseOrderRef = pdResult2[0].description;
-              }
-            } catch (err) {
-              console.error(`❌ Query product_details (any) failed:`, err);
-            }
-          }
-
-          // Strategy 4: Query inventory_transaction for latest PURCHASE_IN
+          // Strategy 2: Query inventory_transaction for latest PURCHASE_IN
           if (!purchaseOrderRef) {
             try {
               const [itResult] = await db.query(
@@ -678,14 +624,12 @@ exports.create = async (req, res) => {
             }
           }
 
-          // ========================================
-          // ✅ NEW: Use pre_order_no if available and no PO found
-          // ========================================
+          // Strategy 3: Use pre_order_no if available and no PO found
           if (!purchaseOrderRef && pre_order_no) {
             purchaseOrderRef = pre_order_no;
           }
 
-          // Strategy 5: Fallback to order_no if all else fails
+          // Strategy 4: Fallback to order_no if all else fails
           if (!purchaseOrderRef) {
             purchaseOrderRef = order_no;
           }
@@ -968,17 +912,6 @@ exports.getOrderDetail = async (req, res) => {
             ORDER BY it.created_at DESC
             LIMIT 1
           ),
-          -- Strategy 4: From product_details
-          (
-            SELECT pd.description
-            FROM product_details pd
-            WHERE pd.customer_id = o.customer_id
-              AND CAST(pd.category AS UNSIGNED) = p.category_id
-              AND pd.description IS NOT NULL
-              AND pd.description != ''
-            ORDER BY pd.created_at DESC
-            LIMIT 1
-          ),
           -- Fallback
           p.description
         ) AS product_description
@@ -1033,7 +966,7 @@ exports.getone = async (req, res) => {
         SUM(od.qty) AS total_quantity,
         SUM(od.qty * od.price * (1 - COALESCE(p.discount, 0)/100) / NULLIF(p.actual_price, 0)) AS grand_total,
         
-        -- ✅ បន្ថែម robust description lookup
+        -- ✅ Simplified description lookup (no product_details)
         COALESCE(
           -- Strategy 1: From customer_debt.description
           (
@@ -1073,18 +1006,7 @@ exports.getone = async (req, res) => {
             ORDER BY it.created_at DESC
             LIMIT 1
           ),
-          -- Strategy 4: From product_details
-          (
-            SELECT pd.description
-            FROM product_details pd
-            WHERE pd.customer_id = o.customer_id
-              AND CAST(pd.category AS UNSIGNED) = p.category_id
-              AND pd.description IS NOT NULL
-              AND pd.description != ''
-            ORDER BY pd.created_at DESC
-            LIMIT 1
-          ),
-          -- Fallback
+          -- Fallback to pre_order_no or product description
           o.pre_order_no,
           p.description
         ) AS product_description

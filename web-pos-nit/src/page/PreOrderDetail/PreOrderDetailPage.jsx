@@ -115,14 +115,9 @@ function PreOrderDetailPage() {
     };
 
     if (!id) {
-        return (
-            <MainPage>
-                <Card className="text-center p-8">
-                    <Title level={4}>No Pre-Order ID provided</Title>
-                    <Button onClick={() => navigate('/pre-order-management')}>Back to List</Button>
-                </Card>
-            </MainPage>
-        );
+        // Redirect to management page if no ID provided
+        navigate('/pre-order-management');
+        return null;
     }
 
     if (state.loading) {

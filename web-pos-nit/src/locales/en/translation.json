@@ -273,6 +273,8 @@
     "pre_order_detail": "Pre-Order Detail",
     "invoice_details": "Invoice Details",
     "debt_list": "Debt List",
+    "customer_payment_ledger": "Customer Ledger",
+    "supplier_payment": "Supplier Payment",
     "payment_summary": "Payment Summary",
     "products": "Products",
     "category": "Category",
@@ -301,6 +303,7 @@
     "my_profile": "My Profile",
     "logout": "Logout",
     "search": "Search...",
+    "settings": "Settings",
     "categories": {
       "main": "MAIN",
       "statistics": "STATISTICS",

@@ -28,7 +28,7 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Avatar, Dropdown, Space, Input } from "antd";
+import { Layout, Avatar, Dropdown, Space, Input, Drawer } from "antd";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -74,8 +74,9 @@ import { useDarkMode } from "../DarkModeContext.jsx";
 const { Header, Content, Footer } = Layout;
 const { Search } = Input;
 
-// ✅ Menu configuration with categories
+// ✅ Menu configuration with categories (organized logically)
 const menuItems = [
+  // MAIN DASHBOARDS
   {
     key: "",
     icon: LayoutDashboard,
@@ -88,12 +89,8 @@ const menuItems = [
     label: "menu.security_dashboard",
     category: "MAIN",
   },
-  {
-    key: "report_BranchComparison",
-    icon: FileText,
-    label: "menu.report_branch_comparison",
-    category: "MAIN",
-  },
+
+  // STATISTICS & NOTIFICATIONS
   {
     key: "notifications/statistics",
     icon: Bell,
@@ -101,73 +98,18 @@ const menuItems = [
     category: "STATISTICS",
   },
   {
-    key: "admin-management",
-    icon: Users,
-    label: "menu.admin_management",
-    category: "MANAGEMENT",
+    key: "report_BranchComparison",
+    icon: FileText,
+    label: "menu.report_branch_comparison",
+    category: "STATISTICS",
   },
-  {
-    key: "supperadmin-management",
-    icon: User,
-    label: "menu.super_admin_management",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "permission-management",
-    icon: Settings,
-    label: "menu.permission_management",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "inactive_admins",
-    icon: User,
-    label: "menu.inactive_admins",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "super-TelegramConfiguration",
-    icon: Bell,
-    label: "menu.telegram_configuration",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "BranchPermissionOverride",
-    icon: Settings,
-    label: "menu.branch_permission_override",
-    category: "MANAGEMENT",
-  },
+
+  // SALES & POS OPERATIONS
   {
     key: "invoices",
     icon: FileText,
     label: "menu.invoices",
-    category: "FINANCE",
-  },
-  {
-    key: "fakeinvoices",
-    icon: FileText,
-    label: "menu.fake_invoices",
-    category: "FINANCE",
-  },
-  {
-    key: "delivery",
-    icon: ShoppingCart,
-    label: "menu.delivery_note",
     category: "OPERATIONS",
-    children: [
-      { key: "delivery-map", label: "menu.delivery_map" },
-      { key: "DeliveryReports", label: "menu.delivery_reports" },
-      { key: "deliverynote", label: "menu.delivery_note" },
-      { key: "active-deliveries", label: "menu.active_deliveries" },
-      { key: "driver", label: "menu.driver" },
-      { key: "driver-auth", label: "menu.driver_auth" },
-      { key: "Truck", label: "menu.truck" },
-    ],
-  },
-  {
-    key: "finance",
-    icon: DollarSign,
-    label: "menu.family_finance",
-    category: "FINANCE",
   },
   {
     key: "EnhancedPOSOrder",
@@ -183,20 +125,16 @@ const menuItems = [
     key: "order",
     icon: FileText,
     label: "menu.invoice_details",
-    category: "FINANCE",
+    category: "OPERATIONS",
   },
   {
-    key: "total_due",
-    icon: DollarSign,
-    label: "menu.debt_list",
-    category: "FINANCE",
+    key: "fakeinvoices",
+    icon: FileText,
+    label: "menu.fake_invoices",
+    category: "OPERATIONS",
   },
-  {
-    key: "payment/history",
-    icon: DollarSign,
-    label: "menu.payment_summary",
-    category: "FINANCE",
-  },
+
+  // INVENTORY & PRODUCTS
   {
     key: "products",
     icon: Package,
@@ -217,38 +155,46 @@ const menuItems = [
     children: [
       { key: "supplier", label: "menu.supplier" },
       { key: "purchase-orders", label: "menu.purchase_orders" },
+      { key: "supplier-payment", label: "menu.supplier_payment" },
       { key: "inventory-transactions", label: "menu.inventory_transactions" },
     ],
   },
   {
-    key: "customer",
-    icon: User,
-    label: "menu.customer",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "admin-ShiftClosing",
-    icon: User,
-    label: "menu.shift_closing",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "admin-DailyClosing",
-    icon: User,
-    label: "menu.daily_closing",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "admin-ShiftClosingChecklist",
-    icon: User,
-    label: "menu.closing_checklist",
-    category: "MANAGEMENT",
-  },
-  {
     key: "admin-StockReconciliation",
-    icon: User,
+    icon: Package,
     label: "menu.stock_reconciliation",
-    category: "MANAGEMENT",
+    category: "OPERATIONS",
+  },
+
+  // DELIVERY MANAGEMENT
+  {
+    key: "delivery",
+    icon: ShoppingCart,
+    label: "menu.delivery_note",
+    category: "OPERATIONS",
+    children: [
+      { key: "delivery-map", label: "menu.delivery_map" },
+      { key: "DeliveryReports", label: "menu.delivery_reports" },
+      { key: "deliverynote", label: "menu.delivery_note" },
+      { key: "active-deliveries", label: "menu.active_deliveries" },
+      { key: "driver", label: "menu.driver" },
+      { key: "driver-auth", label: "menu.driver_auth" },
+      { key: "Truck", label: "menu.truck" },
+    ],
+  },
+
+  // FINANCE & PAYMENTS
+  {
+    key: "finance",
+    icon: DollarSign,
+    label: "menu.family_finance",
+    category: "FINANCE",
+  },
+  {
+    key: "customer-payment",
+    icon: DollarSign,
+    label: "menu.customer_payment_ledger",
+    category: "FINANCE",
   },
   {
     key: "expense",
@@ -260,6 +206,14 @@ const menuItems = [
       { key: "expanse_type", label: "menu.expense_type" },
     ],
   },
+
+  // CUSTOMER & EMPLOYEE MANAGEMENT
+  {
+    key: "customer",
+    icon: User,
+    label: "menu.customer",
+    category: "MANAGEMENT",
+  },
   {
     key: "employee-management",
     icon: Users,
@@ -270,6 +224,8 @@ const menuItems = [
       { key: "ip-Management", label: "menu.ip_management" },
     ],
   },
+
+  // USER & ADMIN MANAGEMENT
   {
     key: "user-management",
     icon: User,
@@ -280,6 +236,67 @@ const menuItems = [
       { key: "role", label: "menu.role" },
     ],
   },
+  {
+    key: "admin-management",
+    icon: Users,
+    label: "menu.admin_management",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "supperadmin-management",
+    icon: Shield,
+    label: "menu.super_admin_management",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "inactive_admins",
+    icon: User,
+    label: "menu.inactive_admins",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "permission-management",
+    icon: Settings,
+    label: "menu.permission_management",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "BranchPermissionOverride",
+    icon: Settings,
+    label: "menu.branch_permission_override",
+    category: "MANAGEMENT",
+  },
+
+  // SHIFT & DAILY OPERATIONS
+  {
+    key: "admin-ShiftClosing",
+    icon: AlignJustify,
+    label: "menu.shift_closing",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "admin-DailyClosing",
+    icon: AlignJustify,
+    label: "menu.daily_closing",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "admin-ShiftClosingChecklist",
+    icon: AlignJustify,
+    label: "menu.closing_checklist",
+    category: "MANAGEMENT",
+  },
+
+  // SYSTEM SETTINGS
+  {
+    key: "super-TelegramConfiguration",
+    icon: Bell,
+    label: "menu.telegram_configuration",
+    category: "MANAGEMENT",
+  },
+
+
+  // REPORTS
   {
     key: "reports",
     icon: FileText,
@@ -298,6 +315,12 @@ const menuItems = [
       { key: "report_Profit_Loss", label: "report.profit_loss" },
     ],
   },
+  {
+    key: "settings",
+    icon: Settings,
+    label: "menu.settings",
+    category: "MANAGEMENT",
+  },
 ];
 
 const CleanDarkLayout = () => {
@@ -305,16 +328,28 @@ const CleanDarkLayout = () => {
   const permision = getPermission();
   const { setConfig } = configStore();
   const profile = getProfile();
-  const [collapsed, setCollapsed] = useState(false);
-  const [expandedKeys, setExpandedKeys] = useState(["delivery", "products", "reports"]);
-  const [selectedKey, setSelectedKey] = useState("");
-  const [searchValue, setSearchValue] = useState("");
   const navigate = useNavigate();
   const location = useLocation();
   const { t, i18n } = useTranslation();
-  const { changeLanguage: changeCustomLanguage } = useCustomTranslation();
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [drawerVisible, setDrawerVisible] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedKey, setSelectedKey] = useState("");
+  const [expandedKeys, setExpandedKeys] = useState(["delivery", "products", "reports"]);
+  const { changeLanguage: changeCustomLanguage } = useCustomTranslation();
   const [configLoaded, setConfigLoaded] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (!mobile) setDrawerVisible(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
@@ -342,7 +377,7 @@ const CleanDarkLayout = () => {
       // ✅ Step 3: If item has children, filter them by permission
       if (item1?.children && item1?.children.length > 0) {
         let childTmp = [];
-        
+
         // ✅ Double loop to match children permissions (exact MainLayout logic)
         item1.children.forEach((data1) => {
           permision.forEach((data2) => {
@@ -358,7 +393,7 @@ const CleanDarkLayout = () => {
         // ✅ Step 4: If has valid children, add/update parent
         if (childTmp.length > 0) {
           const existingIndex = new_items_menu.findIndex(m => m.key === item1.key);
-          
+
           if (existingIndex !== -1) {
             // Update existing parent with children
             new_items_menu[existingIndex] = {
@@ -497,6 +532,7 @@ const CleanDarkLayout = () => {
 
   const handleMenuClick = (key) => {
     setSelectedKey(key);
+    if (isMobile) setDrawerVisible(false);
     if (key) {
       navigate("/" + key);
     } else {
@@ -539,9 +575,8 @@ const CleanDarkLayout = () => {
               handleMenuClick(item.key);
             }
           }}
-          className={`hierarchical-menu-item ${isSelected ? "selected" : ""} ${
-            collapsed && level === 0 ? "collapsed" : ""
-          }`}
+          className={`hierarchical-menu-item ${isSelected ? "selected" : ""} ${collapsed && level === 0 ? "collapsed" : ""
+            }`}
           style={{ paddingLeft: `${12 + level * 16}px` }}
         >
           {Icon && <Icon size={18} className="menu-icon" />}
@@ -563,9 +598,8 @@ const CleanDarkLayout = () => {
               <button
                 key={child.key}
                 onClick={() => handleMenuClick(child.key)}
-                className={`hierarchical-menu-item submenu-item ${
-                  selectedKey === child.key ? "selected" : ""
-                }`}
+                className={`hierarchical-menu-item submenu-item ${selectedKey === child.key ? "selected" : ""
+                  }`}
                 style={{ paddingLeft: `${12 + (level + 1) * 16}px` }}
               >
                 <span className="menu-label">{t(child.label)}</span>
@@ -626,108 +660,147 @@ const CleanDarkLayout = () => {
     return null;
   }
 
-  return (
-    <Layout style={{ minHeight: "100vh" }}>
-      {/* Hierarchical Sidebar */}
-      <div className={`hierarchical-sidebar ${collapsed ? "collapsed" : "expanded"}`}>
-        {/* Header */}
-        <div className="sidebar-header">
-          <div className="logo-section">
-            <img src={logo} alt="PETRONAS" className="logo-icon-img" />
-            {!collapsed && (
-              <div className="logo-text">
-                <div className="company-name">PETRONAS</div>
-                <div className="company-subtitle">CAMBODIA</div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Search */}
-        {!collapsed && (
-          <div className="sidebar-search">
-            <Search
-              placeholder={t("menu.search")}
-              allowClear
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-              prefix={<SearchOutlined />}
-            />
-          </div>
-        )}
-
-        {/* Menu */}
-        <div className="menu-container">
-          {categories.map((category) => {
-            const categoryItems = filteredMenuItems.filter(
-              (item) => item.category === category
-            );
-            if (categoryItems.length === 0) return null;
-
-            return (
-              <div key={category} className="menu-category">
-                {!collapsed && (
-                  <div className="category-header">
-                    {t(`menu.categories.${category.toLowerCase()}`)}
-                  </div>
-                )}
-                {categoryItems.map((item) => renderMenuItem(item))}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Footer */}
-        {!collapsed && (
-          <div className="sidebar-footer">
-            <div className="footer-content">
-              <SettingOutlined />
-              <span>Version {APP_VERSION}</span>
+  const SidebarContent = () => (
+    <div className={`hierarchical-sidebar-content`}>
+      {/* Header */}
+      <div className="sidebar-header">
+        <div className="logo-section">
+          <img src={logo} alt="PETRONAS" className="logo-icon-img" />
+          {(!collapsed || isMobile) && (
+            <div className="logo-text">
+              <div className="company-name">PETRONAS</div>
+              <div className="company-subtitle">CAMBODIA</div>
             </div>
-            <p className="footer-copyright">© {new Date().getFullYear()} PETRONAS</p>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
+      {/* Search */}
+      {(!collapsed || isMobile) && (
+        <div className="sidebar-search">
+          <Search
+            placeholder={t("menu.search")}
+            allowClear
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+            prefix={<SearchOutlined />}
+          />
+        </div>
+      )}
+
+      {/* Menu */}
+      <div className="menu-container">
+        {categories.map((category) => {
+          const categoryItems = filteredMenuItems.filter(
+            (item) => item.category === category
+          );
+          if (categoryItems.length === 0) return null;
+
+          return (
+            <div key={category} className="menu-category">
+              {(!collapsed || isMobile) && (
+                <div className="category-header">
+                  {t(`menu.categories.${category.toLowerCase()}`)}
+                </div>
+              )}
+              {categoryItems.map((item) => renderMenuItem(item))}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer */}
+      {(!collapsed || isMobile) && (
+        <div className="sidebar-footer">
+          <div className="footer-content">
+            <SettingOutlined />
+            <span>Version {APP_VERSION}</span>
+          </div>
+          <p className="footer-copyright">© {new Date().getFullYear()} PETRONAS</p>
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <Layout style={{ minHeight: "100vh" }}>
+      {/* Sidebar for Desktop */}
+      {!isMobile && (
+        <div className={`hierarchical-sidebar ${collapsed ? "collapsed" : "expanded"}`}>
+          <SidebarContent />
+        </div>
+      )}
+
+      {/* Sidebar for Mobile (Drawer) */}
+      <Drawer
+        placement="left"
+        onClose={() => setDrawerVisible(false)}
+        open={drawerVisible}
+        width={280}
+        styles={{ body: { padding: 0 } }}
+        className="mobile-sidebar-drawer"
+        closable={false}
+      >
+        <div className="hierarchical-sidebar expanded" style={{ position: 'relative', left: 0, top: 0, bottom: 0, height: '100%', border: 'none', borderRadius: 0 }}>
+          <SidebarContent />
+        </div>
+      </Drawer>
+
       {/* Main Layout */}
-      <Layout style={{ marginLeft: collapsed ? "80px" : "280px", transition: "margin-left 0.3s" }}>
+      <Layout style={{
+        marginLeft: isMobile ? "0px" : (collapsed ? "80px" : "280px"),
+        transition: "margin-left 0.3s"
+      }}>
         {/* Header */}
         <Header className="clean-dark-header">
           <div className="header-left">
-            <div className="trigger-button" onClick={() => setCollapsed(!collapsed)}>
-              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            <div className="trigger-button" onClick={() => isMobile ? setDrawerVisible(true) : setCollapsed(!collapsed)}>
+              {isMobile ? <AlignJustify /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
             </div>
           </div>
 
           <div className="header-right">
             <Dropdown menu={languageMenu} placement="bottomRight">
-              <div className="header-icon">
+              <div className="header-icon glass-pill">
                 <GlobalOutlined />
+                {!isMobile && <span className="pill-label">{i18n.language === 'km' ? 'ភាសាខ្មែរ' : 'English'}</span>}
               </div>
             </Dropdown>
 
-            <div className="header-icon" onClick={toggleDarkMode}>
+            <div
+              className={`header-icon glass-pill ${isDarkMode ? "active" : ""}`}
+              onClick={toggleDarkMode}
+            >
               <BulbOutlined />
+              {!isMobile && <span className="pill-label">{isDarkMode ? 'Dark' : 'Light'}</span>}
             </div>
 
-            <div className="header-icon" onClick={toggleFullScreen}>
+            <div
+              className={`header-icon glass-pill ${isFullScreen ? "active" : ""}`}
+              onClick={toggleFullScreen}
+            >
               {isFullScreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
+              {!isMobile && <span className="pill-label">{isFullScreen ? 'Exit' : 'Full'}</span>}
             </div>
 
-          
-                {/* <NotificationBell /> */}
-            
+
+            {/* <NotificationBell /> */}
+
 
             <Link to="/attendance">
-              <div className="header-icon" title="Attendance">
+              <div
+                className={`header-icon glass-pill ${location.pathname === "/attendance" ? "active" : ""}`}
+                title="Attendance"
+              >
                 <HomeOutlined />
+                {!isMobile && <span className="pill-label">Attendance</span>}
               </div>
             </Link>
 
             <Dropdown menu={profileMenu} placement="bottomRight">
               <Space className="header-profile">
-                <Avatar src={getProfileImageUrl()} size={32} />
-                <span className="profile-name">{profile?.name}</span>
+                <Avatar src={getProfileImageUrl()} size={isMobile ? 28 : 32} />
+                {!isMobile && <span className="profile-name">{profile?.name}</span>}
               </Space>
             </Dropdown>
           </div>

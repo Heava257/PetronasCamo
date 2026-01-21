@@ -35,11 +35,22 @@ INSERT INTO user_roles (user_id,role_id) VALUES
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
 
-(1,498),
-(1,499),
-(1,500),
-(1,501),
-(1,502);
+
+(1,508),
+(1,509),
+(1,510),
+(1,511),
+(1,512);
+
+
+
+
+INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
+("settings.getlist","settings",1,"/settings"),
+("settings.getone","settings",NULL,NULL),
+("settings.create","settings",NULL,NULL),
+("settings.update","settings",NULL,NULL),
+("settings.remove","settings",NULL,NULL);
 
 
 
@@ -209,11 +220,11 @@ INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
 
 
 INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
-("ip-Management.getlist", "ip-Management", 1, "/ip-Management"),
-("ip-Management.getone", "ip-Management", NULL, NULL),
-("ip-Management.create", "ip-Management", NULL, NULL),
-("ip-Management.update", "ip-Management", NULL, NULL),
-("ip-Management.remove", "ip-Management", NULL, NULL);
+("supplier-payment.getlist", "supplier-payment", 1, "/supplier-payment"),
+("supplier-payment.getone", "supplier-payment", NULL, NULL),
+("supplier-payment.create", "supplier-payment", NULL, NULL),
+("supplier-payment.update", "supplier-payment", NULL, NULL),
+("supplier-payment.remove", "supplier-payment", NULL, NULL);
 
 
 
@@ -439,11 +450,11 @@ INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
 
 
 INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
-("report_Stock_Status.getlist","report_Stock_Status",1,"/report_Stock_Status"),
-("report_Stock_Status.getone","report_Stock_Status",NULL,NULL),
-("report_Stock_Status.create","report_Stock_Status",NULL,NULL),
-("report_Stock_Status.update","report_Stock_Status",NULL,NULL),
-("report_Stock_Status.remove","report_Stock_Status",NULL,NULL);
+("customer-payment.getlist","customer-payment",1,"/customer-payment"),
+("customer-payment.getone","customer-payment",NULL,NULL),
+("customer-payment.create","customer-payment",NULL,NULL),
+("customer-payment.update","customer-payment",NULL,NULL),
+("customer-payment.remove","customer-payment",NULL,NULL);
 
 INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
 ("report_Stock_Movement.getlist","report_Stock_Movement",1,"/report_Stock_Movement"),

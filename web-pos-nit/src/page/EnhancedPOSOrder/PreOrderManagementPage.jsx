@@ -458,10 +458,17 @@ function PreOrderManagementPage() {
       title: "Status",
       dataIndex: "status",
       key: "status",
-      render: (status) => (
-        <Tag color={getStatusColor(status)} className="khmer-text-product">
-          {getStatusText(status)}
-        </Tag>
+      render: (status, record) => (
+        <div className="flex flex-col items-start gap-1">
+          <Tag color={getStatusColor(status)} className="khmer-text-product">
+            {getStatusText(status)}
+          </Tag>
+          {record.confirmed_by_name && (
+            <span className="text-[10px] text-gray-500">
+              By: {record.confirmed_by_name}
+            </span>
+          )}
+        </div>
       )
     },
     {
