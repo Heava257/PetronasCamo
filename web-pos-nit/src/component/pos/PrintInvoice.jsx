@@ -624,12 +624,7 @@ const PrintInvoice = React.forwardRef((props, ref) => {
 
   const destinationGroups = groupItemsByDestination(cart_list);
   const destinationKeys = Object.keys(destinationGroups);
-  console.log("🖨️ PrintInvoice DEBUG:", {
-    cart_list_count: cart_list.length,
-    cart_items: cart_list.map(i => ({ name: i.name, dest: i.destination })),
-    destinationKeys,
-    destinationGroups
-  });
+
   const hasMultipleDestinations = destinationKeys.length > 1 || (destinationKeys.length === 1 && destinationKeys[0] !== 'default');
 
   // Always display exactly 4 rows in the table

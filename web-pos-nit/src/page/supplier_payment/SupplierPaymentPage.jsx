@@ -96,9 +96,7 @@ function SupplierPaymentPage() {
     }, [state.selectedSupplier, state.dateRange]);
 
     const loadSuppliers = async () => {
-        console.log("Loading suppliers...");
         const res = await request("supplier", "get");
-        console.log("Suppliers response:", res);
         if (res && !res.error) {
             setState(p => ({ ...p, suppliers: res.list || [] }));
         }
@@ -115,9 +113,7 @@ function SupplierPaymentPage() {
             end_date: state.dateRange[1]?.format('YYYY-MM-DD')
         };
 
-        console.log("Loading ledger with params:", params);
         const res = await request("supplier_payment/ledger", "get", params);
-        console.log("Ledger response:", res);
 
         if (res && !res.error) {
             setState(p => ({

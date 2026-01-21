@@ -244,13 +244,7 @@ function PosPage() {
           return; // ✅ STOP: Don't load if stock is insufficient
         }
 
-        // ✅ UPDATE STATE WITH NEW CART ITEMS:
-        console.log("🔍 DEBUG: newCartItems with destinations:", newCartItems.map(i => ({ name: i.name, destination: i.destination })));
-        setState(prev => ({
-          ...prev,
-          cart_list: newCartItems,
-          loading: false
-        }));
+
 
         // ✅ SET CUSTOMER INFO & PRE_ORDER_ID IN SUMMARY
         setObjSummary(prev => ({

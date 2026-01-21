@@ -52,7 +52,7 @@ function PermissionManagement() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("by-branch");
   const profile = getProfile();
-  
+
   const [state, setState] = useState({
     branches: [],
     selectedBranch: null,
@@ -77,6 +77,11 @@ function PermissionManagement() {
   const [cloneModalVisible, setCloneModalVisible] = useState(false);
   const [cloneForm] = Form.useForm();
 
+  // ✅ Search/Filter State
+  const [searchText, setSearchText] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectionFilter, setSelectionFilter] = useState('all'); // 'all', 'selected', 'unselected'
+
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -92,7 +97,7 @@ function PermissionManagement() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      
+
       const branchesRes = await request("superadmin/users", "get");
       if (branchesRes && branchesRes.success) {
         const uniqueBranches = [...new Set(
@@ -140,7 +145,7 @@ function PermissionManagement() {
     try {
       setLoading(true);
       const res = await request(`permissions/branch/${encodeURIComponent(branchName)}`, "get");
-      
+
       if (res && res.success) {
         setState(prev => ({
           ...prev,
@@ -163,7 +168,7 @@ function PermissionManagement() {
     try {
       setLoading(true);
       const res = await request(`permissions/user/${userId}`, "get");
-      
+
       if (res && res.success) {
         setState(prev => ({
           ...prev,
@@ -188,19 +193,19 @@ function PermissionManagement() {
     try {
       setLoading(true);
       const res = await request("permissions/comparison", "get");
-      
+
       if (res && res.success) {
         const rolePermissions = res.matrix
           .filter(row => row[`role_${roleId}`])
           .map(row => row.permission_id);
-        
+
         setState(prev => ({
           ...prev,
           selectedRole: roleId,
           selectedPermissionIds: rolePermissions,
           rolePermissions: res.matrix
         }));
-        
+
         setModalType('edit-role');
         setEditMode(false);
         setModalVisible(true);
@@ -217,7 +222,7 @@ function PermissionManagement() {
     try {
       setLoading(true);
       const res = await request("permissions/comparison", "get");
-      
+
       if (res && res.success) {
         setState(prev => ({
           ...prev,
@@ -232,113 +237,113 @@ function PermissionManagement() {
       setLoading(false);
     }
   };
-  
-const handleUpdateRolePermissions = async () => {
-  try {
-    setLoading(true);
-    
-    // ✅ Update permissions
-    const res = await request(`permissions/role/${state.selectedRole}`, "put", {
-      permission_ids: state.selectedPermissionIds
-    });
 
-    if (res && res.success) {
-      message.success(res.message);
-      
-      // ✅ Show confirmation modal for force refresh
+  const handleUpdateRolePermissions = async () => {
+    try {
+      setLoading(true);
+
+      // ✅ Update permissions
+      const res = await request(`permissions/role/${state.selectedRole}`, "put", {
+        permission_ids: state.selectedPermissionIds
+      });
+
+      if (res && res.success) {
+        message.success(res.message);
+
+        // ✅ Show confirmation modal for force refresh
+        Modal.confirm({
+          title: '🔄 Force Refresh Permissions?',
+          content: (
+            <div>
+              <p>Permissions have been updated successfully.</p>
+              <p className="mt-2 text-orange-600">
+                <strong>Would you like to force all affected users to re-login?</strong>
+              </p>
+              <p className="text-sm text-gray-600 mt-2">
+                • Yes: Users will be logged out immediately and must re-login<br />
+                • No: Users will see updated permissions on next login
+              </p>
+            </div>
+          ),
+          okText: 'បាទ/ចាស - Force Logout',
+          cancelText: 'ទេ - Next Login',
+          okButtonProps: { danger: true },
+          onOk: async () => {
+            try {
+              // ✅ Force refresh permissions
+              const refreshRes = await request(
+                `permissions/refresh/role/${state.selectedRole}`,
+                "post"
+              );
+
+              if (refreshRes && refreshRes.success) {
+                message.success({
+                  content: `✅ ${refreshRes.affected_users} users will be logged out`,
+                  duration: 5
+                });
+              }
+            } catch (error) {
+              console.error("Failed to force refresh:", error);
+              message.error("Failed to force logout users");
+            }
+          },
+          onCancel: () => {
+            message.info('Users will see updated permissions on next login');
+          }
+        });
+
+        loadComparisonMatrix();
+        setModalVisible(false);
+        setEditMode(false);
+      } else {
+        message.error("Failed to update permissions");
+      }
+    } catch (error) {
+      console.error("Error updating permissions:", error);
+      message.error("Failed to update permissions");
+    } finally {
+      setLoading(false);
+    }
+  };
+  const ForceRefreshButton = ({ userId, userName }) => {
+    const [loading, setLoading] = useState(false);
+
+    const handleForceRefresh = async () => {
       Modal.confirm({
-        title: '🔄 Force Refresh Permissions?',
-        content: (
-          <div>
-            <p>Permissions have been updated successfully.</p>
-            <p className="mt-2 text-orange-600">
-              <strong>Would you like to force all affected users to re-login?</strong>
-            </p>
-            <p className="text-sm text-gray-600 mt-2">
-              • Yes: Users will be logged out immediately and must re-login<br/>
-              • No: Users will see updated permissions on next login
-            </p>
-          </div>
-        ),
-        okText: 'បាទ/ចាស - Force Logout',
-        cancelText: 'ទេ - Next Login',
+        title: 'Force Logout User?',
+        content: `This will immediately log out ${userName} and require them to login again.`,
+        okText: 'Force Logout',
         okButtonProps: { danger: true },
         onOk: async () => {
           try {
-            // ✅ Force refresh permissions
-            const refreshRes = await request(
-              `permissions/refresh/role/${state.selectedRole}`, 
-              "post"
-            );
-            
-            if (refreshRes && refreshRes.success) {
-              message.success({
-                content: `✅ ${refreshRes.affected_users} users will be logged out`,
-                duration: 5
-              });
+            setLoading(true);
+            const res = await request(`permissions/refresh/user/${userId}`, "post");
+
+            if (res && res.success) {
+              message.success(res.message_kh || res.message);
             }
           } catch (error) {
-            console.error("Failed to force refresh:", error);
-            message.error("Failed to force logout users");
+            message.error("Failed to force refresh");
+          } finally {
+            setLoading(false);
           }
-        },
-        onCancel: () => {
-          message.info('Users will see updated permissions on next login');
         }
       });
-      
-      loadComparisonMatrix();
-      setModalVisible(false);
-      setEditMode(false);
-    } else {
-      message.error("Failed to update permissions");
-    }
-  } catch (error) {
-    console.error("Error updating permissions:", error);
-    message.error("Failed to update permissions");
-  } finally {
-    setLoading(false);
-  }
-};
-const ForceRefreshButton = ({ userId, userName }) => {
-  const [loading, setLoading] = useState(false);
+    };
 
-  const handleForceRefresh = async () => {
-    Modal.confirm({
-      title: 'Force Logout User?',
-      content: `This will immediately log out ${userName} and require them to login again.`,
-      okText: 'Force Logout',
-      okButtonProps: { danger: true },
-      onOk: async () => {
-        try {
-          setLoading(true);
-          const res = await request(`permissions/refresh/user/${userId}`, "post");
-          
-          if (res && res.success) {
-            message.success(res.message_kh || res.message);
-          }
-        } catch (error) {
-          message.error("Failed to force refresh");
-        } finally {
-          setLoading(false);
-        }
-      }
-    });
+    return (
+      <Tooltip title="Force user to re-login">
+        <Button
+          icon={<ReloadOutlined />}
+          size="small"
+          onClick={handleForceRefresh}
+          loading={loading}
+        >
+          Force Refresh
+        </Button>
+      </Tooltip>
+    );
   };
-
-  return (
-    <Tooltip title="Force user to re-login">
-      <Button
-        icon={<ReloadOutlined />}
-        size="small"
-        onClick={handleForceRefresh}
-        loading={loading}
-      >
-        Force Refresh
-      </Button>
-    </Tooltip>
-  );
-};
   const handleClonePermissions = async (values) => {
     try {
       setLoading(true);
@@ -368,7 +373,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
       const ids = prev.selectedPermissionIds.includes(permissionId)
         ? prev.selectedPermissionIds.filter(id => id !== permissionId)
         : [...prev.selectedPermissionIds, permissionId];
-      
+
       return { ...prev, selectedPermissionIds: ids };
     });
   };
@@ -376,14 +381,64 @@ const ForceRefreshButton = ({ userId, userName }) => {
   const handleSelectAll = (categoryPerms) => {
     const allIds = categoryPerms.map(p => p.id);
     const allSelected = allIds.every(id => state.selectedPermissionIds.includes(id));
-    
+
     setState(prev => {
       const ids = allSelected
         ? prev.selectedPermissionIds.filter(id => !allIds.includes(id))
         : [...new Set([...prev.selectedPermissionIds, ...allIds])];
-      
+
       return { ...prev, selectedPermissionIds: ids };
     });
+  };
+
+  // ✅ Filter permissions based on search and filters
+  const getFilteredPermissions = () => {
+    let filtered = { ...state.groupedPermissions };
+
+    // Filter by search text
+    if (searchText.trim()) {
+      filtered = Object.entries(filtered).reduce((acc, [category, perms]) => {
+        const matchingPerms = perms.filter(p =>
+          p.name.toLowerCase().includes(searchText.toLowerCase())
+        );
+        if (matchingPerms.length > 0) {
+          acc[category] = matchingPerms;
+        }
+        return acc;
+      }, {});
+    }
+
+    // Filter by selected categories
+    if (selectedCategories.length > 0) {
+      filtered = Object.entries(filtered).reduce((acc, [category, perms]) => {
+        if (selectedCategories.includes(category)) {
+          acc[category] = perms;
+        }
+        return acc;
+      }, {});
+    }
+
+    // Filter by selection status (when editing)
+    if (editMode && selectionFilter !== 'all') {
+      filtered = Object.entries(filtered).reduce((acc, [category, perms]) => {
+        const matchingPerms = perms.filter(p => {
+          const isSelected = state.selectedPermissionIds.includes(p.id);
+          return selectionFilter === 'selected' ? isSelected : !isSelected;
+        });
+        if (matchingPerms.length > 0) {
+          acc[category] = matchingPerms;
+        }
+        return acc;
+      }, {});
+    }
+
+    return filtered;
+  };
+
+  // Get total count of filtered permissions
+  const getTotalFilteredCount = () => {
+    const filtered = getFilteredPermissions();
+    return Object.values(filtered).reduce((sum, perms) => sum + perms.length, 0);
   };
 
   const branchUserColumns = [
@@ -416,9 +471,9 @@ const ForceRefreshButton = ({ userId, userName }) => {
       width: 120,
       align: "center",
       render: (count) => (
-        <Badge 
-          count={count} 
-          showZero 
+        <Badge
+          count={count}
+          showZero
           style={{ backgroundColor: count > 0 ? '#52c41a' : '#d9d9d9' }}
         />
       ),
@@ -474,9 +529,9 @@ const ForceRefreshButton = ({ userId, userName }) => {
           row => row[`role_${record.id}`]
         ).length;
         return (
-          <Badge 
-            count={count} 
-            showZero 
+          <Badge
+            count={count}
+            showZero
             style={{ backgroundColor: '#1890ff' }}
           />
         );
@@ -564,7 +619,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
           </div>
           <Badge count={user.permission_count} showZero className="shrink-0" />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <Tag color={user.role_code === 'SUPER_ADMIN' ? 'gold' : user.role_code === 'ADMIN' ? 'blue' : 'green'} className="text-xs">
             {user.role_name}
@@ -578,7 +633,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
             មើលសិទ្ធិ
           </Button>
         </div>
-        
+
         {user.permissions && (
           <div className="pt-2 border-t">
             <p className="text-xs text-gray-600 truncate">{user.permissions}</p>
@@ -591,7 +646,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
   // Mobile Role Card
   const RoleMobileCard = ({ role }) => {
     const count = state.comparisonMatrix.filter(row => row[`role_${role.id}`]).length;
-    
+
     return (
       <Card className="mb-3 shadow-sm hover:shadow-md transition-shadow" bodyStyle={{ padding: '12px' }}>
         <div className="space-y-3">
@@ -602,7 +657,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
             </div>
             <Badge count={count} showZero style={{ backgroundColor: '#1890ff' }} className="shrink-0" />
           </div>
-          
+
           <div className="flex gap-2">
             <Button
               type="primary"
@@ -675,7 +730,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
               }
               key="by-branch"
             >
-              <Card className="mb-4 bg-blue-50" bodyStyle={{ padding: '12px 16px' }}>
+              <Card className="mb-4 bg-blue-50 dark:bg-gray-800" bodyStyle={{ padding: '12px 16px' }}>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <span className="font-semibold text-sm">ជ្រើសរើសសាខា:</span>
                   <Select
@@ -764,7 +819,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
               )}
 
               {!state.selectedBranch && (
-                <Empty 
+                <Empty
                   description={<span className="text-xs sm:text-sm">សូមជ្រើសរើសសាខាដើម្បីមើលព័ត៌មាន</span>}
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                 />
@@ -780,7 +835,7 @@ const ForceRefreshButton = ({ userId, userName }) => {
               }
               key="role-editor"
             >
-              <div className="mb-4 p-3 bg-yellow-50 rounded border border-yellow-200">
+              <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
                 <p className="font-semibold mb-1 text-xs sm:text-sm">⚠️ ការជូនដំណឹង:</p>
                 <p className="text-xs sm:text-sm">
                   ការកែប្រែសិទ្ធិតួនាទីនឹងប៉ះពាល់ដល់អ្នកប្រើប្រាស់ទាំងអស់ដែលមានតួនាទីនេះ។
@@ -870,363 +925,419 @@ const ForceRefreshButton = ({ userId, userName }) => {
           </Tabs>
         </Card>
 
-{/* 1. VIEW USER PERMISSIONS MODAL - RESPONSIVE */}
-<Modal
-  open={modalVisible && modalType === 'view'}
-  onCancel={() => setModalVisible(false)}
-  footer={null}
-  width={window.innerWidth < 768 ? '95%' : 900}
-  title={
-    <div className="text-base sm:text-xl font-bold flex items-center gap-2 flex-wrap">
-      <EyeOutlined className="text-blue-600 text-lg sm:text-xl" /> 
-      <span className="break-words">សិទ្ធិរបស់ {state.userInfo.name}</span>
-    </div>
-  }
-  bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
->
-  {/* User Info - RESPONSIVE */}
-  <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50">
-    <Row gutter={[12, 12]}>
-      <Col xs={24} sm={8}>
-        <div className="text-xs sm:text-sm text-gray-600">ឈ្មោះ:</div>
-        <div className="font-semibold text-sm sm:text-base truncate">{state.userInfo.name}</div>
-      </Col>
-      <Col xs={24} sm={8}>
-        <div className="text-xs sm:text-sm text-gray-600">Username:</div>
-        <div className="font-semibold text-sm sm:text-base truncate">{state.userInfo.username}</div>
-      </Col>
-      <Col xs={24} sm={8}>
-        <div className="text-xs sm:text-sm text-gray-600">តួនាទី:</div>
-        <Tag color="blue" className="text-xs sm:text-sm">{state.userInfo.role_name}</Tag>
-      </Col>
-    </Row>
-    <Row gutter={[12, 12]} className="mt-3">
-      <Col xs={24} sm={12}>
-        <div className="text-xs sm:text-sm text-gray-600">សាខា:</div>
-        <div className="font-semibold text-sm sm:text-base">{state.userInfo.branch_name || 'N/A'}</div>
-      </Col>
-      <Col xs={24} sm={12}>
-        <div className="text-xs sm:text-sm text-gray-600">ចំនួនសិទ្ធិសរុប:</div>
-        <Badge 
-          count={state.userPermissions.length} 
-          showZero 
-          style={{ backgroundColor: '#52c41a' }}
-        />
-      </Col>
-    </Row>
-  </Card>
-
-  {/* Permissions grouped by category - RESPONSIVE */}
-  <Collapse defaultActiveKey={['0']} className="mb-4">
-    {Object.entries(
-      state.userPermissions.reduce((acc, perm) => {
-        const category = perm.category || 'Other';
-        if (!acc[category]) acc[category] = [];
-        acc[category].push(perm);
-        return acc;
-      }, {})
-    ).map(([category, perms], index) => (
-      <Panel 
-        header={
-          <div className="flex justify-between items-center gap-2">
-            <span className="font-semibold text-xs sm:text-sm truncate flex-1">{category}</span>
-            <Badge count={perms.length} style={{ backgroundColor: '#1890ff' }} />
-          </div>
-        } 
-        key={index}
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {perms.map(perm => (
-            <div key={perm.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
-              <CheckCircleOutlined style={{ color: '#52c41a' }} className="shrink-0" />
-              <span className="text-xs sm:text-sm">{perm.name}</span>
-            </div>
-          ))}
-        </div>
-      </Panel>
-    ))}
-  </Collapse>
-
-  {/* Mobile-friendly Footer */}
-  <div className="flex justify-end mt-4">
-    <Button onClick={() => setModalVisible(false)} block={window.innerWidth < 640} size="middle">
-      បិទ
-    </Button>
-  </div>
-</Modal>
-
-{/* 2. EDIT ROLE PERMISSIONS MODAL - RESPONSIVE */}
-<Modal
-  open={modalVisible && modalType === 'edit-role'}
-  onCancel={() => {
-    setModalVisible(false);
-    setEditMode(false);
-  }}
-  width={window.innerWidth < 768 ? '95%' : 1000}
-  footer={
-    <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-      {/* Warning Message */}
-      <div className="text-center sm:text-left">
-        {editMode && (
-          <span className="text-orange-600 text-xs sm:text-sm">
-            ⚠️ កំពុងកែប្រែ - សូមចុច "រក្សាទុក" ដើម្បីធ្វើបច្ចុប្បន្នភាព
-          </span>
-        )}
-      </div>
-
-      {/* Action Buttons */}
-      <Space className="w-full sm:w-auto flex-wrap justify-center sm:justify-end" size={[8, 8]}>
-        <Button 
-          onClick={() => setModalVisible(false)}
-          block={window.innerWidth < 640}
-          className="sm:w-auto"
-        >
-          បិទ
-        </Button>
-        {!editMode ? (
-          <Button
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => setEditMode(true)}
-            block={window.innerWidth < 640}
-            className="sm:w-auto"
-          >
-            ចាប់ផ្តើមកែប្រែ
-          </Button>
-        ) : (
-          <>
-            <Button
-              icon={<RollbackOutlined />}
-              onClick={() => {
-                setEditMode(false);
-                loadRolePermissions(state.selectedRole);
-              }}
-              block={window.innerWidth < 640}
-              className="sm:w-auto"
-            >
-              បោះបង់
-            </Button>
-            <Popconfirm
-              title="រក្សាទុកការផ្លាស់ប្តូរ?"
-              description={`តើអ្នកចង់រក្សាទុកការផ្លាស់ប្តូរសិទ្ធិសម្រាប់តួនាទី ${getRoleById(state.selectedRole)?.name}?`}
-              onConfirm={handleUpdateRolePermissions}
-              okText="បាទ/ចាស"
-              cancelText="មិន"
-            >
-              <Button
-                type="primary"
-                icon={<SaveOutlined />}
-                loading={loading}
-                className="bg-green-600 hover:bg-green-700"
-                block={window.innerWidth < 640}
-              >
-                រក្សាទុក
-              </Button>
-            </Popconfirm>
-          </>
-        )}
-      </Space>
-    </div>
-  }
-  title={
-    <div className="text-base sm:text-xl font-bold flex flex-wrap items-center gap-2">
-      <EditOutlined className="text-blue-600 text-lg sm:text-xl" /> 
-      <span className="break-words">កែប្រែសិទ្ធិតួនាទី: {getRoleById(state.selectedRole)?.name}</span>
-      <Tag color="blue" className="text-xs sm:text-sm">{getRoleById(state.selectedRole)?.code}</Tag>
-    </div>
-  }
-  bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
->
-  {/* Statistics - RESPONSIVE */}
-  <Card className="mb-4 bg-gradient-to-r from-purple-50 to-blue-50">
-    <Row gutter={[12, 12]}>
-      <Col xs={24} sm={12}>
-        <Statistic
-          title={<span className="text-xs sm:text-sm">ចំនួនសិទ្ធិដែលបានជ្រើសរើស</span>}
-          value={state.selectedPermissionIds.length}
-          prefix={<CheckCircleOutlined className="text-sm sm:text-base" />}
-          valueStyle={{ color: '#52c41a', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}
-        />
-      </Col>
-      <Col xs={24} sm={12}>
-        <Statistic
-          title={<span className="text-xs sm:text-sm">ចំនួនសិទ្ធិសរុប</span>}
-          value={state.allPermissions.length}
-          prefix={<SafetyCertificateOutlined className="text-sm sm:text-base" />}
-          valueStyle={{ color: '#1890ff', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}
-        />
-      </Col>
-    </Row>
-  </Card>
-
-  {/* Permission Selection - RESPONSIVE */}
-  <Collapse defaultActiveKey={Object.keys(state.groupedPermissions)}>
-    {Object.entries(state.groupedPermissions).map(([category, perms]) => {
-      const selectedCount = perms.filter(p => 
-        state.selectedPermissionIds.includes(p.id)
-      ).length;
-      const allSelected = selectedCount === perms.length;
-
-      return (
-        <Panel
-          key={category}
-          header={
-            <div className="flex justify-between items-center gap-2">
-              <Space className="flex-1 min-w-0" size={[4, 4]}>
-                <span className="font-semibold text-xs sm:text-sm truncate">{category}</span>
-                <Badge 
-                  count={`${selectedCount}/${perms.length}`}
-                  style={{ 
-                    backgroundColor: allSelected ? '#52c41a' : '#1890ff',
-                    fontSize: window.innerWidth < 640 ? '10px' : '12px'
-                  }}
-                />
-              </Space>
-              {editMode && (
-                <Checkbox
-                  checked={allSelected}
-                  indeterminate={selectedCount > 0 && !allSelected}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={() => handleSelectAll(perms)}
-                  className="shrink-0"
-                >
-                  <span className="text-xs sm:text-sm hidden sm:inline">ជ្រើសរើសទាំងអស់</span>
-                  <span className="text-xs sm:hidden">ទាំងអស់</span>
-                </Checkbox>
-              )}
+        {/* 1. VIEW USER PERMISSIONS MODAL - RESPONSIVE */}
+        <Modal
+          open={modalVisible && modalType === 'view'}
+          onCancel={() => setModalVisible(false)}
+          footer={null}
+          width={window.innerWidth < 768 ? '95%' : 900}
+          title={
+            <div className="text-base sm:text-xl font-bold flex items-center gap-2 flex-wrap">
+              <EyeOutlined className="text-blue-600 text-lg sm:text-xl" />
+              <span className="break-words">សិទ្ធិរបស់ {state.userInfo.name}</span>
             </div>
           }
+          bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
         >
-          {/* Mobile: Single column, Desktop: 2 columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {perms.map(perm => {
-              const isSelected = state.selectedPermissionIds.includes(perm.id);
-              
-              return (
-                <div
-                  key={perm.id}
-                  className={`flex items-center justify-between p-2 sm:p-3 rounded border transition-all ${
-                    isSelected 
-                      ? 'bg-green-50 border-green-300' 
-                      : 'bg-gray-50 border-gray-200'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    {isSelected ? (
-                      <CheckCircleOutlined style={{ color: '#52c41a' }} className="shrink-0" />
-                    ) : (
-                      <CloseCircleOutlined style={{ color: '#d9d9d9' }} className="shrink-0" />
-                    )}
-                    <span className={`text-xs sm:text-sm truncate ${isSelected ? 'font-medium' : ''}`}>
-                      {perm.name}
-                    </span>
+          {/* User Info - RESPONSIVE */}
+          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800">
+            <Row gutter={[12, 12]}>
+              <Col xs={24} sm={8}>
+                <div className="text-xs sm:text-sm text-gray-600">ឈ្មោះ:</div>
+                <div className="font-semibold text-sm sm:text-base truncate">{state.userInfo.name}</div>
+              </Col>
+              <Col xs={24} sm={8}>
+                <div className="text-xs sm:text-sm text-gray-600">Username:</div>
+                <div className="font-semibold text-sm sm:text-base truncate">{state.userInfo.username}</div>
+              </Col>
+              <Col xs={24} sm={8}>
+                <div className="text-xs sm:text-sm text-gray-600">តួនាទី:</div>
+                <Tag color="blue" className="text-xs sm:text-sm">{state.userInfo.role_name}</Tag>
+              </Col>
+            </Row>
+            <Row gutter={[12, 12]} className="mt-3">
+              <Col xs={24} sm={12}>
+                <div className="text-xs sm:text-sm text-gray-600">សាខា:</div>
+                <div className="font-semibold text-sm sm:text-base">{state.userInfo.branch_name || 'N/A'}</div>
+              </Col>
+              <Col xs={24} sm={12}>
+                <div className="text-xs sm:text-sm text-gray-600">ចំនួនសិទ្ធិសរុប:</div>
+                <Badge
+                  count={state.userPermissions.length}
+                  showZero
+                  style={{ backgroundColor: '#52c41a' }}
+                />
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Permissions grouped by category - RESPONSIVE */}
+          <Collapse defaultActiveKey={['0']} className="mb-4">
+            {Object.entries(
+              state.userPermissions.reduce((acc, perm) => {
+                const category = perm.category || 'Other';
+                if (!acc[category]) acc[category] = [];
+                acc[category].push(perm);
+                return acc;
+              }, {})
+            ).map(([category, perms], index) => (
+              <Panel
+                header={
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="font-semibold text-xs sm:text-sm truncate flex-1">{category}</span>
+                    <Badge count={perms.length} style={{ backgroundColor: '#1890ff' }} />
                   </div>
-                  {editMode && (
-                    <Switch
-                      checked={isSelected}
-                      onChange={() => handlePermissionToggle(perm.id)}
-                      size="small"
-                      className="shrink-0"
-                    />
-                  )}
+                }
+                key={index}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {perms.map(perm => (
+                    <div key={perm.id} className="flex items-center gap-2 p-2 bg-gray-50 rounded">
+                      <CheckCircleOutlined style={{ color: '#52c41a' }} className="shrink-0" />
+                      <span className="text-xs sm:text-sm">{perm.name}</span>
+                    </div>
+                  ))}
                 </div>
+              </Panel>
+            ))}
+          </Collapse>
+
+          {/* Mobile-friendly Footer */}
+          <div className="flex justify-end mt-4">
+            <Button onClick={() => setModalVisible(false)} block={window.innerWidth < 640} size="middle">
+              បិទ
+            </Button>
+          </div>
+        </Modal>
+
+        {/* 2. EDIT ROLE PERMISSIONS MODAL - RESPONSIVE */}
+        <Modal
+          open={modalVisible && modalType === 'edit-role'}
+          onCancel={() => {
+            setModalVisible(false);
+            setEditMode(false);
+          }}
+          width={window.innerWidth < 768 ? '95%' : 1000}
+          footer={
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
+              {/* Warning Message */}
+              <div className="text-center sm:text-left">
+                {editMode && (
+                  <span className="text-orange-600 text-xs sm:text-sm">
+                    ⚠️ កំពុងកែប្រែ - សូមចុច "រក្សាទុក" ដើម្បីធ្វើបច្ចុប្បន្នភាព
+                  </span>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <Space className="w-full sm:w-auto flex-wrap justify-center sm:justify-end" size={[8, 8]}>
+                <Button
+                  onClick={() => setModalVisible(false)}
+                  block={window.innerWidth < 640}
+                  className="sm:w-auto"
+                >
+                  បិទ
+                </Button>
+                {!editMode ? (
+                  <Button
+                    type="primary"
+                    icon={<EditOutlined />}
+                    onClick={() => setEditMode(true)}
+                    block={window.innerWidth < 640}
+                    className="sm:w-auto"
+                  >
+                    ចាប់ផ្តើមកែប្រែ
+                  </Button>
+                ) : (
+                  <>
+                    <Button
+                      icon={<RollbackOutlined />}
+                      onClick={() => {
+                        setEditMode(false);
+                        loadRolePermissions(state.selectedRole);
+                      }}
+                      block={window.innerWidth < 640}
+                      className="sm:w-auto"
+                    >
+                      បោះបង់
+                    </Button>
+                    <Popconfirm
+                      title="រក្សាទុកការផ្លាស់ប្តូរ?"
+                      description={`តើអ្នកចង់រក្សាទុកការផ្លាស់ប្តូរសិទ្ធិសម្រាប់តួនាទី ${getRoleById(state.selectedRole)?.name}?`}
+                      onConfirm={handleUpdateRolePermissions}
+                      okText="បាទ/ចាស"
+                      cancelText="មិន"
+                    >
+                      <Button
+                        type="primary"
+                        icon={<SaveOutlined />}
+                        loading={loading}
+                        className="bg-green-600 hover:bg-green-700"
+                        block={window.innerWidth < 640}
+                      >
+                        រក្សាទុក
+                      </Button>
+                    </Popconfirm>
+                  </>
+                )}
+              </Space>
+            </div>
+          }
+          title={
+            <div className="text-base sm:text-xl font-bold flex flex-wrap items-center gap-2">
+              <EditOutlined className="text-blue-600 text-lg sm:text-xl" />
+              <span className="break-words">កែប្រែសិទ្ធិតួនាទី: {getRoleById(state.selectedRole)?.name}</span>
+              <Tag color="blue" className="text-xs sm:text-sm">{getRoleById(state.selectedRole)?.code}</Tag>
+            </div>
+          }
+          bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
+        >
+          {/* Statistics - RESPONSIVE */}
+          <Card className="mb-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-800">
+            <Row gutter={[12, 12]}>
+              <Col xs={24} sm={12}>
+                <Statistic
+                  title={<span className="text-xs sm:text-sm">ចំនួនសិទ្ធិដែលបានជ្រើសរើស</span>}
+                  value={state.selectedPermissionIds.length}
+                  prefix={<CheckCircleOutlined className="text-sm sm:text-base" />}
+                  valueStyle={{ color: '#52c41a', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}
+                />
+              </Col>
+              <Col xs={24} sm={12}>
+                <Statistic
+                  title={<span className="text-xs sm:text-sm">ចំនួនសិទ្ធិសរុប</span>}
+                  value={state.allPermissions.length}
+                  prefix={<SafetyCertificateOutlined className="text-sm sm:text-base" />}
+                  valueStyle={{ color: '#1890ff', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)' }}
+                />
+              </Col>
+            </Row>
+          </Card>
+
+          {/* Search/Filter Bar - ✅ NEW */}
+          <div className="mb-4 p-4 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
+            <Row gutter={[12, 12]}>
+              {/* Search Input */}
+              <Col xs={24} md={12}>
+                <Input.Search
+                  placeholder="ស្វែងរកសិទ្ធិ... (Search permissions)"
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  allowClear
+                  size="large"
+                  className="dark:bg-gray-800"
+                />
+              </Col>
+
+              {/* Category Filter */}
+              <Col xs={24} md={editMode ? 8 : 12}>
+                <Select
+                  mode="multiple"
+                  placeholder="ជ្រើសរើសប្រភេទ (Filter by category)"
+                  value={selectedCategories}
+                  onChange={setSelectedCategories}
+                  style={{ width: '100%' }}
+                  size="large"
+                  maxTagCount="responsive"
+                >
+                  {Object.keys(state.groupedPermissions).map(cat => (
+                    <Option key={cat} value={cat}>{cat}</Option>
+                  ))}
+                </Select>
+              </Col>
+
+              {/* Selection Status Filter (only in edit mode) */}
+              {editMode && (
+                <Col xs={24} md={4}>
+                  <Select
+                    value={selectionFilter}
+                    onChange={setSelectionFilter}
+                    style={{ width: '100%' }}
+                    size="large"
+                  >
+                    <Option value="all">ទាំងអស់</Option>
+                    <Option value="selected">បានជ្រើសរើស</Option>
+                    <Option value="unselected">មិនបានជ្រើសរើស</Option>
+                  </Select>
+                </Col>
+              )}
+            </Row>
+
+            {/* Results Count */}
+            {(searchText || selectedCategories.length > 0 || selectionFilter !== 'all') && (
+              <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+                បង្ហាញ {getTotalFilteredCount()} ពី {state.allPermissions.length} សិទ្ធិ
+              </div>
+            )}
+          </div>
+
+          {/* Permission Selection - RESPONSIVE */}
+          <Collapse defaultActiveKey={Object.keys(getFilteredPermissions())}>
+            {Object.entries(getFilteredPermissions()).map(([category, perms]) => {
+              const selectedCount = perms.filter(p =>
+                state.selectedPermissionIds.includes(p.id)
+              ).length;
+              const allSelected = selectedCount === perms.length;
+
+              return (
+                <Panel
+                  key={category}
+                  header={
+                    <div className="flex justify-between items-center gap-2">
+                      <Space className="flex-1 min-w-0" size={[4, 4]}>
+                        <span className="font-semibold text-xs sm:text-sm truncate">{category}</span>
+                        <Badge
+                          count={`${selectedCount}/${perms.length}`}
+                          style={{
+                            backgroundColor: allSelected ? '#52c41a' : '#1890ff',
+                            fontSize: window.innerWidth < 640 ? '10px' : '12px'
+                          }}
+                        />
+                      </Space>
+                      {editMode && (
+                        <Checkbox
+                          checked={allSelected}
+                          indeterminate={selectedCount > 0 && !allSelected}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => handleSelectAll(perms)}
+                          className="shrink-0"
+                        >
+                          <span className="text-xs sm:text-sm hidden sm:inline">ជ្រើសរើសទាំងអស់</span>
+                          <span className="text-xs sm:hidden">ទាំងអស់</span>
+                        </Checkbox>
+                      )}
+                    </div>
+                  }
+                >
+                  {/* Mobile: Single column, Desktop: 2 columns */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    {perms.map(perm => {
+                      const isSelected = state.selectedPermissionIds.includes(perm.id);
+
+                      return (
+                        <div
+                          key={perm.id}
+                          className={`flex items-center justify-between p-2 sm:p-3 rounded border transition-all ${isSelected
+                              ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
+                              : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                            }`}
+                        >
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            {isSelected ? (
+                              <CheckCircleOutlined style={{ color: '#52c41a' }} className="shrink-0" />
+                            ) : (
+                              <CloseCircleOutlined style={{ color: '#d9d9d9' }} className="shrink-0" />
+                            )}
+                            <span className={`text-xs sm:text-sm truncate dark:text-gray-300 ${isSelected ? 'font-medium' : ''}`}>
+                              {perm.name}
+                            </span>
+                          </div>
+                          {editMode && (
+                            <Switch
+                              checked={isSelected}
+                              onChange={() => handlePermissionToggle(perm.id)}
+                              size="small"
+                              className="shrink-0"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Panel>
               );
             })}
+          </Collapse>
+        </Modal>
+
+        {/* 3. CLONE PERMISSIONS MODAL - RESPONSIVE */}
+        <Modal
+          open={cloneModalVisible}
+          onCancel={() => {
+            setCloneModalVisible(false);
+            cloneForm.resetFields();
+          }}
+          footer={null}
+          width={window.innerWidth < 768 ? '95%' : 600}
+          title={
+            <div className="text-base sm:text-xl font-bold flex items-center gap-2">
+              <CopyOutlined className="text-blue-600 text-lg sm:text-xl" />
+              <span>ចម្លងសិទ្ធិ</span>
+            </div>
+          }
+          bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
+        >
+          {/* Warning Message - RESPONSIVE */}
+          <div className="mb-4 p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
+            <p className="text-xs sm:text-sm">
+              ⚠️ ការចម្លងនឹងជំនួសសិទ្ធិទាំងអស់របស់តួនាទីគោលដៅជាមួយសិទ្ធិពីតួនាទីប្រភព។
+            </p>
           </div>
-        </Panel>
-      );
-    })}
-  </Collapse>
-</Modal>
 
-{/* 3. CLONE PERMISSIONS MODAL - RESPONSIVE */}
-<Modal
-  open={cloneModalVisible}
-  onCancel={() => {
-    setCloneModalVisible(false);
-    cloneForm.resetFields();
-  }}
-  footer={null}
-  width={window.innerWidth < 768 ? '95%' : 600}
-  title={
-    <div className="text-base sm:text-xl font-bold flex items-center gap-2">
-      <CopyOutlined className="text-blue-600 text-lg sm:text-xl" /> 
-      <span>ចម្លងសិទ្ធិ</span>
-    </div>
-  }
-  bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
->
-  {/* Warning Message - RESPONSIVE */}
-  <div className="mb-4 p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">
-    <p className="text-xs sm:text-sm">
-      ⚠️ ការចម្លងនឹងជំនួសសិទ្ធិទាំងអស់របស់តួនាទីគោលដៅជាមួយសិទ្ធិពីតួនាទីប្រភព។
-    </p>
-  </div>
+          {/* Form - RESPONSIVE */}
+          <Form form={cloneForm} layout="vertical" onFinish={handleClonePermissions}>
+            <Form.Item
+              name="source_role_id"
+              label={<span className="text-xs sm:text-sm">តួនាទីប្រភព (ចម្លងពី)</span>}
+              rules={[{ required: true, message: "សូមជ្រើសរើសតួនាទីប្រភព" }]}
+            >
+              <Select
+                placeholder="ជ្រើសរើសតួនាទីប្រភព"
+                size={window.innerWidth < 640 ? 'middle' : 'large'}
+              >
+                {state.roles.map(role => (
+                  <Option key={role.id} value={role.id}>
+                    <span className="text-xs sm:text-sm">{role.name} ({role.code})</span>
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-  {/* Form - RESPONSIVE */}
-  <Form form={cloneForm} layout="vertical" onFinish={handleClonePermissions}>
-    <Form.Item
-      name="source_role_id"
-      label={<span className="text-xs sm:text-sm">តួនាទីប្រភព (ចម្លងពី)</span>}
-      rules={[{ required: true, message: "សូមជ្រើសរើសតួនាទីប្រភព" }]}
-    >
-      <Select 
-        placeholder="ជ្រើសរើសតួនាទីប្រភព"
-        size={window.innerWidth < 640 ? 'middle' : 'large'}
-      >
-        {state.roles.map(role => (
-          <Option key={role.id} value={role.id}>
-            <span className="text-xs sm:text-sm">{role.name} ({role.code})</span>
-          </Option>
-        ))}
-      </Select>
-    </Form.Item>
+            <Form.Item
+              name="target_role_id"
+              label={<span className="text-xs sm:text-sm">តួនាទីគោលដៅ (ចម្លងទៅ)</span>}
+              rules={[{ required: true, message: "សូមជ្រើសរើសតួនាទីគោលដៅ" }]}
+            >
+              <Select
+                placeholder="ជ្រើសរើសតួនាទីគោលដៅ"
+                size={window.innerWidth < 640 ? 'middle' : 'large'}
+              >
+                {state.roles.map(role => (
+                  <Option key={role.id} value={role.id}>
+                    <span className="text-xs sm:text-sm">{role.name} ({role.code})</span>
+                  </Option>
+                ))}
+              </Select>
+            </Form.Item>
 
-    <Form.Item
-      name="target_role_id"
-      label={<span className="text-xs sm:text-sm">តួនាទីគោលដៅ (ចម្លងទៅ)</span>}
-      rules={[{ required: true, message: "សូមជ្រើសរើសតួនាទីគោលដៅ" }]}
-    >
-      <Select 
-        placeholder="ជ្រើសរើសតួនាទីគោលដៅ"
-        size={window.innerWidth < 640 ? 'middle' : 'large'}
-      >
-        {state.roles.map(role => (
-          <Option key={role.id} value={role.id}>
-            <span className="text-xs sm:text-sm">{role.name} ({role.code})</span>
-          </Option>
-        ))}
-      </Select>
-    </Form.Item>
+            <Divider className="my-3 sm:my-4" />
 
-    <Divider className="my-3 sm:my-4" />
-
-    {/* Buttons - RESPONSIVE */}
-    <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-      <Button 
-        onClick={() => {
-          setCloneModalVisible(false);
-          cloneForm.resetFields();
-        }}
-        block={window.innerWidth < 640}
-        className="sm:w-auto"
-      >
-        បោះបង់
-      </Button>
-      <Button 
-        type="primary" 
-        htmlType="submit" 
-        loading={loading} 
-        icon={<CopyOutlined />}
-        block={window.innerWidth < 640}
-        className="sm:w-auto"
-      >
-        ចម្លងសិទ្ធិ
-      </Button>
-    </div>
-  </Form>
-</Modal>
-    </div>
+            {/* Buttons - RESPONSIVE */}
+            <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+              <Button
+                onClick={() => {
+                  setCloneModalVisible(false);
+                  cloneForm.resetFields();
+                }}
+                block={window.innerWidth < 640}
+                className="sm:w-auto"
+              >
+                បោះបង់
+              </Button>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                icon={<CopyOutlined />}
+                block={window.innerWidth < 640}
+                className="sm:w-auto"
+              >
+                ចម្លងសិទ្ធិ
+              </Button>
+            </div>
+          </Form>
+        </Modal>
+      </div>
     </div>
   );
 }

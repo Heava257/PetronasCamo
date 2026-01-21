@@ -281,7 +281,6 @@ function PreOrderManagementPage() {
   };
 
   const onFinish = async (values) => {
-    console.log("🚀 PreOrder Submit Values:", values);
     try {
       setState(prev => ({ ...prev, loading: true }));
       const isEdit = !!state.editRecord;
