@@ -77,11 +77,6 @@ function PermissionManagement() {
   const [cloneModalVisible, setCloneModalVisible] = useState(false);
   const [cloneForm] = Form.useForm();
 
-  // ✅ Search/Filter State
-  const [searchText, setSearchText] = useState('');
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectionFilter, setSelectionFilter] = useState('all'); // 'all', 'selected', 'unselected'
-
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -391,56 +386,6 @@ function PermissionManagement() {
     });
   };
 
-  // ✅ Filter permissions based on search and filters
-  const getFilteredPermissions = () => {
-    let filtered = { ...state.groupedPermissions };
-
-    // Filter by search text
-    if (searchText.trim()) {
-      filtered = Object.entries(filtered).reduce((acc, [category, perms]) => {
-        const matchingPerms = perms.filter(p =>
-          p.name.toLowerCase().includes(searchText.toLowerCase())
-        );
-        if (matchingPerms.length > 0) {
-          acc[category] = matchingPerms;
-        }
-        return acc;
-      }, {});
-    }
-
-    // Filter by selected categories
-    if (selectedCategories.length > 0) {
-      filtered = Object.entries(filtered).reduce((acc, [category, perms]) => {
-        if (selectedCategories.includes(category)) {
-          acc[category] = perms;
-        }
-        return acc;
-      }, {});
-    }
-
-    // Filter by selection status (when editing)
-    if (editMode && selectionFilter !== 'all') {
-      filtered = Object.entries(filtered).reduce((acc, [category, perms]) => {
-        const matchingPerms = perms.filter(p => {
-          const isSelected = state.selectedPermissionIds.includes(p.id);
-          return selectionFilter === 'selected' ? isSelected : !isSelected;
-        });
-        if (matchingPerms.length > 0) {
-          acc[category] = matchingPerms;
-        }
-        return acc;
-      }, {});
-    }
-
-    return filtered;
-  };
-
-  // Get total count of filtered permissions
-  const getTotalFilteredCount = () => {
-    const filtered = getFilteredPermissions();
-    return Object.values(filtered).reduce((sum, perms) => sum + perms.length, 0);
-  };
-
   const branchUserColumns = [
     {
       title: "អ្នកប្រើប្រាស់",
@@ -730,7 +675,7 @@ function PermissionManagement() {
               }
               key="by-branch"
             >
-              <Card className="mb-4 bg-blue-50 dark:bg-gray-800" bodyStyle={{ padding: '12px 16px' }}>
+              <Card className="mb-4 bg-blue-50" bodyStyle={{ padding: '12px 16px' }}>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <span className="font-semibold text-sm">ជ្រើសរើសសាខា:</span>
                   <Select
@@ -835,7 +780,7 @@ function PermissionManagement() {
               }
               key="role-editor"
             >
-              <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded border border-yellow-200 dark:border-yellow-800">
+              <div className="mb-4 p-3 bg-yellow-50 rounded border border-yellow-200">
                 <p className="font-semibold mb-1 text-xs sm:text-sm">⚠️ ការជូនដំណឹង:</p>
                 <p className="text-xs sm:text-sm">
                   ការកែប្រែសិទ្ធិតួនាទីនឹងប៉ះពាល់ដល់អ្នកប្រើប្រាស់ទាំងអស់ដែលមានតួនាទីនេះ។
@@ -940,7 +885,7 @@ function PermissionManagement() {
           bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
         >
           {/* User Info - RESPONSIVE */}
-          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-800">
+          <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50">
             <Row gutter={[12, 12]}>
               <Col xs={24} sm={8}>
                 <div className="text-xs sm:text-sm text-gray-600">ឈ្មោះ:</div>
@@ -1093,7 +1038,7 @@ function PermissionManagement() {
           bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
         >
           {/* Statistics - RESPONSIVE */}
-          <Card className="mb-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-800">
+          <Card className="mb-4 bg-gradient-to-r from-purple-50 to-blue-50">
             <Row gutter={[12, 12]}>
               <Col xs={24} sm={12}>
                 <Statistic
@@ -1114,66 +1059,9 @@ function PermissionManagement() {
             </Row>
           </Card>
 
-          {/* Search/Filter Bar - ✅ NEW */}
-          <div className="mb-4 p-4 bg-white dark:bg-gray-900 rounded border border-gray-200 dark:border-gray-700">
-            <Row gutter={[12, 12]}>
-              {/* Search Input */}
-              <Col xs={24} md={12}>
-                <Input.Search
-                  placeholder="ស្វែងរកសិទ្ធិ... (Search permissions)"
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  allowClear
-                  size="large"
-                  className="dark:bg-gray-800"
-                />
-              </Col>
-
-              {/* Category Filter */}
-              <Col xs={24} md={editMode ? 8 : 12}>
-                <Select
-                  mode="multiple"
-                  placeholder="ជ្រើសរើសប្រភេទ (Filter by category)"
-                  value={selectedCategories}
-                  onChange={setSelectedCategories}
-                  style={{ width: '100%' }}
-                  size="large"
-                  maxTagCount="responsive"
-                >
-                  {Object.keys(state.groupedPermissions).map(cat => (
-                    <Option key={cat} value={cat}>{cat}</Option>
-                  ))}
-                </Select>
-              </Col>
-
-              {/* Selection Status Filter (only in edit mode) */}
-              {editMode && (
-                <Col xs={24} md={4}>
-                  <Select
-                    value={selectionFilter}
-                    onChange={setSelectionFilter}
-                    style={{ width: '100%' }}
-                    size="large"
-                  >
-                    <Option value="all">ទាំងអស់</Option>
-                    <Option value="selected">បានជ្រើសរើស</Option>
-                    <Option value="unselected">មិនបានជ្រើសរើស</Option>
-                  </Select>
-                </Col>
-              )}
-            </Row>
-
-            {/* Results Count */}
-            {(searchText || selectedCategories.length > 0 || selectionFilter !== 'all') && (
-              <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-                បង្ហាញ {getTotalFilteredCount()} ពី {state.allPermissions.length} សិទ្ធិ
-              </div>
-            )}
-          </div>
-
           {/* Permission Selection - RESPONSIVE */}
-          <Collapse defaultActiveKey={Object.keys(getFilteredPermissions())}>
-            {Object.entries(getFilteredPermissions()).map(([category, perms]) => {
+          <Collapse defaultActiveKey={Object.keys(state.groupedPermissions)}>
+            {Object.entries(state.groupedPermissions).map(([category, perms]) => {
               const selectedCount = perms.filter(p =>
                 state.selectedPermissionIds.includes(p.id)
               ).length;
@@ -1218,8 +1106,8 @@ function PermissionManagement() {
                         <div
                           key={perm.id}
                           className={`flex items-center justify-between p-2 sm:p-3 rounded border transition-all ${isSelected
-                              ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
-                              : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                              ? 'bg-green-50 border-green-300'
+                              : 'bg-gray-50 border-gray-200'
                             }`}
                         >
                           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1228,7 +1116,7 @@ function PermissionManagement() {
                             ) : (
                               <CloseCircleOutlined style={{ color: '#d9d9d9' }} className="shrink-0" />
                             )}
-                            <span className={`text-xs sm:text-sm truncate dark:text-gray-300 ${isSelected ? 'font-medium' : ''}`}>
+                            <span className={`text-xs sm:text-sm truncate ${isSelected ? 'font-medium' : ''}`}>
                               {perm.name}
                             </span>
                           </div>
