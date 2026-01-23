@@ -4,11 +4,24 @@
   padding: 24px;
 }
 
+/* Dark Mode Variables Override - REMOVED (Handled globally by glass-theme.css) */
+
 @media (max-width: 768px) {
   .pre-order-management-container {
     padding: 16px;
+    /* background: var(--primary-bg); -- Handled globally */
+    min-height: calc(100vh - 84px);
   }
 }
+
+/* Glass Card Effect is now handled globally in glass-theme.css */
+
+/* Khmer Text Styling */
+.khmer-text-product {
+  font-family: 'Khmer OS Battambang', 'Hanuman', 'Moul', sans-serif !important;
+}
+
+/* Statistics Cards */
 
 /* Khmer Text Styling */
 .khmer-text-product {

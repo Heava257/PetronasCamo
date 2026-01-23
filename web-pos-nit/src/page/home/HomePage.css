@@ -9,30 +9,21 @@
   min-height: 100vh;
   padding: 1rem 1.5rem;
   font-family: 'Khmer OS', 'Khmer OS System', 'Inter', sans-serif;
-  --bg-primary: #0a1929;
-  --bg-secondary: #1e293b;
-  --card-bg: #1e293b;
-  --card-hover: #1a2332;
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --border-color: #334155;
-  --primary-color: #3b82f6;
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  --warning-color: #f59e0b;
-}
 
-/* ========================================
-   LIGHT MODE VARIABLES
-======================================== */
-.dashboard-container.light {
-  --bg-primary: #f8fafc;
-  --bg-secondary: #ffffff;
-  --card-bg: #ffffff;
-  --card-hover: #f8fafc;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --border-color: #e2e8f0;
+  /* Map local variables to global variables set by SettingsContext */
+  --bg-primary: var(--bg-main);
+  --bg-secondary: var(--bg-main);
+  /* or a slightly different shade if available */
+  --card-bg: var(--bg-card);
+  --card-hover: var(--bg-card);
+  /* Could add a brightness filter if needed */
+  --text-primary: var(--text-primary);
+  --text-secondary: var(--text-secondary);
+  --border-color: var(--border-color);
+  --primary-color: var(--primary-color);
+  --success-color: var(--color-success, #10b981);
+  --danger-color: var(--color-error, #ef4444);
+  --warning-color: var(--color-warning, #f59e0b);
 }
 
 .dashboard-container {

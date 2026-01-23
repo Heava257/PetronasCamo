@@ -47,7 +47,10 @@
 .summaryCard {
   flex: 1;
   min-width: 200px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -92,75 +95,95 @@
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ============ DARK MODE STYLES ============ */
+/* NOTE: We are using "Glass" style for Dark Mode when Sunset Glow template is active, 
+   so we override the dark backgrounds to be semi-transparent white/light to match Home Page */
 
 /* Summary Cards - Dark Mode */
 :global(.dark) .summaryCard {
-  background: rgba(31, 41, 55, 0.95) !important;
-  border: 1px solid rgba(75, 85, 99, 0.5);
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.85) !important;
+  /* White glass */
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 :global(.dark) .summaryCard:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
-  border-color: rgba(96, 165, 250, 0.5);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-5px);
 }
 
 :global(.dark) .summaryIcon {
-  color: #60a5fa !important;
+  color: #1890ff !important;
+  /* Keep blue like light mode */
 }
 
 :global(.dark) .summaryTitle {
-  color: #9ca3af !important;
+  color: #666 !important;
+  /* Keep grey like light mode */
 }
 
 :global(.dark) .summaryValue {
-  color: #e5e7eb !important;
+  color: #333 !important;
+  /* Dark text on white card */
 }
 
 :global(.dark) .summaryPositive {
-  color: #10b981 !important;
+  color: #52c41a !important;
 }
 
 :global(.dark) .summaryNegative {
-  color: #ef4444 !important;
+  color: #f5222d !important;
 }
 
 :global(.dark) .summaryNeutral {
-  color: #60a5fa !important;
+  color: #1890ff !important;
 }
 
 /* Customer Cell - Dark Mode */
 :global(.dark) .customerCell {
-  color: #e5e7eb !important;
+  color: #333 !important;
 }
 
 :global(.dark) .customerName {
-  color: #f3f4f6 !important;
+  color: #333 !important;
 }
 
 :global(.dark) .customerTel,
 :global(.dark) .customerAddress {
-  color: #9ca3af !important;
+  color: #666 !important;
 }
 
 /* Khmer Text - Dark Mode */
 :global(.dark) .khmerText {
-  color: #e5e7eb !important;
+  color: #555 !important;
 }
 
 :global(.dark) .englishText {
-  color: #9ca3af !important;
+  color: #888 !important;
 }
 
 /* Table Content - Dark Mode */
@@ -170,7 +193,7 @@
 
 /* Table Header Group - Dark Mode */
 :global(.dark) .tableHeaderGroup {
-  color: #f3f4f6 !important;
+  color: #333 !important;
 }
 
 /* ============ GLOBAL TABLE STYLES - DARK MODE ============ */
@@ -178,33 +201,35 @@
 /* Table Headers */
 :global(.dark) .table-header,
 :global(.dark) .column-header-product {
-  color: #f3f4f6 !important;
+  color: #333 !important;
+  background: rgba(255, 255, 255, 0.9) !important;
 }
 
 :global(.dark) .khmer-text,
 :global(.dark) .khmer-text1,
 :global(.dark) .khmer-text-product {
-  color: #f3f4f6 !important;
+  color: #333 !important;
 }
 
 /* Table Cell Text */
 :global(.dark) .custom-cell-text,
 :global(.dark) .english-company-product {
-  color: #e5e7eb !important;
+  color: #444 !important;
 }
 
 /* Table Rows */
 :global(.dark) .even-row {
-  background: rgba(31, 41, 55, 0.5) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
 }
 
 :global(.dark) .odd-row {
-  background: rgba(55, 65, 81, 0.3) !important;
+  background: rgba(255, 255, 255, 0.4) !important;
 }
 
 /* Checked Row - Light Mode */
 .checked-row {
-  background: rgba(255, 235, 59, 0.3) !important; /* Yellow background */
+  background: rgba(255, 235, 59, 0.3) !important;
+  /* Yellow background */
   border-left: 3px solid #fbbf24 !important;
 }
 
@@ -214,7 +239,8 @@
 
 /* Checked Row - Light Mode */
 .checkedRow {
-  background: rgba(201, 185, 47, 0.3) !important; /* Yellow background */
+  background: rgba(201, 185, 47, 0.3) !important;
+  /* Yellow background */
   border-left: 3px solid #fbbf24 !important;
 }
 
@@ -223,10 +249,10 @@
 }
 
 :global(.dark) .checkedRow {
-  background: rgba(251, 191, 36, 0.2) !important; /* Darker yellow for dark mode */
+  background: rgba(255, 235, 59, 0.3) !important;
   border-left: 3px solid #fbbf24 !important;
 }
 
 :global(.dark) .checkedRow:hover {
-  background: rgba(251, 191, 36, 0.3) !important;
+  background: rgba(255, 235, 59, 0.4) !important;
 }

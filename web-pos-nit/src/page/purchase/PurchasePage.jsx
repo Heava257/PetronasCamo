@@ -47,6 +47,44 @@ const { Text, Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
+// ✅ Add Global Style Override for Purchase Page
+const purchaseStyles = `
+  /* Dark Mode Glass Effect */
+  :global(.dark) .ant-card {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(12px);
+  }
+  
+  :global(.dark) .ant-table {
+    background: transparent !important;
+  }
+
+  :global(.dark) .ant-table-thead > tr > th {
+    background: rgba(243, 244, 246, 0.9) !important;
+    color: #1f2937 !important;
+  }
+
+  :global(.dark) .ant-table-tbody > tr > td {
+     color: #374151 !important;
+  }
+
+  :global(.dark) .ant-modal-content,
+  :global(.dark) .ant-modal-header {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #1f2937 !important;
+  }
+
+  :global(.dark) .ant-input,
+  :global(.dark) .ant-select-selector,
+  :global(.dark) .ant-picker,
+  :global(.dark) .ant-input-number {
+    background: white !important;
+    border-color: #d1d5db !important;
+    color: #1f2937 !important;
+  }
+`;
+
 function PurchasePage() {
   const [form] = Form.useForm();
   const { t } = useTranslation();
@@ -625,6 +663,7 @@ function PurchasePage() {
 
   return (
     <MainPage loading={state.loading}>
+      <style>{purchaseStyles}</style>
       <div className="px-2 sm:px-4 lg:px-6">
         {/* Header Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">

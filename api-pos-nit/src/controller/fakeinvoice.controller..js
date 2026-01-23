@@ -83,14 +83,17 @@ exports.create = async (req, res) => {
       const quantity = safeNumber(item.quantity);
       const unitPrice = safeNumber(item.unit_price);
 
-      // Get divisor from item (frontend sends it), fallback to DB if 0 or missing
-      let actualPrice = safeNumber(item.actual_price, 0);
-      if (actualPrice === 0) {
+      // Get divisor from item (frontend sends it), fallback to DB ONLY if null or undefined
+      let actualPrice = item.actual_price;
+
+      if (actualPrice === undefined || actualPrice === null) {
         const [p] = await connection.query(
           "SELECT p.actual_price, c.actual_price as cat_price FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.id = ?",
           [item.product_id]
         );
         actualPrice = p[0]?.actual_price || p[0]?.cat_price || 0;
+      } else {
+        actualPrice = safeNumber(actualPrice, 0);
       }
 
       // NEW LOGIC: If actualPrice is 0, don't divide
@@ -282,16 +285,17 @@ exports.update = async (req, res) => {
       const quantity = safeNumber(item.quantity);
       const unitPrice = safeNumber(item.unit_price);
 
-      // Get actualPrice from item (frontend sends it)
-      let actual_price = safeNumber(item.actual_price, 0);
+      // Get actualPrice from item (frontend sends it), fallback to DB ONLY if null or undefined
+      let actual_price = item.actual_price;
 
-      // If not provided or 0, fetch from database
-      if (actual_price === 0) {
+      if (actual_price === undefined || actual_price === null) {
         const [productRes] = await connection.query(
           "SELECT p.actual_price, c.actual_price as cat_price FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.id = ?",
           [item.product_id]
         );
         actual_price = productRes[0]?.actual_price || productRes[0]?.cat_price || 0;
+      } else {
+        actual_price = safeNumber(actual_price, 0);
       }
 
       // NEW LOGIC: If actual_price is 0, don't divide

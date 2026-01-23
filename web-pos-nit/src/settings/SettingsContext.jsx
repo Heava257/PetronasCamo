@@ -2,6 +2,7 @@
  * Settings Context - Global settings and theme management
  */
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { ConfigProvider, theme } from 'antd';
 import { templates, getTemplate, templateList } from './templates';
 
 const SettingsContext = createContext();
@@ -41,33 +42,55 @@ const scaleFontSize = (baseSize, multiplier) => {
 const applyTemplateCSS = (template, isDarkMode, fontSize = 'medium') => {
     const root = document.documentElement;
 
-    // Colors
-    root.style.setProperty('--primary-color', template.colors.primary);
-    root.style.setProperty('--primary-hover', template.colors.primaryHover);
-    root.style.setProperty('--primary-light', template.colors.primaryLight);
-    root.style.setProperty('--secondary-color', template.colors.secondary);
-    root.style.setProperty('--accent-color', template.colors.accent);
+    // Determine active colors based on mode
+    let activeColors = { ...template.colors };
+    let activeSidebar = { ...template.sidebar };
 
-    // Background colors (adjust for dark mode)
     if (isDarkMode) {
-        root.style.setProperty('--bg-main', '#0f172a');
-        root.style.setProperty('--bg-card', 'rgba(30, 41, 59, 0.8)');
-        root.style.setProperty('--bg-sidebar', 'rgba(17, 24, 39, 0.9)');
-        root.style.setProperty('--bg-header', 'rgba(17, 24, 39, 0.8)');
-        root.style.setProperty('--text-primary', '#f1f5f9');
-        root.style.setProperty('--text-secondary', '#cbd5e1');
-        root.style.setProperty('--text-muted', '#94a3b8');
-        root.style.setProperty('--border-color', 'rgba(255, 255, 255, 0.1)');
-    } else {
-        root.style.setProperty('--bg-main', template.colors.bgMain);
-        root.style.setProperty('--bg-card', template.colors.bgCard);
-        root.style.setProperty('--bg-sidebar', template.colors.bgSidebar);
-        root.style.setProperty('--bg-header', template.colors.bgHeader);
-        root.style.setProperty('--text-primary', template.colors.textPrimary);
-        root.style.setProperty('--text-secondary', template.colors.textSecondary);
-        root.style.setProperty('--text-muted', template.colors.textMuted);
-        root.style.setProperty('--border-color', template.colors.borderColor);
+        if (template.darkColors) {
+            activeColors = { ...activeColors, ...template.darkColors };
+            // If template specifies separate darkSidebar settings, we could merge them here
+            // But usually sidebar follows its own config, or we override defaults below
+        } else {
+            // Default dark mode overrides if template doesn't specify darkColors
+            activeColors = {
+                ...activeColors,
+                bgMain: '#0f172a',
+                bgCard: 'rgba(30, 41, 59, 0.8)',
+                bgSidebar: 'rgba(17, 24, 39, 0.9)',
+                bgHeader: 'rgba(17, 24, 39, 0.8)',
+                textPrimary: '#f1f5f9',
+                textSecondary: '#cbd5e1',
+                textMuted: '#94a3b8',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                borderLight: 'rgba(255, 255, 255, 0.05)'
+            };
+
+            // Default dark mode sidebar overrides
+            activeSidebar = {
+                ...activeSidebar,
+                background: 'rgba(17, 24, 39, 0.9)',
+                textColor: '#cbd5e1'
+            };
+        }
     }
+
+    // Colors
+    root.style.setProperty('--primary-color', activeColors.primary);
+    root.style.setProperty('--primary-hover', activeColors.primaryHover);
+    root.style.setProperty('--primary-light', activeColors.primaryLight);
+    root.style.setProperty('--secondary-color', activeColors.secondary);
+    root.style.setProperty('--accent-color', activeColors.accent);
+
+    // Backgrounds & Text
+    root.style.setProperty('--bg-main', activeColors.bgMain);
+    root.style.setProperty('--bg-card', activeColors.bgCard);
+    root.style.setProperty('--bg-sidebar', activeColors.bgSidebar);
+    root.style.setProperty('--bg-header', activeColors.bgHeader);
+    root.style.setProperty('--text-primary', activeColors.textPrimary);
+    root.style.setProperty('--text-secondary', activeColors.textSecondary);
+    root.style.setProperty('--text-muted', activeColors.textMuted);
+    root.style.setProperty('--border-color', activeColors.borderColor);
 
     root.style.setProperty('--text-on-primary', template.colors.textOnPrimary);
     root.style.setProperty('--border-light', template.colors.borderLight);
@@ -123,11 +146,11 @@ const applyTemplateCSS = (template, isDarkMode, fontSize = 'medium') => {
     root.style.setProperty('--transition-speed', template.effects.transition);
 
     // Sidebar specific
-    root.style.setProperty('--sidebar-bg', isDarkMode ? template.sidebar.background : template.sidebar.background);
-    root.style.setProperty('--sidebar-text', template.sidebar.textColor);
-    root.style.setProperty('--sidebar-text-active', template.sidebar.textColorActive);
-    root.style.setProperty('--sidebar-item-hover', template.sidebar.itemHoverBg);
-    root.style.setProperty('--sidebar-item-active', template.sidebar.itemActiveBg);
+    root.style.setProperty('--sidebar-bg', activeSidebar.background);
+    root.style.setProperty('--sidebar-text', activeSidebar.textColor);
+    root.style.setProperty('--sidebar-text-active', activeSidebar.textColorActive);
+    root.style.setProperty('--sidebar-item-hover', activeSidebar.itemHoverBg);
+    root.style.setProperty('--sidebar-item-active', activeSidebar.itemActiveBg);
 };
 
 export const useSettings = () => {
@@ -174,7 +197,8 @@ export const SettingsProvider = ({ children }) => {
     // Apply template
     const applyTemplate = useCallback((templateId) => {
         if (templates[templateId]) {
-            setSettings(prev => ({ ...prev, templateId }));
+            // Reset to light mode when switching templates to ensure correct first impression
+            setSettings(prev => ({ ...prev, templateId, darkMode: false }));
         }
     }, []);
 
@@ -207,7 +231,18 @@ export const SettingsProvider = ({ children }) => {
 
     return (
         <SettingsContext.Provider value={value}>
-            {children}
+            <ConfigProvider
+                theme={{
+                    algorithm: settings.darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+                    token: {
+                        colorPrimary: currentTemplate?.colors?.primary,
+                        fontFamily: currentTemplate?.typography?.fontFamily,
+                        borderRadius: parseInt(currentTemplate?.layout?.borderRadius) || 6,
+                    }
+                }}
+            >
+                {children}
+            </ConfigProvider>
         </SettingsContext.Provider>
     );
 };

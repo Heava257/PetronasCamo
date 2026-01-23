@@ -279,15 +279,28 @@ exports.getLedger = async (req, res) => {
             // Extract fuel details if purchase
             let fuel_extra = 0;
             let fuel_diesel = 0;
+            let fuel_gas = 0;
             if (t.transaction_type === 'purchase' && t.items) {
                 try {
                     const items = typeof t.items === 'string' ? JSON.parse(t.items) : t.items;
                     items.forEach(item => {
                         const name = (item.product_name || "").toUpperCase();
-                        if (name.includes('EXTRA') || name.includes('SUPER') || name.includes('95')) {
+                        if (
+                            name.includes('EXTRA') || name.includes('SUPER') || name.includes('95') ||
+                            name.includes('92') || name.includes('GASOLINE') || name.includes('BENZINE') ||
+                            name.includes('សាំង')
+                        ) {
                             fuel_extra += parseFloat(item.quantity || 0);
-                        } else if (name.includes('DIESEL') || name.includes('DO') || name.includes('92')) {
+                        } else if (
+                            name.includes('DIESEL') || name.includes('DO') || name.includes('EURO') ||
+                            name.includes('ម៉ាស៊ូត')
+                        ) {
                             fuel_diesel += parseFloat(item.quantity || 0);
+                        } else if (
+                            name.includes('ហ្គា') || name.includes('ហ្កា') || name.includes('LPG') ||
+                            name.includes('GAS')
+                        ) {
+                            fuel_gas += parseFloat(item.quantity || 0);
                         }
                     });
                 } catch (e) {
@@ -299,7 +312,8 @@ exports.getLedger = async (req, res) => {
                 ...t,
                 running_balance: current_running_balance,
                 fuel_extra,
-                fuel_diesel
+                fuel_diesel,
+                fuel_gas
             };
         });
 

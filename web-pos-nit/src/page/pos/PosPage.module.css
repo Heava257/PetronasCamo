@@ -1,4 +1,3 @@
-
 /* Import Khmer fonts from Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Siemreap&display=swap');
@@ -14,7 +13,27 @@
   border: 1px solid #f0f0f0;
 }
 
-.enhanced-pos-table .ant-table-thead > tr > th {
+:global(.dark) .enhanced-pos-table .ant-table {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(10px);
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #333;
+}
+
+:global(.dark) .enhanced-pos-table .ant-table-thead>tr>th {
+  background: rgba(240, 240, 240, 0.9) !important;
+  color: #333 !important;
+}
+
+:global(.dark) .enhanced-pos-table .ant-table-tbody>tr>td {
+  color: #333 !important;
+}
+
+:global(.dark) .enhanced-pos-table .ant-table-tbody>tr:hover>td {
+  background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.enhanced-pos-table .ant-table-thead>tr>th {
   background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
   border-bottom: 2px solid #e8e8e8;
   padding: 16px 12px;
@@ -22,7 +41,7 @@
   position: relative;
 }
 
-.enhanced-pos-table .ant-table-thead > tr > th::before {
+.enhanced-pos-table .ant-table-thead>tr>th::before {
   content: '';
   position: absolute;
   top: 0;
@@ -32,29 +51,29 @@
   background: linear-gradient(90deg, #1890ff, #40a9ff, #69c0ff);
 }
 
-.enhanced-pos-table .ant-table-tbody > tr {
+.enhanced-pos-table .ant-table-tbody>tr {
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
-.enhanced-pos-table .ant-table-tbody > tr:hover {
+.enhanced-pos-table .ant-table-tbody>tr:hover {
   background-color: #f8f9ff;
   transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(24, 144, 255, 0.1);
 }
 
-.enhanced-pos-table .ant-table-tbody > tr > td {
+.enhanced-pos-table .ant-table-tbody>tr>td {
   padding: 12px;
   border-bottom: 1px solid #f5f5f5;
   vertical-align: middle;
 }
 
-.enhanced-pos-table .ant-table-tbody > tr:last-child > td {
+.enhanced-pos-table .ant-table-tbody>tr:last-child>td {
   border-bottom: none;
 }
 
 /* Focus styles for keyboard navigation */
-.enhanced-pos-table .ant-table-tbody > tr:focus {
+.enhanced-pos-table .ant-table-tbody>tr:focus {
   outline: 2px solid #1890ff;
   outline-offset: -2px;
   background-color: #e6f7ff;
@@ -77,13 +96,14 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .enhanced-pos-table .ant-table-thead > tr > th,
-  .enhanced-pos-table .ant-table-tbody > tr > td {
+
+  .enhanced-pos-table .ant-table-thead>tr>th,
+  .enhanced-pos-table .ant-table-tbody>tr>td {
     padding: 8px 6px;
     font-size: 12px;
   }
-  
-  .enhanced-pos-table .ant-table-tbody > tr:hover {
+
+  .enhanced-pos-table .ant-table-tbody>tr:hover {
     transform: none;
   }
 }
@@ -185,12 +205,16 @@
 
 
 
+
 .dark-mode {
-  --primary-bg: #121212;
-  --secondary-bg: #1f1f1f;
-  --card-bg: #252525;
-  --text-color: #e0e0e0;
-  --border-color: #333;
+  --primary-bg: transparent;
+  --secondary-bg: rgba(255, 255, 255, 0.85);
+  /* Light glass */
+  --card-bg: rgba(255, 255, 255, 0.9);
+  /* White glass */
+  --text-color: #333333;
+  /* Dark text */
+  --border-color: rgba(0, 0, 0, 0.1);
   --highlight-color: #1890ff;
 }
 
@@ -199,7 +223,7 @@ body {
 }
 
 body.dark-mode {
-  background-color: var(--primary-bg);
+  background-color: transparent;
   color: var(--text-color);
 }
 
@@ -232,7 +256,8 @@ body.dark-mode .stat-card {
 }
 
 body.dark-mode .stat-title {
-  color: #aaa;
+  color: #666;
+  /* Keep grey */
 }
 
 .stat-icon {
@@ -334,9 +359,11 @@ body.dark-mode .pageHeader {
   0% {
     top: 0;
   }
+
   50% {
     top: 100%;
   }
+
   100% {
     top: 0;
   }
@@ -407,7 +434,9 @@ body.dark-mode .odd-row {
   gap: 5px;
 }
 
-.category-tag, .unit-tag, .qty-tag {
+.category-tag,
+.unit-tag,
+.qty-tag {
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -507,7 +536,10 @@ body.dark-mode .cart-card {
   margin-top: 16px;
 }
 
-.customer-select, .location-select, .date-picker, .remark-textarea {
+.customer-select,
+.location-select,
+.date-picker,
+.remark-textarea {
   margin-bottom: 10px;
   border-radius: 6px;
 }
@@ -777,12 +809,13 @@ body.dark-mode .popular-item {
   .stats-header {
     display: none;
   }
-  
-  .left-controls, .right-controls {
+
+  .left-controls,
+  .right-controls {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .category-filters {
     overflow-x: scroll;
   }
@@ -808,7 +841,12 @@ body {
 }
 
 /* Specific font settings for different text sizes */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--khmer-font-primary);
   font-weight: 600;
 }
@@ -826,8 +864,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Ensure Khmer text in tables displays properly */
-.ant-table-thead > tr > th,
-.ant-table-tbody > tr > td {
+.ant-table-thead>tr>th,
+.ant-table-tbody>tr>td {
   font-family: var(--khmer-font-primary) !important;
 }
 
@@ -997,9 +1035,17 @@ body.dark-mode .pageHeader {
 }
 
 @keyframes scan {
-  0% { top: 0; }
-  50% { top: 100%; }
-  100% { top: 0; }
+  0% {
+    top: 0;
+  }
+
+  50% {
+    top: 100%;
+  }
+
+  100% {
+    top: 0;
+  }
 }
 
 .scanner-active {
@@ -1069,7 +1115,9 @@ body.dark-mode .odd-row {
   font-family: var(--khmer-font-primary);
 }
 
-.category-tag, .unit-tag, .qty-tag {
+.category-tag,
+.unit-tag,
+.qty-tag {
   border-radius: 4px;
   display: inline-flex;
   align-items: center;
@@ -1177,7 +1225,10 @@ body.dark-mode .cart-card {
   margin-top: 16px;
 }
 
-.customer-select, .location-select, .date-picker, .remark-textarea {
+.customer-select,
+.location-select,
+.date-picker,
+.remark-textarea {
   margin-bottom: 10px;
   border-radius: 6px;
   font-family: var(--khmer-font-primary);
@@ -1451,12 +1502,13 @@ body.dark-mode .popular-item {
   .stats-header {
     display: none;
   }
-  
-  .left-controls, .right-controls {
+
+  .left-controls,
+  .right-controls {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .category-filters {
     overflow-x: scroll;
   }
@@ -1467,8 +1519,8 @@ body.dark-mode .popular-item {
 .ant-input,
 .ant-select-selection-item,
 .ant-select-selection-placeholder,
-.ant-table-thead > tr > th,
-.ant-table-tbody > tr > td,
+.ant-table-thead>tr>th,
+.ant-table-tbody>tr>td,
 .ant-modal,
 .ant-drawer,
 .ant-form,
@@ -1479,8 +1531,8 @@ body.dark-mode .popular-item {
 }
 
 /* Ensure proper line height for Khmer text */
-.ant-table-thead > tr > th,
-.ant-table-tbody > tr > td {
+.ant-table-thead>tr>th,
+.ant-table-tbody>tr>td {
   line-height: 1.6 !important;
 }
 

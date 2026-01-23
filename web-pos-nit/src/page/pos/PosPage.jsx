@@ -24,6 +24,7 @@ import dayjs from 'dayjs';
 import './PosPage.module.css';
 import IntegratedInvoiceSidebar from "./IntegratedInvoiceSidebar";
 import { useTranslation } from "../../locales/TranslationContext";
+import './PosPage.stock.css'; // ✅ New modular styles
 
 function PosPage() {
   const [isDisabled, setIsDisabled] = useState(false);
@@ -42,9 +43,10 @@ function PosPage() {
   const [showReprintModal, setShowReprintModal] = useState(false);
   const [printCompleted, setPrintCompleted] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [stockStats, setStockStats] = useState([]); // ✅ Track fuel stocks
 
   const [state, setState] = useState({
-    preOrders: [], // ✅ Store pre-orders
+    preOrders: [],
     customers: [],
     total: 0,
     loading: false,
@@ -98,6 +100,18 @@ function PosPage() {
       console.error("❌ Failed to fetch pre-orders:", error);
     }
   }, []);
+
+  const fetchStockStats = useCallback(async () => {
+    try {
+      const res = await request("inventory/category-statistics", "get");
+      if (res && res.success && res.data) {
+        setStockStats(res.data);
+      }
+    } catch (error) {
+      console.error("❌ Failed to fetch stock stats:", error);
+    }
+  }, []);
+
   const fetchCategories = async () => {
     try {
       const { id } = getProfile();
@@ -245,7 +259,7 @@ function PosPage() {
         }
 
         // ✅ UPDATE STATE WITH NEW CART ITEMS:
-        console.log("🔍 DEBUG: newCartItems with destinations:", newCartItems.map(i => ({ name: i.name, destination: i.destination })));
+        // console.log("🔍 DEBUG: newCartItems with destinations:", newCartItems.map(i => ({ name: i.name, destination: i.destination })));
         setState(prev => ({
           ...prev,
           cart_list: newCartItems,
@@ -456,6 +470,9 @@ function PosPage() {
           fetchPreOrders();
         }
 
+        // ✅ Refresh stock after checkout
+        fetchStockStats();
+
         setTimeout(() => {
           handlePrintInvoice();
         }, 1000);
@@ -519,6 +536,7 @@ function PosPage() {
       await fetchCategories();
       await fetchCustomers();
       await fetchPreOrders(); // ✅ Fetch pre-orders instead of inventory
+      await fetchStockStats(); // ✅ Fetch fuel stocks
     };
     initializeData();
   }, []);
@@ -662,6 +680,102 @@ function PosPage() {
           selectedLocations={locationObjects}
         />
       </div>
+
+      {/* ✅ STOCK OVERVIEW SECTION */}
+      {stockStats && stockStats.length > 0 && (
+        <div className="stock-overview-container" style={{ margin: '8px 8px 16px 8px' }}>
+          <div className="section-title" style={{ marginBottom: '16px' }}>
+            <Tag color="cyan" style={{
+              fontSize: '14px',
+              fontWeight: 'bold',
+              padding: '6px 16px',
+              borderRadius: '12px',
+              border: 'none',
+              boxShadow: '0 4px 12px rgba(6, 182, 212, 0.2)',
+              background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+              color: 'white'
+            }}>
+              📊 បរិមាណស្តុកប្រេងបច្ចុប្បន្ន (Fuel Stock Summary)
+            </Tag>
+          </div>
+          <Row gutter={[16, 16]}>
+            {stockStats.map((item, idx) => {
+              const stock = parseFloat(item.total_qty || 0);
+              const isLow = stock <= 1000;
+
+              // Fuel-specific colors
+              const fuelType = item.product_name.toLowerCase();
+              let gradient = 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)';
+              let borderColor = 'rgba(226, 232, 240, 0.8)';
+              let iconColor = '#64748b';
+
+              if (fuelType.includes('ហ្កាស') || fuelType.includes('lpg')) {
+                gradient = 'linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)';
+                borderColor = '#fde68a';
+                iconColor = '#b45309';
+              } else if (fuelType.includes('សាំង') || fuelType.includes('gasoline')) {
+                gradient = 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)';
+                borderColor = '#bfdbfe';
+                iconColor = '#1d4ed8';
+              } else if (fuelType.includes('ម៉ាស៊ូត') || fuelType.includes('diesel')) {
+                gradient = 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)';
+                borderColor = '#bbf7d0';
+                iconColor = '#15803d';
+              }
+
+              return (
+                <Col key={idx} xs={24} sm={12} md={8} lg={6} xl={4}>
+                  <div className={`stock-card ${isLow ? 'low-stock-pulse-glow' : ''}`} style={{
+                    background: gradient,
+                    backdropFilter: 'blur(12px)',
+                    border: `2px solid ${borderColor}`,
+                    padding: '16px',
+                    borderRadius: '20px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                    textAlign: 'center',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      fontSize: '11px',
+                      color: iconColor,
+                      fontWeight: '800',
+                      letterSpacing: '0.05em',
+                      textTransform: 'uppercase',
+                      marginBottom: '8px'
+                    }}>
+                      {item.product_name}
+                    </div>
+                    <div style={{
+                      fontSize: '24px',
+                      fontWeight: '900',
+                      color: isLow ? '#ef4444' : '#1e293b',
+                      lineHeight: '1'
+                    }}>
+                      {stock.toLocaleString()} <span style={{ fontSize: '14px', fontWeight: '500' }}>L</span>
+                    </div>
+                    {isLow && (
+                      <div style={{
+                        marginTop: '8px',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        color: '#ef4444',
+                        background: '#fee2e2',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        display: 'inline-block'
+                      }}>
+                        ⚠️ ស្តុកទាប (Low Stock)
+                      </div>
+                    )}
+                  </div>
+                </Col>
+              );
+            })}
+          </Row>
+        </div>
+      )}
 
       <Row gutter={[16, 16]} style={{ margin: 0 }}>
         {/* LEFT SIDE - Pre-Orders */}

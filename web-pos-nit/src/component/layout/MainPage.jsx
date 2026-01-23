@@ -2,6 +2,7 @@ import { Button, Result } from "antd";
 import React, { useEffect, useState } from "react";
 import { RingLoader } from "react-spinners";
 import { getServerStatus } from "../../store/server.store";
+import { useSettings } from "../../settings";
 
 const info = {
   404: {
@@ -22,11 +23,10 @@ const info = {
   },
 };
 
+/* Dark Mode & Theme - Replaced with SettingsContext */
 export default function MainPage({ children, loading }) {
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('darkMode') === 'true';
-  });
-  
+  const { isDarkMode } = useSettings();
+
   const server_status = getServerStatus();
   const isServerError =
     server_status == "403" ||
@@ -34,90 +34,57 @@ export default function MainPage({ children, loading }) {
     server_status == "404" ||
     server_status == "error";
 
-  useEffect(() => {
-    // Listen for dark mode changes
-    const handleStorageChange = (e) => {
-      if (e.key === 'darkMode') {
-        setIsDarkMode(e.newValue === 'true');
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Also check for changes in the same tab
-    const checkDarkMode = () => {
-      const currentDarkMode = localStorage.getItem('darkMode') === 'true';
-      if (currentDarkMode !== isDarkMode) {
-        setIsDarkMode(currentDarkMode);
-      }
-    };
-
-    const interval = setInterval(checkDarkMode, 100);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [isDarkMode]);
 
   if (isServerError) {
     return (
-      <div 
+      <div
         data-theme={isDarkMode ? 'dark' : 'light'}
-        className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${
-          isDarkMode ? 'bg-gray-900 dark' : 'bg-gray-50 light'
-        }`}
+        className={`min-h-screen flex items-center justify-center transition-colors duration-300 ${isDarkMode ? 'bg-gray-900 dark' : 'bg-gray-50 light'
+          }`}
       >
-        <div className={`max-w-md w-full mx-4 p-8 rounded-lg shadow-lg text-center transition-colors ${
-          isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'
-        }`}>
+        <div className={`max-w-md w-full mx-4 p-8 rounded-lg shadow-lg text-center transition-colors ${isDarkMode ? 'bg-gray-800 text-white' : 'bg-white'
+          }`}>
           <Result
             status={server_status + ""}
             title={
-              <h1 className={`text-2xl font-bold mb-4 ${
-                isDarkMode ? 'text-red-400' : 'text-red-600'
-              }`}>
+              <h1 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'
+                }`}>
                 {info[server_status].message}
               </h1>
             }
             subTitle={
-              <p className={`text-base mb-6 ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-600'
-              }`}>
+              <p className={`text-base mb-6 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                }`}>
                 {info[server_status].sub}
               </p>
             }
             extra={
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 size="large"
-                className={`${
-                  isDarkMode 
-                    ? 'bg-blue-600 hover:bg-blue-700 border-blue-600' 
-                    : 'bg-blue-500 hover:bg-blue-600 border-blue-500'
-                } transition-colors`}
+                className={`${isDarkMode
+                  ? 'bg-blue-600 hover:bg-blue-700 border-blue-600'
+                  : 'bg-blue-500 hover:bg-blue-600 border-blue-500'
+                  } transition-colors`}
                 onClick={() => window.location.href = '/'}
               >
                 Back Home
               </Button>
             }
           />
-          
+
           {/* Additional error details for development */}
           {process.env.NODE_ENV === 'development' && (
-            <div className={`mt-6 p-4 rounded-md text-left text-sm ${
-              isDarkMode 
-                ? 'bg-gray-700 border border-gray-600' 
-                : 'bg-gray-100 border border-gray-300'
-            }`}>
-              <h3 className={`font-semibold mb-2 ${
-                isDarkMode ? 'text-yellow-400' : 'text-yellow-600'
+            <div className={`mt-6 p-4 rounded-md text-left text-sm ${isDarkMode
+              ? 'bg-gray-700 border border-gray-600'
+              : 'bg-gray-100 border border-gray-300'
               }`}>
+              <h3 className={`font-semibold mb-2 ${isDarkMode ? 'text-yellow-400' : 'text-yellow-600'
+                }`}>
                 Debug Information:
               </h3>
-              <ul className={`space-y-1 ${
-                isDarkMode ? 'text-gray-300' : 'text-gray-700'
-              }`}>
+              <ul className={`space-y-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
                 <li><strong>Status Code:</strong> {server_status}</li>
                 <li><strong>Timestamp:</strong> {new Date().toISOString()}</li>
                 <li><strong>User Agent:</strong> {navigator.userAgent.substring(0, 50)}...</li>
@@ -130,32 +97,29 @@ export default function MainPage({ children, loading }) {
   }
 
   return (
-    <div 
-      data-theme={isDarkMode ? 'dark' : 'light'} 
-      className={`transition-colors duration-300 ${
-        isDarkMode ? 'bg-gray-900 text-white dark' : 'bg-white text-gray-900 light'
-      }`}
+    <div
+      data-theme={isDarkMode ? 'dark' : 'light'}
+      className={`transition-colors duration-300 ${isDarkMode ? 'bg-transparent text-gray-100 dark' : 'bg-transparent text-gray-900 light'
+        }`}
     >
       {loading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-50">
           <div className="flex flex-col items-center">
             <RingLoader
               color={isDarkMode ? '#60a5fa' : '#3b82f6'}
               loading={loading}
               size={88}
             />
-            <span className={`mt-4 text-lg font-medium ${
-              isDarkMode ? 'text-blue-400' : 'text-blue-600'
-            }`}>
+            <span className={`mt-4 text-lg font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'
+              }`}>
               Loading...
             </span>
           </div>
         </div>
       )}
-      
-      <div className={`min-h-full transition-colors duration-300 ${
-        loading ? 'opacity-70' : 'opacity-100'
-      }`}>
+
+      <div className={`min-h-full transition-colors duration-300 ${loading ? 'opacity-70' : 'opacity-100'
+        }`}>
         {children}
       </div>
 
@@ -183,4 +147,4 @@ export default function MainPage({ children, loading }) {
       `}</style>
     </div>
   );
-}           
+}

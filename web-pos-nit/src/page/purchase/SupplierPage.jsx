@@ -12,10 +12,46 @@ import { useTranslation } from "../../locales/TranslationContext";
 const { Text, Title } = Typography;
 const { Option } = Select;
 
+// ✅ Add Global Style Override for Supplier Page
+const supplierStyles = `
+  /* Dark Mode Glass Effect */
+  :global(.dark) .ant-card {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(12px);
+  }
+  
+  :global(.dark) .ant-table {
+    background: transparent !important;
+  }
+
+  :global(.dark) .ant-table-thead > tr > th {
+    background: rgba(243, 244, 246, 0.9) !important;
+    color: #1f2937 !important;
+  }
+
+  :global(.dark) .ant-table-tbody > tr > td {
+     color: #374151 !important;
+  }
+
+  :global(.dark) .ant-modal-content,
+  :global(.dark) .ant-modal-header {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #1f2937 !important;
+  }
+
+  :global(.dark) .ant-input,
+  :global(.dark) .ant-select-selector {
+    background: white !important;
+    border-color: #d1d5db !important;
+    color: #1f2937 !important;
+  }
+`;
+
 function SupplierPage() {
   const [form] = Form.useForm();
-  const { t, language } = useTranslation(); 
-  
+  const { t, language } = useTranslation();
+
   const [state, setState] = useState({
     list: [],
     loading: false,
@@ -139,7 +175,7 @@ function SupplierPage() {
       id: supplier.id,
       is_active: newStatus
     });
-    
+
     if (res && !res.error) {
       message.success(newStatus === 1 ? t("Activated successfully") : t("Deactivated successfully"));
       getList();
@@ -170,12 +206,11 @@ function SupplierPage() {
   // Mobile Supplier Card Component
   const SupplierMobileCard = ({ supplier, index }) => {
     const isActive = supplier.is_active === 1;
-    
+
     return (
-      <Card 
-        className={`mb-3 shadow-sm hover:shadow-md transition-all duration-200 ${
-          isActive ? 'bg-white dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-900 opacity-75'
-        } border border-gray-200 dark:border-gray-700`}
+      <Card
+        className={`mb-3 shadow-sm hover:shadow-md transition-all duration-200 ${isActive ? 'bg-white dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-900 opacity-75'
+          } border border-gray-200 dark:border-gray-700`}
         bodyStyle={{ padding: '16px' }}
       >
         <div className="flex justify-between items-start mb-3">
@@ -194,7 +229,7 @@ function SupplierPage() {
             <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">
               {supplier.name}
             </h3>
-            
+
             {/* Contact Info */}
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -211,9 +246,9 @@ function SupplierPage() {
               </div>
             </div>
           </div>
-          <Button 
-            type="link" 
-            icon={<EyeOutlined />} 
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
             onClick={() => showDetailModal(supplier)}
             className="text-blue-500 dark:text-blue-400"
           />
@@ -414,9 +449,9 @@ function SupplierPage() {
       render: (website) => website ? (
         <div className="flex items-center gap-2">
           <GlobalOutlined className="text-purple-500" />
-          <a 
-            href={website} 
-            target="_blank" 
+          <a
+            href={website}
+            target="_blank"
             rel="noopener noreferrer"
             className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 truncate block max-w-[120px]"
           >
@@ -446,8 +481,8 @@ function SupplierPage() {
       render: (value, data) => (
         <Space size="small">
           <Tooltip title={t("EDIT")}>
-            <Button 
-              type="primary" 
+            <Button
+              type="primary"
               size="small"
               icon={<EditOutlined />}
               onClick={() => onClickBtnEdit(data)}
@@ -455,9 +490,9 @@ function SupplierPage() {
             />
           </Tooltip>
           <Tooltip title={t("DELETE")}>
-            <Button 
-              type="primary" 
-              danger 
+            <Button
+              type="primary"
+              danger
               size="small"
               icon={<DeleteOutlined />}
               onClick={() => onClickBtnDelete(data)}
@@ -465,7 +500,7 @@ function SupplierPage() {
             />
           </Tooltip>
           <Tooltip title={data.is_active === 1 ? t("Deactivate") : t("Activate")}>
-            <Button 
+            <Button
               type="default"
               size="small"
               onClick={() => toggleSupplierStatus(data)}
@@ -479,6 +514,7 @@ function SupplierPage() {
 
   return (
     <MainPage loading={state.loading}>
+      <style>{supplierStyles}</style>
       <div className="px-2 sm:px-4 lg:px-6">
         {/* Header Section */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-lg shadow-md p-6 mb-6">
@@ -495,9 +531,9 @@ function SupplierPage() {
             </div>
 
             {/* New Button */}
-            <Button 
-              type="primary" 
-              onClick={openModal} 
+            <Button
+              type="primary"
+              onClick={openModal}
               icon={<MdOutlineCreateNewFolder />}
               size="large"
               className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 shadow-lg"
@@ -590,7 +626,7 @@ function SupplierPage() {
                   <Title level={5} className="mb-4 text-blue-600 dark:text-blue-400">
                     Basic Information
                   </Title>
-                  
+
                   <Form.Item
                     name="name"
                     label={<span className="font-medium">{t("name")}</span>}
@@ -653,7 +689,7 @@ function SupplierPage() {
                   <Title level={5} className="mb-4 text-green-600 dark:text-green-400">
                     Business Details
                   </Title>
-                  
+
                   <Form.Item
                     name="fuel_types"
                     label={<span className="font-medium">Fuel Types</span>}
@@ -711,8 +747,8 @@ function SupplierPage() {
                     name="note"
                     label={<span className="font-medium">Additional Notes</span>}
                   >
-                    <Input.TextArea 
-                      placeholder="Enter additional notes or special requirements..." 
+                    <Input.TextArea
+                      placeholder="Enter additional notes or special requirements..."
                       rows={4}
                       size="large"
                     />
@@ -727,10 +763,10 @@ function SupplierPage() {
                 <Button onClick={closeModal} size="large" className="sm:w-auto">
                   {t("cancel")}
                 </Button>
-                <Button 
-                  type="primary" 
-                  htmlType="submit" 
-                  size="large" 
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  size="large"
                   className="sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0"
                 >
                   {t(form.getFieldValue("id") ? "edit" : "save")}
@@ -773,7 +809,7 @@ function SupplierPage() {
                   <Title level={5} className="mb-3 text-blue-600 dark:text-blue-400">
                     Basic Information
                   </Title>
-                  
+
                   <Space direction="vertical" className="w-full" size="middle">
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
@@ -836,9 +872,9 @@ function SupplierPage() {
                         </Text>
                         <div className="flex items-center gap-2">
                           <GlobalOutlined className="text-purple-500" />
-                          <a 
-                            href={selectedSupplier.website} 
-                            target="_blank" 
+                          <a
+                            href={selectedSupplier.website}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-500 hover:text-blue-700 break-all"
                           >
@@ -855,7 +891,7 @@ function SupplierPage() {
                   <Title level={5} className="mb-3 text-green-600 dark:text-green-400">
                     Business Details
                   </Title>
-                  
+
                   <Space direction="vertical" className="w-full" size="middle">
                     {selectedSupplier.fuel_types && (
                       <div>
@@ -955,7 +991,7 @@ function SupplierPage() {
         {/* Desktop Table View */}
         <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
           <Table
-            rowClassName={(record, index) => 
+            rowClassName={(record, index) =>
               `supplier-row ${record.is_active === 0 ? 'inactive-row' : ''} ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-900' : 'bg-white dark:bg-gray-800'}`
             }
             dataSource={filteredList}
@@ -981,9 +1017,9 @@ function SupplierPage() {
           ) : filteredList.length > 0 ? (
             <div className="space-y-3">
               {filteredList.map((supplier, index) => (
-                <SupplierMobileCard 
-                  key={supplier.id} 
-                  supplier={supplier} 
+                <SupplierMobileCard
+                  key={supplier.id}
+                  supplier={supplier}
                   index={index}
                 />
               ))}

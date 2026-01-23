@@ -36,14 +36,14 @@ import { getProfile } from "../../store/profile.store";
 import FakeInvoicePrint from "../../component/pos/FakeInvoicePrint";
 import { useReactToPrint } from 'react-to-print';
 import { useTranslation } from '../../locales/TranslationContext';
-import { useDarkMode } from "../../component/DarkModeContext"; // 👈 Import dark mode
+import { useSettings } from "../../settings/SettingsContext"; // 👈 Import settings
 
 function FakeInvoicePage() {
   const { t } = useTranslation();
   const { config } = configStore();
   const [form] = Form.useForm();
   const printRef = useRef();
-  const { isDarkMode } = useDarkMode(); // 👈 ប្រើ dark mode
+  const { isDarkMode } = useSettings(); // 👈 ប្រើ settings
 
   // States
   const [list, setList] = useState([]);
@@ -102,36 +102,26 @@ function FakeInvoicePage() {
   };
 
   const calculateStatistics = (invoices = []) => {
-    const grouped = Object.values(invoices.reduce((acc, item) => {
-      const key = item.order_no;
-      if (!acc[key]) {
-        acc[key] = {
-          ...item,
-          total_amount: 0,
-          paid_amount: 0,
-          total_due: 0
-        };
-      }
-      acc[key].total_amount += parseFloat(item.total_amount || 0);
-      acc[key].paid_amount += parseFloat(item.paid_amount || 0);
-      acc[key].total_due += parseFloat(item.total_due || 0);
-      return acc;
-    }, {}));
+    const stats = invoices.reduce((acc, invoice) => {
+      const totalAmount = parseFloat(invoice.total_amount || 0);
+      const paidAmount = parseFloat(invoice.paid_amount || 0);
+      const totalDue = parseFloat(invoice.total_due || 0);
 
-    const stats = grouped.reduce((acc, invoice) => {
       acc.totalInvoices += 1;
-      acc.totalAmount += invoice.total_amount;
+      acc.totalAmount += totalAmount;
+
       switch (invoice.payment_status) {
         case 'Paid':
-          acc.paidAmount += invoice.total_amount;
+          acc.paidAmount += totalAmount;
           break;
         case 'Partial':
-          acc.partialAmount += invoice.paid_amount;
-          acc.unpaidAmount += invoice.total_due;
+          acc.paidAmount += paidAmount;
+          acc.unpaidAmount += totalDue;
+          acc.partialAmount += paidAmount;
           break;
         case 'Unpaid':
         default:
-          acc.unpaidAmount += invoice.total_amount;
+          acc.unpaidAmount += totalAmount;
           break;
       }
       return acc;
@@ -272,27 +262,18 @@ function FakeInvoicePage() {
     });
   };
 
-  const groupedInvoices = Object.values(
-    list.reduce((acc, item) => {
-      const key = item.order_no;
-      if (!acc[key]) {
-        acc[key] = {
-          ...item,
-          quantity: 0,
-          total_amount: 0,
-          paid_amount: 0,
-          total_due: 0,
-          detail_ids: [],
-        };
-      }
-      acc[key].quantity += Number(item.quantity || 0);
-      acc[key].total_amount += parseFloat(item.total_amount || 0);
-      acc[key].paid_amount += parseFloat(item.paid_amount || 0);
-      acc[key].total_due += parseFloat(item.total_due || 0);
-      acc[key].detail_ids.push(item.id);
-      return acc;
-    }, {})
-  );
+  // ✅ Refactored to avoid double-counting by not grouping by order_no
+  // Each database record is treated as a distinct invoice row
+  const groupedInvoices = React.useMemo(() => {
+    return list.map(item => ({
+      ...item,
+      // Ensure numeric fields are correctly parsed from the record
+      quantity: Number(item.quantity || item.total_quantity || 0),
+      total_amount: parseFloat(item.total_amount || 0),
+      paid_amount: parseFloat(item.paid_amount || 0),
+      total_due: parseFloat(item.total_due || 0),
+    }));
+  }, [list]);
 
   const onCloseModal = () => {
     form.resetFields();
@@ -440,7 +421,11 @@ function FakeInvoicePage() {
         if (!product) {
           throw new Error(t('product_not_found') || "Product not found" + `: ${item.product_id}`);
         }
-        const actual_price = product.actual_price || 0;
+        // ✅ Use actual_price from the form if provided, otherwise fallback to product default
+        const actual_price = (item.actual_price !== undefined && item.actual_price !== null)
+          ? item.actual_price
+          : (product.actual_price || 0);
+
         return {
           product_id: item.product_id,
           product_name: product.name || "Product",

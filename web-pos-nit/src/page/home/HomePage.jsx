@@ -39,7 +39,7 @@ import {
 } from "recharts";
 import { useTranslation } from "../../locales/TranslationContext";
 import { getProfile } from "../../store/profile.store";
-import { useDarkMode } from "../../component/DarkModeContext.jsx";
+import { useSettings } from "../../settings/SettingsContext";
 import moment from "moment";
 import "./HomePage.css";
 
@@ -50,7 +50,7 @@ function HomePage() {
   const { t } = useTranslation();
   const profile = getProfile();
   const navigate = useNavigate();
-  const { isDarkMode } = useDarkMode();
+  const { isDarkMode } = useSettings();
 
   // State management
   const [dashboard, setDashboard] = useState([]);

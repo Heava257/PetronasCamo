@@ -35,7 +35,6 @@ import {
   LogoutOutlined,
   SearchOutlined,
   GlobalOutlined,
-  BulbOutlined,
   FullscreenOutlined,
   FullscreenExitOutlined,
   HomeOutlined,
@@ -70,7 +69,8 @@ import { Config } from "../../util/config";
 import NotificationPanel from "../../page/supperAdmin/NotificationPanel/NotificationPanelPage.jsx";
 import NotificationBell from "../../page/supperAdmin/NotificationBell/NotificationBellPage.jsx";
 import { APP_VERSION } from "../../version.js";
-import { useDarkMode } from "../DarkModeContext.jsx";
+import { useSettings } from "../../settings";
+import TemplateSelector from "../common/TemplateSelector";
 const { Header, Content, Footer } = Layout;
 const { Search } = Input;
 
@@ -324,8 +324,10 @@ const menuItems = [
 ];
 
 const CleanDarkLayout = () => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
-  const permision = getPermission();
+  /* Dark Mode & Theme - Replaced with SettingsContext */
+  const { isSettingsOpen, isDarkMode } = useSettings();
+  const permisionRaw = getPermission();
+  const permision = useMemo(() => permisionRaw, [JSON.stringify(permisionRaw)]);
   const { setConfig } = configStore();
   const profile = getProfile();
   const navigate = useNavigate();
@@ -585,26 +587,29 @@ const CleanDarkLayout = () => {
               <span className="menu-label">{t(item.label)}</span>
               {hasChildren && (
                 <span className="expand-icon">
-                  {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                  {isExpanded ? "−" : "+"}
                 </span>
               )}
             </>
           )}
         </button>
 
-        {hasChildren && isExpanded && !collapsed && (
-          <div className="submenu">
-            {item.children.map((child) => (
-              <button
-                key={child.key}
-                onClick={() => handleMenuClick(child.key)}
-                className={`hierarchical-menu-item submenu-item ${selectedKey === child.key ? "selected" : ""
-                  }`}
-                style={{ paddingLeft: `${12 + (level + 1) * 16}px` }}
-              >
-                <span className="menu-label">{t(child.label)}</span>
-              </button>
-            ))}
+        {hasChildren && !collapsed && (
+          <div className={`submenu ${isExpanded ? 'expanded' : ''}`}>
+            <div className="submenu-inner">
+              {item.children.map((child) => (
+                <button
+                  type="button"
+                  key={child.key}
+                  onClick={() => handleMenuClick(child.key)}
+                  className={`hierarchical-menu-item submenu-item ${selectedKey === child.key ? "selected" : ""
+                    }`}
+                  style={{ paddingLeft: `${12 + (level + 1) * 16}px` }}
+                >
+                  <span className="menu-label">{t(child.label)}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -660,7 +665,7 @@ const CleanDarkLayout = () => {
     return null;
   }
 
-  const SidebarContent = () => (
+  const sidebarContent = (
     <div className={`hierarchical-sidebar-content`}>
       {/* Header */}
       <div className="sidebar-header">
@@ -723,11 +728,11 @@ const CleanDarkLayout = () => {
   );
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout style={{ minHeight: "100vh", background: 'transparent' }}>
       {/* Sidebar for Desktop */}
       {!isMobile && (
         <div className={`hierarchical-sidebar ${collapsed ? "collapsed" : "expanded"}`}>
-          <SidebarContent />
+          {sidebarContent}
         </div>
       )}
 
@@ -742,17 +747,18 @@ const CleanDarkLayout = () => {
         closable={false}
       >
         <div className="hierarchical-sidebar expanded" style={{ position: 'relative', left: 0, top: 0, bottom: 0, height: '100%', border: 'none', borderRadius: 0 }}>
-          <SidebarContent />
+          {sidebarContent}
         </div>
       </Drawer>
 
       {/* Main Layout */}
       <Layout style={{
         marginLeft: isMobile ? "0px" : (collapsed ? "80px" : "280px"),
-        transition: "margin-left 0.3s"
+        transition: "margin-left 0.3s",
+        background: 'transparent' // ✅ Make Layout transparent
       }}>
         {/* Header */}
-        <Header className="clean-dark-header">
+        <Header className="clean-dark-header" style={{ background: 'transparent' }}>
           <div className="header-left">
             <div className="trigger-button" onClick={() => isMobile ? setDrawerVisible(true) : setCollapsed(!collapsed)}>
               {isMobile ? <AlignJustify /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
@@ -767,14 +773,9 @@ const CleanDarkLayout = () => {
               </div>
             </Dropdown>
 
-            <div
-              className={`header-icon glass-pill ${isDarkMode ? "active" : ""}`}
-              onClick={toggleDarkMode}
-            >
-              <BulbOutlined />
-              {!isMobile && <span className="pill-label">{isDarkMode ? 'Dark' : 'Light'}</span>}
-            </div>
 
+
+            <TemplateSelector isMobile={isMobile} />
             <div
               className={`header-icon glass-pill ${isFullScreen ? "active" : ""}`}
               onClick={toggleFullScreen}

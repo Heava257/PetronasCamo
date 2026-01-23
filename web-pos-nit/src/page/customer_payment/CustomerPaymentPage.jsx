@@ -36,7 +36,7 @@ import * as XLSX from 'xlsx';
 import { Image } from "antd";
 import { Config } from "../../util/config";
 import { debounce } from "lodash";
-import { useDarkMode } from "../../component/DarkModeContext";
+import { useSettings } from "../../settings";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -65,7 +65,7 @@ const getTableStyles = (isDarkMode) => `
 
 function CustomerPaymentPage() {
     const { t } = useTranslation();
-    const { isDarkMode } = useDarkMode();
+    const { isDarkMode } = useSettings();
     const [form] = Form.useForm();
 
     const [state, setState] = useState({

@@ -20,12 +20,12 @@ import { useTranslation } from "../../locales/TranslationContext";
  * This component should be integrated into your existing PosPage
  * Add it to the cart/summary section
  */
-function LocationSelector({ 
-  customerId, 
-  selectedLocation, 
+function LocationSelector({
+  customerId,
+  selectedLocation,
   onLocationChange,
   selectedTruck,
-  onTruckChange 
+  onTruckChange
 }) {
   const { t } = useTranslation();
   const [locations, setLocations] = useState([]);
@@ -51,7 +51,7 @@ function LocationSelector({
       if (res && res.success) {
         const locationList = res.locations || [];
         setLocations(locationList);
-        
+
         // Auto-select default location
         const defaultLocation = locationList.find(loc => loc.is_default);
         if (defaultLocation && !selectedLocation) {
@@ -77,14 +77,14 @@ function LocationSelector({
   const handleQuickAddLocation = async () => {
     try {
       const values = await form.validateFields();
-      
+
       const locationData = {
         customer_id: customerId,
         location_name: values.location_name,
         address: values.address,
         status: 1,
       };
-      
+
       const res = await request("locations", "post", locationData);
       if (res && res.success) {
         message.success(t("location_created"));
@@ -102,20 +102,37 @@ function LocationSelector({
 
   return (
     <div style={{ marginBottom: '16px' }}>
+      <style>{`
+        /* Dark mode overrides for LocationSelector components (Select, Input, etc) */
+        :global(.dark) .ant-select-selector {
+            background-color: rgba(255, 255, 255, 0.5) !important;
+            border-color: #d1d5db !important;
+            color: #1f2937 !important;
+        }
+        :global(.dark) .ant-select-arrow {
+            color: #4b5563 !important;
+        }
+        :global(.dark) .ant-select-selection-item {
+            color: #1f2937 !important;
+        }
+        :global(.dark) .ant-select-selection-placeholder {
+            color: #6b7280 !important;
+        }
+      `}</style>
       {/* Location Selector */}
       <div style={{ marginBottom: '12px' }}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '8px',
           marginBottom: '8px'
         }}>
           <MdLocationOn style={{ fontSize: '20px', color: '#1890ff' }} />
-          <span style={{ fontWeight: '600', fontSize: '14px' }}>
+          <span style={{ fontWeight: '600', fontSize: '14px' }} className="text-gray-800 dark:text-gray-800">
             {t("delivery_location")} *
           </span>
         </div>
-        
+
         <Space.Compact style={{ width: '100%' }}>
           <Select
             style={{ flex: 1 }}
@@ -131,8 +148,8 @@ function LocationSelector({
                 <div style={{ marginTop: '8px', color: '#888' }}>
                   {t("no_locations_found")}
                 </div>
-                <Button 
-                  type="link" 
+                <Button
+                  type="link"
                   onClick={() => setShowAddLocation(true)}
                 >
                   {t("add_first_location")}
@@ -143,8 +160,8 @@ function LocationSelector({
             {locations.map(location => (
               <Select.Option key={location.id} value={location.id}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <MdLocationOn style={{ 
-                    color: location.is_default ? '#faad14' : '#1890ff' 
+                  <MdLocationOn style={{
+                    color: location.is_default ? '#faad14' : '#1890ff'
                   }} />
                   <span>{location.location_name}</span>
                   {location.is_default && (
@@ -154,8 +171,8 @@ function LocationSelector({
                   )}
                 </div>
                 {location.address && (
-                  <div style={{ 
-                    fontSize: '12px', 
+                  <div style={{
+                    fontSize: '12px',
                     color: '#888',
                     marginLeft: '24px',
                     whiteSpace: 'nowrap',
@@ -168,7 +185,7 @@ function LocationSelector({
               </Select.Option>
             ))}
           </Select>
-          
+
           <Tooltip title={t("add_new_location")}>
             <Button
               icon={<MdAdd />}
@@ -217,21 +234,21 @@ function LocationSelector({
 
       {/* Truck Selector */}
       <div>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
           gap: '8px',
           marginBottom: '8px'
         }}>
           <MdLocalShipping style={{ fontSize: '20px', color: '#52c41a' }} />
-          <span style={{ fontWeight: '600', fontSize: '14px' }}>
+          <span style={{ fontWeight: '600', fontSize: '14px' }} className="text-gray-800 dark:text-gray-800">
             {t("delivery_truck")}
           </span>
           <Tag color="orange" style={{ marginLeft: 'auto' }}>
             {t("optional")}
           </Tag>
         </div>
-        
+
         <Select
           style={{ width: '100%' }}
           placeholder={t("select_delivery_truck")}
@@ -309,15 +326,15 @@ function LocationSelector({
           >
             <Input placeholder={t("enter_location_name")} />
           </Form.Item>
-          
+
           <Form.Item
             name="address"
             label={t("address")}
             rules={[{ required: true, message: t("address_required") }]}
           >
-            <Input.TextArea 
-              rows={3} 
-              placeholder={t("enter_full_address")} 
+            <Input.TextArea
+              rows={3}
+              placeholder={t("enter_full_address")}
             />
           </Form.Item>
         </Form>

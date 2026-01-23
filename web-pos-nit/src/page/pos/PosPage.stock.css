@@ -1,0 +1,59 @@
+/* ✅ Stock Overview & Pulse Animation Styles */
+.stock-overview-container {
+    animation: stockFadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stock-card {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+}
+
+.stock-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15) !important;
+    border-color: rgba(24, 144, 255, 0.5) !important;
+    z-index: 10;
+}
+
+.low-stock-pulse-glow {
+    animation: low-stock-pulse-animation 2.5s infinite ease-in-out;
+}
+
+@keyframes low-stock-pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+        border-color: rgba(239, 68, 68, 0.4);
+        background-color: rgba(254, 242, 242, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 25px 6px rgba(239, 68, 68, 0.25);
+        border-color: rgba(239, 68, 68, 1);
+        background-color: rgba(254, 242, 242, 1);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5);
+        border-color: rgba(239, 68, 68, 0.4);
+        background-color: rgba(254, 242, 242, 0.5);
+    }
+}
+
+@keyframes stockFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+        filter: blur(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+/* Ensure Khmer text is crisp */
+.stock-overview-container * {
+    font-family: var(--font-kantumruy), -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, sans-serif !important;
+}

@@ -15,8 +15,6 @@ import {
   Table,
   Tag,
   DatePicker,
-  ConfigProvider,
-  theme,
   Badge,
   InputNumber,
   Divider
@@ -46,9 +44,7 @@ function PreOrderManagementPage() {
   const navigate = useNavigate();
   const [form] = Form.useForm();
 
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('darkMode') === 'true';
-  });
+
 
   const [state, setState] = useState({
     loading: false,
@@ -93,26 +89,7 @@ function PreOrderManagementPage() {
     }
   };
 
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'darkMode') {
-        setIsDarkMode(e.newValue === 'true');
-      }
-    };
 
-    window.addEventListener('storage', handleStorageChange);
-    const interval = setInterval(() => {
-      const currentDarkMode = localStorage.getItem('darkMode') === 'true';
-      if (currentDarkMode !== isDarkMode) {
-        setIsDarkMode(currentDarkMode);
-      }
-    }, 100);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
-    };
-  }, [isDarkMode]);
 
   const loadPreOrders = async () => {
     setState(prev => ({ ...prev, loading: true }));
@@ -596,113 +573,258 @@ function PreOrderManagementPage() {
   );
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: isDarkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
-      }}
-    >
-      <MainPage loading={state.loading}>
-        <div className="pre-order-management-container">
-          {/* Header */}
-          <Card className="mb-4">
-            <Row align="middle" justify="space-between">
-              <Col>
-                <div className="flex items-center gap-3">
-                  <ThunderboltOutlined className="text-3xl text-blue-500" />
-                  <div>
-                    <h2 className="text-2xl font-bold m-0">Pre-Order Management</h2>
-                    <p className="text-sm text-gray-500 m-0">
-                      គ្រប់គ្រងកម្មង់ជាមុន
-                    </p>
-                  </div>
+    <MainPage loading={state.loading}>
+      <div className="pre-order-management-container">
+        {/* Header */}
+        <Card className="mb-4">
+          <Row align="middle" justify="space-between">
+            <Col>
+              <div className="flex items-center gap-3">
+                <ThunderboltOutlined className="text-3xl text-blue-500" />
+                <div>
+                  <h2 className="text-2xl font-bold m-0">Pre-Order Management</h2>
+                  <p className="text-sm text-gray-500 m-0">
+                    គ្រប់គ្រងកម្មង់ជាមុន
+                  </p>
                 </div>
-              </Col>
-              <Col>
-                <Button
-                  type="primary"
-                  icon={<PlusOutlined />}
-                  size="large"
-                  onClick={() => {
-                    setState(prev => ({ ...prev, visibleModal: true, editRecord: null }));
-                    form.resetFields();
-                    setTotalAmount(0);
-                  }}
-                >
-                  បង្កើត
-                </Button>
-              </Col>
-            </Row>
-          </Card>
-
-          {/* Statistics Cards */}
-          <Row gutter={[16, 16]} className="mb-4">
-            <Col xs={12} sm={12} md={6} lg={6}>
-              <Card>
-                <Statistic
-                  title={<span className="khmer-text-product">សរុប</span>}
-                  value={state.stats.total}
-                  prefix={<ClockCircleOutlined />}
-                  valueStyle={{ color: '#1890ff' }}
-                />
-              </Card>
+              </div>
             </Col>
-            <Col xs={12} sm={12} md={6} lg={6}>
-              <Card>
-                <Statistic
-                  title={<span className="khmer-text-product">រង់ចាំ</span>}
-                  value={state.stats.pending}
-                  valueStyle={{ color: '#faad14' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={12} sm={12} md={6} lg={6}>
-              <Card>
-                <Statistic
-                  title={<span className="khmer-text-product">បានបញ្ជាក់</span>}
-                  value={state.stats.confirmed}
-                  valueStyle={{ color: '#1890ff' }}
-                />
-              </Card>
-            </Col>
-            <Col xs={12} sm={12} md={6} lg={6}>
-              <Card>
-                <Statistic
-                  title={<span className="khmer-text-product">ម្រេចរួច</span>}
-                  value={state.stats.ready}
-                  valueStyle={{ color: '#52c41a' }}
-                />
-              </Card>
+            <Col>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                size="large"
+                onClick={() => {
+                  setState(prev => ({ ...prev, visibleModal: true, editRecord: null }));
+                  form.resetFields();
+                  setTotalAmount(0);
+                }}
+              >
+                បង្កើត
+              </Button>
             </Col>
           </Row>
+        </Card>
 
-          {/* Filters */}
-          <Card className="mb-4">
-            <div className="hidden lg:block">
-              <Form layout="inline">
-                <Form.Item>
-                  <Select
-                    placeholder="Status"
-                    style={{ width: 150 }}
-                    allowClear
-                    value={filter.status}
-                    onChange={(value) => setFilter(prev => ({ ...prev, status: value }))}
-                  >
-                    <Select.Option value="pending">រង់ចាំ</Select.Option>
-                    <Select.Option value="confirmed">បានបញ្ជាក់</Select.Option>
-                    <Select.Option value="ready">ម្រេចរួច</Select.Option>
-                    <Select.Option value="delivered">បានដឹកជញ្ជូន</Select.Option>
-                  </Select>
+        {/* Statistics Cards */}
+        <Row gutter={[16, 16]} className="mb-4">
+          <Col xs={12} sm={12} md={6} lg={6}>
+            <Card>
+              <Statistic
+                title={<span className="khmer-text-product">សរុប</span>}
+                value={state.stats.total}
+                prefix={<ClockCircleOutlined />}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} sm={12} md={6} lg={6}>
+            <Card>
+              <Statistic
+                title={<span className="khmer-text-product">រង់ចាំ</span>}
+                value={state.stats.pending}
+                valueStyle={{ color: '#faad14' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} sm={12} md={6} lg={6}>
+            <Card>
+              <Statistic
+                title={<span className="khmer-text-product">បានបញ្ជាក់</span>}
+                value={state.stats.confirmed}
+                valueStyle={{ color: '#1890ff' }}
+              />
+            </Card>
+          </Col>
+          <Col xs={12} sm={12} md={6} lg={6}>
+            <Card>
+              <Statistic
+                title={<span className="khmer-text-product">ម្រេចរួច</span>}
+                value={state.stats.ready}
+                valueStyle={{ color: '#52c41a' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Filters */}
+        <Card className="mb-4">
+          <div className="hidden lg:block">
+            <Form layout="inline">
+              <Form.Item>
+                <Select
+                  placeholder="Status"
+                  style={{ width: 150 }}
+                  allowClear
+                  value={filter.status}
+                  onChange={(value) => setFilter(prev => ({ ...prev, status: value }))}
+                >
+                  <Select.Option value="pending">រង់ចាំ</Select.Option>
+                  <Select.Option value="confirmed">បានបញ្ជាក់</Select.Option>
+                  <Select.Option value="ready">ម្រេចរួច</Select.Option>
+                  <Select.Option value="delivered">បានដឹកជញ្ជូន</Select.Option>
+                </Select>
+              </Form.Item>
+
+              <Form.Item>
+                <Select
+                  placeholder="អតិថិជន"
+                  style={{ width: 200 }}
+                  allowClear
+                  showSearch
+                  value={filter.customer_id}
+                  onChange={(value) => setFilter(prev => ({ ...prev, customer_id: value }))}
+                  options={customers}
+                  filterOption={(input, option) => {
+                    const search = input.toLowerCase();
+                    const name = (option?.name || "").toLowerCase();
+                    const tel = (option?.tel || "").toLowerCase();
+                    const id = String(option?.value || "").toLowerCase();
+
+                    return (
+                      name.includes(search) ||
+                      tel.includes(search) ||
+                      id.includes(search) ||
+                      (option?.label || "").toLowerCase().includes(search)
+                    );
+                  }}
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <DatePicker
+                  placeholder="ពីថ្ងៃ"
+                  format="DD/MM/YYYY"
+                  onChange={(date) => setFilter(prev => ({
+                    ...prev,
+                    from_date: date ? date.format('YYYY-MM-DD') : null
+                  }))}
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <DatePicker
+                  placeholder="ដល់ថ្ងៃ"
+                  format="DD/MM/YYYY"
+                  onChange={(date) => setFilter(prev => ({
+                    ...prev,
+                    to_date: date ? date.format('YYYY-MM-DD') : null
+                  }))}
+                />
+              </Form.Item>
+
+              <Form.Item>
+                <Button onClick={handleClearFilters}>
+                  clear_filters
+                </Button>
+              </Form.Item>
+            </Form>
+          </div>
+
+          <div className="lg:hidden">
+            <Button
+              block
+              icon={<FilterOutlined />}
+              onClick={() => {/* Mobile filter modal */ }}
+            >
+              តម្រង
+            </Button>
+          </div>
+        </Card>
+
+        {/* Table / Cards */}
+        <Card>
+          <div className="hidden lg:block">
+            <Table
+              columns={columns}
+              dataSource={state.list}
+              rowKey="id"
+              loading={state.loading}
+              pagination={{ pageSize: 10 }}
+            />
+          </div>
+
+          <div className="lg:hidden">
+            {state.list.map(record => (
+              <MobileCard key={record.id} record={record} />
+            ))}
+          </div>
+        </Card>
+
+        {/* Create Pre-Order Modal */}
+        <Modal
+          title={
+            <div className="flex items-center gap-2">
+              <PlusOutlined className="text-blue-500" />
+              <span className="khmer-text-product text-xl">
+                {state.editRecord ? "កែប្រែ Pre-Order" : "បង្កើត Pre-Order ថ្មី"}
+              </span>
+            </div>
+          }
+          open={state.visibleModal}
+          onCancel={() => {
+            setState(prev => ({ ...prev, visibleModal: false, editRecord: null }));
+            form.resetFields();
+            setTotalAmount(0);
+          }}
+          footer={null}
+          width={1000}
+          className="pre-order-modal"
+        >
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={onFinish}
+            onValuesChange={calculateTotal}
+            initialValues={{
+              products: [{}]
+            }}
+          >
+            {/* ✅ UPDATED: Manual Pre-Order Number Input */}
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="pre_order_no"
+                  label={<span className="khmer-text-product">លេខប័ណ្ណ</span>}
+                  hasFeedback
+                  validateTrigger={['onChange', 'onBlur']}
+                  rules={[
+                    { required: true, message: 'សូមបញ្ចូលលេខប័ណ្ណ' },
+                    {
+                      validator: async (_, value) => {
+                        if (!value || state.editRecord) return Promise.resolve(); // Skip check on edit or empty
+                        try {
+                          // Check duplicate via API
+                          const res = await request(`pre-order/check-duplicate?no=${value}`, "get");
+                          if (res && res.exists) {
+                            return Promise.reject(new Error("លេខកម្មង់នេះមានរួចហើយ (Duplicate)"));
+                          }
+                          return Promise.resolve();
+                        } catch (error) {
+                          console.error("Duplicate check error:", error);
+                          return Promise.resolve(); // Ignore API errors to not block user
+                        }
+                      }
+                    }
+                  ]}
+                >
+                  <Input
+                    placeholder="Ex: PO-2025-001"
+                    disabled={!!state.editRecord} // Disable when editing
+                  />
                 </Form.Item>
-
-                <Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  name="customer_id"
+                  label={<span className="khmer-text-product">អតិថិជន</span>}
+                  rules={[{ required: true, message: 'Please select customer' }]}
+                >
                   <Select
-                    placeholder="អតិថិជន"
-                    style={{ width: 200 }}
-                    allowClear
+                    placeholder="ជ្រើសរើសអតិថិជន"
                     showSearch
-                    value={filter.customer_id}
-                    onChange={(value) => setFilter(prev => ({ ...prev, customer_id: value }))}
                     options={customers}
+                    onChange={handleCustomerChange}
                     filterOption={(input, option) => {
                       const search = input.toLowerCase();
                       const name = (option?.name || "").toLowerCase();
@@ -718,284 +840,133 @@ function PreOrderManagementPage() {
                     }}
                   />
                 </Form.Item>
+              </Col>
+            </Row>
 
-                <Form.Item>
-                  <DatePicker
-                    placeholder="ពីថ្ងៃ"
-                    format="DD/MM/YYYY"
-                    onChange={(date) => setFilter(prev => ({
-                      ...prev,
-                      from_date: date ? date.format('YYYY-MM-DD') : null
-                    }))}
-                  />
+            <Row gutter={16}>
+              <Col span={8}>
+                <Form.Item
+                  name="delivery_date"
+                  label={<span className="khmer-text-product">ថ្ងៃដឹកជញ្ជូន</span>}
+                >
+                  <DatePicker style={{ width: '100%' }} />
                 </Form.Item>
+              </Col>
 
-                <Form.Item>
-                  <DatePicker
-                    placeholder="ដល់ថ្ងៃ"
-                    format="DD/MM/YYYY"
-                    onChange={(date) => setFilter(prev => ({
-                      ...prev,
-                      to_date: date ? date.format('YYYY-MM-DD') : null
-                    }))}
-                  />
-                </Form.Item>
 
-                <Form.Item>
-                  <Button onClick={handleClearFilters}>
-                    clear_filters
-                  </Button>
-                </Form.Item>
-              </Form>
-            </div>
+            </Row>
 
-            <div className="lg:hidden">
-              <Button
-                block
-                icon={<FilterOutlined />}
-                onClick={() => {/* Mobile filter modal */ }}
-              >
-                តម្រង
-              </Button>
-            </div>
-          </Card>
-
-          {/* Table / Cards */}
-          <Card>
-            <div className="hidden lg:block">
-              <Table
-                columns={columns}
-                dataSource={state.list}
-                rowKey="id"
-                loading={state.loading}
-                pagination={{ pageSize: 10 }}
-              />
-            </div>
-
-            <div className="lg:hidden">
-              {state.list.map(record => (
-                <MobileCard key={record.id} record={record} />
-              ))}
-            </div>
-          </Card>
-
-          {/* Create Pre-Order Modal */}
-          <Modal
-            title={
-              <div className="flex items-center gap-2">
-                <PlusOutlined className="text-blue-500" />
-                <span className="khmer-text-product text-xl">
-                  {state.editRecord ? "កែប្រែ Pre-Order" : "បង្កើត Pre-Order ថ្មី"}
-                </span>
-              </div>
-            }
-            open={state.visibleModal}
-            onCancel={() => {
-              setState(prev => ({ ...prev, visibleModal: false, editRecord: null }));
-              form.resetFields();
-              setTotalAmount(0);
-            }}
-            footer={null}
-            width={1000}
-            className="pre-order-modal"
-          >
-            <Form
-              form={form}
-              layout="vertical"
-              onFinish={onFinish}
-              onValuesChange={calculateTotal}
-              initialValues={{
-                products: [{}]
-              }}
+            <Form.Item
+              name="delivery_address"
+              label={<span className="khmer-text-product">គោលដៅតែមួយ</span>}
             >
-              {/* ✅ UPDATED: Manual Pre-Order Number Input */}
-              <Row gutter={16}>
-                <Col span={12}>
-                  <Form.Item
-                    name="pre_order_no"
-                    label={<span className="khmer-text-product">លេខប័ណ្ណ</span>}
-                    hasFeedback
-                    validateTrigger={['onChange', 'onBlur']}
-                    rules={[
-                      { required: true, message: 'សូមបញ្ចូលលេខប័ណ្ណ' },
-                      {
-                        validator: async (_, value) => {
-                          if (!value || state.editRecord) return Promise.resolve(); // Skip check on edit or empty
-                          try {
-                            // Check duplicate via API
-                            const res = await request(`pre-order/check-duplicate?no=${value}`, "get");
-                            if (res && res.exists) {
-                              return Promise.reject(new Error("លេខកម្មង់នេះមានរួចហើយ (Duplicate)"));
-                            }
-                            return Promise.resolve();
-                          } catch (error) {
-                            console.error("Duplicate check error:", error);
-                            return Promise.resolve(); // Ignore API errors to not block user
-                          }
-                        }
-                      }
-                    ]}
-                  >
-                    <Input
-                      placeholder="Ex: PO-2025-001"
-                      disabled={!!state.editRecord} // Disable when editing
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    name="customer_id"
-                    label={<span className="khmer-text-product">អតិថិជន</span>}
-                    rules={[{ required: true, message: 'Please select customer' }]}
-                  >
-                    <Select
-                      placeholder="ជ្រើសរើសអតិថិជន"
-                      showSearch
-                      options={customers}
-                      onChange={handleCustomerChange}
-                      filterOption={(input, option) => {
-                        const search = input.toLowerCase();
-                        const name = (option?.name || "").toLowerCase();
-                        const tel = (option?.tel || "").toLowerCase();
-                        const id = String(option?.value || "").toLowerCase();
+              <Input.TextArea rows={2} placeholder="បញ្ជាក់ទីតាំងដឹកជញ្ជូន..." />
+            </Form.Item>
 
-                        return (
-                          name.includes(search) ||
-                          tel.includes(search) ||
-                          id.includes(search) ||
-                          (option?.label || "").toLowerCase().includes(search)
-                        );
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={16}>
-                <Col span={8}>
-                  <Form.Item
-                    name="delivery_date"
-                    label={<span className="khmer-text-product">ថ្ងៃដឹកជញ្ជូន</span>}
-                  >
-                    <DatePicker style={{ width: '100%' }} />
-                  </Form.Item>
-                </Col>
-
-
-              </Row>
-
-              <Form.Item
-                name="delivery_address"
-                label={<span className="khmer-text-product">គោលដៅតែមួយ</span>}
-              >
-                <Input.TextArea rows={2} placeholder="បញ្ជាក់ទីតាំងដឹកជញ្ជូន..." />
-              </Form.Item>
-
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-lg font-bold khmer-text-product">បញ្ជីមុខទំនិញ</span>
-                </div>
-                <Form.List name="products">
-                  {(fields, { add, remove }) => (
-                    <>
-                      {fields.map(({ key, name, ...restField }) => (
-                        <Row key={key} gutter={8} align="bottom" className="mb-2">
-                          <Col span={8}>
-                            <Form.Item
-                              {...restField}
-                              name={[name, 'product_id']}
-                              label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">មុខទំនិញ</span> : null}
-                              rules={[{ required: true, message: 'Missing product' }]}
-                            >
-                              <Select
-                                placeholder="ជ្រើសរើសផលិតផល"
-                                showSearch
-                                options={products
-                                  .filter(p => Number(p.actual_price) > 0)
-                                  .map(p => ({
-                                    label: `${p.name} (${p.category_name || 'N/A'})`,
-                                    value: p.id
-                                  }))}
-                                onChange={(productId) => handleProductSelect(productId, name)}
-                                filterOption={(input, option) =>
-                                  (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                                }
-                              />
-                            </Form.Item>
-                          </Col>
-                          <Col span={4}>
-                            <Form.Item
-                              {...restField}
-                              name={[name, 'qty']}
-                              label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">បរិមាណ</span> : null}
-                              rules={[{ required: true, message: 'Missing qty' }]}
-                            >
-                              <InputNumber placeholder="0" style={{ width: '100%' }} />
-                            </Form.Item>
-                          </Col>
-                          <Col span={4}>
-                            <Form.Item
-                              {...restField}
-                              name={[name, 'price']}
-                              label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">តម្លៃ/ឯកតា</span> : null}
-                              rules={[{ required: true, message: 'Missing price' }]}
-                            >
-                              <InputNumber placeholder="0.00" style={{ width: '100%' }} />
-                            </Form.Item>
-                          </Col>
-                          <Col span={6}>
-                            <Form.Item
-                              {...restField}
-                              name={[name, 'destination']}
-                              label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">គោលដៅពីរឬច្រើន</span> : null}
-                            >
-                              <Input placeholder="គោលដៅ" />
-                            </Form.Item>
-                          </Col>
-                          <Col span={2}>
-                            <Form.Item label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">លុប</span> : null}>
-                              <Button
-                                type="text"
-                                danger
-                                icon={<Trash2 />}
-                                onClick={() => remove(name)}
-                                disabled={fields.length === 1}
-                              />
-                            </Form.Item>
-                          </Col>
-                        </Row>
-                      ))}
-                      <Form.Item>
-                        <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                          បន្ថែមមុខទំនិញ
-                        </Button>
-                      </Form.Item>
-                    </>
-                  )}
-                </Form.List>
+            <div className="mb-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-lg font-bold khmer-text-product">បញ្ជីមុខទំនិញ</span>
               </div>
+              <Form.List name="products">
+                {(fields, { add, remove }) => (
+                  <>
+                    {fields.map(({ key, name, ...restField }) => (
+                      <Row key={key} gutter={8} align="bottom" className="mb-2">
+                        <Col span={8}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'product_id']}
+                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">មុខទំនិញ</span> : null}
+                            rules={[{ required: true, message: 'Missing product' }]}
+                          >
+                            <Select
+                              placeholder="ជ្រើសរើសផលិតផល"
+                              showSearch
+                              options={products
+                                .filter(p => Number(p.actual_price) > 0)
+                                .map(p => ({
+                                  label: `${p.name} (${p.category_name || 'N/A'})`,
+                                  value: p.id
+                                }))}
+                              onChange={(productId) => handleProductSelect(productId, name)}
+                              filterOption={(input, option) =>
+                                (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+                              }
+                            />
+                          </Form.Item>
+                        </Col>
+                        <Col span={4}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'qty']}
+                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">បរិមាណ</span> : null}
+                            rules={[{ required: true, message: 'Missing qty' }]}
+                          >
+                            <InputNumber placeholder="0" style={{ width: '100%' }} />
+                          </Form.Item>
+                        </Col>
+                        <Col span={4}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'price']}
+                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">តម្លៃ/ឯកតា</span> : null}
+                            rules={[{ required: true, message: 'Missing price' }]}
+                          >
+                            <InputNumber placeholder="0.00" style={{ width: '100%' }} />
+                          </Form.Item>
+                        </Col>
+                        <Col span={6}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'destination']}
+                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">គោលដៅពីរឬច្រើន</span> : null}
+                          >
+                            <Input placeholder="គោលដៅ" />
+                          </Form.Item>
+                        </Col>
+                        <Col span={2}>
+                          <Form.Item label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">លុប</span> : null}>
+                            <Button
+                              type="text"
+                              danger
+                              icon={<Trash2 />}
+                              onClick={() => remove(name)}
+                              disabled={fields.length === 1}
+                            />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                    ))}
+                    <Form.Item>
+                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                        បន្ថែមមុខទំនិញ
+                      </Button>
+                    </Form.Item>
+                  </>
+                )}
+              </Form.List>
+            </div>
 
-              <Divider />
+            <Divider />
 
-              <div className="flex justify-between items-center">
-                <div className="text-xl">
-                  <span className="khmer-text-product text-gray-500 mr-2">សរុប:</span>
-                  <span className="font-bold text-blue-600">{formatPrice(totalAmount)}</span>
-                </div>
-                <Space>
-                  <Button onClick={() => setState(prev => ({ ...prev, visibleModal: false }))}>
-                    បោះបង់
-                  </Button>
-                  <Button type="primary" htmlType="submit" size="large">
-                    រក្សាទុក
-                  </Button>
-                </Space>
+            <div className="flex justify-between items-center">
+              <div className="text-xl">
+                <span className="khmer-text-product text-gray-500 mr-2">សរុប:</span>
+                <span className="font-bold text-blue-600">{formatPrice(totalAmount)}</span>
               </div>
-            </Form>
-          </Modal>
-        </div>
-      </MainPage>
-    </ConfigProvider>
+              <Space>
+                <Button onClick={() => setState(prev => ({ ...prev, visibleModal: false }))}>
+                  បោះបង់
+                </Button>
+                <Button type="primary" htmlType="submit" size="large">
+                  រក្សាទុក
+                </Button>
+              </Space>
+            </div>
+          </Form>
+        </Modal>
+      </div>
+    </MainPage>
   );
 }
 

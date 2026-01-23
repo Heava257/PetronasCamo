@@ -231,7 +231,7 @@ const SectionHeader = ({ icon: Icon, title, badge = null, className = "" }) => (
             <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 rounded-lg">
                 <Icon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 khmer-text-semibold">
+            <span className="text-sm font-semibold text-gray-800 dark:text-gray-800 khmer-text-semibold">
                 {title}
             </span>
         </div>
@@ -423,9 +423,9 @@ const IntegratedInvoiceSidebar = ({
 
     return (
         <>
-            <div className="w-full max-w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl dark:shadow-slate-900/50 overflow-hidden border-2 border-gray-100 dark:border-slate-700">
+            <div className="w-full max-w-full bg-white dark:bg-white/90 backdrop-blur-md rounded-2xl shadow-xl dark:shadow-slate-900/10 overflow-hidden border-2 border-gray-100 dark:border-white/50">
                 {/* Enhanced Header with Gradient */}
-                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-500 dark:via-indigo-500 dark:to-purple-500 p-5 text-white relative overflow-hidden">
+                <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-600 dark:via-indigo-600 dark:to-purple-600 p-5 text-white relative overflow-hidden">
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-10">
                         <div className="absolute inset-0" style={{
@@ -503,10 +503,10 @@ const IntegratedInvoiceSidebar = ({
                 </div>
 
                 {/* Main Content Area with Better Spacing */}
-                <div className="p-5 bg-gradient-to-br from-gray-50 to-white dark:from-slate-800 dark:to-slate-900 space-y-5">
+                <div className="p-5 bg-gradient-to-br from-gray-50 to-white dark:from-white/50 dark:to-gray-100/50 space-y-5">
                     {/* Pre-Orders Quick Selection (Sale Orders) */}
                     {preOrders && preOrders.length > 0 && (
-                        <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border-2 border-orange-100 dark:border-orange-900/30 animate-pulse-subtle">
+                        <div className="bg-white dark:bg-white/80 rounded-xl p-4 shadow-md border-2 border-orange-100 dark:border-orange-200 animate-pulse-subtle">
                             <SectionHeader
                                 icon={FileText}
                                 title={t("pending_pre_orders") || "Sale Orders (Draft)"}
@@ -526,10 +526,10 @@ const IntegratedInvoiceSidebar = ({
                                                 {order.customer_name}
                                             </span>
                                         </div>
-                                        <span className="text-[10px] text-gray-500 dark:text-gray-400 font-mono">
+                                        <span className="text-[10px] text-gray-500 dark:text-gray-600 font-mono">
                                             {order.pre_order_no}
                                         </span>
-                                        <div className="mt-2 text-xs font-bold text-gray-800 dark:text-gray-200">
+                                        <div className="mt-2 text-xs font-bold text-gray-800 dark:text-gray-800">
                                             {formatPrice ? formatPrice(order.total_amount) : `$${order.total_amount}`}
                                         </div>
                                     </button>
@@ -539,7 +539,7 @@ const IntegratedInvoiceSidebar = ({
                     )}
 
                     {/* Cart Items Section */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                    <div className="bg-white dark:bg-white/80 rounded-xl p-4 shadow-md border border-gray-100 dark:border-white/60">
                         <SectionHeader
                             icon={Package}
                             title={t("cart_items")}
@@ -561,29 +561,29 @@ const IntegratedInvoiceSidebar = ({
                                     const getCategoryColor = (category) => {
                                         const categoryColors = {
                                             'ហ្កាស(LPG)': {
-                                                bg: 'bg-gradient-to-br from-yellow-50 to-amber-100 dark:from-yellow-900/20 dark:to-amber-900/20',
-                                                border: 'border-yellow-300 dark:border-yellow-700',
-                                                badge: 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300 border-yellow-300 dark:border-yellow-700'
+                                                bg: 'bg-gradient-to-br from-yellow-50 to-amber-100 dark:from-yellow-50/50 dark:to-amber-100/50',
+                                                border: 'border-yellow-300 dark:border-yellow-200',
+                                                badge: 'bg-yellow-100 dark:bg-yellow-50 text-yellow-800 dark:text-yellow-800 border-yellow-300 dark:border-yellow-200'
                                             },
                                             'ប្រេងសាំងធម្មតា(EA)': {
-                                                bg: 'bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-cyan-900/20 dark:to-blue-900/20',
-                                                border: 'border-cyan-300 dark:border-cyan-700',
-                                                badge: 'bg-cyan-100 dark:bg-cyan-900/40 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-700'
+                                                bg: 'bg-gradient-to-br from-cyan-50 to-blue-100 dark:from-cyan-50/50 dark:to-blue-100/50',
+                                                border: 'border-cyan-300 dark:border-cyan-200',
+                                                badge: 'bg-cyan-100 dark:bg-cyan-50 text-cyan-800 dark:text-cyan-800 border-cyan-300 dark:border-cyan-200'
                                             },
                                             'ប្រេងម៉ាស៊ូត(Do)': {
-                                                bg: 'bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20',
-                                                border: 'border-green-300 dark:border-green-700',
-                                                badge: 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 border-green-300 dark:border-green-700'
+                                                bg: 'bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-50/50 dark:to-emerald-100/50',
+                                                border: 'border-green-300 dark:border-green-200',
+                                                badge: 'bg-green-100 dark:bg-green-50 text-green-800 dark:text-green-800 border-green-300 dark:border-green-200'
                                             },
                                             'ប្រេងសាំងស៊ុបពែរ(Super)': {
-                                                bg: 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20',
-                                                border: 'border-blue-300 dark:border-blue-700',
-                                                badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700'
+                                                bg: 'bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-50/50 dark:to-indigo-100/50',
+                                                border: 'border-blue-300 dark:border-blue-200',
+                                                badge: 'bg-blue-100 dark:bg-blue-50 text-blue-800 dark:text-blue-800 border-blue-300 dark:border-blue-200'
                                             },
                                             'default': {
-                                                bg: 'bg-gradient-to-br from-gray-50 to-slate-100 dark:from-gray-800 dark:to-slate-800',
-                                                border: 'border-gray-300 dark:border-gray-700',
-                                                badge: 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-300 dark:border-gray-700'
+                                                bg: 'bg-gradient-to-br from-gray-50 to-slate-100 dark:from-white/60 dark:to-gray-100/60',
+                                                border: 'border-gray-300 dark:border-gray-200',
+                                                badge: 'bg-gray-100 dark:bg-gray-100 text-gray-800 dark:text-gray-800 border-gray-300 dark:border-gray-200'
                                             }
                                         };
                                         return categoryColors[category] || categoryColors['default'];
@@ -632,9 +632,8 @@ const IntegratedInvoiceSidebar = ({
 
                                             {/* Input Fields */}
                                             <div className="grid grid-cols-2 gap-3">
-                                                {/* Quantity Input */}
                                                 <div className="space-y-1">
-                                                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300 khmer-text-medium flex items-center justify-between gap-1 w-full">
+                                                    <label className="text-xs font-semibold text-gray-800 dark:text-gray-800 khmer-text-semibold flex items-center justify-between gap-1 w-full">
                                                         <span className="flex items-center gap-1">
                                                             <Package className="w-3 h-3" />
                                                             {t("quantity")}
@@ -651,32 +650,32 @@ const IntegratedInvoiceSidebar = ({
                                                             step="0.001"
                                                             min="0"
                                                             disabled={true}
-                                                            className="w-full pl-8 pr-3 py-2.5 text-sm border-2 border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                                                            className="w-full pl-8 pr-3 py-2.5 text-sm border-2 border-gray-300 dark:border-gray-300 bg-gray-100 dark:bg-gray-50 text-gray-600 dark:text-gray-800 rounded-lg cursor-not-allowed font-semibold"
                                                             title="មានតែ Admin ទេដែលអាចកែប្រែតម្លៃនេះ ក្នុង Inventory Transaction Page"
                                                         />
 
-                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-400 font-medium">L</span>
+                                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 dark:text-gray-500 font-medium">L</span>
                                                     </div>
                                                 </div>
 
                                                 {/* ✅ FIXED: Selling Price Input (Disabled) */}
                                                 <div className="space-y-1">
-                                                    <label className="text-xs font-medium text-gray-700 dark:text-gray-300 khmer-text-medium flex items-center gap-1">
+                                                    <label className="text-xs font-semibold text-gray-800 dark:text-gray-800 khmer-text-semibold flex items-center gap-1">
                                                         <span>💲</span>
                                                         {t("selling_price")}
-                                                        <span className="ml-1 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 rounded text-xs flex items-center gap-1">
+                                                        <span className="ml-1 px-1.5 py-0.5 bg-amber-100 dark:bg-amber-100 text-amber-700 dark:text-amber-800 rounded text-xs flex items-center gap-1">
                                                             🔒 <span className="hidden sm:inline">Admin</span>
                                                         </span>
                                                     </label>
                                                     <div className="relative">
-                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-400 font-semibold">$</span>
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 dark:text-gray-500 font-semibold">$</span>
                                                         <input
                                                             type="number"
                                                             value={item.selling_price === null || item.selling_price === undefined ? '' : item.selling_price}
                                                             step="0.001"
                                                             min="0"
                                                             disabled={true}
-                                                            className="w-full pl-8 pr-3 py-2.5 text-sm border-2 border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded-lg cursor-not-allowed font-semibold"
+                                                            className="w-full pl-8 pr-3 py-2.5 text-sm border-2 border-gray-300 dark:border-gray-300 bg-gray-100 dark:bg-gray-50 text-gray-600 dark:text-gray-800 rounded-lg cursor-not-allowed font-semibold"
                                                             title="មានតែ Admin ទេដែលអាចកែប្រែតម្លៃនេះ ក្នុង Inventory Transaction Page"
                                                         />
                                                     </div>
@@ -691,12 +690,12 @@ const IntegratedInvoiceSidebar = ({
                     </div>
 
                     {/* Customer Information Section */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                    <div className="bg-white dark:bg-white/80 rounded-xl p-4 shadow-md border border-gray-100 dark:border-white/60">
                         <SectionHeader icon={User} title={t("customer_information")} />
 
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium">
+                                <label className="block text-xs font-semibold text-gray-800 dark:text-gray-800 mb-2 khmer-text-semibold">
                                     {/* {t("customer_selection")} */}
                                 </label>
                                 <select
@@ -726,7 +725,7 @@ const IntegratedInvoiceSidebar = ({
                                             }
                                         }
                                     }}
-                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-sm bg-white khmer-text font-medium transition-all"
+                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent text-sm bg-white khmer-text font-medium transition-all"
                                 >
                                     <option value="">{t("select_customer")}</option>
                                     {/* ✅ Add General Stock Option */}
@@ -744,12 +743,12 @@ const IntegratedInvoiceSidebar = ({
                     </div>
 
                     {/* Location & Delivery Section */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                    <div className="bg-white dark:bg-white/80 rounded-xl p-4 shadow-md border border-gray-100 dark:border-white/60">
 
                         <div className="space-y-4">
                             {/* Location Selector Component */}
                             {objSummary.customer_id && (
-                                <div className="pt-3 border-t-2 border-gray-100 dark:border-slate-700">
+                                <div className="pt-3 border-t-2 border-gray-100 dark:border-gray-200">
                                     <LocationSelector
                                         customerId={objSummary.customer_id}
                                         selectedLocation={selectedLocation}
@@ -764,13 +763,13 @@ const IntegratedInvoiceSidebar = ({
                     </div>
 
                     {/* Dates & Remarks Section */}
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-4 shadow-md border border-gray-100 dark:border-slate-700">
+                    <div className="bg-white dark:bg-white/80 rounded-xl p-4 shadow-md border border-gray-100 dark:border-white/60">
                         <SectionHeader icon={Calendar} title={t("dates_remarks")} />
 
                         <div className="space-y-4">
                             {/* Order Date */}
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
+                                <label className="block text-xs font-semibold text-gray-800 dark:text-gray-800 mb-2 khmer-text-semibold flex items-center gap-2">
                                     <Calendar className="w-3.5 h-3.5 text-orange-500" />
                                     {t("order_date")}
                                 </label>
@@ -788,7 +787,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, order_date: newDate }));
                                             }
                                         }}
-                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("day")}</option>
                                         {Array.from({ length: 31 }, (_, i) => (
@@ -811,7 +810,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, order_date: newDate }));
                                             }
                                         }}
-                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("month")}</option>
                                         {getMonthNames().map((month, index) => (
@@ -834,7 +833,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, order_date: newDate }));
                                             }
                                         }}
-                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-orange-500 dark:focus:ring-orange-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("year")}</option>
                                         {Array.from({ length: 10 }, (_, i) => {
@@ -848,7 +847,7 @@ const IntegratedInvoiceSidebar = ({
                                     </select>
                                 </div>
                                 {objSummary.order_date && (
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1 khmer-text">
+                                    <p className="text-xs text-gray-600 dark:text-gray-600 mt-2 flex items-center gap-1 khmer-text">
                                         <span>✓</span>
                                         <span>{t("selected_date").replace("{date}", convertToDisplayFormat(objSummary.order_date))}</span>
                                     </p>
@@ -857,7 +856,7 @@ const IntegratedInvoiceSidebar = ({
 
                             {/* Delivery Date */}
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
+                                <label className="block text-xs font-semibold text-gray-800 dark:text-gray-800 mb-2 khmer-text-semibold flex items-center gap-2">
                                     <Truck className="w-3.5 h-3.5 text-green-500" />
                                     {t("delivery_date")}
                                 </label>
@@ -875,7 +874,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, delivery_date: newDate }));
                                             }
                                         }}
-                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("day")}</option>
                                         {Array.from({ length: 31 }, (_, i) => (
@@ -898,7 +897,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, delivery_date: newDate }));
                                             }
                                         }}
-                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("month")}</option>
                                         {getMonthNames().map((month, index) => (
@@ -921,7 +920,7 @@ const IntegratedInvoiceSidebar = ({
                                                 setObjSummary(prev => ({ ...prev, delivery_date: newDate }));
                                             }
                                         }}
-                                        className="px-3 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
+                                        className="px-3 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-green-500 dark:focus:ring-green-400 focus:border-transparent text-sm khmer-text font-medium transition-all"
                                     >
                                         <option value="">{t("year")}</option>
                                         {Array.from({ length: 10 }, (_, i) => {
@@ -935,7 +934,7 @@ const IntegratedInvoiceSidebar = ({
                                     </select>
                                 </div>
                                 {objSummary.delivery_date && (
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 flex items-center gap-1 khmer-text">
+                                    <p className="text-xs text-gray-600 dark:text-gray-600 mt-2 flex items-center gap-1 khmer-text">
                                         <span>✓</span>
                                         <span>{t("selected_date").replace("{date}", convertToDisplayFormat(objSummary.delivery_date))}</span>
                                     </p>
@@ -944,7 +943,7 @@ const IntegratedInvoiceSidebar = ({
 
                             {/* Remarks */}
                             <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2 khmer-text-medium flex items-center gap-2">
+                                <label className="block text-xs font-semibold text-gray-800 dark:text-gray-800 mb-2 khmer-text-semibold flex items-center gap-2">
                                     <FileText className="w-3.5 h-3.5 text-purple-500" />
                                     {t("remarks")}
                                 </label>
@@ -952,7 +951,7 @@ const IntegratedInvoiceSidebar = ({
                                     value={objSummary.remark || ""}
                                     onChange={(e) => setObjSummary(prev => ({ ...prev, remark: e.target.value }))}
                                     placeholder={t("add_notes")}
-                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-slate-600 dark:bg-slate-700 dark:text-gray-100 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent resize-none text-sm khmer-text transition-all"
+                                    className="w-full px-4 py-3 border-2 border-gray-200 dark:border-gray-300 dark:bg-white/50 dark:text-gray-800 rounded-xl focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 focus:border-transparent resize-none text-sm khmer-text transition-all"
                                     rows={3}
                                 />
                             </div>
@@ -1003,13 +1002,13 @@ const IntegratedInvoiceSidebar = ({
                 {/* Enhanced Footer Summary */}
                 <div className="bg-gradient-to-r from-slate-50 to-gray-100 dark:from-slate-800 dark:to-slate-900 p-5 border-t-2 border-gray-200 dark:border-slate-700">
                     <div className="text-center">
-                        <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2 khmer-text-medium">
+                        <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-600 mb-2 khmer-text-medium">
                             {t("final_total_amount")}
                         </div>
                         <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent khmer-text-bold">
                             ${Number(totalAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
-                        <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400 khmer-text">
+                        <div className="mt-2 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-600 khmer-text">
                             <Package className="w-3.5 h-3.5" />
                             <span>{cartItems.length} {t("items")}</span>
                             <span>•</span>

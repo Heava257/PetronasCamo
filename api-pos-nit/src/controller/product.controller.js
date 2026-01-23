@@ -514,8 +514,6 @@ exports.remove = async (req, res) => {
       return res.status(400).json({ message: "Product ID is required!" });
     }
 
-    await db.query("DELETE FROM product_details WHERE product_id = :id", { id });
-
     var [data] = await db.query("DELETE FROM product WHERE id = :id", { id });
 
     if (data.affectedRows === 0) {
@@ -590,7 +588,6 @@ exports.getTotalPayments = async (req, res) => {
       INNER JOIN customer cu ON p.customer_id = cu.id
       INNER JOIN user u ON cu.user_id = u.id
       INNER JOIN user cu_user ON cu_user.group_id = u.group_id
-      LEFT JOIN product_details pd ON p.order_id = pd.product_id
       ${sqlWhere}
     `;
 
@@ -614,59 +611,65 @@ exports.getProductDetail = async (req, res) => {
     const { txt_search, category_id, page, from_date, to_date, order_date, receive_date, is_list_all } = req.query;
 
     const listAll = is_list_all === 'true';
+    // ✅ Refactored to use product and inventory_transaction instead of product_details
     let sqlSelect = `
       SELECT 
-        pd.id AS detail_id,
+        it.id AS detail_id,
         p.id AS product_id,
         cu.name AS customer_name, 
-        pd.name,
-        pd.barcode AS detail_barcode,
-        pd.company_name AS detail_company_name,
-        pd.description AS detail_description,
-        pd.qty,
-        pd.unit,
-        pd.unit_price AS detail_unit_price,
-        pd.total_price,
+        p.name,
+        p.barcode AS detail_barcode,
+        p.company_name AS detail_company_name,
+        p.description AS detail_description,
+        it.quantity as qty,
+        p.unit,
+        it.unit_price AS detail_unit_price,
+        (it.quantity * it.unit_price) as total_price,
         c.actual_price,
         c.name AS category_name,
-        pd.status AS detail_status, 
-        pd.created_at AS detail_created_at,
-        pd.updated_at AS updated_at,
-        pd.created_by AS detail_created_by,
-        pd.is_completed,
-        pd.created_date AS product_create_at,
-        p.order_date AS product_created_at,
-        pd.receive_date AS receive_date,
-        p.create_by AS product_created_by,
+        it.transaction_type AS detail_status, 
+        it.created_at AS detail_created_at,
+        it.created_at AS updated_at,
+        it.user_id AS detail_created_by,
+        1 as is_completed,
+        p.create_at AS product_create_at,
+        it.created_at AS product_created_at,
+        p.receive_date AS receive_date,
+        u.name as product_created_by,
         u.group_id,
         u.name AS user_name
     `;
     let sqlFrom = `
-      FROM product_details pd
-      INNER JOIN product p ON pd.product_id = p.id
-      INNER JOIN category c ON CAST(pd.category AS UNSIGNED) = c.id
-      INNER JOIN customer cu ON pd.customer_id = cu.id 
-      INNER JOIN user u ON pd.user_id = u.id
-      INNER JOIN user cu_user ON cu_user.group_id = u.group_id
+      FROM inventory_transaction it
+      INNER JOIN product p ON it.product_id = p.id
+      INNER JOIN category c ON p.category_id = c.id
+      INNER JOIN customer cu ON p.customer_id = cu.id 
+      INNER JOIN user u ON it.user_id = u.id
     `;
-    let sqlWhere = `WHERE cu_user.id = ?`;
-    const params = [req.current_id];
+    let sqlWhere = `WHERE 1=1`;
+    const params = [];
+
+    // Filter by branch/group access if needed
+    if (req.auth) {
+      sqlWhere += ` AND u.group_id = (SELECT group_id FROM user WHERE id = ?)`;
+      params.push(req.current_id);
+    }
 
 
     if (order_date) {
-      sqlWhere += ` AND DATE(pd.created_date) = DATE(?)`;
+      sqlWhere += ` AND DATE(it.created_at) = DATE(?)`;
       params.push(order_date);
     } else if (receive_date) {
-      sqlWhere += ` AND DATE(pd.receive_date) = DATE(?)`;
+      sqlWhere += ` AND DATE(p.receive_date) = DATE(?)`;
       params.push(receive_date);
     } else if (from_date && to_date) {
-      sqlWhere += ` AND DATE(pd.created_date) >= DATE(?) AND DATE(pd.created_date) <= DATE(?)`;
+      sqlWhere += ` AND DATE(it.created_at) >= DATE(?) AND DATE(it.created_at) <= DATE(?)`;
       params.push(from_date, to_date);
     } else if (from_date) {
-      sqlWhere += ` AND DATE(pd.created_date) >= DATE(?)`;
+      sqlWhere += ` AND DATE(it.created_at) >= DATE(?)`;
       params.push(from_date);
     } else if (to_date) {
-      sqlWhere += ` AND DATE(pd.created_date) <= DATE(?)`;
+      sqlWhere += ` AND DATE(it.created_at) <= DATE(?)`;
       params.push(to_date);
     }
 
@@ -674,10 +677,10 @@ exports.getProductDetail = async (req, res) => {
       const pattern = `%${txt_search}%`;
       sqlWhere += `
         AND (
-          pd.name LIKE ? OR 
-          pd.barcode LIKE ? OR 
-          pd.company_name LIKE ? OR 
-          pd.description LIKE ? OR
+          p.name LIKE ? OR 
+          p.barcode LIKE ? OR 
+          p.company_name LIKE ? OR 
+          p.description LIKE ? OR
           c.name LIKE ? OR
           cu.name LIKE ?
         )
@@ -686,7 +689,7 @@ exports.getProductDetail = async (req, res) => {
     }
 
     if (category_id) {
-      sqlWhere += ` AND CAST(pd.category AS UNSIGNED) = ?`;
+      sqlWhere += ` AND p.category_id = ?`;
       params.push(category_id);
     }
 
@@ -696,8 +699,8 @@ exports.getProductDetail = async (req, res) => {
 
     const summarySql = `
       SELECT 
-        SUM(pd.qty) AS totalQuantity,
-        SUM((pd.qty * pd.unit_price) / c.actual_price) AS totalValue
+        SUM(it.quantity) AS totalQuantity,
+        SUM((it.quantity * it.unit_price) / c.actual_price) AS totalValue
       ${sqlFrom}
       ${sqlWhere}
     `;
@@ -741,7 +744,7 @@ exports.getProductDetail = async (req, res) => {
       remainingBalance: parseFloat(summaryRows[0]?.totalValue || 0) - parseFloat(paymentRows[0]?.totalPaid || 0)
     };
 
-    let sql = `${sqlSelect} ${sqlFrom} ${sqlWhere} ORDER BY CAST(pd.description AS UNSIGNED) ASC`;
+    let sql = `${sqlSelect} ${sqlFrom} ${sqlWhere} ORDER BY it.created_at DESC`;
 
     if (!listAll && page) {
       const pageSize = 10;
@@ -781,39 +784,7 @@ exports.getProductDetail = async (req, res) => {
   }
 };
 exports.updateProductCompletion = async (req, res) => {
-  try {
-    const { detail_id, is_completed } = req.body;
-
-    if (!detail_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Product detail ID is required"
-      });
-    }
-
-    const sql = `
-      UPDATE product_details  
-      SET is_completed = ?, updated_at = NOW() 
-      WHERE id = ?
-    `;
-
-    const [result] = await db.query(sql, [is_completed ? 1 : 0, detail_id]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Product detail not found"
-      });
-    }
-
-    res.json({
-      success: true,
-      message: "Completion status updated successfully"
-    });
-
-  } catch (error) {
-    logError("updateProductCompletion", error)
-  }
+  res.json({ success: true, message: "Completion feature for product_details table is disabled (table removed)." });
 };
 
 

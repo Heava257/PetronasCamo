@@ -1039,20 +1039,7 @@ exports.updateCustomerDebt = async (req, res) => {
 
     let productDescription = description;
 
-    if (!productDescription) {
-      const [productDetailsRows] = await connection.query(
-        `SELECT pd.description
-         FROM product_details pd
-         JOIN customer_debt cd ON cd.customer_id = pd.customer_id 
-           AND CAST(pd.category AS UNSIGNED) = cd.category_id
-         WHERE cd.order_id = ?
-         ORDER BY pd.created_at DESC
-         LIMIT 1`,
-        [order_id]
-      );
-
-      productDescription = productDetailsRows[0]?.description || `Order-${order_id}`;
-    }
+    productDescription = `Order-${order_id}`;
 
     const slipFiles = req.files?.["upload_image_optional"] || [];
     const slipPaths = slipFiles.map((file) => file.path || file.filename);
@@ -1529,19 +1516,18 @@ exports.updateDebt = async (req, res) => {
       const targetCategoryId = category_id || existingDebt[0].category_id;
 
       const getOrderDetailQuery = `
-        SELECT od.id as order_detail_id, p.id as product_id, pd.id as product_detail_id
+        SELECT od.id as order_detail_id, p.id as product_id
         FROM customer_debt cd
         JOIN \`order\` o ON cd.order_id = o.id
         JOIN order_detail od ON o.id = od.order_id
         JOIN product p ON od.product_id = p.id
-        LEFT JOIN product_details pd ON p.id = pd.product_id
         WHERE cd.id = ? AND p.category_id = ?
         LIMIT 1
       `;
       const [orderDetailResult] = await db.query(getOrderDetailQuery, [debt_id, targetCategoryId]);
 
       if (orderDetailResult.length > 0) {
-        const { order_detail_id, product_detail_id } = orderDetailResult[0];
+        const { order_detail_id } = orderDetailResult[0];
 
         if (unit_price !== undefined) {
           const updateOrderDetailQuery = `
@@ -1550,15 +1536,6 @@ exports.updateDebt = async (req, res) => {
             WHERE id = ?
           `;
           await db.query(updateOrderDetailQuery, [unit_price, order_detail_id]);
-        }
-
-        if (qty !== undefined && product_detail_id) {
-          const updateProductDetailsQuery = `
-            UPDATE product_details 
-            SET qty = ?
-            WHERE id = ?
-          `;
-          await db.query(updateProductDetailsQuery, [qty, product_detail_id]);
         }
       } else {
         return res.status(400).json({
@@ -1576,36 +1553,7 @@ exports.updateDebt = async (req, res) => {
         od.price AS unit_price,
         p.name AS product_name,
         p.barcode AS product_barcode,
-        pd.qty AS product_qty,
         cat.name AS category_name,
-        cd.actual_price AS debt_actual_price,
-        cat.actual_price AS category_actual_price,
-        COALESCE(
-          NULLIF(cd.actual_price, 0), 
-          cat.actual_price
-        ) AS effective_actual_price,
-        DATE_FORMAT(cd.due_date, '%Y-%m-%d') AS formatted_due_date,
-        DATE_FORMAT(cd.last_payment_date, '%Y-%m-%d') AS formatted_last_payment_date,
-        DATE_FORMAT(cd.created_at, '%Y-%m-%d %H:%i:%s') AS formatted_created_at,
-        DATE_FORMAT(cd.updated_at, '%Y-%m-%d %H:%i:%s') AS formatted_updated_at,
-        DATE_FORMAT(o.delivery_date, '%Y-%m-%d') AS formatted_delivery_date,
-        DATE_FORMAT(o.order_date, '%Y-%m-%d') AS formatted_order_date,
-        CASE 
-          WHEN cd.due_date IS NOT NULL AND cd.due_date < CURDATE() AND cd.payment_status != 'Paid' 
-          THEN DATEDIFF(CURDATE(), cd.due_date)
-          ELSE NULL
-        END AS days_overdue,
-        CASE 
-          WHEN COALESCE(NULLIF(cd.actual_price, 0), cat.actual_price) > 0 
-          THEN (od.price * cd.qty) / COALESCE(NULLIF(cd.actual_price, 0), cat.actual_price)
-          ELSE 0
-        END AS calculated_amount_using_effective_price
-      FROM customer_debt cd
-      JOIN customer c ON cd.customer_id = c.id
-      JOIN \`order\` o ON cd.order_id = o.id
-      LEFT JOIN order_detail od ON o.id = od.order_id
-      LEFT JOIN product p ON od.product_id = p.id AND p.category_id = cd.category_id
-      LEFT JOIN product_details pd ON p.id = pd.product_id
       LEFT JOIN category cat ON cd.category_id = cat.id
       WHERE cd.id = ?
       LIMIT 1
@@ -1703,17 +1651,7 @@ exports.deleteDebt = async (req, res) => {
       [orderId]
     );
 
-    // ✅ Step 4: Delete product_details (BEFORE deleting order_detail!)
-    let productDetailsDeleted = 0;
-    if (orderProducts.length > 0) {
-      const productIds = orderProducts.map(p => p.product_id);
-      const [deleteProductDetailsResult] = await connection.query(
-        `DELETE FROM product_details 
-         WHERE customer_id = ? AND product_id IN (?)`,
-        [debtRecord.customer_id, productIds]
-      );
-      productDetailsDeleted = deleteProductDetailsResult.affectedRows;
-    }
+    // ✅ Removed product_details deletion as table does not exist
 
     // ✅ Step 5: Delete payments
     const [deletePaymentsResult] = await connection.query(
@@ -1757,7 +1695,6 @@ exports.deleteDebt = async (req, res) => {
         order_id: orderId
       },
       debug_info: {
-        product_details_deleted: productDetailsDeleted,
         payments_deleted: deletePaymentsResult.affectedRows,
         order_details_deleted: deleteOrderDetailResult.affectedRows,
         debts_deleted: deleteDebtResult.affectedRows,

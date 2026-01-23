@@ -6,12 +6,18 @@
 /* Apply template background to body and layout */
 body {
   background: var(--bg-main, #f0f2f5);
+  /* Use transparent in template if needed */
   margin: 0;
   padding: 0;
 }
 
+body.dark-mode {
+  background: transparent !important;
+  /* Force transparent in dark mode */
+}
+
 .ant-layout {
-  background: var(--bg-main, #f0f2f5) !important;
+  background: transparent !important;
 }
 
 /* Layout constants (not template-specific) */
@@ -251,6 +257,23 @@ div {
   font-size: var(--font-size-base, 14px);
   transition: all 0.25s ease;
   cursor: pointer;
+  position: relative;
+}
+
+/* Add vertical dotted line for parent items */
+.hierarchical-menu-item::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: -4px;
+  width: 1px;
+  border-left: 2px dotted var(--border-color, rgba(0, 0, 0, 0.3));
+  display: none;
+}
+
+.dark .hierarchical-menu-item::after {
+  border-left-color: rgba(22, 21, 21, 0.3);
 }
 
 .hierarchical-menu-item:hover {
@@ -285,9 +308,98 @@ div {
   flex: 1;
 }
 
+.submenu {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.3s ease-out;
+  padding-left: 0;
+  margin-left: 48px;
+  margin-top: -4px;
+}
+
+.submenu.expanded {
+  grid-template-rows: 1fr;
+  margin-bottom: 8px;
+  /* Add margin only when expanded */
+}
+
+.submenu-inner {
+  overflow: hidden;
+  /* Make sure inner content renders correctly */
+  min-height: 0;
+}
+
+/* Vertical dotted line for submenu - starts from parent */
+.submenu::before {
+  content: '';
+  position: absolute;
+  left: -36px;
+  top: 0;
+  bottom: 8px;
+  width: 0;
+  border-left: 1px dotted #000 !important;
+  background: transparent;
+  opacity: 1;
+  z-index: 10;
+}
+
+.dark .submenu::before {
+  border-left-color: rgba(255, 255, 255, 0.8) !important;
+}
+
 .submenu-item {
   font-size: var(--font-size-sm, 12px);
   padding: calc(var(--font-size-base, 14px) * 0.5) 12px;
+  padding-left: 4px;
+  position: relative;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+/* Horizontal dotted connector line from vertical to item */
+.submenu-item::before {
+  content: '';
+  position: absolute;
+  left: -36px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 0;
+  border-top: 1px dotted #000 !important;
+  background: transparent;
+  opacity: 1;
+  z-index: 10;
+}
+
+.dark .submenu-item::before {
+  border-top-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.expand-icon {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--text-muted, #94a3b8);
+  border-radius: 3px;
+  background: white;
+  font-size: 14px;
+  font-weight: bold;
+  color: var(--text-muted, #64748b);
+  transition: all 0.25s ease;
+}
+
+.dark .expand-icon {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.hierarchical-menu-item:hover .expand-icon {
+  border-color: var(--primary-color, #3b82f6);
+  color: var(--primary-color, #3b82f6);
 }
 
 /* Header Styles */

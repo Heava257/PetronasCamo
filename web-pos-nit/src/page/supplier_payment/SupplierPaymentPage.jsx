@@ -293,12 +293,14 @@ function SupplierPaymentPage() {
                     const qty = parseFloat(item.quantity || item.qty || 0);
                     const amount = parseFloat(item.total || item.amount || (qty * parseFloat(item.unit_price || item.price || 0)));
 
-                    if (name.includes('gasoline') || name.includes('extra') || name.includes('ស៊ីឡែម') || name.includes('xăng')) {
+                    if (name.includes('gasoline') || name.includes('extra') || name.includes('super') || name.includes('95') || name.includes('92') || name.includes('សាំង') || name.includes('benzine')) {
                         gasolineQty += qty;
                         gasolineAmount += amount;
-                    } else if (name.includes('diesel') || name.includes('euro') || name.includes('ជាតិ') || name.includes('dầu')) {
+                    } else if (name.includes('diesel') || name.includes('euro') || name.includes('ម៉ាស៊ូត') || name.includes('dầu')) {
                         dieselQty += qty;
                         dieselAmount += amount;
+                    } else if (name.includes('ហ្គា') || name.includes('ហ្កា') || name.includes('lpg') || name.includes('gas')) {
+                        // For future use if gas totals are needed
                     }
                 });
             } catch (e) {
@@ -346,6 +348,12 @@ function SupplierPaymentPage() {
                     title: "Extra (L)",
                     width: 100,
                     dataIndex: "fuel_extra",
+                    render: (val) => val > 0 ? val.toLocaleString() : '-'
+                },
+                {
+                    title: "Gas (L)",
+                    width: 100,
+                    dataIndex: "fuel_gas",
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {

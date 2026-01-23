@@ -10,11 +10,11 @@ import {
 import { request } from "../../util/helper";
 import { Config } from "../../util/config";
 import { getProfile, setProfile } from "../../store/profile.store";
-import { useDarkMode } from "../../component/DarkModeContext.jsx";
+import { useSettings } from "../../settings";
 import styles from "./ProfilePage.module.css";
 
 const ProfilePage = () => {
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
+  const { isDarkMode, toggleDarkMode } = useSettings();
   const [personalInfoForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
