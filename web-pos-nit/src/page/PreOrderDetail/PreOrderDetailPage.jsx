@@ -62,6 +62,8 @@ function PreOrderDetailPage() {
     useEffect(() => {
         if (id) {
             loadPreOrderDetail();
+        } else {
+            navigate('/pre-order-management');
         }
     }, [id]);
 
@@ -114,11 +116,6 @@ function PreOrderDetailPage() {
         return texts[status] || status;
     };
 
-    if (!id) {
-        // Redirect to management page if no ID provided
-        navigate('/pre-order-management');
-        return null;
-    }
 
     if (state.loading) {
         return <MainPage><div style={{ textAlign: 'center', marginTop: 50 }}><Spin size="large" /></div></MainPage>;
@@ -180,7 +177,7 @@ function PreOrderDetailPage() {
 
                         {/* Receipt Body */}
                         <div className="receipt-header">
-                            <Title level={2} className="m-0 khmer-text-product">📦 STOCK UPDATES 📝</Title>
+                            <Title level={2} className="m-0 khmer-text-product">📦 PRE-ORDER DETAIL 📝</Title>
                         </div>
 
                         {/* Customer Info */}
@@ -217,15 +214,15 @@ function PreOrderDetailPage() {
                             {state.details.map((item, index) => (
                                 <div key={item.id || index} className="receipt-item">
                                     <div className="receipt-item-header khmer-text-product">
-                                        🔄 {index + 1}. STOCK UPDATED
+                                        🛍️ {index + 1}. PRODUCT DETAIL
                                     </div>
                                     <div className="receipt-detail-row">
                                         <span className="receipt-label khmer-text-product">• Category:</span>
                                         <span className="receipt-value khmer-text-product">{item.category_name}</span>
                                     </div>
                                     <div className="receipt-detail-row">
-                                        <span className="receipt-label khmer-text-product">• Company:</span>
-                                        <span className="receipt-value">{item.company_name || ""}</span>
+                                        <span className="receipt-label khmer-text-product">• Supplier:</span>
+                                        <span className="receipt-value">{item.supplier_name || ""}</span>
                                     </div>
                                     {item.destination && (
                                         <div className="receipt-detail-row">

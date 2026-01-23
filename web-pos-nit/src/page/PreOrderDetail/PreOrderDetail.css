@@ -129,3 +129,148 @@
 .dark .font-semibold {
   color: #ffffff;
 }
+
+/* Receipt Styling */
+.receipt-container {
+  max-width: 600px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 30px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-family: 'Khmer OS Battambang', 'Hanuman', sans-serif;
+}
+
+.dark .receipt-container {
+  background: #1f1f1f;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+
+.receipt-header {
+  text-align: center;
+  border-bottom: 2px solid #333;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.dark .receipt-header {
+  border-bottom-color: #444;
+}
+
+.receipt-section {
+  margin-bottom: 20px;
+}
+
+.receipt-section-title {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #1890ff;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 5px;
+}
+
+.dark .receipt-section-title {
+  border-bottom-color: #333;
+}
+
+.receipt-detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.receipt-label {
+  color: #666;
+}
+
+.dark .receipt-label {
+  color: #aaa;
+}
+
+.receipt-value {
+  font-weight: 500;
+  text-align: right;
+}
+
+.receipt-separator {
+  text-align: center;
+  color: #ccc;
+  margin: 15px 0;
+  letter-spacing: 2px;
+}
+
+.receipt-item-list {
+  margin-bottom: 20px;
+}
+
+.receipt-item {
+  padding: 10px;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+
+.dark .receipt-item {
+  background: #262626;
+  border-color: #333;
+}
+
+.receipt-item-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #555;
+  font-size: 15px;
+}
+
+.dark .receipt-item-header {
+  color: #ddd;
+}
+
+.grand-total-section {
+  border-top: 2px solid #333;
+  padding-top: 15px;
+  margin-top: 10px;
+}
+
+.dark .grand-total-section {
+  border-top-color: #444;
+}
+
+.grand-total-row {
+  font-size: 20px;
+  font-weight: bold;
+  color: #52c41a;
+  text-align: right;
+  margin-bottom: 10px;
+}
+
+.receipt-footer-row {
+  text-align: right;
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 3px;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .pre-order-detail-container {
+    padding: 0;
+  }
+
+  .receipt-container {
+    box-shadow: none;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  body {
+    background: white !important;
+  }
+}

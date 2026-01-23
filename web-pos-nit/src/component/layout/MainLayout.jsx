@@ -118,7 +118,7 @@ const menuItems = [
     category: "OPERATIONS",
     children: [
       { key: "pre-order-management", label: "menu.pre_order_management" },
-      { key: "pre-order-detail", label: "menu.pre_order_detail" },
+      // { key: "pre-order-detail", label: "menu.pre_order_detail" },
     ],
   },
   {
@@ -459,8 +459,13 @@ const CleanDarkLayout = () => {
   useEffect(() => {
     if (!permision || permision.length === 0) return;
 
-    const findIndex = permision.findIndex(
-      (item) => item.web_route_key === location.pathname
+    const findIndex = (permision || []).findIndex(
+      (item) => {
+        const routeKey = item.web_route_key;
+        if (!routeKey) return false;
+        // Check for exact match or if current path starts with permitted route as a base path
+        return location.pathname === routeKey || location.pathname.startsWith(routeKey + "/");
+      }
     );
 
     if (findIndex === -1 && location.pathname !== "/login") {
@@ -472,8 +477,9 @@ const CleanDarkLayout = () => {
 
   // Update selected key based on location
   useEffect(() => {
-    const path = location.pathname.substring(1);
-    setSelectedKey(path);
+    // For dynamic routes, use the base path segment as the selected key
+    const pathParts = location.pathname.substring(1).split('/');
+    setSelectedKey(pathParts[0]);
   }, [location.pathname]);
 
   // Fullscreen listener

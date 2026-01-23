@@ -478,6 +478,7 @@ exports.getPreOrderById = async (req, res) => {
                 p.actual_price as product_actual_price,
                 p.category_id,
                 p.qty as available_qty,
+                p.supplier_name,
                 c.actual_price as category_actual_price,
                 c.name as category_name
              FROM pre_order_detail pod 
