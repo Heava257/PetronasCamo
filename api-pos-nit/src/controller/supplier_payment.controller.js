@@ -231,7 +231,7 @@ exports.getLedger = async (req, res) => {
         // Get purchases - select specific columns with paid amount calculation
         let purchaseSql = `
       SELECT 
-        p.id,
+        CONCAT('pur-', p.id) as id,
         p.order_no,
         p.order_date as transaction_date,
         p.total_amount as debit,
@@ -263,7 +263,7 @@ exports.getLedger = async (req, res) => {
         // Get payments - select matching columns (must match purchase query for UNION)
         let paymentSql = `
       SELECT 
-        sp.id,
+        CONCAT('pay-', sp.id) as id,
         p.order_no as order_no,
         sp.payment_date as transaction_date,
         0 as debit,

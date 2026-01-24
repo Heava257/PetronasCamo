@@ -316,8 +316,9 @@ function SupplierPaymentPage() {
             duplicateSlipFound: false,
             invalidSlipFound: false,
             scanning: false,
-            slip_image: null // Clear any previous slip image
+            slip_image: null
         }));
+        form.setFieldsValue({ slip_image_url: null });
     };
 
     const handleScanSlip = async (file) => {
@@ -388,7 +389,8 @@ function SupplierPaymentPage() {
                     note: description || `Auto-scanned`
                 });
 
-                message.success("Slip scanned successfully! Details filled.");
+                const dateNotice = date ? ` (Date detected: ${date})` : "";
+                message.success(`Slip scanned successfully! Details filled.${dateNotice}`);
             } else {
                 message.warning("Could not read slip details. Please fill manually.");
             }
@@ -418,9 +420,10 @@ function SupplierPaymentPage() {
             okType: 'danger',
             cancelText: 'No',
             onOk: async () => {
+                const realId = record.id.split('-')[1]; // Extract numeric ID from pur-123 or pay-456
                 const url = record.transaction_type === 'purchase'
-                    ? `purchase/${record.id.split('-')[0]}` // Extract real ID if it was split
-                    : `supplier_payment/${record.id}`;
+                    ? `purchase/${realId}`
+                    : `supplier_payment/${realId}`;
 
                 const res = await request(url, "delete");
                 if (res && !res.error) {
@@ -461,6 +464,7 @@ function SupplierPaymentPage() {
                 setState(p => ({ ...p, paymentModalVisible: false, slip_image: null })); // Close and clear
                 loadLedger();
                 form.resetFields();
+                form.setFieldsValue({ slip_image_url: null }); // Explicit clear
             } else {
                 message.error(res.message || "Failed to record payment");
             }
@@ -947,7 +951,8 @@ function SupplierPaymentPage() {
                     open={state.paymentModalVisible}
                     onCancel={() => {
                         form.resetFields();
-                        setState(p => ({ ...p, paymentModalVisible: false }));
+                        form.setFieldsValue({ slip_image_url: null, bank_ref: null });
+                        setState(p => ({ ...p, paymentModalVisible: false, slip_image: null, duplicateSlipFound: false, invalidSlipFound: false }));
                     }}
                     footer={null}
                     width={700}
@@ -1027,12 +1032,14 @@ function SupplierPaymentPage() {
                                                         }
                                                     }}
                                                     onRemove={() => {
-                                                        setState(p => ({ ...p, duplicateSlipFound: false, invalidSlipFound: false }));
+                                                        setState(p => ({ ...p, duplicateSlipFound: false, invalidSlipFound: false, slip_image: null }));
                                                         form.setFieldsValue({
                                                             amount: undefined,
                                                             bank_name: undefined,
                                                             note: undefined,
-                                                            reference_no: undefined
+                                                            reference_no: undefined,
+                                                            slip_image_url: null,
+                                                            bank_ref: null
                                                         });
                                                     }}
                                                 >
