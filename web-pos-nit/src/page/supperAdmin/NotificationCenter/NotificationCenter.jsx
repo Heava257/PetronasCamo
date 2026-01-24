@@ -75,23 +75,23 @@ const TelegramNotificationCard = ({ notification, onMarkAsRead, onDelete, onCopy
       text += `Method: ${payment.payment_method}\n`;
       if (payment.bank) text += `Bank: ${payment.bank}\n`;
       text += `Date: ${payment.payment_date_formatted}\n\n`;
-      
+
       text += `👤 Customer Information:\n`;
       text += `Name: ${customer.name}\n`;
       text += `Phone: ${customer.phone}\n`;
       text += `Address: ${customer.address}\n\n`;
-      
+
       if (payment.debts_updated > 0) {
         text += `📊 Payment Summary:\n`;
         text += `Total Paid: $${payment.total_paid}\n`;
         text += `Total Due: $${payment.total_due}\n`;
         text += `Debts Updated: ${payment.debts_updated}\n`;
       }
-      
+
       if (payment.notes) {
         text += `\n📝 Notes: ${payment.notes}\n`;
       }
-      
+
       text += `\n✅ Processed by: ${payment.processed_by}\n`;
     }
 
@@ -130,22 +130,20 @@ const TelegramNotificationCard = ({ notification, onMarkAsRead, onDelete, onCopy
   };
 
   return (
-    <div className={`relative mb-4 rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${
-      isNew ? 'animate-slide-in-telegram border-4 border-green-400' : 'border-2 border-gray-700'
-    }`}>
+    <div className={`relative mb-4 rounded-xl overflow-hidden shadow-2xl transition-all duration-300 ${isNew ? 'animate-slide-in-telegram border-4 border-green-400' : 'border-2 border-gray-700'
+      }`}>
 
       {/* Header Bar */}
-      <div className={`px-4 py-3 flex items-center justify-between ${
-        isPaymentReceived
-          ? 'bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500'
-          : isStockUpdate
+      <div className={`px-4 py-3 flex items-center justify-between ${isPaymentReceived
+        ? 'bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500'
+        : isStockUpdate
           ? 'bg-gradient-to-r from-purple-600 via-pink-500 to-red-500'
           : isCustomerCreated
-          ? 'bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500'
-          : isLoginAlert
-          ? 'bg-gradient-to-r from-indigo-600 via-blue-500 to-cyan-500'
-          : 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500'
-      }`}>
+            ? 'bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500'
+            : isLoginAlert
+              ? 'bg-gradient-to-r from-indigo-600 via-blue-500 to-cyan-500'
+              : 'bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500'
+        }`}>
         <div className="flex items-center gap-3">
           <div className={`p-2 bg-white/20 rounded-full ${isNew ? 'animate-bounce' : ''}`}>
             {isPaymentReceived ? (
@@ -163,15 +161,15 @@ const TelegramNotificationCard = ({ notification, onMarkAsRead, onDelete, onCopy
           <div>
             <div className="flex items-center gap-2">
               <span className="text-white font-bold text-lg uppercase tracking-wide">
-                {isPaymentReceived
+                {notification.title || (isPaymentReceived
                   ? 'PAYMENT ALERT'
                   : isStockUpdate
-                  ? 'STOCK ALERT'
-                  : isCustomerCreated
-                  ? 'CUSTOMER ALERT'
-                  : isLoginAlert
-                  ? 'LOGIN ALERT'
-                  : (notification.branch_name || 'SYSTEM') + ' ALERT'}
+                    ? 'STOCK ALERT'
+                    : isCustomerCreated
+                      ? 'CUSTOMER ALERT'
+                      : isLoginAlert
+                        ? 'LOGIN ALERT'
+                        : (notification.branch_name || 'SYSTEM') + ' ALERT')}
               </span>
               {isNew && (
                 <span className="bg-green-400 text-gray-900 text-xs font-bold px-3 py-1 rounded-full animate-pulse">
@@ -221,49 +219,29 @@ const TelegramNotificationCard = ({ notification, onMarkAsRead, onDelete, onCopy
 
         {/* Success/Info Badge */}
         <div className="px-4 pt-4">
-          <div className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 border-2 ${
-            isPaymentReceived
-              ? 'bg-green-500/20 border-green-500'
-              : isStockUpdate
+          <div className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 border-2 ${isPaymentReceived
+            ? 'bg-green-500/20 border-green-500'
+            : isStockUpdate
               ? 'bg-purple-500/20 border-purple-500'
               : isCustomerCreated
-              ? 'bg-green-500/20 border-green-500'
-              : isLoginAlert
-              ? 'bg-blue-500/20 border-blue-500'
-              : 'bg-green-500/20 border-green-500'
-          }`}>
-            {isPaymentReceived ? (
-              <>
-                <DollarSign className="w-5 h-5 text-green-400" />
-                <span className="text-green-300 font-bold text-lg">
-                  Payment Received! 💰
-                </span>
-              </>
-            ) : isStockUpdate ? (
-              <>
-                <Package className="w-5 h-5 text-purple-400" />
-                <span className="text-purple-300 font-bold text-lg">
-                  Stock {notification.data?.is_new ? 'Added' : 'Updated'}!
-                </span>
-              </>
-            ) : isCustomerCreated ? (
-              <>
-                <UserCheck className="w-5 h-5 text-green-400" />
-                <span className="text-green-300 font-bold text-lg">New Customer Added! 🎉</span>
-              </>
-            ) : isLoginAlert ? (
-              <>
-                <Lock className="w-5 h-5 text-blue-400" />
-                <span className="text-blue-300 font-bold text-lg">Login Alert</span>
-              </>
-            ) : isOrderCreated ? (
-              <>
-                <Check className="w-5 h-5 text-green-400" />
-                <span className="text-green-300 font-bold text-lg">Order Completed!</span>
-              </>
-            ) : (
-              <span className="text-gray-400">Unknown Notification</span>
-            )}
+                ? 'bg-green-500/20 border-green-500'
+                : isLoginAlert
+                  ? 'bg-blue-500/20 border-blue-500'
+                  : 'bg-green-500/20 border-green-500'
+            }`}>
+            <span className="text-gray-300 font-bold text-lg">
+              {notification.title || (isPaymentReceived
+                ? 'Payment Received! 💰'
+                : isStockUpdate
+                  ? 'Stock Updated!'
+                  : isCustomerCreated
+                    ? 'New Customer Added! 🎉'
+                    : isLoginAlert
+                      ? 'Login Alert 🔐'
+                      : isOrderCreated
+                        ? 'Order Completed! ✅'
+                        : 'New Notification')}
+            </span>
           </div>
         </div>
 
@@ -480,7 +458,7 @@ const TelegramNotificationCard = ({ notification, onMarkAsRead, onDelete, onCopy
             </>
           )}
 
-        
+
           {isLoginAlert && notification.data?.login_info && (
             <>
               {/* User Section */}
@@ -860,13 +838,13 @@ export default function NotificationCenter() {
   const [stats, setStats] = useState({});
   const [branches, setBranches] = useState([]);
   const [toast, setToast] = useState(null);
-  
+
   // ✅ NEW: Date range state
   const [dateRange, setDateRange] = useState({
     from: '', // Empty = no limit
     to: ''    // Empty = no limit
   });
-  
+
   const [filters, setFilters] = useState({
     branch_name: 'all',
     notification_type: 'all',
@@ -882,8 +860,8 @@ export default function NotificationCenter() {
   const setQuickDate = (preset) => {
     const today = new Date();
     const formatDate = (date) => date.toISOString().split('T')[0];
-    
-    switch(preset) {
+
+    switch (preset) {
       case 'today':
         setDateRange({
           from: formatDate(today),
@@ -995,7 +973,7 @@ export default function NotificationCenter() {
       if (filters.priority !== 'all') params.priority = filters.priority;
       if (filters.is_read !== 'all') params.is_read = filters.is_read;
       if (filters.search) params.search = filters.search;
-      
+
       // ✅ NEW: Add date range parameters
       if (dateRange.from) params.date_from = dateRange.from;
       if (dateRange.to) params.date_to = dateRange.to;
@@ -1051,11 +1029,11 @@ export default function NotificationCenter() {
   const fetchStats = async () => {
     try {
       const params = {};
-      
+
       // ✅ NEW: Add date range to stats
       if (dateRange.from) params.date_from = dateRange.from;
       if (dateRange.to) params.date_to = dateRange.to;
-      
+
       const response = await request('notifications/stats', 'get', params);
       if (response?.success) {
         setStats(response.stats || {});
@@ -1399,11 +1377,10 @@ export default function NotificationCenter() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white flex items-center gap-3 animate-slide-in z-50 ${
-          toast.type === 'success' ? 'bg-green-500' :
+        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white flex items-center gap-3 animate-slide-in z-50 ${toast.type === 'success' ? 'bg-green-500' :
           toast.type === 'error' ? 'bg-red-500' :
-          'bg-blue-500'
-        }`}>
+            'bg-blue-500'
+          }`}>
           {toast.type === 'success' && <Check className="w-5 h-5" />}
           {toast.type === 'error' && <X className="w-5 h-5" />}
           {toast.type === 'info' && <Bell className="w-5 h-5" />}

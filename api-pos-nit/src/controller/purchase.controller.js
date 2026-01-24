@@ -233,6 +233,7 @@ exports.create = async (req, res) => {
         const notificationResult = await sendSmartNotification({
           event_type: 'purchase_created',
           branch_name: branch_name,
+          title: `🆕 New Purchase: ${order_no}`,
           message: message,
           severity: 'normal'
         });
@@ -463,6 +464,7 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
         sendSmartNotification({
           event_type: 'purchase_status_changed',
           branch_name: branch_name,
+          title: `🔄 Purchase ${order_no} Status: ${statusText[status] || status}`,
           message: telegramMessage,
           severity: status === 'delivered' ? 'high' : 'normal'
         }).catch(err => {
@@ -721,6 +723,7 @@ ${deliveredProductDetails}
           sendSmartNotification({
             event_type: 'purchase_delivered',
             branch_name: branch_name,
+            title: `🚚 Purchase Delivered: ${order_no}`,
             message: inventoryMessage,
             severity: 'high'
           }).catch(err => console.error('❌ Telegram notification failed:', err));

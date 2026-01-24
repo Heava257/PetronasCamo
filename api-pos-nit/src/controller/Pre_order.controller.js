@@ -283,6 +283,7 @@ ${special_instructions ? `📝 <b>Special Instructions:</b>\n${special_instructi
         const notificationResult = await sendSmartNotification({
           event_type: 'pre_order_created', // Pre-orders use order_created event
           branch_name: branch_name,
+          title: `🔖 Pre-Order Created: ${pre_order_no}`,
           message: telegramMessage,
           severity: 'normal'
         });

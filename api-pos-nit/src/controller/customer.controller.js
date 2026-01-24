@@ -5,7 +5,7 @@ const { createSystemNotification } = require("./System_notification.controller")
 exports.getListByCurrentUserGroup = async (req, res) => {
   try {
     const { txtSearch } = req.query;
-    
+
     const currentUserBranch = req.auth?.branch_name;
     const currentUserId = req.current_id;
 
@@ -450,16 +450,16 @@ function assessCustomerRisk({ outstandingBalance, monthlyIncome, activeLoans, pa
 
 exports.create = async (req, res) => {
   try {
-    const { 
-      name, 
-      tel, 
-      email, 
-      address, 
-      type, 
-      gender, 
-      id_card_number, 
-      id_card_expiry, 
-      spouse_name, 
+    const {
+      name,
+      tel,
+      email,
+      address,
+      type,
+      gender,
+      id_card_number,
+      id_card_expiry,
+      spouse_name,
       spouse_tel,
       guarantor_name,
       guarantor_tel,
@@ -482,19 +482,19 @@ exports.create = async (req, res) => {
 
     const [existing] = await db.query(`SELECT id FROM customer WHERE tel = ?`, [tel]);
     if (existing.length > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        error: true, 
-        message: "លេខទូរស័ព្ទនេះមានរួចហើយ។ សូមប្រើលេខផ្សេង។" 
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "លេខទូរស័ព្ទនេះមានរួចហើយ។ សូមប្រើលេខផ្សេង។"
       });
     }
 
     const [existingEmail] = await db.query(`SELECT id FROM customer WHERE email = ?`, [email]);
     if (existingEmail.length > 0) {
-      return res.status(400).json({ 
-        success: false, 
-        error: true, 
-        message: "អ៊ីមែលនេះមានរួចហើយ។ សូមប្រើអ៊ីមែលផ្សេង។" 
+      return res.status(400).json({
+        success: false,
+        error: true,
+        message: "អ៊ីមែលនេះមានរួចហើយ។ សូមប្រើអ៊ីមែលផ្សេង។"
       });
     }
 
@@ -511,7 +511,7 @@ exports.create = async (req, res) => {
 
     const params = [
       name, tel, email, address || null, type, gender || null, createdBy, userId,
-      id_card_number || null, id_card_expiry || null, spouse_name || null, spouse_tel || null, 
+      id_card_number || null, id_card_expiry || null, spouse_name || null, spouse_tel || null,
       guarantor_name || null, guarantor_tel || null, status, branch_name
     ];
 
@@ -521,7 +521,7 @@ exports.create = async (req, res) => {
 
     if (customerInfo.length > 0) {
       const customer = customerInfo[0];
-      
+
       const formatDate = () => {
         const d = new Date();
         const day = String(d.getDate()).padStart(2, '0');
@@ -532,11 +532,11 @@ exports.create = async (req, res) => {
 
       let telegramMessage = `🆕 <b>អតិថិជនថ្មីត្រូវបានបង្កើត!</b>\n`;
       telegramMessage += `━━━━━━━━━━━━━━━\n`;
-      
+
       if (branch_name) {
         telegramMessage += `🏢 <b>Branch:</b> ${branch_name}\n`;
       }
-      
+
       telegramMessage += `📅 <b>កាលបរិច្ឆេទ:</b> ${formatDate()}\n`;
       telegramMessage += `👤 <b>អតិថិជន:</b> ${customer.name}\n`;
       telegramMessage += `📞 <b>លេខទូរស័ព្ទ:</b> ${customer.tel}\n`;
@@ -554,11 +554,11 @@ exports.create = async (req, res) => {
       telegramMessage += `<i>បង្កើតដោយ: ${createdBy}</i>`;
 
       let plainMessage = `New Customer Created\n\n`;
-      
+
       if (branch_name) {
         plainMessage += `Branch: ${branch_name}\n`;
       }
-      
+
       plainMessage += `Date: ${formatDate()}\n`;
       plainMessage += `\nCustomer Information:\n`;
       plainMessage += `• Name: ${customer.name}\n`;
@@ -579,10 +579,11 @@ exports.create = async (req, res) => {
         await sendSmartNotification({
           event_type: 'customer_created',
           branch_name: branch_name,
+          title: `👤 New Customer: ${customer.name}`,
           message: telegramMessage,
           severity: 'normal'
         });
-        
+
       } catch (notifError) {
         console.error("❌ Failed to send Telegram notification:", notifError);
       }
@@ -624,7 +625,7 @@ exports.create = async (req, res) => {
           color: 'green',
           action_url: `/customers/${customer.id}`
         });
-        
+
       } catch (sysNotifError) {
         console.error('❌ Failed to create system notification:', sysNotifError);
       }
@@ -648,16 +649,16 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { 
-      name, 
-      tel, 
-      email, 
-      address, 
-      type, 
-      gender, 
-      id_card_number, 
-      id_card_expiry, 
-      spouse_name, 
+    const {
+      name,
+      tel,
+      email,
+      address,
+      type,
+      gender,
+      id_card_number,
+      id_card_expiry,
+      spouse_name,
       spouse_tel,
       guarantor_name,
       guarantor_tel,
@@ -675,14 +676,14 @@ exports.update = async (req, res) => {
     const currentUserBranch = req.auth?.branch_name;
     let checkExistsSql = `SELECT id, branch_name FROM customer WHERE id = ?`;
     const checkParams = [id];
-    
+
     if (currentUserBranch) {
       checkExistsSql += ` AND branch_name = ?`;
       checkParams.push(currentUserBranch);
     }
-    
+
     const [customerExists] = await db.query(checkExistsSql, checkParams);
-    
+
     if (!customerExists || customerExists.length === 0) {
       return res.status(404).json({
         success: false,
@@ -693,7 +694,7 @@ exports.update = async (req, res) => {
 
     const checkSql = `SELECT id, name FROM customer WHERE tel = ? AND id != ?`;
     const [existing] = await db.query(checkSql, [tel, id]);
-    
+
     if (existing && existing.length > 0) {
       return res.status(400).json({
         success: false,
@@ -704,7 +705,7 @@ exports.update = async (req, res) => {
 
     const checkEmailSql = `SELECT id, name FROM customer WHERE email = ? AND id != ?`;
     const [existingEmail] = await db.query(checkEmailSql, [email, id]);
-    
+
     if (existingEmail && existingEmail.length > 0) {
       return res.status(400).json({
         success: false,
@@ -751,7 +752,7 @@ exports.update = async (req, res) => {
   } catch (error) {
     console.error("=== Customer Update Error ===");
     console.error("Error details:", error);
-    
+
     if (error.code === 'ER_DUP_ENTRY') {
       if (error.message.includes('tel')) {
         return res.status(400).json({
@@ -768,7 +769,7 @@ exports.update = async (req, res) => {
         });
       }
     }
-    
+
     res.status(500).json({
       success: false,
       error: true,
@@ -796,7 +797,7 @@ exports.assignCustomerToUser = async (req, res) => {
       success: true,
       message: "Customer assigned successfully!",
     });
-   } catch (error) {
+  } catch (error) {
     logError("customer.assigned", error, res);
   }
 };
@@ -815,14 +816,14 @@ exports.remove = async (req, res) => {
     const currentUserBranch = req.auth?.branch_name;
     let checkSql = `SELECT id, branch_name FROM customer WHERE id = ?`;
     const checkParams = [id];
-    
+
     if (currentUserBranch) {
       checkSql += ` AND branch_name = ?`;
       checkParams.push(currentUserBranch);
     }
-    
+
     const [customerExists] = await db.query(checkSql, checkParams);
-    
+
     if (!customerExists || customerExists.length === 0) {
       return res.status(404).json({
         success: false,
@@ -859,7 +860,7 @@ exports.getCustomerOrderStats = async (req, res) => {
     }
 
     const ids = customer_ids.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
-    
+
     if (ids.length === 0) {
       return res.json({ success: true, data: [] });
     }

@@ -274,6 +274,7 @@
     "invoice_details": "Invoice Details",
     "debt_list": "Debt List",
     "customer_payment_ledger": "Customer Ledger",
+    "supplier_payment_ledger": "Supplier Ledger",
     "supplier_payment": "Supplier Payment",
     "payment_summary": "Payment Summary",
     "products": "Products",
@@ -310,6 +311,8 @@
       "management": "MANAGEMENT",
       "finance": "FINANCE",
       "operations": "OPERATIONS",
+      "sales": "SALES & ORDERS",
+      "inventory": "STOCK & INVENTORY",
       "reports": "REPORTS"
     }
   }

@@ -78,97 +78,45 @@ const { Search } = Input;
 const menuItems = [
   // MAIN DASHBOARDS
   {
-    key: "",
+    key: "dashboard-group",
     icon: LayoutDashboard,
-    label: "menu.dashboard",
+    label: "menu.categories.main",
     category: "MAIN",
-  },
-  {
-    key: "security/dashboard",
-    icon: Shield,
-    label: "menu.security_dashboard",
-    category: "MAIN",
+    children: [
+      { key: "", icon: LayoutDashboard, label: "menu.dashboard" },
+      { key: "security/dashboard", icon: Shield, label: "menu.security_dashboard" },
+    ]
   },
 
-  // STATISTICS & NOTIFICATIONS
+  // SALES & ORDERS
   {
-    key: "notifications/statistics",
-    icon: Bell,
-    label: "menu.notifications_statistics",
-    category: "STATISTICS",
-  },
-  {
-    key: "report_BranchComparison",
-    icon: FileText,
-    label: "menu.report_branch_comparison",
-    category: "STATISTICS",
-  },
-
-  // SALES & POS OPERATIONS
-  {
-    key: "invoices",
-    icon: FileText,
-    label: "menu.invoices",
-    category: "OPERATIONS",
-  },
-  {
-    key: "EnhancedPOSOrder",
+    key: "sales-group",
     icon: ShoppingCart,
-    label: "menu.enhanced_pos_order",
+    label: "menu.categories.sales", // Need to add this key or use a literal
     category: "OPERATIONS",
     children: [
-      { key: "pre-order-management", label: "menu.pre_order_management" },
-      // { key: "pre-order-detail", label: "menu.pre_order_detail" },
-    ],
-  },
-  {
-    key: "order",
-    icon: FileText,
-    label: "menu.invoice_details",
-    category: "OPERATIONS",
-  },
-  {
-    key: "fakeinvoices",
-    icon: FileText,
-    label: "menu.fake_invoices",
-    category: "OPERATIONS",
+      { key: "invoices", label: "menu.invoices", children: [{ key: "order", label: "menu.invoice_details" }] },
+      { key: "EnhancedPOSOrder", label: "menu.enhanced_pos_order", children: [{ key: "pre-order-management", label: "menu.pre_order_management" }] },
+      { key: "fakeinvoices", label: "menu.fake_invoices" },
+    ]
   },
 
-  // INVENTORY & PRODUCTS
+  // INVENTORY & STOCK
   {
-    key: "products",
+    key: "inventory-group",
     icon: Package,
-    label: "menu.products",
+    label: "menu.categories.inventory",
     category: "OPERATIONS",
     children: [
-      { key: "category", label: "menu.category" },
-      { key: "product", label: "menu.products" },
-      { key: "company-payment-management", label: "menu.company_payment_management" },
-      { key: "company-payment", label: "menu.company_payment" },
-    ],
-  },
-  {
-    key: "purchase",
-    icon: ShoppingCart,
-    label: "menu.purchase",
-    category: "OPERATIONS",
-    children: [
-      { key: "supplier", label: "menu.supplier" },
-      { key: "purchase-orders", label: "menu.purchase_orders" },
-      { key: "supplier-payment", label: "menu.supplier_payment" },
-      { key: "inventory-transactions", label: "menu.inventory_transactions" },
-    ],
-  },
-  {
-    key: "admin-StockReconciliation",
-    icon: Package,
-    label: "menu.stock_reconciliation",
-    category: "OPERATIONS",
+      { key: "products", label: "menu.products", children: [{ key: "category", label: "menu.category" }, { key: "product", label: "menu.products" }, { key: "company-payment-management", label: "menu.company_payment_management" }, { key: "company-payment", label: "menu.company_payment" }] },
+      { key: "purchase", label: "menu.purchase", children: [{ key: "supplier", label: "menu.supplier" }, { key: "purchase-orders", label: "menu.purchase_orders" }, { key: "inventory-transactions", label: "menu.inventory_transactions" }] },
+      { key: "admin-StockReconciliation", label: "menu.stock_reconciliation" },
+    ]
   },
 
-  // DELIVERY MANAGEMENT
+  // LOGISTICS
   {
-    key: "delivery",
+    key: "delivery-group",
     icon: ShoppingCart,
     label: "menu.delivery_note",
     category: "OPERATIONS",
@@ -180,129 +128,55 @@ const menuItems = [
       { key: "driver", label: "menu.driver" },
       { key: "driver-auth", label: "menu.driver_auth" },
       { key: "Truck", label: "menu.truck" },
-    ],
+    ]
   },
 
-  // FINANCE & PAYMENTS
+  // FINANCE
   {
-    key: "finance",
+    key: "finance-group",
     icon: DollarSign,
-    label: "menu.family_finance",
-    category: "FINANCE",
-  },
-  {
-    key: "customer-payment",
-    icon: DollarSign,
-    label: "menu.customer_payment_ledger",
-    category: "FINANCE",
-  },
-  {
-    key: "expense",
-    icon: DollarSign,
-    label: "menu.expense",
+    label: "menu.categories.finance",
     category: "FINANCE",
     children: [
-      { key: "expanse", label: "menu.expense" },
-      { key: "expanse_type", label: "menu.expense_type" },
-    ],
+      { key: "finance", label: "menu.family_finance" },
+      { key: "customer-payment", label: "menu.customer_payment_ledger" },
+      { key: "supplier-payment", label: "menu.supplier_payment_ledger" },
+      { key: "expense", label: "menu.expense", children: [{ key: "expanse", label: "menu.expense" }, { key: "expanse_type", label: "menu.expense_type" }] },
+    ]
   },
 
-  // CUSTOMER & EMPLOYEE MANAGEMENT
+  // ADMINISTRATION
   {
-    key: "customer",
-    icon: User,
-    label: "menu.customer",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "employee-management",
-    icon: Users,
-    label: "menu.employee",
-    category: "MANAGEMENT",
-    children: [
-      { key: "employee", label: "menu.employee" },
-      { key: "ip-Management", label: "menu.ip_management" },
-    ],
-  },
-
-  // USER & ADMIN MANAGEMENT
-  {
-    key: "user-management",
-    icon: User,
-    label: "menu.user",
-    category: "MANAGEMENT",
-    children: [
-      { key: "user", label: "menu.user" },
-      { key: "role", label: "menu.role" },
-    ],
-  },
-  {
-    key: "admin-management",
-    icon: Users,
-    label: "menu.admin_management",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "supperadmin-management",
-    icon: Shield,
-    label: "menu.super_admin_management",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "inactive_admins",
-    icon: User,
-    label: "menu.inactive_admins",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "permission-management",
+    key: "admin-group",
     icon: Settings,
-    label: "menu.permission_management",
+    label: "menu.categories.management",
     category: "MANAGEMENT",
-  },
-  {
-    key: "BranchPermissionOverride",
-    icon: Settings,
-    label: "menu.branch_permission_override",
-    category: "MANAGEMENT",
-  },
-
-  // SHIFT & DAILY OPERATIONS
-  {
-    key: "admin-ShiftClosing",
-    icon: AlignJustify,
-    label: "menu.shift_closing",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "admin-DailyClosing",
-    icon: AlignJustify,
-    label: "menu.daily_closing",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "admin-ShiftClosingChecklist",
-    icon: AlignJustify,
-    label: "menu.closing_checklist",
-    category: "MANAGEMENT",
+    children: [
+      { key: "customer", label: "menu.customer" },
+      { key: "employee-management", label: "menu.employee", children: [{ key: "employee", label: "menu.employee" }, { key: "ip-Management", label: "menu.ip_management" }] },
+      { key: "user-management", label: "menu.user", children: [{ key: "user", label: "menu.user" }, { key: "role", label: "menu.role" }] },
+      { key: "admin-management", label: "menu.admin_management" },
+      { key: "supperadmin-management", label: "menu.super_admin_management" },
+      { key: "inactive_admins", label: "menu.inactive_admins" },
+      { key: "permission-management", label: "menu.permission_management" },
+      { key: "BranchPermissionOverride", label: "menu.branch_permission_override" },
+      { key: "admin-ShiftClosing", label: "menu.shift_closing" },
+      { key: "admin-DailyClosing", label: "menu.daily_closing" },
+      { key: "admin-ShiftClosingChecklist", label: "menu.closing_checklist" },
+      { key: "super-TelegramConfiguration", label: "menu.telegram_configuration" },
+      { key: "settings", label: "menu.settings" },
+    ]
   },
 
-  // SYSTEM SETTINGS
+  // STATISTICS & REPORTS
   {
-    key: "super-TelegramConfiguration",
-    icon: Bell,
-    label: "menu.telegram_configuration",
-    category: "MANAGEMENT",
-  },
-
-
-  // REPORTS
-  {
-    key: "reports",
+    key: "reports-group",
     icon: FileText,
-    label: "menu.reports",
+    label: "menu.categories.reports",
     category: "REPORTS",
     children: [
+      { key: "notifications/statistics", label: "menu.notifications_statistics" },
+      { key: "report_BranchComparison", label: "menu.report_branch_comparison" },
       { key: "report_Sale_Summary", label: "menu.sales_summary" },
       { key: "report_Expense_Summary", label: "menu.expense_summary" },
       { key: "report_Customer", label: "menu.new_customer_summary" },
@@ -313,13 +187,7 @@ const menuItems = [
       { key: "report_Outstanding_Debt", label: "report.outstanding_debt" },
       { key: "report_Payment_History", label: "report.payment_history" },
       { key: "report_Profit_Loss", label: "report.profit_loss" },
-    ],
-  },
-  {
-    key: "settings",
-    icon: Settings,
-    label: "menu.settings",
-    category: "MANAGEMENT",
+    ]
   },
 ];
 
@@ -339,7 +207,10 @@ const CleanDarkLayout = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [selectedKey, setSelectedKey] = useState("");
-  const [expandedKeys, setExpandedKeys] = useState(["delivery", "products", "reports"]);
+  const [openKeys, setOpenKeys] = useState([]);
+  const [expandedKeys, setExpandedKeys] = useState(["dashboard-group"]);
+  const [sidebarWidth, setSidebarWidth] = useState(260); // Default width
+  const [isResizing, setIsResizing] = useState(false);
   const { changeLanguage: changeCustomLanguage } = useCustomTranslation();
   const [configLoaded, setConfigLoaded] = useState(false);
 
@@ -359,62 +230,69 @@ const CleanDarkLayout = () => {
     localStorage.setItem('language', lng);
   };
 
-  // ✅✅✅ CORRECT: Filter menu by permissions (EXACT LOGIC FROM MainLayout) ✅✅✅
+  // ✅ Filter menu by permissions & SEARCH logic
   const filteredItems = useMemo(() => {
     if (!permision || permision.length === 0) return [];
 
-    const new_items_menu = [];
+    const checkItemPermission = (item) => {
+      // If it's a structural group (dashboard-group, etc.), it's visible if any child is visible
+      if (item.children) {
+        const visibleChildren = item.children.filter(checkItemPermission);
+        if (visibleChildren.length > 0) {
+          return { ...item, children: visibleChildren };
+        }
+        return null;
+      }
 
-    menuItems.forEach((item1) => {
-      // ✅ Step 1: Check if parent has direct permission
-      const p1 = permision.findIndex(
-        (data1) => data1.web_route_key === "/" + item1.key
+      // Check permission for actual leaf items
+      const hasPermission = permision.some(
+        (data) => data.web_route_key === "/" + item.key ||
+          (item.key === "" && data.web_route_key === "/")
       );
 
-      // ✅ Step 2: If parent has permission, add it immediately
-      if (p1 !== -1) {
-        new_items_menu.push({ ...item1 });
-      }
+      return hasPermission ? item : null;
+    };
 
-      // ✅ Step 3: If item has children, filter them by permission
-      if (item1?.children && item1?.children.length > 0) {
-        let childTmp = [];
+    // First filter by permission
+    let items = menuItems
+      .map(checkItemPermission)
+      .filter(Boolean);
 
-        // ✅ Double loop to match children permissions (exact MainLayout logic)
-        item1.children.forEach((data1) => {
-          permision.forEach((data2) => {
-            if (data2.web_route_key === "/" + data1.key) {
-              // Avoid duplicates
-              if (!childTmp.find(c => c.key === data1.key)) {
-                childTmp.push(data1);
-              }
-            }
-          });
-        });
+    // Then filter by search value
+    if (searchValue.trim()) {
+      const searchLower = searchValue.toLowerCase();
 
-        // ✅ Step 4: If has valid children, add/update parent
-        if (childTmp.length > 0) {
-          const existingIndex = new_items_menu.findIndex(m => m.key === item1.key);
+      const filterBySearch = (item) => {
+        const labelText = t(item.label).toLowerCase();
+        const matchesLabel = labelText.includes(searchLower);
 
-          if (existingIndex !== -1) {
-            // Update existing parent with children
-            new_items_menu[existingIndex] = {
-              ...new_items_menu[existingIndex],
-              children: childTmp
-            };
-          } else {
-            // Add new parent with children
-            new_items_menu.push({
-              ...item1,
-              children: childTmp
-            });
+        if (item.children) {
+          const visibleChildren = item.children.filter(filterBySearch);
+          if (visibleChildren.length > 0 || matchesLabel) {
+            return { ...item, children: visibleChildren };
           }
+          return null;
         }
-      }
-    });
 
-    return new_items_menu;
-  }, [permision]);
+        return matchesLabel ? item : null;
+      };
+
+      items = items.map(filterBySearch).filter(Boolean);
+    }
+
+    return items;
+  }, [permision, searchValue, t]);
+
+  const onOpenChange = (keys) => {
+    const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
+    const rootSubmenuKeys = menuItems.map(item => item.key);
+
+    if (rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
+      setOpenKeys(keys);
+    } else {
+      setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+    }
+  };
 
   // Load config
   useEffect(() => {
@@ -532,11 +410,55 @@ const CleanDarkLayout = () => {
     }
   };
 
-  const toggleExpanded = (key) => {
-    setExpandedKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
-    );
+  const toggleExpanded = (key, level = 0) => {
+    setExpandedKeys((prev) => {
+      const isExpanded = prev.includes(key);
+
+      // If closing, just filter it out
+      if (isExpanded) {
+        return prev.filter((k) => k !== key);
+      }
+
+      // If opening a top-level item (level 0), close all other level 0 items (Accordion mode)
+      if (level === 0) {
+        const otherRootKeys = menuItems.map(item => item.key);
+        const filteredPrev = prev.filter(k => !otherRootKeys.includes(k));
+        return [...filteredPrev, key];
+      }
+
+      // Otherwise just add it (allow multiple open at deeper levels)
+      return [...prev, key];
+    });
   };
+
+  // ✅ RESIZE LOGIC
+  const handleMouseDown = useCallback((e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e) => {
+      const newWidth = e.clientX - 12; // Adjusted for sidebar margin
+      if (newWidth >= 200 && newWidth <= 500) {
+        setSidebarWidth(newWidth);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isResizing]);
 
   const handleMenuClick = (key) => {
     setSelectedKey(key);
@@ -568,23 +490,22 @@ const CleanDarkLayout = () => {
 
   // Render menu item
   const renderMenuItem = (item, level = 0) => {
-    const Icon = item.icon;
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedKeys.includes(item.key);
+    const Icon = item.icon;
     const isSelected = selectedKey === item.key;
 
     return (
-      <div key={item.key} className="menu-item-container">
+      <div key={item.key} className={`menu-item-container level-${level}`}>
         <button
           onClick={() => {
             if (hasChildren) {
-              toggleExpanded(item.key);
+              toggleExpanded(item.key, level);
             } else {
               handleMenuClick(item.key);
             }
           }}
-          className={`hierarchical-menu-item ${isSelected ? "selected" : ""} ${collapsed && level === 0 ? "collapsed" : ""
-            }`}
+          className={`hierarchical-menu-item ${isSelected ? "selected" : ""} ${collapsed && level === 0 ? "collapsed" : ""} ${hasChildren ? "has-children" : ""}`}
           style={{ paddingLeft: `${12 + level * 16}px` }}
         >
           {Icon && <Icon size={18} className="menu-icon" />}
@@ -593,7 +514,7 @@ const CleanDarkLayout = () => {
               <span className="menu-label">{t(item.label)}</span>
               {hasChildren && (
                 <span className="expand-icon">
-                  {isExpanded ? "−" : "+"}
+                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </span>
               )}
             </>
@@ -603,18 +524,7 @@ const CleanDarkLayout = () => {
         {hasChildren && !collapsed && (
           <div className={`submenu ${isExpanded ? 'expanded' : ''}`}>
             <div className="submenu-inner">
-              {item.children.map((child) => (
-                <button
-                  type="button"
-                  key={child.key}
-                  onClick={() => handleMenuClick(child.key)}
-                  className={`hierarchical-menu-item submenu-item ${selectedKey === child.key ? "selected" : ""
-                    }`}
-                  style={{ paddingLeft: `${12 + (level + 1) * 16}px` }}
-                >
-                  <span className="menu-label">{t(child.label)}</span>
-                </button>
-              ))}
+              {item.children.map((child) => renderMenuItem(child, level + 1))}
             </div>
           </div>
         )}
@@ -737,8 +647,17 @@ const CleanDarkLayout = () => {
     <Layout style={{ minHeight: "100vh", background: 'transparent' }}>
       {/* Sidebar for Desktop */}
       {!isMobile && (
-        <div className={`hierarchical-sidebar ${collapsed ? "collapsed" : "expanded"}`}>
+        <div
+          className={`hierarchical-sidebar ${collapsed ? "collapsed" : "expanded"}`}
+          style={{ width: collapsed ? "80px" : `${sidebarWidth}px` }}
+        >
           {sidebarContent}
+          {!collapsed && (
+            <div
+              className={`sidebar-resizer ${isResizing ? 'active' : ''}`}
+              onMouseDown={handleMouseDown}
+            />
+          )}
         </div>
       )}
 
@@ -759,8 +678,8 @@ const CleanDarkLayout = () => {
 
       {/* Main Layout */}
       <Layout style={{
-        marginLeft: isMobile ? "0px" : (collapsed ? "80px" : "280px"),
-        transition: "margin-left 0.3s",
+        marginLeft: isMobile ? "0px" : (collapsed ? "80px" : `${sidebarWidth + 12}px`),
+        transition: isResizing ? "none" : "margin-left 0.3s",
         background: 'transparent' // ✅ Make Layout transparent
       }}>
         {/* Header */}

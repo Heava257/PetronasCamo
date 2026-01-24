@@ -478,6 +478,7 @@ exports.create = async (req, res) => {
     sendSmartNotification({
       event_type: 'order_created',
       branch_name: branch_name,
+      title: `✅ Order ${order_no} Created${pre_order_no ? ` (PO: ${pre_order_no})` : ''}`,
       message: telegramText,
       severity: order.total_amount > 5000 ? 'critical' : 'normal'
     }).catch(err => console.error('❌ Telegram notification failed:', err));

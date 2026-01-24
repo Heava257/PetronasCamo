@@ -197,6 +197,7 @@ exports.create = async (req, res) => {
       await sendSmartNotification({
         event_type: 'invoice_created',
         branch_name: branch_name,
+        title: `📄 Call-Out Invoice: ${order_no}`,
         message: telegramText,
         severity: finalTotalAmount > 5000 ? 'critical' : 'normal'
       });

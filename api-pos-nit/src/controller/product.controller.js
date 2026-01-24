@@ -1690,8 +1690,9 @@ exports.sendBatchTelegramNotification = async (products) => {
   // ✅✅✅ SEND TELEGRAM NOTIFICATION ✅✅✅
   try {
     await sendSmartNotification({
-      event_type: 'stock_update',
+      event_type: 'stock_adjustment',
       branch_name: branch_name,
+      title: `🔄 Stock Adjusted: ${product.name}`,
       message: telegramMessage,
       severity: 'normal'
     });

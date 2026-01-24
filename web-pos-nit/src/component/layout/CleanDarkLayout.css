@@ -92,23 +92,64 @@ div {
   left: 12px;
   top: 12px;
   bottom: 12px;
-  background: var(--bg-sidebar, rgba(255, 255, 255, 0.8));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  border: var(--glass-border);
+  /* Requested soft background style applied to entire sidebar */
+  background-image: radial-gradient(73% 147%, #EADFDF 59%, #ECE2DF 100%), radial-gradient(91% 146%, rgba(255, 255, 255, 0.50) 47%, rgba(0, 0, 0, 0.50) 100%);
+  background-blend-mode: screen;
+
+  backdrop-filter: var(--glass-blur, blur(16px));
+  border: 1px solid rgba(203, 213, 225, 0.4);
   border-radius: var(--radius-xl);
-  color: var(--text-primary, #1e293b);
+  color: var(--text-primary, #0f172a);
   display: flex;
   flex-direction: column;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
-  box-shadow: var(--shadow-premium);
-  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  overflow: visible;
+  /* Allow resizer to be visible */
+}
+
+/* Resize handle */
+.sidebar-resizer {
+  position: absolute;
+  right: -6px;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+  cursor: col-resize;
+  z-index: 1001;
+  transition: background-color 0.2s;
+}
+
+.sidebar-resizer:hover,
+.sidebar-resizer.active {
+  background-color: var(--primary-color, #3b82f6);
+  opacity: 0.3;
+}
+
+.sidebar-resizer::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  background-color: var(--primary-color, #3b82f6);
+  border-radius: 1px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.sidebar-resizer:hover::after,
+.sidebar-resizer.active::after {
+  opacity: 1;
 }
 
 .dark .hierarchical-sidebar {
-  background: var(--bg-sidebar, rgba(17, 24, 39, 0.8));
-  border: var(--glass-border-dark);
-  color: var(--text-primary, #f1f5f9);
+  background: var(--bg-sidebar, rgba(15, 23, 42, 0.9));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-primary, #f8fafc);
 }
 
 .hierarchical-sidebar.expanded {
@@ -237,10 +278,12 @@ div {
   font-size: var(--font-size-sm, 11px);
   font-weight: 800;
   color: var(--primary-color, #3b82f6);
-  padding: calc(var(--font-size-base, 14px) * 0.85) 12px calc(var(--font-size-base, 14px) * 0.4) 12px;
+  padding: 16px 12px 6px 12px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.8;
+  letter-spacing: 1.5px;
+  opacity: 0.9;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+  margin-bottom: 8px;
 }
 
 .hierarchical-menu-item {
@@ -248,16 +291,24 @@ div {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: calc(var(--font-size-base, 14px) * 0.7) 12px;
-  margin-bottom: 4px;
+  padding: calc(var(--font-size-base, 14px) * 0.75) 16px;
+  margin-bottom: 8px;
   border-radius: var(--radius-lg);
-  background: transparent;
-  border: none;
-  color: var(--text-muted, #64748b);
+
+  /* Semi-transparent items to show the sidebar texture through */
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  color: #0f172a;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
   font-size: var(--font-size-base, 14px);
-  transition: all 0.25s ease;
+  text-align: left;
+  justify-content: flex-start;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   position: relative;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
 }
 
 /* Add vertical dotted line for parent items */
@@ -277,14 +328,19 @@ div {
 }
 
 .hierarchical-menu-item:hover {
-  background: var(--primary-light, rgba(59, 130, 246, 0.08));
+  background-color: rgba(255, 255, 255, 0.4);
   color: var(--primary-color, #3b82f6);
+  transform: translateX(6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .hierarchical-menu-item.selected {
-  background: var(--primary-color, #3b82f6);
+  background-color: var(--primary-color, #3b82f6);
+  background-image: none;
+  /* Remove gradient for selected to keep high contrast */
   color: var(--text-on-primary, white) !important;
   box-shadow: 0 4px 12px var(--primary-light, rgba(59, 130, 246, 0.3));
+  text-shadow: none;
 }
 
 .hierarchical-menu-item.selected .menu-icon {
@@ -311,22 +367,18 @@ div {
 .submenu {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.3s ease-out;
-  padding-left: 0;
-  margin-left: 48px;
-  margin-top: -4px;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
 
 .submenu.expanded {
   grid-template-rows: 1fr;
-  margin-bottom: 8px;
-  /* Add margin only when expanded */
+  margin-bottom: 4px;
 }
 
 .submenu-inner {
-  overflow: hidden;
-  /* Make sure inner content renders correctly */
   min-height: 0;
+  padding-bottom: 4px;
 }
 
 /* Vertical dotted line for submenu - starts from parent */
@@ -375,31 +427,43 @@ div {
   border-top-color: rgba(255, 255, 255, 0.8) !important;
 }
 
-.expand-icon {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid var(--text-muted, #94a3b8);
-  border-radius: 3px;
+.hierarchical-menu-item.selected .expand-icon {
   background: white;
-  font-size: 14px;
-  font-weight: bold;
-  color: var(--text-muted, #64748b);
-  transition: all 0.25s ease;
-}
-
-.dark .expand-icon {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.hierarchical-menu-item:hover .expand-icon {
-  border-color: var(--primary-color, #3b82f6);
   color: var(--primary-color, #3b82f6);
+  border-color: white;
+}
+
+.hierarchical-sidebar.collapsed .category-header {
+  display: none;
+}
+
+.hierarchical-sidebar.collapsed .menu-container {
+  padding: 8px 10px;
+}
+
+.hierarchical-sidebar.collapsed .expand-icon {
+  display: none;
+}
+
+/* Specific styling for deeper levels */
+.level-1,
+.level-2,
+.level-3 {
+  position: relative;
+}
+
+.level-1 .hierarchical-menu-item,
+.level-2 .hierarchical-menu-item {
+  font-size: 13px;
+  margin-bottom: 2px;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  opacity: 0.9;
+}
+
+.level-1 .hierarchical-menu-item:not(.selected),
+.level-2 .hierarchical-menu-item:not(.selected) {
+  background: transparent;
 }
 
 /* Header Styles */
