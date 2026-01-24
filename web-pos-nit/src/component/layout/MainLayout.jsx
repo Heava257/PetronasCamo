@@ -88,35 +88,67 @@ const menuItems = [
     ]
   },
 
-  // SALES & ORDERS
+  // OPERATIONS
   {
-    key: "sales-group",
-    icon: ShoppingCart,
-    label: "menu.categories.sales", // Need to add this key or use a literal
+    key: "invoices-parent",
+    icon: FileText,
+    label: "menu.invoices",
     category: "OPERATIONS",
     children: [
-      { key: "invoices", label: "menu.invoices", children: [{ key: "order", label: "menu.invoice_details" }] },
-      { key: "EnhancedPOSOrder", label: "menu.enhanced_pos_order", children: [{ key: "pre-order-management", label: "menu.pre_order_management" }] },
-      { key: "fakeinvoices", label: "menu.fake_invoices" },
+      { key: "invoices", label: "menu.create_invoice" },
+      { key: "order", label: "menu.invoice_details" },
     ]
   },
-
-  // INVENTORY & STOCK
   {
-    key: "inventory-group",
-    icon: Package,
-    label: "menu.categories.inventory",
+    key: "EnhancedPOSOrder",
+    icon: ShoppingCart,
+    label: "menu.enhanced_pos_order",
     category: "OPERATIONS",
     children: [
-      { key: "products", label: "menu.products", children: [{ key: "category", label: "menu.category" }, { key: "product", label: "menu.products" }, { key: "company-payment-management", label: "menu.company_payment_management" }, { key: "company-payment", label: "menu.company_payment" }] },
-      { key: "purchase", label: "menu.purchase", children: [{ key: "supplier", label: "menu.supplier" }, { key: "purchase-orders", label: "menu.purchase_orders" }, { key: "inventory-transactions", label: "menu.inventory_transactions" }] },
-      { key: "admin-StockReconciliation", label: "menu.stock_reconciliation" },
+      { key: "pre-order-management", label: "menu.pre_order_management" },
     ]
+  },
+  {
+    key: "fakeinvoices",
+    icon: FileText,
+    label: "menu.fake_invoices",
+    category: "OPERATIONS",
+  },
+
+  // INVENTORY
+  {
+    key: "products",
+    icon: Package,
+    label: "menu.products",
+    category: "OPERATIONS",
+    children: [
+      { key: "category", label: "menu.category" },
+      { key: "product", label: "menu.products" },
+      { key: "company-payment-management", label: "menu.company_payment_management" },
+      { key: "company-payment", label: "menu.company_payment" },
+    ]
+  },
+  {
+    key: "purchase",
+    icon: ShoppingCart,
+    label: "menu.purchase",
+    category: "OPERATIONS",
+    children: [
+      { key: "supplier", label: "menu.supplier" },
+      { key: "purchase-orders", label: "menu.purchase_orders" },
+      { key: "inventory-transactions", label: "menu.inventory_transactions" },
+    ]
+  },
+  {
+    key: "admin-StockReconciliation",
+    icon: Package,
+    label: "menu.stock_reconciliation",
+    category: "OPERATIONS",
   },
 
   // LOGISTICS
   {
-    key: "delivery-group",
+    key: "delivery",
     icon: ShoppingCart,
     label: "menu.delivery_note",
     category: "OPERATIONS",
@@ -133,61 +165,194 @@ const menuItems = [
 
   // FINANCE
   {
-    key: "finance-group",
+    key: "finance",
     icon: DollarSign,
-    label: "menu.categories.finance",
+    label: "menu.family_finance",
+    category: "FINANCE",
+  },
+  {
+    key: "customer-payment",
+    icon: DollarSign,
+    label: "menu.customer_payment_ledger",
+    category: "FINANCE",
+  },
+  {
+    key: "supplier-payment",
+    icon: DollarSign,
+    label: "menu.supplier_payment_ledger",
+    category: "FINANCE",
+  },
+  {
+    key: "expense",
+    icon: DollarSign,
+    label: "menu.expense",
     category: "FINANCE",
     children: [
-      { key: "finance", label: "menu.family_finance" },
-      { key: "customer-payment", label: "menu.customer_payment_ledger" },
-      { key: "supplier-payment", label: "menu.supplier_payment_ledger" },
-      { key: "expense", label: "menu.expense", children: [{ key: "expanse", label: "menu.expense" }, { key: "expanse_type", label: "menu.expense_type" }] },
+      { key: "expanse", label: "menu.expense" },
+      { key: "expanse_type", label: "menu.expense_type" },
     ]
   },
 
   // ADMINISTRATION
   {
-    key: "admin-group",
-    icon: Settings,
-    label: "menu.categories.management",
+    key: "customer",
+    icon: User,
+    label: "menu.customer",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "employee-management",
+    icon: Users,
+    label: "menu.employee",
     category: "MANAGEMENT",
     children: [
-      { key: "customer", label: "menu.customer" },
-      { key: "employee-management", label: "menu.employee", children: [{ key: "employee", label: "menu.employee" }, { key: "ip-Management", label: "menu.ip_management" }] },
-      { key: "user-management", label: "menu.user", children: [{ key: "user", label: "menu.user" }, { key: "role", label: "menu.role" }] },
-      { key: "admin-management", label: "menu.admin_management" },
-      { key: "supperadmin-management", label: "menu.super_admin_management" },
-      { key: "inactive_admins", label: "menu.inactive_admins" },
-      { key: "permission-management", label: "menu.permission_management" },
-      { key: "BranchPermissionOverride", label: "menu.branch_permission_override" },
-      { key: "admin-ShiftClosing", label: "menu.shift_closing" },
-      { key: "admin-DailyClosing", label: "menu.daily_closing" },
-      { key: "admin-ShiftClosingChecklist", label: "menu.closing_checklist" },
-      { key: "super-TelegramConfiguration", label: "menu.telegram_configuration" },
-      { key: "settings", label: "menu.settings" },
+      { key: "employee", label: "menu.employee" },
+      { key: "ip-Management", label: "menu.ip_management" },
     ]
+  },
+  {
+    key: "user-management",
+    icon: User,
+    label: "menu.user",
+    category: "MANAGEMENT",
+    children: [
+      { key: "user", label: "menu.user" },
+      { key: "role", label: "menu.role" },
+    ]
+  },
+  {
+    key: "admin-management",
+    icon: Users,
+    label: "menu.admin_management",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "supperadmin-management",
+    icon: Shield,
+    label: "menu.super_admin_management",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "inactive_admins",
+    icon: User,
+    label: "menu.inactive_admins",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "permission-management",
+    icon: Settings,
+    label: "menu.permission_management",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "BranchPermissionOverride",
+    icon: Settings,
+    label: "menu.branch_permission_override",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "admin-ShiftClosing",
+    icon: AlignJustify,
+    label: "menu.shift_closing",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "admin-DailyClosing",
+    icon: AlignJustify,
+    label: "menu.daily_closing",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "admin-ShiftClosingChecklist",
+    icon: AlignJustify,
+    label: "menu.closing_checklist",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "super-TelegramConfiguration",
+    icon: Bell,
+    label: "menu.telegram_configuration",
+    category: "MANAGEMENT",
+  },
+  {
+    key: "settings",
+    icon: Settings,
+    label: "menu.settings",
+    category: "MANAGEMENT",
   },
 
   // STATISTICS & REPORTS
   {
-    key: "reports-group",
-    icon: FileText,
-    label: "menu.categories.reports",
+    key: "notifications/statistics",
+    icon: Bell,
+    label: "menu.notifications_statistics",
     category: "REPORTS",
-    children: [
-      { key: "notifications/statistics", label: "menu.notifications_statistics" },
-      { key: "report_BranchComparison", label: "menu.report_branch_comparison" },
-      { key: "report_Sale_Summary", label: "menu.sales_summary" },
-      { key: "report_Expense_Summary", label: "menu.expense_summary" },
-      { key: "report_Customer", label: "menu.new_customer_summary" },
-      { key: "Top_Sale", label: "menu.top_sales" },
-      { key: "report_Stock_Status", label: "report.stock_status_report" },
-      { key: "report_Stock_Movement", label: "report.stock_movement_report" },
-      { key: "report_Purchase_History", label: "report.purchase_history" },
-      { key: "report_Outstanding_Debt", label: "report.outstanding_debt" },
-      { key: "report_Payment_History", label: "report.payment_history" },
-      { key: "report_Profit_Loss", label: "report.profit_loss" },
-    ]
+  },
+  {
+    key: "report_BranchComparison",
+    icon: FileText,
+    label: "menu.report_branch_comparison",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Sale_Summary",
+    icon: FileText,
+    label: "menu.sales_summary",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Expense_Summary",
+    icon: FileText,
+    label: "menu.expense_summary",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Customer",
+    icon: FileText,
+    label: "menu.new_customer_summary",
+    category: "REPORTS",
+  },
+  {
+    key: "Top_Sale",
+    icon: FileText,
+    label: "menu.top_sales",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Stock_Status",
+    icon: FileText,
+    label: "report.stock_status_report",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Stock_Movement",
+    icon: FileText,
+    label: "report.stock_movement_report",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Purchase_History",
+    icon: FileText,
+    label: "report.purchase_history",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Outstanding_Debt",
+    icon: FileText,
+    label: "report.outstanding_debt",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Payment_History",
+    icon: FileText,
+    label: "report.payment_history",
+    category: "REPORTS",
+  },
+  {
+    key: "report_Profit_Loss",
+    icon: FileText,
+    label: "report.profit_loss",
+    category: "REPORTS",
   },
 ];
 

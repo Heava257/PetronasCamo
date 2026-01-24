@@ -255,6 +255,7 @@
     "telegram_configuration": "កំណត់ Telegram",
     "branch_permission_override": "បដិសេធសិទ្ធិសាខា",
     "invoices": "វិក្កយបត្រចេញលក់អតិថិជន",
+    "create_invoice": "វិក័យបត្រចេញអោយអតិថិជន",
     "fake_invoices": "វិក័យបត្រក្រៅប្រព័ន្ធ",
     "delivery_note": "បណ្ណដឹកជញ្ជូន",
     "delivery_map": "ផែនទីដឹកជញ្ជូន",

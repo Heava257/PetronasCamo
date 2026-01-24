@@ -258,6 +258,7 @@
     "telegram_configuration": "Telegram Configuration",
     "branch_permission_override": "Branch Permission Override",
     "invoices": "Invoices",
+    "create_invoice": "Create Invoice",
     "fake_invoices": "Fake Invoices",
     "delivery_note": "Delivery Note",
     "delivery_map": "Delivery Map",
