@@ -118,8 +118,10 @@ function TelegramConfiguration() {
       icon: "⚙️",
       color: "default",
       events: [
-        { value: "system_event", label: "System Alerts" },
-        { value: "user_login", label: "User Login" },
+        { value: "system_event", label: "ការជូនដំណឹងប្រព័ន្ធ / System Alerts" },
+        { value: "user_login", label: "ចូលប្រព័ន្ធ / User Login" },
+        { value: "unauthorized_access", label: "ចូលដោយគ្មានសិទ្ធិ / Unauthorized Access" },
+        { value: "new_user", label: "បង្កើតគណនីថ្មី / New Account" },
       ],
     },
   };
@@ -182,29 +184,29 @@ function TelegramConfiguration() {
     setModalVisible(true);
   };
 
-const handleEdit = (record) => {
-  // ✅✅✅ FIXED: Parse event_types if it's a JSON string
-  let parsedEventTypes = record.event_types;
-  
-  // If event_types is a string, parse it
-  if (typeof record.event_types === 'string') {
-    try {
-      parsedEventTypes = JSON.parse(record.event_types);
-    } catch (e) {
-      console.error('Failed to parse event_types:', e);
-      parsedEventTypes = null;
+  const handleEdit = (record) => {
+    // ✅✅✅ FIXED: Parse event_types if it's a JSON string
+    let parsedEventTypes = record.event_types;
+
+    // If event_types is a string, parse it
+    if (typeof record.event_types === 'string') {
+      try {
+        parsedEventTypes = JSON.parse(record.event_types);
+      } catch (e) {
+        console.error('Failed to parse event_types:', e);
+        parsedEventTypes = null;
+      }
     }
-  }
-  
-  
-  form.setFieldsValue({
-    ...record,
-    id: record.id,
-    event_types: parsedEventTypes, // ✅ Now properly parsed
-  });
-  
-  setModalVisible(true);
-};
+
+
+    form.setFieldsValue({
+      ...record,
+      id: record.id,
+      event_types: parsedEventTypes, // ✅ Now properly parsed
+    });
+
+    setModalVisible(true);
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -456,334 +458,335 @@ const handleEdit = (record) => {
   ];
 
   return (
-      <MainPage loading={loading}>
-    <div className="p-4 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <Card className="mb-4 shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 border-0">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-white text-3xl font-bold flex items-center gap-3">
-              <RobotOutlined /> Telegram Bot Configuration
-            </h1>
-            <p className="text-white text-sm opacity-90 mt-1">
-              គ្រប់គ្រង Telegram Bot Tokens និង Event Filters សម្រាប់សាខានីមួយៗ
-            </p>
+    <MainPage loading={loading}>
+      <div className="p-4 bg-gray-50 min-h-screen">
+        {/* Header */}
+        <Card className="mb-4 shadow-lg bg-gradient-to-r from-blue-600 to-cyan-600 border-0">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-white text-3xl font-bold flex items-center gap-3">
+                <RobotOutlined /> Telegram Bot Configuration
+              </h1>
+              <p className="text-white text-sm opacity-90 mt-1">
+                គ្រប់គ្រង Telegram Bot Tokens និង Event Filters សម្រាប់សាខានីមួយៗ
+              </p>
+            </div>
+            <Space>
+              <Button
+                type="default"
+                size="large"
+                icon={<ReloadOutlined />}
+                onClick={loadData}
+                loading={loading}
+                className="bg-white text-blue-600 border-0 hover:bg-gray-100"
+              >
+                ផ្ទុកឡើងវិញ
+              </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<PlusOutlined />}
+                onClick={handleCreate}
+                className="bg-white text-blue-600 border-0 hover:bg-gray-100"
+              >
+                បន្ថែមថ្មី
+              </Button>
+            </Space>
           </div>
-          <Space>
-            <Button
-              type="default"
-              size="large"
-              icon={<ReloadOutlined />}
-              onClick={loadData}
-              loading={loading}
-              className="bg-white text-blue-600 border-0 hover:bg-gray-100"
-            >
-              ផ្ទុកឡើងវិញ
-            </Button>
-            <Button
-              type="primary"
-              size="large"
-              icon={<PlusOutlined />}
-              onClick={handleCreate}
-              className="bg-white text-blue-600 border-0 hover:bg-gray-100"
-            >
-              បន្ថែមថ្មី
-            </Button>
-          </Space>
-        </div>
-      </Card>
+        </Card>
 
-      {/* Statistics */}
-      <Row gutter={[16, 16]} className="mb-4">
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-md">
-            <Statistic
-              title="ចំនួនសរុប"
-              value={state.stats.total_configs}
-              prefix={<RobotOutlined />}
-              valueStyle={{ color: "#1890ff" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-md">
-            <Statistic
-              title="កំពុងដំណើរការ"
-              value={state.stats.active_configs}
-              prefix={<CheckCircleOutlined />}
-              valueStyle={{ color: "#52c41a" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-md">
-            <Statistic
-              title="សាខា"
-              value={state.stats.branch_configs}
-              prefix={<BranchesOutlined />}
-              valueStyle={{ color: "#722ed1" }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="shadow-md">
-            <Statistic
-              title="សាកល្បងជោគជ័យ"
-              value={state.stats.working_configs}
-              prefix={<SendOutlined />}
-              valueStyle={{ color: "#52c41a" }}
-            />
-          </Card>
-        </Col>
-      </Row>
+        {/* Statistics */}
+        <Row gutter={[16, 16]} className="mb-4">
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="shadow-md">
+              <Statistic
+                title="ចំនួនសរុប"
+                value={state.stats.total_configs}
+                prefix={<RobotOutlined />}
+                valueStyle={{ color: "#1890ff" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="shadow-md">
+              <Statistic
+                title="កំពុងដំណើរការ"
+                value={state.stats.active_configs}
+                prefix={<CheckCircleOutlined />}
+                valueStyle={{ color: "#52c41a" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="shadow-md">
+              <Statistic
+                title="សាខា"
+                value={state.stats.branch_configs}
+                prefix={<BranchesOutlined />}
+                valueStyle={{ color: "#722ed1" }}
+              />
+            </Card>
+          </Col>
+          <Col xs={24} sm={12} lg={6}>
+            <Card className="shadow-md">
+              <Statistic
+                title="សាកល្បងជោគជ័យ"
+                value={state.stats.working_configs}
+                prefix={<SendOutlined />}
+                valueStyle={{ color: "#52c41a" }}
+              />
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Info Alert */}
-      <Alert
-        message="ℹ️ របៀបប្រើប្រាស់ Event Filters"
-        description={
-          <div>
-            <p>
-              • <strong>NULL (ទទេ):</strong> ទទួល alerts ទាំងអស់ (សម្រាប់ Manager)
-            </p>
-            <p>
-              • <strong>Specific Events:</strong> ទទួលតែ events ដែលបានជ្រើសរើស
-            </p>
-            <p>
-              • <strong>Multiple Groups:</strong> អាចមាន groups ច្រើនក្នុង branch តែមួយ
-            </p>
-            <p className="mt-2 text-xs text-gray-600">
-              ឧទាហរណ៍: "Procurement Team" ទទួលតែ purchase events, "Sales Team" ទទួលតែ order events
-            </p>
-          </div>
-        }
-        type="info"
-        showIcon
-        className="mb-4"
-      />
-
-      {/* Main Table */}
-      <Card className="shadow-md">
-        <Table
-          loading={loading}
-          dataSource={state.configs}
-          columns={columns}
-          rowKey="id"
-          scroll={{ x: 1500 }}
-          pagination={{
-            pageSize: 10,
-            showSizeChanger: true,
-            showTotal: (total) => `ចំនួនសរុប ${total} configurations`,
-          }}
+        {/* Info Alert */}
+        <Alert
+          message="ℹ️ របៀបប្រើប្រាស់ Event Filters"
+          description={
+            <div>
+              <p>
+                • <strong>NULL (ទទេ):</strong> ទទួល alerts ទាំងអស់ (សម្រាប់ Manager)
+              </p>
+              <p>
+                • <strong>Specific Events:</strong> ទទួលតែ events ដែលបានជ្រើសរើស
+              </p>
+              <p>
+                • <strong>Multiple Groups:</strong> អាចមាន groups ច្រើនក្នុង branch តែមួយ
+              </p>
+              <p className="mt-2 text-xs text-gray-600">
+                ឧទាហរណ៍: "Procurement Team" ទទួលតែ purchase events, "Sales Team" ទទួលតែ order events
+              </p>
+            </div>
+          }
+          type="info"
+          showIcon
+          className="mb-4"
         />
-      </Card>
 
-      {/* ✅✅✅ ENHANCED Modal with Event Types ✅✅✅ */}
-      <Modal
-        open={modalVisible}
-        onCancel={() => setModalVisible(false)}
-        footer={null}
-        width={800}
-        title={
-          <div className="text-xl font-bold flex items-center gap-2">
-            {form.getFieldValue("id") ? (
-              <>
-                <EditOutlined className="text-blue-600" /> កែប្រែការកំណត់
-              </>
-            ) : (
-              <>
-                <PlusOutlined className="text-green-600" /> បន្ថែមការកំណត់ថ្មី
-              </>
-            )}
-          </div>
-        }
-      >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item name="id" hidden>
-            <Input />
-          </Form.Item>
+        {/* Main Table */}
+        <Card className="shadow-md">
+          <Table
+            loading={loading}
+            dataSource={state.configs}
+            columns={columns}
+            rowKey="id"
+            scroll={{ x: 1500 }}
+            pagination={{
+              pageSize: 10,
+              showSizeChanger: true,
+              showTotal: (total) => `ចំនួនសរុប ${total} configurations`,
+            }}
+          />
+        </Card>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                name="config_type"
-                label="ប្រភេទ"
-                rules={[{ required: true, message: "ជ្រើសរើសប្រភេទ" }]}
-              >
-                <Select placeholder="ជ្រើសរើសប្រភេទ">
-                  <Option value="super_admin">
-                    <CrownOutlined /> Super Admin
-                  </Option>
-                  <Option value="branch">
-                    <BranchesOutlined /> Branch
-                  </Option>
-                  <Option value="system">
-                    <SettingOutlined /> System
-                  </Option>
-                </Select>
-              </Form.Item>
-            </Col>
+        {/* ✅✅✅ ENHANCED Modal with Event Types ✅✅✅ */}
+        <Modal
+          open={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          footer={null}
+          width={800}
+          title={
+            <div className="text-xl font-bold flex items-center gap-2">
+              {form.getFieldValue("id") ? (
+                <>
+                  <EditOutlined className="text-blue-600" /> កែប្រែការកំណត់
+                </>
+              ) : (
+                <>
+                  <PlusOutlined className="text-green-600" /> បន្ថែមការកំណត់ថ្មី
+                </>
+              )}
+            </div>
+          }
+        >
+          <Form form={form} layout="vertical" onFinish={handleSubmit}>
+            <Form.Item name="id" hidden>
+              <Input />
+            </Form.Item>
 
-            <Col span={12}>
-              <Form.Item
-                name="config_name"
-                label="ឈ្មោះ"
-                rules={[{ required: true, message: "បញ្ចូលឈ្មោះ" }]}
-              >
-                <Input placeholder="ឧ. Procurement Team" />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Form.Item
-            noStyle
-            shouldUpdate={(prevValues, currentValues) =>
-              prevValues.config_type !== currentValues.config_type
-            }
-          >
-            {({ getFieldValue }) =>
-              getFieldValue("config_type") === "branch" ? (
+            <Row gutter={16}>
+              <Col span={12}>
                 <Form.Item
-                  name="branch_name"
-                  label="សាខា"
-                  rules={[{ required: true, message: "ជ្រើសរើសសាខា" }]}
+                  name="config_type"
+                  label="ប្រភេទ"
+                  rules={[{ required: true, message: "ជ្រើសរើសប្រភេទ" }]}
                 >
-                  <Select placeholder="ជ្រើសរើសសាខា">
-                    {state.branches.map((branch) => (
-                      <Option key={branch} value={branch}>
-                        {branch}
-                      </Option>
-                    ))}
+                  <Select placeholder="ជ្រើសរើសប្រភេទ">
+                    <Option value="super_admin">
+                      <CrownOutlined /> Super Admin
+                    </Option>
+                    <Option value="branch">
+                      <BranchesOutlined /> Branch
+                    </Option>
+                    <Option value="system">
+                      <SettingOutlined /> System
+                    </Option>
                   </Select>
                 </Form.Item>
-              ) : null
-            }
-          </Form.Item>
+              </Col>
 
-          {/* ✅✅✅ NEW: Event Types Selection ✅✅✅ */}
-          <Form.Item
-            name="event_types"
-            label={
-              <span className="flex items-center gap-2">
-                <FilterOutlined /> Event Filters
-                <Tooltip title="ទទេ = ទទួលទាំងអស់ (Manager). ជ្រើសរើស = ទទួលតែ events ដែលបានជ្រើស">
-                  <BellOutlined className="text-blue-500" />
-                </Tooltip>
-              </span>
-            }
-          >
-            <Select
-              mode="multiple"
-              placeholder="ទុកទទេដើម្បីទទួលទាំងអស់ / Select specific events"
-              allowClear
-              style={{ width: "100%" }}
-            >
-              {Object.entries(eventTypeGroups).map(([groupKey, group]) => (
-                <Select.OptGroup
-                  key={groupKey}
-                  label={`${group.icon} ${group.label}`}
+              <Col span={12}>
+                <Form.Item
+                  name="config_name"
+                  label="ឈ្មោះ"
+                  rules={[{ required: true, message: "បញ្ចូលឈ្មោះ" }]}
                 >
-                  {group.events.map((event) => (
-                    <Option key={event.value} value={event.value}>
-                      <Space>
-                        <span>{group.icon}</span>
-                        <span>{event.label}</span>
-                      </Space>
-                    </Option>
-                  ))}
-                </Select.OptGroup>
-              ))}
-            </Select>
-          </Form.Item>
+                  <Input placeholder="ឧ. Procurement Team" />
+                </Form.Item>
+              </Col>
+            </Row>
 
-          <Alert
-            message="💡 Event Filter Tips"
-            description={
-              <div className="text-xs">
-                <p>• <strong>ទទេ (NULL):</strong> Group នេះទទួល alerts ទាំងអស់ (សម្រាប់ Manager)</p>
-                <p>• <strong>ជ្រើសរើស:</strong> Group នេះទទួលតែ events ដែលបានជ្រើសរើស</p>
-                <p>• <strong>ឧទាហរណ៍:</strong> "Procurement Team" → ជ្រើសរើស purchase_created, purchase_delivered</p>
-              </div>
-            }
-            type="info"
-            showIcon
-            className="mb-4"
-          />
-
-          <Form.Item
-            name="bot_token"
-            label="Bot Token"
-            rules={[
-              { required: true, message: "បញ្ចូល Bot Token" },
-              {
-                pattern: /^[0-9]+:[a-zA-Z0-9_-]+$/,
-                message: "Format មិនត្រឹមត្រូវ (ឧ. 123456:ABC-Def...)"
+            <Form.Item
+              noStyle
+              shouldUpdate={(prevValues, currentValues) =>
+                prevValues.config_type !== currentValues.config_type
               }
-            ]}
-          >
-            <Input.Password
-              placeholder="7018630729:AAGHSample..."
-              className="font-mono"
+            >
+              {({ getFieldValue }) =>
+                getFieldValue("config_type") === "branch" ? (
+                  <Form.Item
+                    name="branch_name"
+                    label="សាខា"
+                    rules={[{ required: true, message: "ជ្រើសរើសសាខា" }]}
+                  >
+                    <Select placeholder="ជ្រើសរើសសាខា">
+                      {state.branches.map((branch) => (
+                        <Option key={branch} value={branch}>
+                          {branch}
+                        </Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                ) : null
+              }
+            </Form.Item>
+
+            {/* ✅✅✅ NEW: Event Types Selection ✅✅✅ */}
+            <Form.Item
+              name="event_types"
+              label={
+                <span className="flex items-center gap-2">
+                  <FilterOutlined /> Event Filters
+                  <Tooltip title="ទទេ = ទទួលទាំងអស់ (Manager). ជ្រើសរើស = ទទួលតែ events ដែលបានជ្រើស">
+                    <BellOutlined className="text-blue-500" />
+                  </Tooltip>
+                </span>
+              }
+            >
+              <Select
+                mode="multiple"
+                placeholder="ទុកទទេដើម្បីទទួលទាំងអស់ / Select specific events"
+                allowClear
+                style={{ width: "100%" }}
+              >
+                {Object.entries(eventTypeGroups).map(([groupKey, group]) => (
+                  <Select.OptGroup
+                    key={groupKey}
+                    label={`${group.icon} ${group.label}`}
+                  >
+                    {group.events.map((event) => (
+                      <Option key={event.value} value={event.value}>
+                        <Space>
+                          <span>{group.icon}</span>
+                          <span>{event.label}</span>
+                        </Space>
+                      </Option>
+                    ))}
+                  </Select.OptGroup>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Alert
+              message="💡 Event Filter Tips"
+              description={
+                <div className="text-xs">
+                  <p>• <strong>ទទេ (NULL):</strong> Group នេះទទួល alerts ទាំងអស់ (សម្រាប់ Manager)</p>
+                  <p>• <strong>ជ្រើសរើស:</strong> Group នេះទទួលតែ events ដែលបានជ្រើសរើស</p>
+                  <p>• <strong>User Login:</strong> នឹងផ្ញើព័ត៌មានលម្អិតដូចជា (IP, ទីតាំង, និងឧបករណ៍ដែលបានប្រើ)</p>
+                  <p>• <strong>ឧទាហរណ៍:</strong> "Procurement Team" → ជ្រើសរើស purchase_created, purchase_delivered</p>
+                </div>
+              }
+              type="info"
+              showIcon
+              className="mb-4"
             />
-          </Form.Item>
 
-          <Form.Item
-            name="chat_id"
-            label="Chat ID"
-            rules={[{ required: true, message: "បញ្ចូល Chat ID" }]}
-          >
-            <Input
-              placeholder="-1002627306293 ឬ 123456789"
-              className="font-mono"
+            <Form.Item
+              name="bot_token"
+              label="Bot Token"
+              rules={[
+                { required: true, message: "បញ្ចូល Bot Token" },
+                {
+                  pattern: /^[0-9]+:[a-zA-Z0-9_-]+$/,
+                  message: "Format មិនត្រឹមត្រូវ (ឧ. 123456:ABC-Def...)"
+                }
+              ]}
+            >
+              <Input.Password
+                placeholder="7018630729:AAGHSample..."
+                className="font-mono"
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="chat_id"
+              label="Chat ID"
+              rules={[{ required: true, message: "បញ្ចូល Chat ID" }]}
+            >
+              <Input
+                placeholder="-1002627306293 ឬ 123456789"
+                className="font-mono"
+              />
+            </Form.Item>
+
+            <Form.Item name="description" label="ពិពណ៌នា">
+              <TextArea rows={3} placeholder="ពិពណ៌នាអំពីការកំណត់នេះ..." />
+            </Form.Item>
+
+            <Form.Item
+              name="is_active"
+              label="Status"
+              rules={[{ required: true }]}
+              initialValue={1}
+            >
+              <Select>
+                <Option value={1}>Active</Option>
+                <Option value={0}>Inactive</Option>
+              </Select>
+            </Form.Item>
+
+            <Alert
+              message="💡 របៀបយក Bot Token និង Chat ID"
+              description={
+                <div className="text-xs">
+                  <p>
+                    <strong>Bot Token:</strong> @BotFather → /newbot
+                  </p>
+                  <p>
+                    <strong>Chat ID:</strong> @userinfobot → /start
+                  </p>
+                  <p>
+                    <strong>Group Chat ID:</strong> Add @getmyid_bot → /my_id
+                  </p>
+                </div>
+              }
+              type="info"
+              showIcon
+              className="mb-4"
             />
-          </Form.Item>
 
-          <Form.Item name="description" label="ពិពណ៌នា">
-            <TextArea rows={3} placeholder="ពិពណ៌នាអំពីការកំណត់នេះ..." />
-          </Form.Item>
+            <Divider />
 
-          <Form.Item
-            name="is_active"
-            label="Status"
-            rules={[{ required: true }]}
-            initialValue={1}
-          >
-            <Select>
-              <Option value={1}>Active</Option>
-              <Option value={0}>Inactive</Option>
-            </Select>
-          </Form.Item>
-
-          <Alert
-            message="💡 របៀបយក Bot Token និង Chat ID"
-            description={
-              <div className="text-xs">
-                <p>
-                  <strong>Bot Token:</strong> @BotFather → /newbot
-                </p>
-                <p>
-                  <strong>Chat ID:</strong> @userinfobot → /start
-                </p>
-                <p>
-                  <strong>Group Chat ID:</strong> Add @getmyid_bot → /my_id
-                </p>
-              </div>
-            }
-            type="info"
-            showIcon
-            className="mb-4"
-          />
-
-          <Divider />
-
-          <div className="flex justify-end gap-3">
-            <Button onClick={() => setModalVisible(false)}>បោះបង់</Button>
-            <Button type="primary" htmlType="submit" loading={loading}>
-              {form.getFieldValue("id") ? "កែប្រែ" : "បន្ថែម"}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
-    </div>
+            <div className="flex justify-end gap-3">
+              <Button onClick={() => setModalVisible(false)}>បោះបង់</Button>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                {form.getFieldValue("id") ? "កែប្រែ" : "បន្ថែម"}
+              </Button>
+            </div>
+          </Form>
+        </Modal>
+      </div>
     </MainPage>
   );
 }

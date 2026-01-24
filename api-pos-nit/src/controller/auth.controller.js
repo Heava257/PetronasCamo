@@ -5,6 +5,8 @@ const config = require("../util/config");
 const { json } = require("express");
 const { OAuth2Client } = require('google-auth-library');
 const { createSystemNotification } = require("./System_notification.controller");
+const { sendLoginNotification, sendSmartNotification } = require("../util/Telegram.helpe");
+const { formatNumber } = require("../util/helper");
 
 
 
@@ -799,7 +801,13 @@ ${locationInfo ? `
     `;
 
     // Send Telegram notification (non-blocking)
-    sendTelegramMessagenewLogin(alertMessage).catch(err => {
+    sendSmartNotification({
+      event_type: 'new_user',
+      branch_name: finalBranchName,
+      title: `🆕 New Account: ${username}`,
+      message: alertMessage,
+      severity: 'info'
+    }).catch(err => {
       console.error("Failed to send Telegram alert:", err.message);
     });
 
@@ -1213,16 +1221,27 @@ exports.login = async (req, res) => {
 
     // All logging is optional
     try {
-      await exports.logLoginActivity({
+      const deviceInfo = parseUserAgent(userAgent);
+      const locationInfo = await getLocationFromIP(clientIP);
+
+      const loginData = {
         user_id: data[0].id,
         username: data[0].username,
         ip_address: clientIP,
         user_agent: userAgent,
-        device_info: JSON.stringify({}),
-        location_info: JSON.stringify({}),
+        device_info: JSON.stringify(deviceInfo),
+        location_info: JSON.stringify(locationInfo || {}),
         login_time: new Date(),
         status: 'success'
+      };
+
+      await exports.logLoginActivity(loginData);
+
+      // ✅ Trigger Smart Login Alert (to Telegram via dynamic config)
+      sendLoginNotification(data[0], loginData).catch(err => {
+        console.error('⚠️ Login notification failed:', err.message);
       });
+
     } catch (logErr) {
       console.warn('⚠️ Failed to log activity:', logErr.message);
     }

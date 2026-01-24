@@ -259,8 +259,59 @@ exports.getEventTypes = () => {
     // System Events
     'system_event': 'ព្រឹត្តិការណ៍ប្រព័ន្ធ / System Event',
     'user_login': 'ចូលប្រព័ន្ធ / User Login',
-    'unauthorized_access': 'ចូលដោយគ្មានការអនុញ្ញាត / Unauthorized Access'
+    'unauthorized_access': 'ចូលដោយគ្មានការអនុញ្ញាត / Unauthorized Access',
+    'new_user': 'គណនីថ្មី / New Account Created'
   };
+};
+
+/**
+ * Handle user login notifications
+ */
+exports.sendLoginNotification = async (userData, loginInfo) => {
+  const { name, username, branch_name, role_name } = userData;
+  const { ip_address, user_agent, location_info, device_info, login_time } = loginInfo;
+
+  const device = typeof device_info === 'string' ? JSON.parse(device_info) : device_info;
+  const location = typeof location_info === 'string' ? JSON.parse(location_info) : location_info;
+
+  const formattedTime = new Date(login_time).toLocaleString('en-US', {
+    timeZone: 'Asia/Phnom_Penh',
+    dateStyle: 'full',
+    timeStyle: 'long'
+  });
+
+  const message = `
+🔐 <b>ការចូលប្រព័ន្ធ / User Login Detected</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 <b>អ្នកប្រើប្រាស់ / User:</b> ${name}
+🆔 <b>Username:</b> ${username}
+🎭 <b>តួនាទី / Role:</b> ${role_name}
+🏢 <b>សាខា / Branch:</b> ${branch_name || 'N/A'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏰ <b>ពេលវេលា / Login Time:</b>
+${formattedTime}
+
+🌐 <b>IP Address:</b> <code>${ip_address}</code>
+${location && location.country ? `📍 <b>Location:</b> ${location.city || 'Unknown'}, ${location.country}` : ''}
+
+💻 <b>Device Info:</b>
+• Platform: ${device?.platform || 'Unknown'}
+• Browser: ${device?.browser || 'Unknown'} ${device?.version || ''}
+• Device: ${device?.deviceType || 'Unknown'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+<i>This is an automated security alert.</i>
+  `;
+
+  return exports.sendSmartNotification({
+    event_type: 'user_login',
+    branch_name: branch_name,
+    title: `🔐 User Login: ${username}`,
+    message: message.trim(),
+    severity: 'info'
+  });
 };
 
 exports.sendBranchNotification = async (branch_name, message) => {
