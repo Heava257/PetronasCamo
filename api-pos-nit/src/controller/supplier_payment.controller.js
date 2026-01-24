@@ -1,4 +1,5 @@
-const { db, logError } = require("../util/helper");
+const { db, logError, formatPrice } = require("../util/helper");
+const { sendSmartNotification } = require("../util/Telegram.helpe");
 const XLSX = require('xlsx');
 
 // Create a new payment
@@ -85,6 +86,74 @@ exports.create = async (req, res) => {
         res.json({
             success: true,
             message: "Payment recorded successfully"
+        });
+
+        // ✅ Trigger Smart Notification (Non-blocking)
+        setImmediate(async () => {
+            try {
+                // Get Supplier Info
+                const [supplierInfo] = await db.query(
+                    "SELECT name FROM supplier WHERE id = :supplier_id",
+                    { supplier_id }
+                );
+
+                // Get User info (for branch)
+                const [userInfo] = await db.query(
+                    "SELECT name, branch_name FROM user WHERE id = :user_id",
+                    { user_id: req.auth?.id || 1 }
+                );
+
+                // Get linked purchase info if any
+                let orderInfo = "";
+                if (purchase_id) {
+                    const [purchaseInfo] = await db.query(
+                        "SELECT order_no FROM purchase WHERE id = :id",
+                        { id: purchase_id }
+                    );
+                    if (purchaseInfo.length > 0) {
+                        orderInfo = `\n• ឡេខវិក្កយបត្រ: <code>${purchaseInfo[0].order_no}</code>`;
+                    }
+                }
+
+                const supplierName = supplierInfo[0]?.name || "Unknown Supplier";
+                const branchName = userInfo[0]?.branch_name || "Unknown Branch";
+                const userName = userInfo[0]?.name || "Unknown User";
+
+                const message = `
+💸 <b>ការបង់ប្រាក់ឱ្យអ្នកផ្គត់ផ្គង់ / Supplier Payment</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏢 <b>Supplier / អ្នកផ្គត់ផ្គង់:</b> ${supplierName}
+💰 <b>Amount / ចំនួនទឹកប្រាក់:</b> <b>${formatPrice(amount)}</b>
+🗓️ <b>Date / កាលបរិច្ឆេទ:</b> ${payment_date}${orderInfo}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏦 <b>Payment Details:</b>
+• វិធីសាស្រ្ត: ${payment_method.replace(/_/g, " ").toUpperCase()}
+• ធនាគារ: ${bank_name || 'N/A'}
+• ឡេខយោង: <code>${reference_no || 'N/A'}</code>
+• ឡេខយោងធនាគារ: <code>${bank_ref || 'N/A'}</code>
+
+📍 <b>Recorded By:</b>
+• សាខា: ${branchName}
+• ដោយ: ${userName}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏰ ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh', dateStyle: 'medium', timeStyle: 'short' })}
+                `;
+
+                await sendSmartNotification({
+                    event_type: 'supplier_payment',
+                    branch_name: branchName,
+                    title: `💸 Supplier Payment: ${supplierName}`,
+                    message: message.trim(),
+                    severity: 'info',
+                    image_url: slip_image // ✅ Send the bank slip image
+                });
+
+            } catch (notifError) {
+                console.error("❌ Supplier Payment Notification Error:", notifError);
+            }
         });
 
     } catch (error) {
@@ -428,6 +497,60 @@ exports.delete = async (req, res) => {
         res.json({
             success: true,
             message: "Payment deleted successfully"
+        });
+
+        // ✅ Trigger Smart Notification (Non-blocking)
+        setImmediate(async () => {
+            try {
+                const deletedPayment = payment[0];
+
+                // Get Supplier Info
+                const [supplierInfo] = await db.query(
+                    "SELECT name FROM supplier WHERE id = :supplier_id",
+                    { supplier_id: deletedPayment.supplier_id }
+                );
+
+                // Get User info (for branch)
+                const [userInfo] = await db.query(
+                    "SELECT name, branch_name FROM user WHERE id = :user_id",
+                    { user_id: req.auth?.id || 1 }
+                );
+
+                const supplierName = supplierInfo[0]?.name || "Unknown Supplier";
+                const branchName = userInfo[0]?.branch_name || "Unknown Branch";
+                const userName = userInfo[0]?.name || "Unknown User";
+
+                const message = `
+🗑️ <b>ការលុបការបង់ប្រាក់ / Supplier Payment Deleted</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🏢 <b>Supplier / អ្នកផ្គត់ផ្គង់:</b> ${supplierName}
+💰 <b>Amount / ចំនួនទឹកប្រាក់:</b> <b>${formatPrice(deletedPayment.amount)}</b>
+🗓️ <b>Original Date:</b> ${deletedPayment.payment_date}
+🏦 <b>Bank Reference:</b> <code>${deletedPayment.bank_ref || 'N/A'}</code>
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📍 <b>Deleted By:</b>
+• សាខា: ${branchName}
+• ដោយ: ${userName}
+
+⚠️ <i>This action has been logged for security audit.</i>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+⏰ ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh', dateStyle: 'medium', timeStyle: 'short' })}
+                `;
+
+                await sendSmartNotification({
+                    event_type: 'supplier_payment',
+                    branch_name: branchName,
+                    title: `🗑️ Payment Deleted: ${supplierName}`,
+                    message: message.trim(),
+                    severity: 'warning',
+                    image_url: deletedPayment.slip_image // ✅ Send the deleted bank slip image
+                });
+
+            } catch (notifError) {
+                console.error("❌ Supplier Payment Delete Notification Error:", notifError);
+            }
         });
 
     } catch (error) {

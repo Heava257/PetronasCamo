@@ -91,6 +91,7 @@ function TelegramConfiguration() {
         { value: "purchase_created", label: "ការទិញថ្មី / New Purchase" },
         { value: "purchase_status_changed", label: "ប្តូរស្ថានភាព / Status Changed" },
         { value: "purchase_delivered", label: "ទទួលទំនិញ / Delivered" },
+        { value: "supplier_payment", label: "បង់ប្រាក់ឱ្យអ្នកផ្គត់ផ្គង់ / Supplier Payment" },
       ],
     },
     inventory: {

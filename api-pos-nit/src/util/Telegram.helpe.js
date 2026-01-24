@@ -8,7 +8,8 @@ exports.sendSmartNotification = async ({
   branch_name = null,
   title = null,
   message,
-  severity = 'normal'
+  severity = 'normal',
+  image_url = null
 }) => {
   try {
     // ✅ Check if notifications are globally enabled
@@ -137,10 +138,26 @@ exports.sendSmartNotification = async ({
             text: recipient.message,
             parse_mode: 'HTML'
           },
-          {
-            timeout: 10000
-          }
+          { timeout: 10000 }
         );
+
+        // ✅ If image_url exists, send it as a follow-up
+        if (image_url) {
+          try {
+            await axios.post(
+              `https://api.telegram.org/bot${recipient.bot_token}/sendPhoto`,
+              {
+                chat_id: recipient.chat_id,
+                photo: image_url,
+                caption: `📸 Bank Slip for: ${recipient.config_name}`
+              },
+              { timeout: 10000 }
+            );
+          } catch (photoError) {
+            console.error(`❌ Failed to send photo to ${recipient.config_name}:`, photoError.message);
+            // Don't fail the whole loop if just the photo fails
+          }
+        }
 
         results.push({
           success: true,
@@ -245,6 +262,7 @@ exports.getEventTypes = () => {
     'purchase_created': 'ការទិញថ្មី / New Purchase',
     'purchase_status_changed': 'ប្តូរស្ថានភាពការទិញ / Purchase Status Changed',
     'purchase_delivered': 'ទទួលទំនិញ / Purchase Delivered',
+    'supplier_payment': 'បង់ប្រាក់ឱ្យអ្នកផ្គត់ផ្គង់ / Supplier Payment',
 
     // Inventory Events
     'low_stock_alert': 'ស្តុកនៅសល់តិច / Low Stock Alert',
