@@ -58,6 +58,7 @@ exports.scanSlip = async (req, res) => {
             success: true,
             data: {
                 ...result,
+                imagePath: imagePath,
                 duplicate: duplicateFound,
                 duplicateMessage: duplicateMessage
             },

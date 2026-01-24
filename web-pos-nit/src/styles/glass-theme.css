@@ -1,15 +1,20 @@
-/* Global Glass Theme for Dark Mode */
-/* This enforces the "White Glass" look across the application in Dark Mode */
+/* Global Glass Theme - Refactored to follow Template System */
 
-/* 1. Global Variables for Glass Theme */
+/* 1. Global Variables for Glass Theme - Now following template variables */
 :root .dark {
+    --glass-bg-color: var(--bg-card, rgba(15, 23, 42, 0.85));
+    --glass-border-color: var(--border-color, rgba(255, 255, 255, 0.1));
+    --glass-text-primary: var(--text-primary, #f8fafc);
+    --glass-text-secondary: var(--text-secondary, #cbd5e1);
+    --glass-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+}
+
+/* Fallback for when current template is light but .dark is accidentally left */
+:root .light {
     --glass-bg-color: rgba(255, 255, 255, 0.85);
     --glass-border-color: rgba(255, 255, 255, 0.4);
     --glass-text-primary: #1f2937;
-    /* Gray-800 */
     --glass-text-secondary: #4b5563;
-    /* Gray-600 */
-    --glass-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* 2. Ant Design Card Overrides */
@@ -41,24 +46,22 @@
 }
 
 :global(.dark) .ant-table-thead>tr>th {
-    background: rgba(243, 244, 246, 0.9) !important;
-    /* Gray-100/90% */
+    background: rgba(30, 41, 59, 0.8) !important;
     color: var(--glass-text-primary) !important;
     border-bottom: 1px solid var(--glass-border-color) !important;
     font-weight: 600 !important;
 }
 
 :global(.dark) .ant-table-tbody>tr>td {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     color: var(--glass-text-primary) !important;
 }
 
 :global(.dark) .ant-table-tbody>tr:hover>td {
-    background: rgba(59, 130, 246, 0.1) !important;
-    /* Blue tint on hover */
+    background: rgba(59, 130, 246, 0.2) !important;
 }
 
-/* 4. Text and Headings Overrides (Ensure dark text on white glass) */
+/* 4. Text and Headings Overrides */
 :global(.dark) h1,
 :global(.dark) h2,
 :global(.dark) h3,
@@ -88,16 +91,22 @@
 
 /* 6. Inputs and Selects (Glass Style) */
 :global(.dark) .ant-input,
+:global(.dark) .ant-input-password,
+:global(.dark) .ant-input-affix-wrapper,
 :global(.dark) .ant-input-number,
 :global(.dark) .ant-picker,
 :global(.dark) .ant-select-selector {
-    background: rgba(255, 255, 255, 0.5) !important;
-    border-color: #d1d5db !important;
-    color: var(--glass-text-primary) !important;
+    background: rgba(30, 41, 59, 0.75) !important;
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    color: #f8fafc !important;
+}
+
+:global(.dark) .ant-input-affix-wrapper>input.ant-input {
+    background: transparent !important;
 }
 
 :global(.dark) .ant-input::placeholder {
-    color: #6b7280 !important;
+    color: #94a3b8 !important;
 }
 
 /* 7. Modal & Drawer Overrides */
@@ -106,6 +115,7 @@
     background: var(--glass-bg-color) !important;
     backdrop-filter: blur(16px) !important;
     color: var(--glass-text-primary) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 :global(.dark) .ant-modal-header,
@@ -121,4 +131,19 @@
 
 :global(.dark) .ant-modal-close {
     color: var(--glass-text-primary) !important;
+}
+
+/* 8. FORM LABELS - CRITICAL FIX FOR VISIBILITY */
+:global(.dark) .ant-form-item-label>label {
+    color: #f8fafc !important;
+    /* Force nearly white color for visibility */
+    font-weight: 500 !important;
+}
+
+:global(.dark) .ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+    color: #ef4444 !important;
+}/* descriptions and help text */
+:global(.dark) .ant-form-item-extra,
+:global(.dark) .ant-form-item-explain {
+    color: #cbd5e1 !important;
 }

@@ -11,7 +11,9 @@ exports.create = async (req, res) => {
             amount,
             payment_method,
             reference_no,
+            bank_ref,
             bank_name,
+            slip_image,
             note
         } = req.body;
 
@@ -26,7 +28,6 @@ exports.create = async (req, res) => {
         // Part 1: Allow shared reference_no (e.g. Invoice No)
         // Part 2: Strictly BLOCK duplicate bank slips (using bank_ref from OCR)
         // Part 3: Global Protection - check both Supplier AND Customer tables
-        const bank_ref = req.body.bank_ref;
         if (bank_ref && bank_ref !== 'null' && bank_ref !== 'undefined') {
             const note_ref = `%[SlipRef: ${bank_ref}]%`;
 
@@ -55,10 +56,10 @@ exports.create = async (req, res) => {
         const insertSql = `
       INSERT INTO supplier_payment (
         purchase_id, supplier_id, payment_date, amount,
-        payment_method, reference_no, bank_ref, bank_name, note, created_by
+        payment_method, reference_no, bank_ref, bank_name, slip_image, note, created_by
       ) VALUES (
         :purchase_id, :supplier_id, :payment_date, :amount,
-        :payment_method, :reference_no, :bank_ref, :bank_name, :note, :created_by
+        :payment_method, :reference_no, :bank_ref, :bank_name, :slip_image, :note, :created_by
       )
     `;
 
@@ -71,6 +72,7 @@ exports.create = async (req, res) => {
             reference_no: reference_no || null,
             bank_ref: bank_ref || null,
             bank_name: bank_name || null,
+            slip_image: slip_image || null,
             note: bank_ref ? `${note}\n\n[SlipRef: ${bank_ref}]` : (note || null),
             created_by: req.auth?.id || 1
         });
@@ -173,6 +175,44 @@ exports.getList = async (req, res) => {
     }
 };
 
+// Get unpaid invoices for a supplier
+exports.getUnpaidInvoices = async (req, res) => {
+    try {
+        const { supplier_id } = req.query;
+
+        if (!supplier_id) {
+            return res.status(400).json({
+                success: false,
+                message: "Supplier ID is required"
+            });
+        }
+
+        const sql = `
+            SELECT 
+                p.id,
+                p.order_no,
+                p.order_date,
+                p.total_amount,
+                COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0) as paid_amount,
+                (p.total_amount - COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0)) as remaining_amount
+            FROM purchase p
+            WHERE p.supplier_id = :supplier_id
+            AND (p.total_amount - COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0)) > 0
+            ORDER BY p.order_date ASC
+        `;
+
+        const [results] = await db.query(sql, { supplier_id });
+
+        res.json({
+            success: true,
+            list: results
+        });
+
+    } catch (error) {
+        logError("supplier_payment.getUnpaidInvoices", error, res);
+    }
+};
+
 // Get ledger (main function for detailed view)
 exports.getLedger = async (req, res) => {
     try {
@@ -201,6 +241,8 @@ exports.getLedger = async (req, res) => {
         NULL as reference_no,
         NULL as payment_method,
         NULL as bank_name,
+        NULL as bank_ref,
+        NULL as slip_image,
         p.notes as note,
         COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0) as paid_amount,
         (p.total_amount - COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0)) as remaining_amount
@@ -222,7 +264,7 @@ exports.getLedger = async (req, res) => {
         let paymentSql = `
       SELECT 
         sp.id,
-        sp.purchase_id as order_no,
+        p.order_no as order_no,
         sp.payment_date as transaction_date,
         0 as debit,
         sp.amount as credit,
@@ -231,10 +273,13 @@ exports.getLedger = async (req, res) => {
         sp.reference_no,
         sp.payment_method,
         sp.bank_name,
+        sp.bank_ref,
+        sp.slip_image,
         sp.note,
         0 as paid_amount,
         0 as remaining_amount
       FROM supplier_payment sp
+      LEFT JOIN purchase p ON sp.purchase_id = p.id
       WHERE sp.supplier_id = :supplier_id
     `;
 

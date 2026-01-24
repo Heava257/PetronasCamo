@@ -108,7 +108,8 @@
     "remaining_balance": "ប្រាក់នៅសល់",
     "payment_methods_dist": "ការបែងចែកវិធីសាស្រ្តទូទាត់",
     "payment_details": "លម្អិតការទូទាត់",
-    "payment_date": "កាលបរិច្ឆេទបង់ប្រាក់",
+    "invoice_summary": "សេចក្តីសង្ខេបវិក្កយបត្រ",
+    "payment_date": "ថ្ងៃបង់ប្រាក់",
     "payment_method": "វិធីសាស្រ្តទូទាត់",
     "debt_total": "ជំពាក់សរុប",
     "total_paid": "បានបង់សរុប",
@@ -313,5 +314,13 @@
       "inventory": "ស្តុក និងទំនិញ",
       "reports": "របាយការណ៍"
     }
+  },
+  "payment": {
+    "invoice_no": "លេខវិក្កយបត្រ",
+    "select_invoice": "ជ្រើសរើសវិក្កយបត្រ (ស្រេចចិត្ត)",
+    "invoice_summary": "សេចក្តីសង្ខេបវិក្កយបត្រ",
+    "total_amount": "ទឹកប្រាក់សរុប",
+    "paid_amount": "ចំនួនទឹកប្រាក់បានបង់",
+    "remaining_balance": "សមតុល្យនៅសល់"
   }
 }

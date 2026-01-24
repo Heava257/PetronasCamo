@@ -18,7 +18,10 @@ import {
     Space,
     Tag,
     Alert,
-    Upload
+    Upload,
+    Image,
+    Descriptions,
+    Divider
 } from "antd";
 import dayjs from "dayjs";
 import {
@@ -27,7 +30,10 @@ import {
     PrinterOutlined,
     PlusOutlined,
     ArrowUpOutlined,
-    ArrowDownOutlined
+    ArrowDownOutlined,
+    EyeOutlined,
+    DeleteOutlined,
+    ExclamationCircleOutlined
 } from '@ant-design/icons';
 import { useTranslation } from "../../locales/TranslationContext";
 import * as XLSX from 'xlsx';
@@ -36,7 +42,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
-// Custom styles for supplier ledger table
+// Custom styles for supplier ledger table with Dark Mode support
 const tableStyles = `
     .supplier-ledger-table .ant-table-thead > tr > th {
         background-color: #d4d4d4 !important;
@@ -51,11 +57,151 @@ const tableStyles = `
     .supplier-ledger-table .ant-table-tbody > tr > td {
         border: 1px solid #d4d4d4;
     }
-    .supplier-ledger-table .ant-table-thead > tr:first-child > th:first-child {
-        border-top-left-radius: 0;
+
+    /* Dark Mode Specific Overrides */
+    .dark .ant-card {
+        background: rgba(15, 23, 42, 0.8) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        backdrop-filter: blur(12px);
     }
-    .supplier-ledger-table .ant-table-thead > tr:first-child > th:last-child {
-        border-top-right-radius: 0;
+    
+    .dark .ant-table {
+        background: transparent !important;
+        color: #e2e8f0 !important;
+    }
+
+    .dark .supplier-ledger-table .ant-table-thead > tr > th {
+        background-color: rgba(30, 41, 59, 1) !important;
+        color: #f8fafc !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .dark .supplier-ledger-table .ant-table-thead > tr > th .ant-table-column-title {
+        color: #f8fafc !important;
+    }
+
+    .dark .supplier-ledger-table .ant-table-tbody > tr > td {
+        border-color: rgba(255, 255, 255, 0.05) !important;
+        color: #cbd5e1 !important;
+    }
+
+    .dark .ant-modal-content,
+    .dark .ant-modal-header {
+        background: rgba(15, 23, 42, 0.95) !important;
+        color: #f8fafc !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .dark .ant-modal-title {
+        color: #f8fafc !important;
+    }
+
+    .dark .ant-form-item-label > label {
+        color: #94a3b8 !important;
+    }
+
+    .dark .ant-input,
+    .dark .ant-select-selector,
+    .dark .ant-picker,
+    .dark .ant-input-number,
+    .dark .ant-input-number-input,
+    .dark .ant-input-textarea {
+        background: rgba(30, 41, 59, 0.6) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f8fafc !important;
+    }
+
+    .dark .ant-input::placeholder {
+        color: #64748b !important;
+    }
+
+    .dark .ant-typography {
+        color: #f8fafc !important;
+    }
+
+    .dark .bg-white {
+        background-color: rgba(30, 41, 59, 0.4) !important;
+    }
+
+    .dark .bg-gray-50 {
+        background-color: rgba(15, 23, 42, 0.5) !important;
+    }
+    
+    .dark .ant-alert-warning {
+        background: rgba(120, 53, 15, 0.3) !important;
+        border-color: rgba(180, 83, 9, 0.4) !important;
+    }
+
+    .dark .ant-alert-error {
+        background: rgba(127, 29, 29, 0.3) !important;
+        border-color: rgba(185, 28, 28, 0.4) !important;
+    }
+
+    .dark .ant-alert-message,
+    .dark .ant-alert-description {
+        color: #f8fafc !important;
+    }
+    
+    .dark .ant-alert-icon {
+        color: #f8fafc !important;
+    }
+
+    /* Detailed Input overrides to fix the 'White Background' issue */
+    .dark .ant-modal .ant-input,
+    .dark .ant-modal .ant-select-selector,
+    .dark .ant-modal .ant-picker,
+    .dark .ant-modal .ant-input-number,
+    .dark .ant-modal .ant-input-number-input,
+    .dark .ant-modal .ant-input-textarea,
+    .dark .ant-modal .ant-select-selection-item {
+        background-color: #1e293b !important; /* Solid Slate-800 for visibility */
+        background: rgba(30, 41, 59, 0.8) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+        color: #f8fafc !important;
+    }
+
+    /* Target nested elements for Select and InputNumber */
+    .dark .ant-modal .ant-select-selection-placeholder {
+        color: #94a3b8 !important;
+    }
+    
+    .dark .ant-modal .ant-select-arrow,
+    .dark .ant-modal .ant-picker-icon {
+        color: #94a3b8 !important;
+    }
+
+    .dark .ant-select-dropdown {
+        background-color: #0f172a !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+    
+    .dark .ant-select-item-option-content {
+        color: #cbd5e1 !important;
+    }
+
+    .dark .ant-select-item-option-selected {
+        background-color: rgba(59, 130, 246, 0.5) !important;
+    }
+
+    .dark .ant-picker-panel-container {
+        background-color: #0f172a !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .dark .ant-picker-cell-inner {
+        color: #cbd5e1 !important;
+    }
+
+    .dark .ant-picker-cell-selected .ant-picker-cell-inner {
+        background-color: #3b82f6 !important;
+        color: white !important;
+    }
+
+    /* Fix for bright white summary section in dark mode */
+    .dark .bg-white.dark\\:bg-gray-800 {
+        background: rgba(30, 41, 59, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
     }
 `;
 
@@ -82,7 +228,11 @@ function SupplierPaymentPage() {
             total_payments: 0,
             ending_balance: 0,
             comparison: 0
-        }
+        },
+        viewModalVisible: false,
+        selectedRecord: null,
+        slip_image: null, // To store Cloudinary URL from OCR
+        unpaidInvoices: []
     });
 
     useEffect(() => {
@@ -129,6 +279,14 @@ function SupplierPaymentPage() {
         }
     };
 
+    const loadUnpaidInvoices = async () => {
+        if (!state.selectedSupplier) return;
+        const res = await request(`supplier_payment/unpaid_invoices?supplier_id=${state.selectedSupplier}`, "get");
+        if (res && !res.error) {
+            setState(p => ({ ...p, unpaidInvoices: res.list || [] }));
+        }
+    };
+
     const handleExport = async () => {
         if (!state.selectedSupplier) {
             message.error("Please select a supplier");
@@ -151,12 +309,14 @@ function SupplierPaymentPage() {
 
     const showPaymentModal = () => {
         form.resetFields();
+        loadUnpaidInvoices();
         setState(p => ({
             ...p,
             paymentModalVisible: true,
             duplicateSlipFound: false,
             invalidSlipFound: false,
-            scanning: false
+            scanning: false,
+            slip_image: null // Clear any previous slip image
         }));
     };
 
@@ -210,10 +370,16 @@ function SupplierPaymentPage() {
                     return;
                 }
 
-                setState(p => ({ ...p, duplicateSlipFound: false, invalidSlipFound: false }));
+                setState(p => ({
+                    ...p,
+                    duplicateSlipFound: false,
+                    invalidSlipFound: false,
+                    slip_image: res.data.imagePath // Keep state as backup
+                }));
 
                 // Auto-fill form
                 form.setFieldsValue({
+                    slip_image_url: res.data.imagePath, // CRITICAL: Store in form data
                     amount: amount || undefined,
                     payment_date: date ? dayjs(date) : undefined,
                     reference_no: reference_no,
@@ -234,6 +400,39 @@ function SupplierPaymentPage() {
         }
     };
 
+    const onClickBtnView = (record) => {
+        setState(p => ({
+            ...p,
+            selectedRecord: record,
+            viewModalVisible: true
+        }));
+    };
+
+    const onClickBtnDelete = (record) => {
+        const typeLabel = record.transaction_type === 'purchase' ? 'Invoice' : 'Payment';
+        Modal.confirm({
+            title: `Delete ${typeLabel}`,
+            icon: <ExclamationCircleOutlined />,
+            content: `Are you sure you want to delete this ${record.transaction_type}? This will adjust the ledger balance.`,
+            okText: 'Yes, Delete',
+            okType: 'danger',
+            cancelText: 'No',
+            onOk: async () => {
+                const url = record.transaction_type === 'purchase'
+                    ? `purchase/${record.id.split('-')[0]}` // Extract real ID if it was split
+                    : `supplier_payment/${record.id}`;
+
+                const res = await request(url, "delete");
+                if (res && !res.error) {
+                    message.success(`${typeLabel} deleted successfully`);
+                    loadLedger();
+                } else {
+                    message.error(res.message || `Failed to delete ${record.transaction_type}`);
+                }
+            }
+        });
+    };
+
     const handlePaymentSubmit = async (values) => {
         if (state.duplicateSlipFound || state.invalidSlipFound) {
             message.error("This payment is blocked. Please provide a valid, unique bank slip.");
@@ -250,6 +449,7 @@ function SupplierPaymentPage() {
                 reference_no: values.reference_no,
                 bank_ref: values.bank_ref, // Include unique slip ref
                 bank_name: values.bank_name,
+                slip_image: values.slip_image_url || state.slip_image, // Use form value or state backup
                 note: values.note,
                 purchase_id: values.purchase_id || null
             };
@@ -258,7 +458,7 @@ function SupplierPaymentPage() {
 
             if (res && !res.error) {
                 message.success("Payment recorded successfully");
-                setState(p => ({ ...p, paymentModalVisible: false })); // Close modal
+                setState(p => ({ ...p, paymentModalVisible: false, slip_image: null })); // Close and clear
                 loadLedger();
                 form.resetFields();
             } else {
@@ -313,6 +513,73 @@ function SupplierPaymentPage() {
 
     const fuelTotals = calculateFuelTotals();
 
+    // ✅ Refactor ledger data to split multi-product purchases into separate rows
+    const processedLedger = React.useMemo(() => {
+        let currentBalance = parseFloat(state.summary.beginning_balance || 0);
+        const result = [];
+
+        state.ledger.forEach((entry, entryIdx) => {
+            if (entry.transaction_type === 'purchase') {
+                let items = [];
+                try {
+                    items = entry.items ? (typeof entry.items === 'string' ? JSON.parse(entry.items) : entry.items) : [];
+                } catch (e) {
+                    console.error("Error parsing items", e);
+                }
+
+                if (items.length > 0) {
+                    items.forEach((item, itemIdx) => {
+                        const name = (item.product_name || item.name || '').toLowerCase();
+                        const qty = parseFloat(item.quantity || item.qty || 0);
+                        const unitPrice = parseFloat(item.unit_price || item.price || 0);
+                        const itemTotal = parseFloat(item.total || item.amount || (qty * unitPrice));
+
+                        // Determine fuel type column
+                        let fuel_extra = 0, fuel_gas = 0, fuel_diesel = 0;
+                        if (name.includes('gasoline') || name.includes('extra') || name.includes('super') || name.includes('95') || name.includes('92') || name.includes('សាំង') || name.includes('benzine')) {
+                            fuel_extra = qty;
+                        } else if (name.includes('diesel') || name.includes('euro') || name.includes('ម៉ាស៊ូត') || name.includes('dầu')) {
+                            fuel_diesel = qty;
+                        } else if (name.includes('ហ្គា') || name.includes('ហ្កា') || name.includes('lpg') || name.includes('gas')) {
+                            fuel_gas = qty;
+                        }
+
+                        // Update running balance locally
+                        currentBalance += itemTotal;
+
+                        result.push({
+                            ...entry,
+                            id: `${entry.id}-${itemIdx}`, // Unique ID for table row
+                            note: items.length > 1 ? `${entry.note || 'Purchase'} (${item.product_name || item.name})` : (entry.note || 'Purchase'),
+                            fuel_extra,
+                            fuel_gas,
+                            fuel_diesel,
+                            unit_price_specific: unitPrice,
+                            debit: itemTotal,
+                            running_balance: currentBalance
+                        });
+                    });
+                } else {
+                    // Fallback if no items but have debit
+                    currentBalance += parseFloat(entry.debit || 0);
+                    result.push({
+                        ...entry,
+                        running_balance: currentBalance
+                    });
+                }
+            } else {
+                // Payment
+                currentBalance -= parseFloat(entry.credit || 0);
+                result.push({
+                    ...entry,
+                    running_balance: currentBalance
+                });
+            }
+        });
+
+        return result;
+    }, [state.ledger, state.summary.beginning_balance]);
+
     const columns = [
         {
             title: "ថ្ងៃ ខែ ឆ្នាំ / Date",
@@ -326,7 +593,7 @@ function SupplierPaymentPage() {
             dataIndex: "order_no",
             key: "order_no",
             width: 120,
-            render: (val, record) => record.transaction_type === 'purchase' ? val : ''
+            render: (val) => val || ''
         },
         {
             title: "អធិប្បាយ / Description",
@@ -370,11 +637,15 @@ function SupplierPaymentPage() {
             width: 100,
             render: (_, record) => {
                 if (record.transaction_type !== 'purchase') return '';
+                // Use specific price if we split the rows, otherwise fallback to average
+                if (record.unit_price_specific !== undefined) {
+                    return `USD ${formatPrice(record.unit_price_specific)}`;
+                }
                 try {
                     const items = record.items ? (typeof record.items === 'string' ? JSON.parse(record.items) : record.items) : [];
                     if (items.length > 0) {
                         const avgPrice = items.reduce((sum, i) => sum + parseFloat(i.unit_price || i.price || 0), 0) / items.length;
-                        return `$${formatPrice(avgPrice)}`;
+                        return `USD ${formatPrice(avgPrice)}`;
                     }
                     return '-';
                 } catch (e) {
@@ -390,7 +661,7 @@ function SupplierPaymentPage() {
                     dataIndex: "debit",
                     key: "dollar_debit",
                     width: 100,
-                    render: (val, record) => record.transaction_type === 'purchase' ? `$${formatPrice(val)}` : ''
+                    render: (val, record) => record.transaction_type === 'purchase' ? `USD ${formatPrice(val)}` : ''
                 },
                 {
                     title: "Riel",
@@ -398,7 +669,7 @@ function SupplierPaymentPage() {
                     render: (_, record) => {
                         if (record.transaction_type !== 'purchase') return '';
                         const rielAmount = parseFloat(record.debit || 0) * state.exchangeRate;
-                        return `៛${rielAmount.toLocaleString()}`;
+                        return `KHR ${rielAmount.toLocaleString()}`;
                     }
                 }
             ]
@@ -411,14 +682,23 @@ function SupplierPaymentPage() {
                     dataIndex: "reference_no",
                     key: "ref",
                     width: 150,
-                    render: (val, record) => record.transaction_type === 'payment' ? val : ''
+                    render: (val, record) => {
+                        if (record.transaction_type !== 'payment') return '';
+                        return (
+                            <div style={{ lineHeight: '1.2' }}>
+                                {record.order_no && <div style={{ fontWeight: '600', color: '#1890ff' }}>{record.order_no}</div>}
+                                {val && <div style={{ fontSize: '11px', opacity: 0.8 }}>{val}</div>}
+                                {!record.order_no && !val && '-'}
+                            </div>
+                        );
+                    }
                 },
                 {
                     title: "Dollar",
                     dataIndex: "credit",
                     key: "dollar_credit",
                     width: 100,
-                    render: (val, record) => record.transaction_type === 'payment' ? `$${formatPrice(val)}` : ''
+                    render: (val, record) => record.transaction_type === 'payment' ? `USD ${formatPrice(val)}` : ''
                 },
                 {
                     title: "Riel",
@@ -426,7 +706,7 @@ function SupplierPaymentPage() {
                     render: (_, record) => {
                         if (record.transaction_type !== 'payment') return '';
                         const rielAmount = parseFloat(record.credit || 0) * state.exchangeRate;
-                        return `៛${rielAmount.toLocaleString()}`;
+                        return `KHR ${rielAmount.toLocaleString()}`;
                     }
                 }
             ]
@@ -441,7 +721,7 @@ function SupplierPaymentPage() {
                     width: 120,
                     render: (val) => (
                         <Text style={{ color: val > 0 ? 'red' : 'green', fontWeight: 'bold' }}>
-                            ${formatPrice(Math.abs(val))}
+                            USD {formatPrice(Math.abs(val))}
                         </Text>
                     )
                 },
@@ -452,12 +732,36 @@ function SupplierPaymentPage() {
                         const rielBalance = parseFloat(record.running_balance || 0) * state.exchangeRate;
                         return (
                             <Text style={{ color: rielBalance > 0 ? 'red' : 'green', fontWeight: 'bold' }}>
-                                ៛{Math.abs(rielBalance).toLocaleString()}
+                                KHR {Math.abs(rielBalance).toLocaleString()}
                             </Text>
                         );
                     }
                 }
             ]
+        },
+        {
+            title: "សកម្មភាព / Action",
+            key: "action",
+            width: 100,
+            fixed: 'right',
+            render: (_, record) => record.transaction_type === 'payment' ? (
+                <Space>
+                    <Button
+                        type="primary"
+                        size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => onClickBtnView(record)}
+                        title="View Details"
+                    />
+                    <Button
+                        danger
+                        size="small"
+                        icon={<DeleteOutlined />}
+                        onClick={() => onClickBtnDelete(record)}
+                        title="Delete"
+                    />
+                </Space>
+            ) : null
         }
     ];
 
@@ -519,8 +823,8 @@ function SupplierPaymentPage() {
                                     style={{ width: '100%' }}
                                     min={1}
                                     step={100}
-                                    formatter={(value) => `៛ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                    parser={(value) => value.replace(/៛\s?|(,*)/g, '')}
+                                    formatter={(value) => `KHR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                    parser={(value) => value.replace(/KHR\s?|(,*)/g, '')}
                                 />
                             </div>
                         </Col>
@@ -557,7 +861,7 @@ function SupplierPaymentPage() {
                 <Card>
                     <Table
                         columns={columns}
-                        dataSource={state.ledger}
+                        dataSource={processedLedger}
                         rowKey={(record) => `${record.transaction_type}-${record.id}`}
                         pagination={false}
                         scroll={{ x: 1400 }}
@@ -579,28 +883,28 @@ function SupplierPaymentPage() {
                                     <div className="p-4 bg-white dark:bg-gray-800 rounded border shadow-sm">
                                         <Row justify="space-between" className="mb-3">
                                             <Col><Text strong>Beginning Balance (សមតុល្យដើមគ្រា):</Text></Col>
-                                            <Col><Text>${formatPrice(state.summary.beginning_balance || 0)}</Text></Col>
+                                            <Col><Text>USD {formatPrice(state.summary.beginning_balance || 0)}</Text></Col>
                                         </Row>
                                         <Row justify="space-between" className="mb-3">
                                             <Col>
                                                 <Text strong style={{ color: '#1890ff' }}>Increase (ទិញបន្ថែមក្នុងគ្រា):</Text>
                                                 <Text type="secondary" className="ml-2">({state.summary.increase_count || 0} times)</Text>
                                             </Col>
-                                            <Col><Text style={{ color: '#1890ff' }}>+ ${formatPrice(state.summary.increase || 0)}</Text></Col>
+                                            <Col><Text style={{ color: '#1890ff' }}>+ USD {formatPrice(state.summary.increase || 0)}</Text></Col>
                                         </Row>
                                         <Row justify="space-between" className="mb-3">
                                             <Col>
                                                 <Text strong style={{ color: '#52c41a' }}>Payments (សងក្នុងគ្រា):</Text>
                                                 <Text type="secondary" className="ml-2">({state.summary.payment_count || 0} times)</Text>
                                             </Col>
-                                            <Col><Text style={{ color: '#52c41a' }}>- ${formatPrice(state.summary.total_payments || 0)}</Text></Col>
+                                            <Col><Text style={{ color: '#52c41a' }}>- USD {formatPrice(state.summary.total_payments || 0)}</Text></Col>
                                         </Row>
                                         <div className="border-t my-2" />
                                         <Row justify="space-between" className="mt-2">
                                             <Col><Title level={4}>Ending Balance (សមតុល្យចុងគ្រា):</Title></Col>
                                             <Col>
                                                 <Title level={4} style={{ color: state.summary.ending_balance > 0 ? 'red' : 'green' }}>
-                                                    ${formatPrice(Math.abs(state.summary.ending_balance || 0))}
+                                                    USD {formatPrice(Math.abs(state.summary.ending_balance || 0))}
                                                 </Title>
                                             </Col>
                                         </Row>
@@ -616,11 +920,11 @@ function SupplierPaymentPage() {
                                                 <div className="mt-4">
                                                     {state.summary.comparison > 0 ? (
                                                         <Text strong style={{ fontSize: '24px', color: 'red' }}>
-                                                            <ArrowUpOutlined /> Increase: ${formatPrice(state.summary.comparison)}
+                                                            <ArrowUpOutlined /> Increase: USD {formatPrice(state.summary.comparison)}
                                                         </Text>
                                                     ) : state.summary.comparison < 0 ? (
                                                         <Text strong style={{ fontSize: '24px', color: 'green' }}>
-                                                            <ArrowDownOutlined /> Decrease: ${formatPrice(Math.abs(state.summary.comparison))}
+                                                            <ArrowDownOutlined /> Decrease: USD {formatPrice(Math.abs(state.summary.comparison))}
                                                         </Text>
                                                     ) : (
                                                         <Text strong style={{ fontSize: '24px', color: 'gray' }}>
@@ -700,9 +1004,6 @@ function SupplierPaymentPage() {
                         >
                             {({ getFieldValue }) => {
                                 const method = getFieldValue('payment_method');
-                                const hasAmount = !!getFieldValue('amount');
-                                const hasSlip = !!getFieldValue('slip_image');
-
                                 const isBank = method === 'bank_transfer';
                                 const isCash = method === 'cash' || method === 'cheque' || method === 'other';
 
@@ -742,69 +1043,128 @@ function SupplierPaymentPage() {
                                             </Form.Item>
                                         )}
 
-                                        {(isCash || (isBank && (hasAmount || hasSlip))) && (
-                                            <>
-                                                <Form.Item
-                                                    name="payment_date"
-                                                    label="Payment Date"
-                                                    rules={[{ required: true }]}
-                                                >
-                                                    <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" sx={{ width: '100%' }} />
-                                                </Form.Item>
+                                        <Form.Item
+                                            name="purchase_id"
+                                            label={`${t("payment.invoice_no")} (Invoice No)`}
+                                        >
+                                            <Select
+                                                placeholder={t("payment.select_invoice")}
+                                                allowClear
+                                                onChange={(val) => {
+                                                    if (val) {
+                                                        const invoice = state.unpaidInvoices.find(i => i.id === val);
+                                                        if (invoice) {
+                                                            form.setFieldsValue({
+                                                                amount: invoice.remaining_amount
+                                                            });
+                                                        }
+                                                    }
+                                                }}
+                                            >
+                                                {state.unpaidInvoices.map(inv => (
+                                                    <Option key={inv.id} value={inv.id}>
+                                                        {inv.order_no} - {t("total")}: ${formatPrice(inv.total_amount)} ({t("remaining")}: ${formatPrice(inv.remaining_amount)})
+                                                    </Option>
+                                                ))}
+                                            </Select>
+                                        </Form.Item>
 
-                                                <Form.Item
-                                                    name="amount"
-                                                    label="Amount (USD)"
-                                                    rules={[{ required: true }]}
-                                                >
-                                                    <InputNumber
-                                                        style={{ width: '100%' }}
-                                                        min={0}
-                                                        precision={2}
-                                                        formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                                        parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
+                                        <Form.Item
+                                            noStyle
+                                            shouldUpdate={(prevValues, currentValues) => prevValues.purchase_id !== currentValues.purchase_id}
+                                        >
+                                            {({ getFieldValue }) => {
+                                                const purchaseId = getFieldValue('purchase_id');
+                                                if (!purchaseId) return null;
+                                                const invoice = state.unpaidInvoices.find(i => i.id === purchaseId);
+                                                if (!invoice) return null;
+                                                return (
+                                                    <Alert
+                                                        message={`${t("payment.invoice_summary")}: ${invoice.order_no}`}
+                                                        description={
+                                                            <div style={{ padding: '8px 0' }}>
+                                                                <Row justify="space-between" className="mb-1">
+                                                                    <Col><Text>{t("payment.total_amount")}:</Text></Col>
+                                                                    <Col><Text strong>USD {formatPrice(invoice.total_amount)}</Text></Col>
+                                                                </Row>
+                                                                <Row justify="space-between" className="mb-1">
+                                                                    <Col><Text>{t("payment.paid_amount")}:</Text></Col>
+                                                                    <Col><Text style={{ color: '#52c41a' }}>USD {formatPrice(invoice.paid_amount)}</Text></Col>
+                                                                </Row>
+                                                                <Row justify="space-between">
+                                                                    <Col><Text strong>{t("payment.remaining_balance")}:</Text></Col>
+                                                                    <Col><Text strong style={{ color: '#ff4d4f' }}>USD {formatPrice(invoice.remaining_amount)}</Text></Col>
+                                                                </Row>
+                                                            </div>
+                                                        }
+                                                        type="info"
+                                                        showIcon
+                                                        style={{ marginBottom: 16 }}
                                                     />
-                                                </Form.Item>
+                                                );
+                                            }}
+                                        </Form.Item>
 
-                                                <Form.Item
-                                                    name="reference_no"
-                                                    label="Reference Number"
-                                                >
-                                                    <Input placeholder="e.g., Acleda5337..." />
-                                                </Form.Item>
+                                        <Form.Item
+                                            name="payment_date"
+                                            label="Payment Date"
+                                            rules={[{ required: true }]}
+                                        >
+                                            <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+                                        </Form.Item>
 
-                                                {isBank && (
-                                                    <Form.Item
-                                                        name="bank_name"
-                                                        label="Bank Name"
-                                                        rules={[{ required: true, message: 'Please select a bank' }]}
-                                                    >
-                                                        <Select placeholder="Select Bank">
-                                                            <Option value="ABA Bank">ABA Bank</Option>
-                                                            <Option value="ACLEDA Bank">ACLEDA Bank</Option>
-                                                            <Option value="Canadia Bank">Canadia Bank</Option>
-                                                            <Option value="Wing Bank">Wing Bank</Option>
-                                                            <Option value="True Money">True Money</Option>
-                                                            <Option value="Bakong">Bakong</Option>
-                                                        </Select>
-                                                    </Form.Item>
-                                                )}
+                                        <Form.Item
+                                            name="amount"
+                                            label="Amount (USD)"
+                                            rules={[{ required: true }]}
+                                        >
+                                            <InputNumber
+                                                style={{ width: '100%' }}
+                                                min={0}
+                                                precision={2}
+                                                formatter={(value) => `USD ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                                parser={(value) => value.replace(/USD\s?|(,*)/g, '')}
+                                            />
+                                        </Form.Item>
 
-                                                <Form.Item
-                                                    name="note"
-                                                    label="Note"
-                                                >
-                                                    <Input.TextArea rows={3} />
-                                                </Form.Item>
-                                            </>
+                                        <Form.Item
+                                            name="reference_no"
+                                            label="Reference Number"
+                                        >
+                                            <Input placeholder="e.g., Acleda5337..." />
+                                        </Form.Item>
+
+                                        {isBank && (
+                                            <Form.Item
+                                                name="bank_name"
+                                                label="Bank Name"
+                                                rules={[{ required: true, message: 'Please select a bank' }]}
+                                            >
+                                                <Select placeholder="Select Bank">
+                                                    <Option value="ABA Bank">ABA Bank</Option>
+                                                    <Option value="ACLEDA Bank">ACLEDA Bank</Option>
+                                                    <Option value="Canadia Bank">Canadia Bank</Option>
+                                                    <Option value="Wing Bank">Wing Bank</Option>
+                                                    <Option value="True Money">True Money</Option>
+                                                    <Option value="Bakong">Bakong</Option>
+                                                </Select>
+                                            </Form.Item>
                                         )}
+
+                                        <Form.Item
+                                            name="note"
+                                            label="Note"
+                                        >
+                                            <Input.TextArea rows={3} />
+                                        </Form.Item>
                                     </>
                                 );
                             }}
                         </Form.Item>
 
-                        {/* Hidden field for unique bank slip reference */}
+                        {/* Hidden fields for bank slip data */}
                         <Form.Item name="bank_ref" hidden><Input /></Form.Item>
+                        <Form.Item name="slip_image_url" hidden><Input /></Form.Item>
 
                         <div style={{ textAlign: 'right', marginTop: 24 }}>
                             <Button
@@ -832,6 +1192,91 @@ function SupplierPaymentPage() {
                             </Button>
                         </div>
                     </Form>
+                </Modal>
+
+                {/* View Detail Modal */}
+                <Modal
+                    title={<Title level={4}>{t("invoice_summary")}</Title>}
+                    open={state.viewModalVisible}
+                    onCancel={() => setState(p => ({ ...p, viewModalVisible: false, selectedRecord: null }))}
+                    footer={[
+                        <Button key="close" onClick={() => setState(p => ({ ...p, viewModalVisible: false, selectedRecord: null }))}>
+                            {t("close")}
+                        </Button>
+                    ]}
+                    width={800}
+                >
+                    {state.selectedRecord && (
+                        <div className="py-2">
+                            <Descriptions bordered column={2}>
+                                <Descriptions.Item label={`${t("payment_date")} (ថ្ងៃខែឆ្នាំ)`}>
+                                    {dayjs(state.selectedRecord.transaction_date).format("DD-MM-YYYY HH:mm")}
+                                </Descriptions.Item>
+                                <Descriptions.Item label="Type (ប្រភេទ)">
+                                    <Tag color={state.selectedRecord.transaction_type === 'purchase' ? 'orange' : 'blue'}>
+                                        {(state.selectedRecord.transaction_type || '').toUpperCase()}
+                                    </Tag>
+                                </Descriptions.Item>
+                                <Descriptions.Item label="Invoice No (លេខវិក្កយបត្រ)" span={2}>
+                                    <Text strong style={{ color: '#1890ff' }}>{state.selectedRecord.order_no || '-'}</Text>
+                                </Descriptions.Item>
+
+                                {state.selectedRecord.transaction_type === 'purchase' ? (
+                                    <>
+                                        <Descriptions.Item label="Total Amount (សរុប)">
+                                            <Text strong style={{ color: 'red' }}>USD {formatPrice(state.selectedRecord.debit)}</Text>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Riel Equation">
+                                            KHR {(parseFloat(state.selectedRecord.debit || 0) * state.exchangeRate).toLocaleString()}
+                                        </Descriptions.Item>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Descriptions.Item label="Payment Amount (ទឹកប្រាក់សង)">
+                                            <Text strong style={{ color: 'green' }}>USD {formatPrice(state.selectedRecord.credit)}</Text>
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Riel Equation">
+                                            KHR {(parseFloat(state.selectedRecord.credit || 0) * state.exchangeRate).toLocaleString()}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Method (វិធីសាស្រ្តអនុវត្ត)">
+                                            {state.selectedRecord.payment_method || 'Bank Transfer'}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Bank Name (ឈ្មោះធនាគារ)">
+                                            {state.selectedRecord.bank_name || '-'}
+                                        </Descriptions.Item>
+                                        <Descriptions.Item label="Reference No (លេខយោង)" span={2}>
+                                            {state.selectedRecord.reference_no || '-'}
+                                        </Descriptions.Item>
+                                    </>
+                                )}
+
+                                <Descriptions.Item label="Note (ចំណាំ)" span={2}>
+                                    {state.selectedRecord.note || '-'}
+                                </Descriptions.Item>
+                            </Descriptions>
+
+                            {state.selectedRecord.transaction_type === 'payment' && (state.selectedRecord.slip_image || (state.selectedRecord.bank_ref && state.selectedRecord.bank_ref.startsWith('dcc'))) && (
+                                <>
+                                    <Divider orientation="left">Bank Slip (ប័ណ្ណបង់ប្រាក់)</Divider>
+                                    <div style={{ textAlign: 'center', background: '#f5f5f5', padding: 20, borderRadius: 8 }}>
+                                        <Image
+                                            width={300}
+                                            src={state.selectedRecord.slip_image || `https://res.cloudinary.com/dt966u8p6/image/upload/v1/petronas-products/${state.selectedRecord.bank_ref}.jpg`}
+                                            fallback="https://res.cloudinary.com/dt966u8p6/image/upload/v1737719602/petronas-products/no-image_o5vz6f.png"
+                                            placeholder={
+                                                <div style={{ width: 300, height: 400, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eee' }}>
+                                                    Scanning...
+                                                </div>
+                                            }
+                                        />
+                                        <div className="mt-2">
+                                            <Text type="secondary">Slip Ref: {state.selectedRecord.bank_ref || state.selectedRecord.reference_no}</Text>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </Modal>
             </div>
         </MainPage >

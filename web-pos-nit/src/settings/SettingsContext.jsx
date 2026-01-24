@@ -42,15 +42,13 @@ const scaleFontSize = (baseSize, multiplier) => {
 const applyTemplateCSS = (template, isDarkMode, fontSize = 'medium') => {
     const root = document.documentElement;
 
-    // Determine active colors based on mode
+    // Initialize with template defaults
     let activeColors = { ...template.colors };
     let activeSidebar = { ...template.sidebar };
 
     if (isDarkMode) {
         if (template.darkColors) {
             activeColors = { ...activeColors, ...template.darkColors };
-            // If template specifies separate darkSidebar settings, we could merge them here
-            // But usually sidebar follows its own config, or we override defaults below
         } else {
             // Default dark mode overrides if template doesn't specify darkColors
             activeColors = {
@@ -197,8 +195,7 @@ export const SettingsProvider = ({ children }) => {
     // Apply template
     const applyTemplate = useCallback((templateId) => {
         if (templates[templateId]) {
-            // Reset to light mode when switching templates to ensure correct first impression
-            setSettings(prev => ({ ...prev, templateId, darkMode: false }));
+            setSettings(prev => ({ ...prev, templateId }));
         }
     }, []);
 
