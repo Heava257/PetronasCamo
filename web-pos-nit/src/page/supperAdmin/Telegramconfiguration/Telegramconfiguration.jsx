@@ -102,6 +102,7 @@ function TelegramConfiguration() {
         { value: "low_stock_alert", label: "ស្តុកនៅសល់តិច / Low Stock" },
         { value: "stock_received", label: "ទទួលស្តុក / Stock Received" },
         { value: "stock_adjustment", label: "កែសម្រួលស្តុក / Adjustment" },
+        { value: "inventory_movement", label: "ចលនាស្តុក (In/Out/Rem) / Inventory Movement" },
       ],
     },
     finance: {

@@ -59,8 +59,8 @@ exports.createReconciliation = async (req, res) => {
       const system_stock = parseFloat(product.system_stock) || 0;
       const physical = parseFloat(physical_stock) || 0;
       const variance = physical - system_stock;
-      const variance_percentage = system_stock > 0 
-        ? ((variance / system_stock) * 100).toFixed(2) 
+      const variance_percentage = system_stock > 0
+        ? ((variance / system_stock) * 100).toFixed(2)
         : 0;
 
       const unit_cost = parseFloat(product.unit_price) || 0;
@@ -113,7 +113,62 @@ exports.createReconciliation = async (req, res) => {
         id: result.insertId,
         product_name: product.name,
         variance,
-        variance_value
+        variance_value,
+        physical,
+        system_stock
+      });
+    }
+
+    // ✅ TRIGGER TELEGRAM NOTIFICATION (Non-blocking)
+    if (results.length > 0) {
+      setImmediate(async () => {
+        try {
+          const { sendSmartNotification } = require("../util/Telegram.helpe");
+          const { formatPrice } = require("../util/helper");
+
+          const details = results.slice(0, 10).map((r, i) => {
+            const icon = r.variance > 0 ? "📈" : r.variance < 0 ? "📉" : "⚖️";
+            const varianceText = r.variance > 0 ? `+${r.variance.toLocaleString()}` : r.variance.toLocaleString();
+            return `${icon} ${i + 1}. <b>${r.product_name}</b>\n• Sys: ${r.system_stock.toLocaleString()} L\n• <b>Adj: ${varianceText} L</b>\n• <b>Rem: <code>${r.physical.toLocaleString()} L</code></b>`;
+          }).join("\n\n");
+
+          const totalVariance = results.reduce((sum, r) => sum + r.variance_value, 0);
+
+          const message = `
+📊 <b>កែសម្រួលស្តុក / Stock Adjustment</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 <b>Reconciliation Info:</b>
+• លេខសម្គាល់: <code>${reconciliation_id}</code>
+• ប្រភេទ: ${reconciliation_type.toUpperCase()}
+• កាលបរិច្ឆេទ: ${reconciliation_date}
+
+📍 <b>Branch:</b>
+• សាខា: ${branch_name || 'N/A'}
+• ដោយ: ${req.auth?.name || 'System'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 <b>ADJUSTMENTS (${results.length} items)</b>
+${details}
+${results.length > 10 ? `\n<i>... and ${results.length - 10} more</i>` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 <b>Estim. Variance Value:</b> <b>${formatPrice(totalVariance)}</b>
+
+⏰ ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh', dateStyle: 'medium', timeStyle: 'short' })}
+                `;
+
+          await sendSmartNotification({
+            event_type: 'inventory_movement',
+            branch_name: branch_name,
+            title: `📊 Stock Adjustment: ${reconciliation_id}`,
+            message: message.trim(),
+            severity: Math.abs(totalVariance) > 500 ? 'warning' : 'info'
+          });
+
+        } catch (notifError) {
+          console.error("❌ Stock adjustment notification error:", notifError);
+        }
       });
     }
 
@@ -228,7 +283,7 @@ exports.updateStatus = async (req, res) => {
     const { status, action_taken, notes } = req.body;
 
     const validStatuses = ['pending', 'investigated', 'resolved', 'written_off'];
-    
+
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,

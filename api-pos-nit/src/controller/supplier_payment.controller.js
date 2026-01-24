@@ -131,8 +131,8 @@ exports.create = async (req, res) => {
 🏦 <b>Payment Details:</b>
 • វិធីសាស្រ្ត: ${payment_method.replace(/_/g, " ").toUpperCase()}
 • ធនាគារ: ${bank_name || 'N/A'}
-• ឡេខយោង: <code>${reference_no || 'N/A'}</code>
-• ឡេខយោងធនាគារ: <code>${bank_ref || 'N/A'}</code>
+• លេខយោង: <code>${reference_no || 'N/A'}</code>
+• លេខយោងធនាគារ: <code>${bank_ref || 'N/A'}</code>
 
 📍 <b>Recorded By:</b>
 • សាខា: ${branchName}

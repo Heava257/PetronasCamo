@@ -268,6 +268,7 @@ exports.getEventTypes = () => {
     'low_stock_alert': 'ស្តុកនៅសល់តិច / Low Stock Alert',
     'stock_received': 'ទទួលស្តុក / Stock Received',
     'stock_adjustment': 'កែសម្រួលស្តុក / Stock Adjustment',
+    'inventory_movement': 'ចលនាស្តុក (In/Out/Rem) / Inventory Movement',
 
     // Finance Events
     'payment_received': 'ទទួលការបង់ប្រាក់ / Payment Received',

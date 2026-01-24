@@ -245,6 +245,150 @@ exports.create = async (req, res) => {
       }
     });
 
+    // 🔄 INVENTORY INTEGRATION: Update if created as delivered or completed
+    const validStatuses = ['delivered', 'completed'];
+    if (validStatuses.includes(status)) {
+      setImmediate(async () => {
+        try {
+          const itemsWithSupp = JSON.parse(JSON.stringify(itemsWithSupplier));
+          for (const item of itemsWithSupp) {
+            let productId = null;
+            let actualPrice = 1190;
+            let existingProduct = [];
+
+            // 1. Try Find by ID
+            if (item.product_id || item.id) {
+              const searchId = item.product_id || item.id;
+              const [byId] = await db.query(
+                "SELECT id, qty, category_id, actual_price FROM product WHERE id = :id LIMIT 1",
+                { id: searchId }
+              );
+              if (byId.length > 0) existingProduct = byId;
+            }
+
+            // 2. Fallback to Name
+            if (existingProduct.length === 0 && item.product_name) {
+              const [byName] = await db.query(
+                "SELECT id, qty, category_id, actual_price FROM product WHERE name = :product_name LIMIT 1",
+                { product_name: item.product_name }
+              );
+              if (byName.length > 0) existingProduct = byName;
+            }
+
+            if (existingProduct.length > 0) {
+              productId = existingProduct[0].id;
+              actualPrice = parseFloat(existingProduct[0].actual_price) || 1190;
+
+              await db.query(`
+                            UPDATE product SET 
+                                qty = qty + :quantity,
+                                unit_price = :unit_price,
+                                supplier_id = :supplier_id,
+                                supplier_name = :supplier_name,
+                                actual_price = :actual_price,
+                                updated_at = CURRENT_TIMESTAMP
+                            WHERE id = :id
+                        `, {
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                supplier_id: supplier.id,
+                supplier_name: supplier.name,
+                actual_price: actualPrice,
+                id: productId
+              });
+            } else {
+              // Create new product
+              const [result] = await db.query(`
+                            INSERT INTO product (
+                                name, category_id, qty, unit_price, unit, 
+                                supplier_id, supplier_name, actual_price, user_id, 
+                                create_at, updated_at, status, barcode
+                            ) VALUES (
+                                :name, :category_id, :qty, :unit_price, 'L',
+                                :supplier_id, :supplier_name, :actual_price, :user_id,
+                                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, :barcode
+                            )
+                        `, {
+                name: item.product_name,
+                category_id: item.category_id || null,
+                qty: item.quantity || 0,
+                unit_price: item.unit_price || 0,
+                supplier_id: supplier.id,
+                supplier_name: supplier.name,
+                actual_price: actualPrice,
+                user_id: req.auth?.id || 1,
+                barcode: `PO${purchaseId}-${Date.now()}`
+              });
+              productId = result.insertId;
+            }
+
+            if (productId) {
+              await db.query(`
+                            INSERT INTO inventory_transaction (
+                                product_id, purchase_id, transaction_type, quantity, 
+                                unit_price, selling_price, actual_price, reference_no,
+                                supplier_id, supplier_name, notes, user_id, created_at
+                            ) VALUES (
+                                :product_id, :purchase_id, 'PURCHASE_IN', :quantity,
+                                :unit_price, :unit_price, :actual_price, :reference_no,
+                                :supplier_id, :supplier_name, :notes, :user_id, NOW()
+                            )
+                        `, {
+                product_id: productId,
+                purchase_id: purchaseId,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                actual_price: actualPrice,
+                reference_no: order_no,
+                supplier_id: supplier.id,
+                supplier_name: supplier.name,
+                notes: `Initial Create (${status}) - Purchase from ${supplier.name}`,
+                user_id: req.auth?.id || 1
+              });
+
+              const [newQtyResult] = await db.query("SELECT qty FROM product WHERE id = :id", { id: productId });
+              item.remaining_qty = newQtyResult[0]?.qty || 0;
+            }
+          }
+
+          // Send Delivery Notification
+          const deliveredDetailsPromises = itemsWithSupp.map(async (item, index) => {
+            let actualPrice = 1190;
+            if (item.category_id) {
+              const [cat] = await db.query(
+                "SELECT actual_price FROM category WHERE id = :id",
+                { id: item.category_id }
+              );
+              if (cat && cat.length > 0 && cat[0].actual_price) {
+                actualPrice = parseFloat(cat[0].actual_price);
+              }
+            }
+            const qty = parseFloat(item.quantity || 0);
+            const price = parseFloat(item.unit_price || 0);
+            const total = (qty * price) / actualPrice;
+            return `🔄 ${index + 1}. <b>${item.product_name}</b>
+• In: <b>+${formatNumber(qty)} L</b>
+• Unit: $${formatNumber(price)}/L
+• Total: <b>$${formatNumber(total)}</b>
+• Rem: <code>${formatNumber(item.remaining_qty || 0)} L</code>`;
+          });
+
+          const deliveredProductDetails = (await Promise.all(deliveredDetailsPromises)).join('\n\n');
+
+          sendSmartNotification({
+            event_type: 'inventory_movement',
+            branch_name: branch_name,
+            title: `🚚 Purchase Created & Stock In: ${order_no}`,
+            message: `📦 <b>ទទួលទំនិញបានជោគជ័យ / DELIVERY COMPLETED</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✅ <b>PO:</b> <code>${order_no}</code>\n✅ <b>Status:</b> ${status.toUpperCase()}\n\n🏢 <b>Supplier:</b> ${supplier.name}\n📍 <b>Branch:</b> ${branch_name}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📦 <b>STOCK UPDATES</b>\n${deliveredProductDetails}\n\n👤 <b>By:</b> ${user_name}`,
+            severity: 'high'
+          });
+
+        } catch (err) {
+          console.error("❌ Inventory Create error:", err);
+        }
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: "Purchase order created successfully",
@@ -654,6 +798,13 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
                 notes: `Purchase from ${supplier.name}`,
                 user_id: req.auth?.id || 1
               });
+
+              // ✅ Store absolute remaining qty for notification
+              const [newQtyResult] = await db.query(
+                "SELECT qty FROM product WHERE id = :id",
+                { id: productId }
+              );
+              item.remaining_qty = newQtyResult[0]?.qty || 0;
             }
           }
 
@@ -677,10 +828,10 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
             return `
 🔄 ${index + 1}. <b>${item.product_name}</b>
 • ប្រភេទ: ${item.category_name || 'N/A'}
-• ចំនួនចូល: ${formatNumber(quantity)} L
-• តម្លៃក្នុងមួយលីត្រ: $${formatNumber(unitPrice)}/L
-• តម្លៃអាហ្វិក (Actual): $${formatNumber(actualPrice)}
-• តម្លៃសរុប: $${formatNumber(itemTotal)}`;
+• In: <b>+${formatNumber(quantity)} L</b>
+• Unit: $${formatNumber(unitPrice)}/L
+• Total: <b>$${formatNumber(itemTotal)}</b>
+• Rem: <code>${formatNumber(item.remaining_qty || 0)} L</code>`;
           });
 
           const deliveredProductDetails = (await Promise.all(deliveredDetailsPromises)).join('\n\n');
@@ -721,12 +872,12 @@ ${deliveredProductDetails}
 `;
 
           sendSmartNotification({
-            event_type: 'purchase_delivered',
+            event_type: 'inventory_movement',
             branch_name: branch_name,
-            title: `🚚 Purchase Delivered: ${order_no}`,
+            title: status === 'completed' ? `✅ Purchase Completed & Stock In: ${order_no}` : `🚚 Purchase Delivered & Stock In: ${order_no}`,
             message: inventoryMessage,
             severity: 'high'
-          }).catch(err => console.error('❌ Telegram notification failed:', err));
+          }).catch(err => console.error('❌ Inventory notification failed:', err));
 
         } catch (inventoryError) {
           console.error("❌ Inventory update error:", inventoryError);

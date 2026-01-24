@@ -365,6 +365,8 @@ exports.create = async (req, res) => {
               details: `Insufficient stock for ${prod.product_name} (Only ${currentQty}L available)`
             });
           }
+
+          item.current_stock = currentQty; // ✅ Store for notification
         }
       }
     }
@@ -436,52 +438,68 @@ exports.create = async (req, res) => {
     notificationMessage += `Total: $${parseFloat(order.total_amount).toLocaleString()}`;
 
     // Build Telegram message
-    let telegramText = `✅ <b>Order Completed!</b>\n`;
-    telegramText += `━━━━━━━━━━━━━━━\n`;
+    // ✅ 1. General Telegram text (Simple summary for Sales group)
+    let generalText = `✅ <b>Order Completed!</b>\n`;
+    generalText += `━━━━━━━━━━━━━━━\n`;
+    if (branch_name) generalText += `🏢 <b>Branch:</b> ${branch_name}\n`;
+    if (pre_order_no) generalText += `🔖 <b>PO #:</b> <code>${pre_order_no}</code>\n`;
+    generalText += `📅 <b>Date:</b> ${formattedOrderDate}\n`;
+    generalText += `👤 <b>Customer:</b> ${customer.name}\n`;
+    generalText += `\n📦 <b>Items:</b>\n`;
 
-    if (branch_name) {
-      telegramText += `🏢 <b>Branch:</b> ${branch_name}\n`;
-    }
-
-    // ✅ ADD: Pre-Order reference in Telegram
+    // ✅ 2. Inventory Telegram text (Rich details for Inventory group)
+    let inventoryText = `📦 <b>Stock Out (Sale)</b>\n`;
+    inventoryText += `━━━━━━━━━━━━━━━\n`;
     if (pre_order_no) {
-      telegramText += `🔖 <b>Pre-Order #:</b> <code>${pre_order_no}</code>\n`;
+      inventoryText += `🔖 <b>PO #:</b> <code>${pre_order_no}</code>\n`;
+    } else {
+      inventoryText += `✅ <b>Order:</b> <code>${order_no}</code>\n`;
     }
-
-    telegramText += `📅 <b>Date:</b> ${formattedOrderDate}\n`;
-
-    if (firstDescription) {
-      telegramText += `📝 <b>Card Number:</b> <i>${firstDescription}</i>\n`;
-    }
-
-    telegramText += `\n👤 <b>Customer:</b> ${customer.name}\n`;
-    telegramText += `🏠 <b>Address:</b> ${customer.address}\n`;
-    telegramText += `📞 <b>Phone:</b> ${customer.tel}\n`;
-    telegramText += `📝 <b>Created By:</b> ${createdBy}\n`;
-    telegramText += `\n📦 <b>Items:</b>\n`;
+    if (branch_name) inventoryText += `🏢 <b>Branch:</b> ${branch_name}\n`;
+    inventoryText += `👤 <b>Customer:</b> ${customer.name}\n\n`;
 
     order_details.forEach((item, idx) => {
       let name = productCategories[item.product_id] || '';
       name = name.replace(/\/?\s*oil\s*\/?/i, '').trim();
-      const qty = Number(item.qty).toLocaleString();
+      const qtySold = Number(item.qty);
       const unitPrice = item.price;
+      const currentStock = Number(item.current_stock || 0);
+      const remaining = currentStock - qtySold;
 
-      telegramText += `  ${idx + 1}. <b>${name}</b> - <b>${qty}L</b>\n`;
-      telegramText += `     • Selling Price: <b>$${unitPrice}</b>\n`;
+      // Add to general text
+      generalText += `  ${idx + 1}. <b>${name}</b> - <b>${qtySold.toLocaleString()}L</b>\n`;
+      generalText += `     • Price: $${unitPrice}\n`;
+
+      // Add to inventory text
+      inventoryText += `  ${idx + 1}. <b>${name}</b>\n`;
+      inventoryText += `     • Out: <b>-${qtySold.toLocaleString()}L</b>\n`;
+      inventoryText += `     • Rem: <code>${remaining.toLocaleString()}L</code>\n`;
     });
 
-    telegramText += `\n🔢 <b>Total Liters:</b> ${totalLiters.toLocaleString()}L\n`;
-    telegramText += `💰 <b>Total:</b> $${parseFloat(order.total_amount).toLocaleString()}\n`;
-    telegramText += `━━━━━━━━━━━━━━━`;
+    generalText += `\n🔢 <b>Total:</b> ${totalLiters.toLocaleString()}L\n`;
+    generalText += `💰 <b>Amount:</b> $${parseFloat(order.total_amount).toLocaleString()}\n`;
+    generalText += `━━━━━━━━━━━━━━━`;
 
-    // Send Telegram notification (don't wait)
+    inventoryText += `\n🔢 <b>Total Liters:</b> ${totalLiters.toLocaleString()}L\n`;
+    inventoryText += `━━━━━━━━━━━━━━━`;
+
+    // ✅ Send General Notification
     sendSmartNotification({
       event_type: 'order_created',
       branch_name: branch_name,
       title: `✅ Order ${order_no} Created${pre_order_no ? ` (PO: ${pre_order_no})` : ''}`,
-      message: telegramText,
+      message: generalText,
       severity: order.total_amount > 5000 ? 'critical' : 'normal'
-    }).catch(err => console.error('❌ Telegram notification failed:', err));
+    }).catch(err => console.error('❌ General notification failed:', err));
+
+    // ✅ Send Inventory Notification (Only one group should be configured for 'inventory_movement')
+    sendSmartNotification({
+      event_type: 'inventory_movement',
+      branch_name: branch_name,
+      title: `📦 Stock Out: ${pre_order_no || order_no}`,
+      message: inventoryText,
+      severity: 'info'
+    }).catch(err => console.error('❌ Inventory notification failed:', err));
 
     // ========================================
     // ✅ UPDATED: Create order with pre_order_no
