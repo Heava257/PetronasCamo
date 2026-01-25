@@ -61,10 +61,10 @@ exports.create = async (req, res) => {
         const insertSql = `
       INSERT INTO payments (
         customer_id, order_id, payment_date, amount,
-        payment_method, bank_name, slip_image, reference_no, bank_ref, notes, created_at, updated_at
+        payment_method, bank_name, slip_image, reference_no, bank_ref, notes, created_at, updated_at, created_by
       ) VALUES (
         :customer_id, :order_id, :payment_date, :amount,
-        :payment_method, :bank_name, :slip_image, :reference_no, :bank_ref, :note, NOW(), NOW()
+        :payment_method, :bank_name, :slip_image, :reference_no, :bank_ref, :note, NOW(), NOW(), :created_by
       )
     `;
 
@@ -78,7 +78,8 @@ exports.create = async (req, res) => {
             slip_image,
             reference_no: reference_no || null,
             bank_ref: bank_ref || null,
-            note: bank_ref ? `${note && note !== 'undefined' ? note : ''}\n\n[SlipRef: ${bank_ref}]` : (note && note !== 'undefined' ? note : '')
+            note: bank_ref ? `${note && note !== 'undefined' ? note : ''}\n\n[SlipRef: ${bank_ref}]` : (note && note !== 'undefined' ? note : ''),
+            created_by: req.auth?.id || 1
         });
 
         // If linked to an specific order, update order payment status
