@@ -115,6 +115,13 @@ exports.getById = async (req, res) => {
 };
 exports.create = async (req, res) => {
   try {
+    // ✅ Handle Multipart/FormData
+    let { items } = req.body;
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { }
+    }
+    const image = req.file ? req.file.path : null;
+
     const {
       supplier_id,
       order_no,
@@ -122,7 +129,6 @@ exports.create = async (req, res) => {
       expected_delivery_date,
       status = 'pending',
       payment_terms,
-      items,
       total_amount,
       notes
     } = req.body;
@@ -183,10 +189,10 @@ exports.create = async (req, res) => {
     const sql = `
       INSERT INTO purchase (
         supplier_id, order_no, order_date, expected_delivery_date,
-        status, payment_terms, items, total_amount, notes, user_id, created_at
+        status, payment_terms, items, total_amount, notes, user_id, image, created_at
       ) VALUES (
         :supplier_id, :order_no, :order_date, :expected_delivery_date,
-        :status, :payment_terms, :items, :total_amount, :notes, :user_id, CURRENT_TIMESTAMP
+        :status, :payment_terms, :items, :total_amount, :notes, :user_id, :image, CURRENT_TIMESTAMP
       )
     `;
 
@@ -197,7 +203,8 @@ exports.create = async (req, res) => {
       status, payment_terms: payment_terms || null,
       items: JSON.stringify(itemsWithSupplier),
       total_amount: calculatedTotal, notes: notes || null,
-      user_id: req.auth?.id || 1
+      user_id: req.auth?.id || 1,
+      image: image
     };
 
     const [result] = await db.query(sql, params);
@@ -409,6 +416,12 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
+    // ✅ Handle Multipart/FormData
+    let { items } = req.body;
+    if (typeof items === 'string') {
+      try { items = JSON.parse(items); } catch (e) { }
+    }
+
     const {
       supplier_id,
       order_no,
@@ -416,7 +429,6 @@ exports.update = async (req, res) => {
       expected_delivery_date,
       status,
       payment_terms,
-      items,
       total_amount,
       notes,
       received_by // ✅ Extract received_by
@@ -441,6 +453,10 @@ exports.update = async (req, res) => {
     const previousStatus = previousOrder[0]?.status;
     const branch_name = previousOrder[0]?.branch_name || 'Unknown Branch';
     const user_name = previousOrder[0]?.user_name || 'Unknown User';
+
+    // ✅ Handle Image Update
+    const previousImage = previousOrder[0]?.image;
+    const image = req.file ? req.file.path : previousImage;
 
     // Validation
     if (!supplier_id || !items || !isArray(items) || items.length === 0) {
@@ -490,7 +506,8 @@ exports.update = async (req, res) => {
         items = :items,
         total_amount = :total_amount,
         notes = :notes,
-        received_by = :received_by,  -- ✅ Update received_by
+        received_by = :received_by,
+        image = :image,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = :id
     `;
@@ -506,7 +523,8 @@ exports.update = async (req, res) => {
       items: JSON.stringify(itemsWithSupplier),
       total_amount: calculatedTotal,
       notes,
-      received_by: received_by || previousOrder[0]?.received_by || null // ✅ Persist or update
+      received_by: received_by || previousOrder[0]?.received_by || null,
+      image: image
     };
 
     await db.query(sql, params);

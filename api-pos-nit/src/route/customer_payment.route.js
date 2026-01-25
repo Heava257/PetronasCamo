@@ -18,6 +18,7 @@ module.exports = (app) => {
     app.post("/api/customer_payment/check_invoice", validate_token("customer-payment.create"), require("../controller/customer_payment.controller").checkInvoice);
     app.post("/api/customer_payment/check_reference", validate_token("customer-payment.create"), require("../controller/customer_payment.controller").checkReference);
     app.get("/api/customer_payment/pending_invoices", validate_token("customer-payment.create"), require("../controller/customer_payment.controller").getPendingInvoices);
+    app.get("/api/customer_payment/debtors", validate_token("customer-payment.getlist"), require("../controller/customer_payment.controller").getDebtors);
 
     // Wildcard routes last
     app.get("/api/customer_payment/:id", validate_token("customer-payment.getone"), getOne);

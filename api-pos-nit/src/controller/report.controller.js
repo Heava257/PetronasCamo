@@ -1693,6 +1693,69 @@ SELECT
   }
 };
 // ✅ CORRECT - ជំនួសចុងបញ្ចប់ file
+
+
+exports.branchComparison = async (req, res) => {
+  try {
+    const { from_date, to_date } = req.query;
+
+    const currentUserId = req.auth?.id || req.current_id;
+    const [currentUser] = await db.query("SELECT role_id, branch_name FROM user WHERE id = ?", [currentUserId]);
+    const { role_id } = currentUser[0] || {};
+    const isSuperAdmin = role_id === 29; // Assuming 29 is SuperAdmin
+
+    if (!isSuperAdmin) {
+      return res.status(403).json({
+        error: true,
+        message: "Access Denied. Super Admin only."
+      });
+    }
+
+    // 1. Get Revenue & Orders per Branch
+    const sql = `
+        SELECT 
+            u.branch_name,
+            COUNT(DISTINCT o.id) as total_orders,
+            COUNT(DISTINCT c.id) as unique_customers,
+            COALESCE(SUM(o.total_amount), 0) as total_revenue,
+            COALESCE(SUM(o.paid_amount), 0) as total_paid,
+            COALESCE(SUM(o.total_amount - o.paid_amount), 0) as total_due
+        FROM \`order\` o
+        INNER JOIN user u ON o.user_id = u.id
+        LEFT JOIN customer c ON o.customer_id = c.id
+        WHERE DATE(o.order_date) BETWEEN :from_date AND :to_date
+        AND u.branch_name IS NOT NULL
+        GROUP BY u.branch_name
+        ORDER BY total_revenue DESC
+    `;
+
+    const [branchComparison] = await db.query(sql, { from_date, to_date });
+
+    const summary = {
+      total_revenue: branchComparison.reduce((acc, curr) => acc + parseFloat(curr.total_revenue), 0),
+      total_paid: branchComparison.reduce((acc, curr) => acc + parseFloat(curr.total_paid), 0),
+      total_due: branchComparison.reduce((acc, curr) => acc + parseFloat(curr.total_due), 0),
+      total_orders: branchComparison.reduce((acc, curr) => acc + parseInt(curr.total_orders), 0),
+      total_customers: branchComparison.reduce((acc, curr) => acc + parseInt(curr.unique_customers), 0)
+    };
+
+    res.json({
+      branchComparison,
+      summary,
+      metadata: {
+        generated_at: new Date(),
+        requested_by: {
+          username: req.auth?.name,
+          role: 'Super Admin'
+        }
+      }
+    });
+
+  } catch (error) {
+    logError("report.branchComparison", error, res);
+  }
+};
+
 module.exports = {
   report_Sale_Summary: exports.report_Sale_Summary,
   report_Expense_Summary: exports.report_Expense_Summary,
@@ -1708,5 +1771,6 @@ module.exports = {
   report_Expense_Category: exports.report_Expense_Category,
   report_Income_vs_Expense: exports.report_Income_vs_Expense,
   report_Expense_Details: exports.report_Expense_Details,
-  getBranchComparison: exports.getBranchComparison
+  getBranchComparison: exports.getBranchComparison,
+  branchComparison: exports.branchComparison
 };

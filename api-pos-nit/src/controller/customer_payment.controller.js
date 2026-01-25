@@ -596,3 +596,76 @@ exports.getPendingInvoices = async (req, res) => {
         logError("customer_payment.getPendingInvoices", error, res);
     }
 };
+
+exports.getDebtors = async (req, res) => {
+    try {
+        const { branch_name } = req.query;
+        let params = {};
+
+        // Calculate Debt based on Ledger Logic: (Sum of All Orders) - (Sum of All Payments)
+        // This ensures the "Total Debt" matches the "Ending Balance" in the Ledger view.
+        // Check permissions
+        const currentUserBranch = req.auth?.branch_name;
+        const currentUserId = req.auth?.id; // Assuming auth middleware populates this
+
+        // If user is not Super Admin (e.g. branch manager or staff), force branch filter
+        // You might need a more robust role check here (e.g. based on role_id)
+        // For now, if req.auth.branch_name exists and is NOT 'All', we use it.
+
+        // Fetch user role to be sure? Or rely on branch_name from token?
+        // Assuming if branch_name is present in token, they are restricted.
+
+        let branchFilter = branch_name;
+
+        // If user has a specific branch assigned (and not All/Head Office), force it
+        if (currentUserBranch && currentUserBranch !== 'All') {
+            branchFilter = currentUserBranch;
+        }
+
+        let sql = `
+            SELECT 
+                c.id as customer_id,
+                c.name as customer_name,
+                c.address,
+                c.tel as customer_tel,
+                c.branch_name,
+                u.name as seller_name,
+                u.tel as seller_tel,
+                
+                COALESCE((SELECT SUM(total_amount) FROM \`order\` WHERE customer_id = c.id), 0) as total_order_amount,
+                COALESCE((SELECT SUM(amount) FROM payments WHERE customer_id = c.id), 0) as total_payment_amount,
+                (
+                    COALESCE((SELECT SUM(total_amount) FROM \`order\` WHERE customer_id = c.id), 0) - 
+                    COALESCE((SELECT SUM(amount) FROM payments WHERE customer_id = c.id), 0)
+                ) as total_debt,
+
+                (SELECT COUNT(*) FROM \`order\` WHERE customer_id = c.id AND total_amount > (COALESCE(paid_amount, 0) + 0.01)) as unpaid_invoices_count,
+
+                (SELECT DATEDIFF(NOW(), MIN(order_date)) FROM \`order\` WHERE customer_id = c.id AND total_amount > (COALESCE(paid_amount, 0) + 0.01)) as days_overdue
+
+            FROM customer c
+            LEFT JOIN user u ON c.user_id = u.id
+            WHERE 1=1
+        `;
+
+        if (branchFilter && branchFilter !== 'All') {
+            sql += " AND c.branch_name = :branch_name";
+            params.branch_name = branchFilter;
+        }
+
+        // Filter only customers with positive debt
+        sql += `
+            HAVING total_debt > 0.01
+            ORDER BY total_debt DESC
+        `;
+
+        const [debtors] = await db.query(sql, params);
+
+        res.json({
+            success: true,
+            list: debtors
+        });
+    } catch (error) {
+        logError("customer_payment.getDebtors", error, res);
+    }
+};

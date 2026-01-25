@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { request, formatPrice } from "../../util/helper";
+import { Config } from "../../util/config";
 import MainPage from "../../component/layout/MainPage";
 import {
   Button,
@@ -21,7 +22,8 @@ import {
   Tag,
   Divider,
   Badge,
-  Tooltip
+  Tooltip,
+  Upload
 } from "antd";
 import dayjs from "dayjs";
 import {
@@ -101,6 +103,7 @@ function PurchasePage() {
   const [selectedPurchase, setSelectedPurchase] = useState(null);
   const [isDetailModalVisible, setIsDetailModalVisible] = useState(false);
   const [orderItems, setOrderItems] = useState([]);
+  const [fileList, setFileList] = useState([]);
 
   // ✅ New State for Receive Modal
   const [isReceiveModalVisible, setIsReceiveModalVisible] = useState(false);
@@ -206,6 +209,7 @@ function PurchasePage() {
     }));
     form.resetFields();
     setOrderItems([]);
+    setFileList([]);
   };
 
   const onFinish = async (items) => {
@@ -217,21 +221,35 @@ function PurchasePage() {
       url = "purchase/" + form.getFieldValue("id");
     }
 
-    const purchaseData = {
-      ...items,
-      order_date: items.order_date ? dayjs(items.order_date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
-      expected_delivery_date: items.expected_delivery_date ? dayjs(items.expected_delivery_date).format('YYYY-MM-DD') : null,
-      items: orderItems,
-      total_amount: calculateTotal(),
-      status: items.status || 'pending'
-    };
+    // ✅ Use FormData for Image Upload
+    const formData = new FormData();
+    formData.append("supplier_id", items.supplier_id);
+    if (items.order_no) formData.append("order_no", items.order_no);
+
+    const orderDate = items.order_date ? dayjs(items.order_date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
+    formData.append("order_date", orderDate);
+
+    if (items.expected_delivery_date) {
+      formData.append("expected_delivery_date", dayjs(items.expected_delivery_date).format('YYYY-MM-DD'));
+    }
+
+    formData.append("status", items.status || 'pending');
+    if (items.payment_terms) formData.append("payment_terms", items.payment_terms);
+    if (items.notes) formData.append("notes", items.notes);
+
+    formData.append("items", JSON.stringify(orderItems));
+    formData.append("total_amount", calculateTotal());
+
+    if (fileList.length > 0 && fileList[0].originFileObj) {
+      formData.append("image", fileList[0].originFileObj);
+    }
 
     setState((p) => ({
       ...p,
       loading: true,
     }));
 
-    const res = await request(url, method, purchaseData);
+    const res = await request(url, method, formData);
 
     if (res && !res.error) {
       getList();
@@ -259,6 +277,17 @@ function PurchasePage() {
       payment_terms: purchase.payment_terms,
       notes: purchase.notes
     });
+
+    if (purchase.image) {
+      setFileList([{
+        uid: '-1',
+        name: 'image',
+        status: 'done',
+        url: Config.getImageUrl(purchase.image),
+      }]);
+    } else {
+      setFileList([]);
+    }
 
     // Load order items with proper structure
     const loadedItems = (purchase.items || []).map(item => {
@@ -569,6 +598,26 @@ function PurchasePage() {
       key: "supplier_name",
       title: t("Supplier"),
       dataIndex: "supplier_name",
+    },
+    {
+      key: "image",
+      title: t("image"),
+      dataIndex: "image",
+      render: (img) => img ? (
+        <img
+          src={Config.getImageUrl(img)}
+          alt="Attachment"
+          className="w-10 h-10 object-cover rounded border border-gray-200 cursor-pointer hover:scale-150 transition-transform"
+          onClick={() => {
+            Modal.info({
+              title: "Attachment",
+              content: <img src={Config.getImageUrl(img)} alt="Attachment" className="w-full" />,
+              width: 500,
+              maskClosable: true
+            });
+          }}
+        />
+      ) : <span className="text-gray-400">-</span>
     },
     {
       key: "order_date",
@@ -986,13 +1035,30 @@ function PurchasePage() {
               />
             </Form.Item>
 
+            <Form.Item label="Attachment (Card Image)">
+              <Upload
+                listType="picture-card"
+                fileList={fileList}
+                onChange={({ fileList }) => setFileList(fileList)}
+                beforeUpload={() => false}
+                maxCount={1}
+              >
+                {fileList.length < 1 && (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>Upload</div>
+                  </div>
+                )}
+              </Upload>
+            </Form.Item>
+
             {/* Buttons */}
             <Form.Item className="mb-0">
               <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                 <Button onClick={closeModal} size="large" block className="sm:w-auto">
                   {t("cancel")}
                 </Button>
-                <Button type="primary" htmlType="submit" size="large" block className="sm:w-auto bg-blue-500">
+                <Button type="primary" htmlType="submit" size="large" block className="sm:w-auto bg-blue-500" loading={state.loading}>
                   {t(form.getFieldValue("id") ? "update" : "save")}
                 </Button>
               </div>

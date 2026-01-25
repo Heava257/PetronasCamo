@@ -20,4 +20,5 @@ module.exports = (app) => {
 
 
 
+  app.get('/api/report/branch-comparison', validate_token(), report.branchComparison);
 };

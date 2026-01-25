@@ -29,7 +29,8 @@ import {
     EyeOutlined,
     DeleteOutlined,
     ArrowUpOutlined,
-    ArrowDownOutlined
+    ArrowDownOutlined,
+    PhoneOutlined
 } from '@ant-design/icons';
 import { useTranslation } from "../../locales/TranslationContext";
 import * as XLSX from 'xlsx';
@@ -97,12 +98,32 @@ function CustomerPaymentPage() {
         duplicateSlipFound: false, // Block submission if true
         invalidSlipFound: false, // Block if not a bank slip
         selectedInvoice: null, // Track selected invoice for overpayment check
-        showAllInvoices: false // Toggle to show paid invoices in selection
+        showAllInvoices: false, // Toggle to show paid invoices in selection
+        debtors: [],
+        branchFilter: null,
+        branches: ['All', 'PP', 'KPS', 'KPC', 'BMC', 'KPT', 'PLN', 'TKV', 'SHV'] // Pre-defined branches or load dynamically
     });
 
     useEffect(() => {
         loadCustomers();
+        loadDebtors();
     }, []);
+
+    const loadDebtors = async (branch = null) => {
+        setState(p => ({ ...p, loading: true }));
+        try {
+            const query = branch && branch !== 'All' ? `?branch_name=${branch}` : '';
+            const res = await request(`customer_payment/debtors${query}`, "get");
+            if (res && res.success) {
+                setState(p => ({ ...p, debtors: res.list || [], loading: false }));
+            } else {
+                setState(p => ({ ...p, loading: false }));
+            }
+        } catch (error) {
+            console.error(error);
+            setState(p => ({ ...p, loading: false }));
+        }
+    };
 
     useEffect(() => {
         if (state.selectedCustomer) {
@@ -388,7 +409,7 @@ function CustomerPaymentPage() {
 
             if (res && res.success) {
                 message.success(res.message);
-                setState(p => ({ ...p, paymentModalVisible: false }));
+                setState(p => ({ ...p, paymentModalVisible: false, shouldScrollToBottom: true }));
                 form.resetFields();
                 loadLedger(); // Reload ledger
             } else {
@@ -756,10 +777,18 @@ function CustomerPaymentPage() {
                 <Row gutter={[16, 16]} align="middle">
                     <Col xs={24} md={12}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {state.selectedCustomer && (
+                                <Button
+                                    icon={<ArrowUpOutlined rotate={-90} />}
+                                    onClick={() => setState(p => ({ ...p, selectedCustomer: null, ledger: [], summary: { beginning_balance: 0, increase: 0, total_payments: 0, ending_balance: 0 } }))}
+                                >
+                                    Back
+                                </Button>
+                            )}
                             <Select
                                 showSearch
                                 style={{ width: 250 }}
-                                placeholder="Select Customer"
+                                placeholder="Select Customer to View Ledger"
                                 value={state.selectedCustomer}
                                 onChange={(val) => setState(p => ({ ...p, selectedCustomer: val }))}
                                 filterOption={(input, option) =>
@@ -772,22 +801,42 @@ function CustomerPaymentPage() {
                                     </Option>
                                 ))}
                             </Select>
-                            <RangePicker
-                                value={state.dateRange}
-                                onChange={(val) => setState(p => ({ ...p, dateRange: val }))}
-                                format="DD/MM/YYYY"
-                            />
+                            {!state.selectedCustomer && (
+                                <Select
+                                    style={{ width: 150 }}
+                                    placeholder="Filter Branch"
+                                    value={state.branchFilter}
+                                    allowClear
+                                    onChange={(val) => {
+                                        setState(p => ({ ...p, branchFilter: val }));
+                                        loadDebtors(val);
+                                    }}
+                                >
+                                    {state.branches.map(b => (
+                                        <Option key={b} value={b}>{b}</Option>
+                                    ))}
+                                </Select>
+                            )}
+                            {state.selectedCustomer && (
+                                <RangePicker
+                                    value={state.dateRange}
+                                    onChange={(val) => setState(p => ({ ...p, dateRange: val }))}
+                                    format="DD/MM/YYYY"
+                                />
+                            )}
                         </div>
                     </Col>
                     <Col xs={24} md={4}>
-                        <div style={{ display: 'flex', alignItems: 'center', color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
-                            <span style={{ marginRight: 8 }}>Rate:</span>
-                            <InputNumber
-                                value={state.exchangeRate}
-                                onChange={(val) => setState(p => ({ ...p, exchangeRate: val }))}
-                                style={{ width: 100, backgroundColor: isDarkMode ? '#1f1f1f' : '#fff', color: isDarkMode ? '#fff' : '#000', borderColor: isDarkMode ? '#444' : '#d9d9d9' }}
-                            />
-                        </div>
+                        {state.selectedCustomer && (
+                            <div style={{ display: 'flex', alignItems: 'center', color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
+                                <span style={{ marginRight: 8 }}>Rate:</span>
+                                <InputNumber
+                                    value={state.exchangeRate}
+                                    onChange={(val) => setState(p => ({ ...p, exchangeRate: val }))}
+                                    style={{ width: 100, backgroundColor: isDarkMode ? '#1f1f1f' : '#fff', color: isDarkMode ? '#fff' : '#000', borderColor: isDarkMode ? '#444' : '#d9d9d9' }}
+                                />
+                            </div>
+                        )}
                     </Col>
                     <Col xs={24} md={8} style={{ textAlign: 'right' }}>
                         <Space>
@@ -795,6 +844,10 @@ function CustomerPaymentPage() {
                                 type="primary"
                                 icon={<PlusOutlined />}
                                 onClick={() => {
+                                    if (!state.selectedCustomer) {
+                                        message.warning("Please select a customer first to create payment.");
+                                        return;
+                                    }
                                     setState(p => ({ ...p, paymentModalVisible: true }));
                                     loadPendingInvoices(state.selectedCustomer);
                                 }}
@@ -821,74 +874,188 @@ function CustomerPaymentPage() {
                 </Row>
             </Card>
 
-            <Table
-                className="ledger-table"
-                columns={columns}
-                dataSource={state.ledger}
-                rowKey="original_id" // Use original_id (p-ID or o-ID)
-                pagination={false}
-                scroll={{ x: 'max-content', y: 600 }}
-                style={{ border: isDarkMode ? '1px solid #303030' : '1px solid #d4d4d4' }}
-                summary={() => (
-                    <Table.Summary fixed>
-                        <Table.Summary.Row style={{ backgroundColor: isDarkMode ? '#1f1f1f' : '#f5f5f5' }}>
-                            <Table.Summary.Cell index={0} colSpan={12} style={{ textAlign: 'right', color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>Current Ending Balance (សមតុល្យចុងគ្រា):</Table.Summary.Cell>
-                            <Table.Summary.Cell index={1} align="right" style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
-                                <Text strong style={{ color: '#ff4d4f', fontSize: '15px' }}>{formatPrice(state.summary.ending_balance)}</Text>
-                            </Table.Summary.Cell>
-                            <Table.Summary.Cell index={2} align="right" style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
-                                <Text strong style={{ color: '#ff4d4f', fontSize: '14px' }}>៛{(state.summary.ending_balance * state.exchangeRate).toLocaleString()}</Text>
-                            </Table.Summary.Cell>
-                            <Table.Summary.Cell index={3}></Table.Summary.Cell>
-                        </Table.Summary.Row>
-                    </Table.Summary>
-                )}
-            />
+            {!state.selectedCustomer ? (
+                // Debtor List Table
+                <Card style={{ background: isDarkMode ? '#141414' : '#fff', border: isDarkMode ? '1px solid #303030' : undefined, borderRadius: '16px' }}>
+                    <div style={{ marginBottom: 16 }}>
+                        <Title level={4} style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a', margin: 0 }}>Outstanding Debtors</Title>
+                    </div>
+                    <Table
+                        dataSource={state.debtors}
+                        rowKey="customer_id"
+                        pagination={{ pageSize: 10 }}
+                        style={{ border: isDarkMode ? '1px solid #303030' : '1px solid #d4d4d4' }}
+                        columns={[
+                            {
+                                title: 'No',
+                                key: 'index',
+                                width: 60,
+                                align: 'center',
+                                render: (_, __, index) => index + 1
+                            },
+                            {
+                                title: 'Customer',
+                                dataIndex: 'customer_name',
+                                key: 'customer_name',
+                                render: (text, record) => (
+                                    <div>
+                                        <div style={{ fontWeight: 600 }}>{text}</div>
+                                        <div style={{ fontSize: '12px', color: '#888' }}>{record.customer_tel}</div>
+                                    </div>
+                                )
+                            },
+                            {
+                                title: 'Address',
+                                dataIndex: 'address',
+                                key: 'address',
+                                ellipsis: true
+                            },
+                            {
+                                title: 'Branch',
+                                dataIndex: 'branch_name',
+                                key: 'branch_name',
+                                width: 100
+                            },
+                            {
+                                title: 'Overdue (Days)',
+                                dataIndex: 'days_overdue',
+                                key: 'days_overdue',
+                                align: 'center',
+                                width: 120,
+                                render: (days) => (
+                                    <Tag color={days > 30 ? 'red' : days > 15 ? 'orange' : 'green'}>
+                                        {days} Days
+                                    </Tag>
+                                )
+                            },
+                            {
+                                title: 'Unpaid Invoices',
+                                dataIndex: 'unpaid_invoices_count',
+                                key: 'unpaid_invoices_count',
+                                align: 'center',
+                                width: 120
+                            },
+                            {
+                                title: 'Total Debt',
+                                dataIndex: 'total_debt',
+                                key: 'total_debt',
+                                align: 'right',
+                                width: 150,
+                                render: (val, record) => (
+                                    <div title={`Billed: $${formatPrice(record.total_order_amount || 0)} | Paid: $${formatPrice(record.total_payment_amount || 0)}`}>
+                                        <Text strong type="danger">${formatPrice(val)}</Text>
+                                        <div style={{ fontSize: '10px', color: '#888' }}>
+                                            Bill: ${formatPrice(record.total_order_amount || 0)}
+                                        </div>
+                                    </div>
+                                )
+                            },
+                            {
+                                title: 'Seller / Admin',
+                                dataIndex: 'seller_name',
+                                key: 'seller_name',
+                                render: (text, record) => (
+                                    <div>
+                                        <div>{text || '-'}</div>
+                                        {record.seller_tel && (
+                                            <a href={`tel:${record.seller_tel}`} style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <PhoneOutlined /> {record.seller_tel}
+                                            </a>
+                                        )}
+                                    </div>
+                                )
+                            },
+                            {
+                                title: 'Action',
+                                key: 'action',
+                                align: 'center',
+                                width: 100,
+                                render: (_, record) => (
+                                    <Button
+                                        type="primary"
+                                        size="small"
+                                        onClick={() => setState(p => ({ ...p, selectedCustomer: record.customer_id }))}
+                                    >
+                                        View
+                                    </Button>
+                                )
+                            }
+                        ]}
+                    />
+                </Card>
+            ) : (
+                <>
+                    <Table
+                        className="ledger-table"
+                        columns={columns}
+                        dataSource={state.ledger}
+                        rowKey="original_id" // Use original_id (p-ID or o-ID)
+                        pagination={false}
+                        scroll={{ x: 'max-content', y: 600 }}
+                        style={{ border: isDarkMode ? '1px solid #303030' : '1px solid #d4d4d4' }}
+                        summary={() => (
+                            <Table.Summary fixed>
+                                <Table.Summary.Row style={{ backgroundColor: isDarkMode ? '#1f1f1f' : '#f5f5f5' }}>
+                                    <Table.Summary.Cell index={0} colSpan={12} style={{ textAlign: 'right', color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>Current Ending Balance (សមតុល្យចុងគ្រា):</Table.Summary.Cell>
+                                    <Table.Summary.Cell index={1} align="right" style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
+                                        <Text strong style={{ color: '#ff4d4f', fontSize: '15px' }}>{formatPrice(state.summary.ending_balance)}</Text>
+                                    </Table.Summary.Cell>
+                                    <Table.Summary.Cell index={2} align="right" style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
+                                        <Text strong style={{ color: '#ff4d4f', fontSize: '14px' }}>៛{(state.summary.ending_balance * state.exchangeRate).toLocaleString()}</Text>
+                                    </Table.Summary.Cell>
+                                    <Table.Summary.Cell index={3}></Table.Summary.Cell>
+                                </Table.Summary.Row>
+                            </Table.Summary>
+                        )}
+                    />
 
-            {/* Redesigned Summary Section */}
-            <Card style={{ marginTop: 20, background: isDarkMode ? '#141414' : '#fff', border: isDarkMode ? '1px solid #303030' : '1px solid #d9d9d9', borderRadius: '16px', boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.05)' }}>
-                <Row gutter={[32, 16]} align="top">
-                    <Col xs={24} md={14}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 1.5fr', gap: '8px' }}>
-                            <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Beginning Balance (សមតុល្យដើមគ្រា) :</Text>
-                            <Text strong style={{ color: isDarkMode ? '#fff' : '#000', textAlign: 'right' }}>{formatPrice(state.summary.beginning_balance)}</Text>
+                    {/* Redesigned Summary Section */}
+                    <Card style={{ marginTop: 20, background: isDarkMode ? '#141414' : '#fff', border: isDarkMode ? '1px solid #303030' : '1px solid #d9d9d9', borderRadius: '16px', boxShadow: '0 4px 20px 0 rgba(0, 0, 0, 0.05)' }}>
+                        <Row gutter={[32, 16]} align="top">
+                            <Col xs={24} md={14}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 1.5fr', gap: '8px' }}>
+                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Beginning Balance (សមតុល្យដើមគ្រា) :</Text>
+                                    <Text strong style={{ color: isDarkMode ? '#fff' : '#000', textAlign: 'right' }}>{formatPrice(state.summary.beginning_balance)}</Text>
 
-                            <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Increase (កំណើនក្នុងគ្រា) [{state.summary.increase_count}] :</Text>
-                            <Text strong style={{ color: isDarkMode ? '#fff' : '#000', textAlign: 'right' }}>{formatPrice(state.summary.increase)}</Text>
+                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Increase (កំណើនក្នុងគ្រា) [{state.summary.increase_count}] :</Text>
+                                    <Text strong style={{ color: isDarkMode ? '#fff' : '#000', textAlign: 'right' }}>{formatPrice(state.summary.increase)}</Text>
 
-                            <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Payments (សងក្នុងគ្រា) [{state.summary.payment_count}] :</Text>
-                            <Text strong style={{ color: '#52c41a', textAlign: 'right' }}>({formatPrice(state.summary.total_payments)})</Text>
+                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Payments (សងក្នុងគ្រា) [{state.summary.payment_count}] :</Text>
+                                    <Text strong style={{ color: '#52c41a', textAlign: 'right' }}>({formatPrice(state.summary.total_payments)})</Text>
 
-                            <div style={{ margin: '8px 0', gridColumn: 'span 2', borderTop: isDarkMode ? '1px solid #333' : '1px solid #eee' }}></div>
+                                    <div style={{ margin: '8px 0', gridColumn: 'span 2', borderTop: isDarkMode ? '1px solid #333' : '1px solid #eee' }}></div>
 
-                            <Text strong style={{ color: isDarkMode ? '#fff' : '#000' }}>Ending Balance (សមតុល្យចុងគ្រា) :</Text>
-                            <Text strong style={{ color: '#ff4d4f', textAlign: 'right', fontSize: '18px' }}>
-                                {formatPrice(state.summary.ending_balance)}
-                            </Text>
-                        </div>
-                    </Col>
-                    <Col xs={24} md={10} style={{ borderLeft: isDarkMode ? '1px solid #333' : '1px solid #eee', paddingLeft: '32px' }}>
-                        <div style={{ textAlign: 'center' }}>
-                            <Text type="secondary" style={{ display: 'block', marginBottom: 10, color: isDarkMode ? '#aaa' : '#888' }}>Comparison with last transactions</Text>
-                            <div style={{
-                                color: state.summary.comparison >= 0 ? '#ff4d4f' : '#52c41a',
-                                fontSize: '24px',
-                                fontWeight: 'bold',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '8px'
-                            }}>
-                                {state.summary.comparison >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
-                                {formatPrice(Math.abs(state.summary.comparison))}
-                            </div>
-                            <Text style={{ color: state.summary.comparison >= 0 ? '#ff4d4f' : '#52c41a', fontSize: '12px' }}>
-                                {state.summary.comparison >= 0 ? 'Debt Increased this month' : 'Debt Decreased this month'}
-                            </Text>
-                        </div>
-                    </Col>
-                </Row>
-            </Card>
+                                    <Text strong style={{ color: isDarkMode ? '#fff' : '#000' }}>Ending Balance (សមតុល្យចុងគ្រា) :</Text>
+                                    <Text strong style={{ color: '#ff4d4f', textAlign: 'right', fontSize: '18px' }}>
+                                        {formatPrice(state.summary.ending_balance)}
+                                    </Text>
+                                </div>
+                            </Col>
+                            <Col xs={24} md={10} style={{ borderLeft: isDarkMode ? '1px solid #333' : '1px solid #eee', paddingLeft: '32px' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                    <Text type="secondary" style={{ display: 'block', marginBottom: 10, color: isDarkMode ? '#aaa' : '#888' }}>Comparison with last transactions</Text>
+                                    <div style={{
+                                        color: state.summary.comparison >= 0 ? '#ff4d4f' : '#52c41a',
+                                        fontSize: '24px',
+                                        fontWeight: 'bold',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px'
+                                    }}>
+                                        {state.summary.comparison >= 0 ? <ArrowUpOutlined /> : <ArrowDownOutlined />}
+                                        {formatPrice(Math.abs(state.summary.comparison))}
+                                    </div>
+                                    <Text style={{ color: state.summary.comparison >= 0 ? '#ff4d4f' : '#52c41a', fontSize: '12px' }}>
+                                        {state.summary.comparison >= 0 ? 'Debt Increased this month' : 'Debt Decreased this month'}
+                                    </Text>
+                                </div>
+                            </Col>
+                        </Row>
+                    </Card>
+                </>
+            )
+            }
 
             {/* New Payment Modal */}
             <Modal
@@ -1216,7 +1383,7 @@ function CustomerPaymentPage() {
                     </div>
                 )}
             </Modal>
-        </MainPage>
+        </MainPage >
     );
 }
 
