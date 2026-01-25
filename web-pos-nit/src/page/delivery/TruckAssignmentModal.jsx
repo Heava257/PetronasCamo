@@ -53,11 +53,11 @@ const TruckAssignmentModal = ({ visible, orderId, orderNo, onClose, onSuccess })
 
       if (res && res.success) {
         message.success(t('truck_assigned_successfully'));
-        
+
         if (onSuccess) {
           onSuccess();
         }
-        
+
         onClose();
       } else {
         message.error(res.message || t('failed_to_assign_truck'));
@@ -109,12 +109,10 @@ const TruckAssignmentModal = ({ visible, orderId, orderNo, onClose, onSuccess })
             loading={loading}
             onChange={handleTruckChange}
             showSearch
-            filterOption={(input, option) =>
-              option.children.toLowerCase().includes(input.toLowerCase())
-            }
+            optionFilterProp="label"
           >
             {trucks.map(truck => (
-              <Select.Option key={truck.id} value={truck.id}>
+              <Select.Option key={truck.id} value={truck.id} label={truck.plate_number}>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold">{truck.plate_number}</span>
                   <span className="text-xs text-gray-500">
@@ -162,7 +160,7 @@ const TruckAssignmentModal = ({ visible, orderId, orderNo, onClose, onSuccess })
                         <div className="text-xs text-gray-500 flex items-center gap-1">
                           <MdPhone /> {t('phone')}
                         </div>
-                        <a 
+                        <a
                           href={`tel:${selectedTruck.driver_phone}`}
                           className="font-medium text-blue-600"
                         >

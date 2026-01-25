@@ -900,13 +900,10 @@ function CustomerPage() {
         <Select
           showSearch
           placeholder={t("ជ្រើសរើសអតិថិជន")}
-          optionFilterProp="children"
-          filterOption={(input, option) =>
-            option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }
+          optionFilterProp="label"
         >
           {filteredList.map(customer => (
-            <Select.Option key={customer.id} value={customer.id}>
+            <Select.Option key={customer.id} value={customer.id} label={`${customer.name} - ${customer.tel}`}>
               {customer.name} - {customer.tel}
             </Select.Option>
           ))}

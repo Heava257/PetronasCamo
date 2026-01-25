@@ -763,11 +763,13 @@ function CustomerPaymentPage() {
                                 value={state.selectedCustomer}
                                 onChange={(val) => setState(p => ({ ...p, selectedCustomer: val }))}
                                 filterOption={(input, option) =>
-                                    (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
+                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                                 }
                             >
                                 {state.customers.map(c => (
-                                    <Option key={c.id} value={c.id}>{c.name} ({c.tel})</Option>
+                                    <Option key={c.id} value={c.id} label={`${c.name} (${c.tel})`}>
+                                        {c.name} ({c.tel})
+                                    </Option>
                                 ))}
                             </Select>
                             <RangePicker
@@ -982,7 +984,7 @@ function CustomerPaymentPage() {
                             showSearch
                             placeholder="Select Invoice"
                             allowClear
-                            optionFilterProp="children"
+                            optionFilterProp="label"
                             onChange={(val) => {
                                 if (!val) {
                                     setState(p => ({
@@ -1011,7 +1013,7 @@ function CustomerPaymentPage() {
                             }}
                         >
                             {state.pendingInvoices.map(inv => (
-                                <Option key={inv.id} value={inv.id}>
+                                <Option key={inv.id} value={inv.id} label={inv.invoice_no}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
                                         <Text strong>{inv.invoice_no}</Text>
                                         <Text type="secondary" style={{ fontSize: '11px', marginLeft: '10px' }}>

@@ -795,12 +795,10 @@ function PurchasePage() {
                     placeholder={t("select_supplier")}
                     showSearch
                     size="large"
-                    filterOption={(input, option) =>
-                      option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }
+                    optionFilterProp="label"
                   >
                     {state.suppliers.map(supplier => (
-                      <Option key={supplier.id} value={supplier.id}>
+                      <Option key={supplier.id} value={supplier.id} label={`${supplier.name} (${supplier.code})`}>
                         {supplier.name} ({supplier.code})
                       </Option>
                     ))}
@@ -895,14 +893,12 @@ function PurchasePage() {
                         size="middle"
                         style={{ width: '100%' }}
                         showSearch
-                        filterOption={(input, option) =>
-                          option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                        }
+                        optionFilterProp="label"
                       >
                         {config.product
                           .filter(prod => Number(prod.actual_price) > 0)
                           .map(prod => (
-                            <Option key={prod.value} value={prod.value}>
+                            <Option key={prod.value} value={prod.value} label={`${prod.label} (${prod.category_name})`}>
                               {prod.label} ({prod.category_name})
                             </Option>
                           ))}

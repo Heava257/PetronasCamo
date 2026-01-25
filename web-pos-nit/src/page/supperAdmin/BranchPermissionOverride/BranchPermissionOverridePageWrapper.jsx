@@ -68,13 +68,13 @@ function BranchPermissionOverridePage() {
       loadOverrides();
     }
   }, [selectedBranch, selectedRole]);
-const loadInitialData = async () => {
+  const loadInitialData = async () => {
     try {
       setLoading(true);
 
       // ✅ Load branches and roles
       const branchesRes = await request("superadmin/users", "get");
-      
+
       if (branchesRes && branchesRes.success) {
         // ✅ FIXED: Use the branches array directly from API response
         if (branchesRes.branches && Array.isArray(branchesRes.branches)) {
@@ -95,7 +95,7 @@ const loadInitialData = async () => {
 
       // ✅ Load all permissions
       const permRes = await request("permissions", "get");
-      
+
       if (permRes && permRes.success && permRes.permissions) {
         setAllPermissions(permRes.permissions);
       } else {
@@ -274,8 +274,8 @@ const loadInitialData = async () => {
 
   // Mobile Card Component
   const OverrideMobileCard = ({ override }) => (
-    <Card 
-      className="mb-3 shadow-sm hover:shadow-md transition-shadow" 
+    <Card
+      className="mb-3 shadow-sm hover:shadow-md transition-shadow"
       bodyStyle={{ padding: '12px' }}
     >
       <div className="space-y-3">
@@ -393,12 +393,10 @@ const loadInitialData = async () => {
                 loading={loading}
                 size="large"
                 showSearch
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().includes(input.toLowerCase())
-                }
+                optionFilterProp="label"
               >
                 {branches.map(branch => (
-                  <Option key={branch} value={branch}>{branch}</Option>
+                  <Option key={branch} value={branch} label={branch}>{branch}</Option>
                 ))}
               </Select>
               {branches.length === 0 && !loading && (
@@ -425,12 +423,10 @@ const loadInitialData = async () => {
                 loading={loading}
                 size="large"
                 showSearch
-                filterOption={(input, option) =>
-                  option.children.toLowerCase().includes(input.toLowerCase())
-                }
+                optionFilterProp="label"
               >
                 {roles.map(role => (
-                  <Option key={role.id} value={role.id}>
+                  <Option key={role.id} value={role.id} label={`${role.name} (${role.code})`}>
                     {role.name} ({role.code})
                   </Option>
                 ))}
@@ -446,11 +442,11 @@ const loadInitialData = async () => {
           {/* Debug Info */}
           {!loading && (
             <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
-              <strong>Debug Info:</strong><br/>
-              Branches loaded: {branches.length}<br/>
-              Roles loaded: {roles.length}<br/>
-              Permissions loaded: {allPermissions.length}<br/>
-              Selected Branch: {selectedBranch || 'None'}<br/>
+              <strong>Debug Info:</strong><br />
+              Branches loaded: {branches.length}<br />
+              Roles loaded: {roles.length}<br />
+              Permissions loaded: {allPermissions.length}<br />
+              Selected Branch: {selectedBranch || 'None'}<br />
               Selected Role: {selectedRole || 'None'}
             </div>
           )}
@@ -526,7 +522,7 @@ const loadInitialData = async () => {
                 size="small"
                 locale={{
                   emptyText: (
-                    <Empty 
+                    <Empty
                       description="No overrides yet. This branch uses the base role permissions."
                       image={Empty.PRESENTED_IMAGE_SIMPLE}
                     />
@@ -547,7 +543,7 @@ const loadInitialData = async () => {
                 </div>
               ) : (
                 <Card className="text-center">
-                  <Empty 
+                  <Empty
                     description="No overrides yet. This branch uses the base role permissions."
                     image={Empty.PRESENTED_IMAGE_SIMPLE}
                   />
@@ -557,7 +553,7 @@ const loadInitialData = async () => {
           </Card>
         ) : (
           <Card className="shadow-md">
-            <Empty 
+            <Empty
               description={
                 <div className="text-center">
                   <p className="text-sm mb-2">Please select both a branch and a role to continue</p>
@@ -623,14 +619,14 @@ const loadInitialData = async () => {
 
             <Form.Item
               noStyle
-              shouldUpdate={(prevValues, currentValues) => 
+              shouldUpdate={(prevValues, currentValues) =>
                 prevValues.override_type !== currentValues.override_type
               }
             >
               {({ getFieldValue }) => {
                 const overrideType = getFieldValue('override_type');
                 let availablePermissions = [];
-                
+
                 if (overrideType === 'add') {
                   const basePermIds = basePermissions.map(p => p.id);
                   availablePermissions = allPermissions.filter(
@@ -650,16 +646,10 @@ const loadInitialData = async () => {
                       placeholder="Select permission"
                       showSearch
                       size="large"
-                      filterOption={(input, option) => {
-                        const children = option.children;
-                        if (typeof children === 'string') {
-                          return children.toLowerCase().includes(input.toLowerCase());
-                        }
-                        return false;
-                      }}
+                      optionFilterProp="label"
                     >
                       {availablePermissions.map(perm => (
-                        <Option key={perm.id} value={perm.id}>
+                        <Option key={perm.id} value={perm.id} label={`${perm.name} (${perm.category || perm.group || 'Other'})`}>
                           {perm.name} ({perm.category || perm.group || 'Other'})
                         </Option>
                       ))}
