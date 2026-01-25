@@ -4,6 +4,13 @@ const dayjs = require('dayjs');
 const { sendSmartNotification } = require("../util/Telegram.helpe");
 const { createSystemNotification } = require("./System_notification.controller");
 
+const formatNumber = (num) => {
+  return parseFloat(num || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
 exports.getone = async (req, res) => {
   try {
     const orderId = req.params.id;
@@ -447,16 +454,6 @@ exports.create = async (req, res) => {
     generalText += `👤 <b>Customer:</b> ${customer.name}\n`;
     generalText += `\n📦 <b>Items:</b>\n`;
 
-    // ✅ 2. Inventory Telegram text (Rich details for Inventory group)
-    let inventoryText = `📦 <b>Stock Out (Sale)</b>\n`;
-    inventoryText += `━━━━━━━━━━━━━━━\n`;
-    if (pre_order_no) {
-      inventoryText += `🔖 <b>PO #:</b> <code>${pre_order_no}</code>\n`;
-    } else {
-      inventoryText += `✅ <b>Order:</b> <code>${order_no}</code>\n`;
-    }
-    if (branch_name) inventoryText += `🏢 <b>Branch:</b> ${branch_name}\n`;
-    inventoryText += `👤 <b>Customer:</b> ${customer.name}\n\n`;
 
     order_details.forEach((item, idx) => {
       let name = productCategories[item.product_id] || '';
@@ -467,21 +464,13 @@ exports.create = async (req, res) => {
       const remaining = currentStock - qtySold;
 
       // Add to general text
-      generalText += `  ${idx + 1}. <b>${name}</b> - <b>${qtySold.toLocaleString()}L</b>\n`;
-      generalText += `     • Price: $${unitPrice}\n`;
-
-      // Add to inventory text
-      inventoryText += `  ${idx + 1}. <b>${name}</b>\n`;
-      inventoryText += `     • Out: <b>-${qtySold.toLocaleString()}L</b>\n`;
-      inventoryText += `     • Rem: <code>${remaining.toLocaleString()}L</code>\n`;
+      generalText += `  ${idx + 1}. <b>${name}</b> - <b>${formatNumber(qtySold)}L</b>\n`;
+      generalText += `     • Price: $${formatNumber(unitPrice)}\n`;
     });
 
-    generalText += `\n🔢 <b>Total:</b> ${totalLiters.toLocaleString()}L\n`;
-    generalText += `💰 <b>Amount:</b> $${parseFloat(order.total_amount).toLocaleString()}\n`;
+    generalText += `\n🔢 <b>Total:</b> ${formatNumber(totalLiters)}L\n`;
+    generalText += `💰 <b>Amount:</b> $${formatNumber(order.total_amount)}\n`;
     generalText += `━━━━━━━━━━━━━━━`;
-
-    inventoryText += `\n🔢 <b>Total Liters:</b> ${totalLiters.toLocaleString()}L\n`;
-    inventoryText += `━━━━━━━━━━━━━━━`;
 
     // ✅ Send General Notification
     sendSmartNotification({
@@ -491,15 +480,6 @@ exports.create = async (req, res) => {
       message: generalText,
       severity: order.total_amount > 5000 ? 'critical' : 'normal'
     }).catch(err => console.error('❌ General notification failed:', err));
-
-    // ✅ Send Inventory Notification (Only one group should be configured for 'inventory_movement')
-    sendSmartNotification({
-      event_type: 'inventory_movement',
-      branch_name: branch_name,
-      title: `📦 Stock Out: ${pre_order_no || order_no}`,
-      message: inventoryText,
-      severity: 'info'
-    }).catch(err => console.error('❌ Inventory notification failed:', err));
 
     // ========================================
     // ✅ UPDATED: Create order with pre_order_no
@@ -701,9 +681,52 @@ exports.create = async (req, res) => {
             user_id: req.auth?.id || null
           });
 
+          // ✅ Get accurate remaining quantity after transaction
+          const [newQtyResult] = await db.query(
+            "SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id",
+            { id: item.product_id }
+          );
+          item.new_inventory_rem = newQtyResult[0]?.qty || 0;
         }
       })
     );
+
+    // ✅ Send Inventory Notification (Enhanced with formatting and real-time stock)
+    try {
+      let inventoryText = `📦 <b>Stock Out (Sale)</b>\n`;
+      inventoryText += `━━━━━━━━━━━━━━━\n`;
+      if (pre_order_no) {
+        inventoryText += `🔖 <b>PO #:</b> <code>${pre_order_no}</code>\n`;
+      } else {
+        inventoryText += `✅ <b>Order:</b> <code>${order_no}</code>\n`;
+      }
+      if (branch_name) inventoryText += `🏢 <b>Branch:</b> ${branch_name}\n`;
+      inventoryText += `👤 <b>Customer:</b> ${customer.name}\n\n`;
+
+      order_details.forEach((item, idx) => {
+        let name = productCategories[item.product_id] || '';
+        name = name.replace(/\/?\s*oil\s*\/?/i, '').trim();
+        const qtySold = Number(item.qty || 0);
+        const remaining = item.new_inventory_rem || 0;
+
+        inventoryText += `  ${idx + 1}. <b>${name}</b>\n`;
+        inventoryText += `     • Out: <b>-${formatNumber(qtySold)} L</b>\n`;
+        inventoryText += `     • Rem: <code>${formatNumber(remaining)} L</code>\n`;
+      });
+
+      inventoryText += `\n🔢 <b>Total Liters:</b> ${formatNumber(totalLiters)} L\n`;
+      inventoryText += `━━━━━━━━━━━━━━━`;
+
+      sendSmartNotification({
+        event_type: 'inventory_movement',
+        branch_name: branch_name,
+        title: `📦 Stock Out: ${pre_order_no || order_no}`,
+        message: inventoryText,
+        severity: 'info'
+      }).catch(err => console.error('❌ Inventory notification failed:', err));
+    } catch (notifErr) {
+      console.error('❌ Notification construction failed:', notifErr);
+    }
 
     // Create customer_debt
     const sqlDebt = `

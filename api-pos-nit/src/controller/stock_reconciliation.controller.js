@@ -3,6 +3,13 @@
 const { db, logError } = require("../util/helper");
 const dayjs = require('dayjs');
 
+const formatNumber = (num) => {
+  return parseFloat(num || 0).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+};
+
 // ========================================
 // 1. CREATE STOCK RECONCILIATION
 // ========================================
@@ -128,8 +135,8 @@ exports.createReconciliation = async (req, res) => {
 
           const details = results.slice(0, 10).map((r, i) => {
             const icon = r.variance > 0 ? "📈" : r.variance < 0 ? "📉" : "⚖️";
-            const varianceText = r.variance > 0 ? `+${r.variance.toLocaleString()}` : r.variance.toLocaleString();
-            return `${icon} ${i + 1}. <b>${r.product_name}</b>\n• Sys: ${r.system_stock.toLocaleString()} L\n• <b>Adj: ${varianceText} L</b>\n• <b>Rem: <code>${r.physical.toLocaleString()} L</code></b>`;
+            const varianceText = r.variance > 0 ? `+${formatNumber(r.variance)}` : formatNumber(r.variance);
+            return `${icon} ${i + 1}. <b>${r.product_name}</b>\n• Sys: ${formatNumber(r.system_stock)} L\n• <b>Adj: ${varianceText} L</b>\n• <b>Rem: <code>${formatNumber(r.physical)} L</code></b>`;
           }).join("\n\n");
 
           const totalVariance = results.reduce((sum, r) => sum + r.variance_value, 0);
