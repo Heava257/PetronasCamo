@@ -346,25 +346,26 @@ exports.create = async (req, res) => {
                 user_id: req.auth?.id || 1
               });
 
-              const [newQtyResult] = await db.query("SELECT qty FROM product WHERE id = :id", { id: productId });
+              // ✅ Get product specific data and calculate SUM of transactions (Dashboard style)
+              const [productData] = await db.query(
+                "SELECT actual_price FROM product WHERE id = :id",
+                { id: productId }
+              );
+              item.actual_price = parseFloat(productData[0]?.actual_price) || actualPrice;
+
+              const [newQtyResult] = await db.query(
+                "SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id",
+                { id: productId }
+              );
               item.remaining_qty = newQtyResult[0]?.qty || 0;
             }
           }
 
           // Send Delivery Notification
           const deliveredDetailsPromises = itemsWithSupp.map(async (item, index) => {
-            let actualPrice = 1190;
-            if (item.category_id) {
-              const [cat] = await db.query(
-                "SELECT actual_price FROM category WHERE id = :id",
-                { id: item.category_id }
-              );
-              if (cat && cat.length > 0 && cat[0].actual_price) {
-                actualPrice = parseFloat(cat[0].actual_price);
-              }
-            }
             const qty = parseFloat(item.quantity || 0);
             const price = parseFloat(item.unit_price || 0);
+            const actualPrice = item.actual_price || 1190;
             const total = (qty * price) / actualPrice;
             return `🔄 ${index + 1}. <b>${item.product_name}</b>
 • In: <b>+${formatNumber(qty)} L</b>
@@ -799,31 +800,33 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
                 user_id: req.auth?.id || 1
               });
 
-              // ✅ Store absolute remaining qty for notification
+              // ✅ Get product specific data and calculate SUM of transactions (Dashboard style)
+              const [productData] = await db.query(
+                "SELECT actual_price FROM product WHERE id = :id",
+                { id: productId }
+              );
+              item.actual_price = parseFloat(productData[0]?.actual_price) || actualPrice;
+
               const [newQtyResult] = await db.query(
-                "SELECT qty FROM product WHERE id = :id",
+                "SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id",
                 { id: productId }
               );
               item.remaining_qty = newQtyResult[0]?.qty || 0;
             }
           }
+        } catch (inventoryError) {
+          console.error("❌ Inventory update error:", inventoryError);
+        }
 
-          // ✅✅✅ FIXED: Send DELIVERED notification
-          // Logic moved INSIDE the if-block so it only triggers on successful delivery/completion logic
+        // ✅✅✅ Send Delivery Notification (Moved OUTSIDE the try-catch to be safe)
+        try {
+
+          // ✅✅✅ Send Delivery Notification
           const deliveredDetailsPromises = itemsWithSupplier.map(async (item, index) => {
-            let actualPrice = 1190;
-            if (item.category_id) {
-              const [cat] = await db.query(
-                "SELECT actual_price FROM category WHERE id = :id",
-                { id: item.category_id }
-              );
-              if (cat && cat.length > 0 && cat[0].actual_price) {
-                actualPrice = parseFloat(cat[0].actual_price);
-              }
-            }
             const quantity = parseFloat(item.quantity || 0);
             const unitPrice = parseFloat(item.unit_price || 0);
-            const itemTotal = (quantity * unitPrice) / actualPrice;
+            const actualP = item.actual_price || 1190;
+            const itemTotal = (quantity * unitPrice) / actualP;
 
             return `
 🔄 ${index + 1}. <b>${item.product_name}</b>
@@ -867,9 +870,10 @@ ${deliveredProductDetails}
             timeZone: 'Asia/Phnom_Penh',
             day: '2-digit', month: '2-digit', year: 'numeric',
             hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
-          })}
+          })
+            }
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-`;
+        `;
 
           sendSmartNotification({
             event_type: 'inventory_movement',
@@ -879,8 +883,8 @@ ${deliveredProductDetails}
             severity: 'high'
           }).catch(err => console.error('❌ Inventory notification failed:', err));
 
-        } catch (inventoryError) {
-          console.error("❌ Inventory update error:", inventoryError);
+        } catch (notifErr) {
+          console.error("❌ Notification error:", notifErr);
         }
       }
     }
@@ -913,7 +917,7 @@ exports.delete = async (req, res) => {
     let checkParams = { id };
 
     if (req.auth?.role !== "admin") {
-      checkSql += ` AND u.branch_name = :branch_name`;
+      checkSql += ` AND u.branch_name = : branch_name`;
       checkParams.branch_name = req.auth?.branch_name;
     }
 
@@ -954,25 +958,25 @@ exports.delete = async (req, res) => {
 exports.getStatistics = async (req, res) => {
   try {
     let sql = `
-      SELECT 
+        SELECT
         COUNT(*) as total_orders,
-        COUNT(CASE WHEN p.status = 'pending' THEN 1 END) as pending_orders,
-        COUNT(CASE WHEN p.status = 'confirmed' THEN 1 END) as confirmed_orders,
-        COUNT(CASE WHEN p.status = 'shipped' THEN 1 END) as shipped_orders,
-        COUNT(CASE WHEN p.status = 'delivered' THEN 1 END) as delivered_orders,
-        COUNT(CASE WHEN p.status = 'cancelled' THEN 1 END) as cancelled_orders,
-        COALESCE(SUM(p.total_amount), 0) as total_value,
-        COALESCE(SUM(CASE WHEN p.status = 'delivered' THEN p.total_amount ELSE 0 END), 0) as delivered_value
+          COUNT(CASE WHEN p.status = 'pending' THEN 1 END) as pending_orders,
+          COUNT(CASE WHEN p.status = 'confirmed' THEN 1 END) as confirmed_orders,
+          COUNT(CASE WHEN p.status = 'shipped' THEN 1 END) as shipped_orders,
+          COUNT(CASE WHEN p.status = 'delivered' THEN 1 END) as delivered_orders,
+          COUNT(CASE WHEN p.status = 'cancelled' THEN 1 END) as cancelled_orders,
+          COALESCE(SUM(p.total_amount), 0) as total_value,
+          COALESCE(SUM(CASE WHEN p.status = 'delivered' THEN p.total_amount ELSE 0 END), 0) as delivered_value
       FROM purchase p
       LEFT JOIN user u ON p.user_id = u.id
-      WHERE 1=1
-    `;
+      WHERE 1 = 1
+          `;
 
     const params = {};
 
     // 🔐 Branch filter
     if (req.auth?.role !== "admin") {
-      sql += ` AND u.branch_name = :branch_name`;
+      sql += ` AND u.branch_name = : branch_name`;
       params.branch_name = req.auth?.branch_name;
     }
 
@@ -992,26 +996,26 @@ exports.getStatistics = async (req, res) => {
 exports.getInventoryStatistics = async (req, res) => {
   try {
     let sql = `
-      SELECT 
+        SELECT
         COUNT(DISTINCT p.id) as total_products,
-        COALESCE(SUM(p.qty), 0) as total_quantity_liters,
-        COALESCE(SUM(p.qty * p.unit_price), 0) as total_stock_value,
-        COUNT(CASE WHEN p.qty <= 1000 THEN 1 END) as low_stock_products,
-        COUNT(CASE WHEN p.qty > 10000 THEN 1 END) as high_stock_products,
-        c.name as category_name,
-        COUNT(CASE WHEN p.id IS NOT NULL THEN 1 END) as product_count,
-        COALESCE(SUM(CASE WHEN p.id IS NOT NULL THEN p.qty ELSE 0 END), 0) as category_quantity,
-        COALESCE(SUM(CASE WHEN p.id IS NOT NULL THEN (p.qty * p.unit_price) ELSE 0 END), 0) as category_value
+          COALESCE(SUM(p.qty), 0) as total_quantity_liters,
+          COALESCE(SUM(p.qty * p.unit_price), 0) as total_stock_value,
+          COUNT(CASE WHEN p.qty <= 1000 THEN 1 END) as low_stock_products,
+          COUNT(CASE WHEN p.qty > 10000 THEN 1 END) as high_stock_products,
+          c.name as category_name,
+          COUNT(CASE WHEN p.id IS NOT NULL THEN 1 END) as product_count,
+          COALESCE(SUM(CASE WHEN p.id IS NOT NULL THEN p.qty ELSE 0 END), 0) as category_quantity,
+          COALESCE(SUM(CASE WHEN p.id IS NOT NULL THEN(p.qty * p.unit_price) ELSE 0 END), 0) as category_value
       FROM category c
       LEFT JOIN product p ON c.id = p.category_id
       LEFT JOIN user u ON p.user_id = u.id
-      WHERE 1=1
-    `;
+      WHERE 1 = 1
+          `;
 
     const params = {};
 
     if (req.auth?.role !== "admin") {
-      sql += ` AND (u.branch_name = :branch_name OR u.branch_name IS NULL)`;
+      sql += ` AND(u.branch_name = : branch_name OR u.branch_name IS NULL)`;
       params.branch_name = req.auth?.branch_name;
     }
 
@@ -1053,26 +1057,26 @@ exports.getRecentTransactions = async (req, res) => {
     const { limit = 10 } = req.query;
 
     let sql = `
-      SELECT 
+        SELECT
         it.*,
-        p.name as product_name,
-        c.name as category_name,
-        u.name as user_name
+          p.name as product_name,
+          c.name as category_name,
+          u.name as user_name
       FROM inventory_transaction it
       LEFT JOIN product p ON it.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
       LEFT JOIN user u ON it.user_id = u.id
-      WHERE 1=1
-    `;
+      WHERE 1 = 1
+          `;
 
     const params = {};
 
     if (req.auth?.role !== "admin") {
-      sql += ` AND u.branch_name = :branch_name`;
+      sql += ` AND u.branch_name = : branch_name`;
       params.branch_name = req.auth?.branch_name;
     }
 
-    sql += ` ORDER BY it.created_at DESC LIMIT :limit`;
+    sql += ` ORDER BY it.created_at DESC LIMIT: limit`;
     params.limit = parseInt(limit);
 
     const [results] = await db.query(sql, params);
