@@ -221,12 +221,17 @@ function LoginPage() {
     const loadModels = async () => {
       const MODEL_URL = '/models';
       try {
-        const api = getFaceApi();
-        await Promise.all([
-          api.loadSsdMobilenetv1Model(MODEL_URL),
-          api.loadFaceLandmarkModel(MODEL_URL),
-          api.loadFaceRecognitionModel(MODEL_URL),
-        ]);
+        // Load sequentially
+        console.log("Loading SSD MobileNet...");
+        await api.loadSsdMobilenetv1Model(MODEL_URL);
+
+        console.log("Loading Face Landmark...");
+        await api.loadFaceLandmarkModel(MODEL_URL);
+
+        console.log("Loading Face Recognition...");
+        await api.loadFaceRecognitionModel(MODEL_URL);
+
+        console.log("Models loaded successfully");
       } catch (e) {
         console.error("Failed to load face models", e);
       }

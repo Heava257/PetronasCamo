@@ -2229,6 +2229,43 @@ exports.loginFace = async (req, res) => {
       const accessToken = await getAccessToken(userData.id, userData.role_id, userData.token_version || 0);
       const refreshToken = await getRefreshToken({ user_id: userData.id });
 
+      // ✅ Log Login & Send Notification
+      const clientIP = req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown';
+      const userAgent = req.get('User-Agent') || 'Unknown';
+
+      try {
+        const deviceInfo = parseUserAgent(userAgent);
+        const locationInfo = await getLocationFromIP(clientIP);
+
+        const loginData = {
+          user_id: userData.id,
+          username: userData.username,
+          ip_address: clientIP,
+          user_agent: userAgent,
+          device_info: JSON.stringify(deviceInfo),
+          location_info: JSON.stringify(locationInfo || {}),
+          login_time: new Date(),
+          status: 'success_face'
+        };
+
+        // Log to DB
+        const sqlLog = `
+           INSERT INTO login_activity 
+           (user_id, username, ip_address, user_agent, device_info, location_info, login_time, status)
+           VALUES 
+           (:user_id, :username, :ip_address, :user_agent, :device_info, :location_info, :login_time, :status)
+        `;
+        await db.query(sqlLog, loginData);
+
+        // ✅ Send Telegram Notification
+        sendLoginNotification(userData, loginData).catch(err => {
+          console.error('⚠️ Face Login notification failed:', err.message);
+        });
+
+      } catch (logErr) {
+        console.warn('⚠️ Failed to log face login activity:', logErr);
+      }
+
       delete userData.password;
       delete userData.face_descriptor;
 

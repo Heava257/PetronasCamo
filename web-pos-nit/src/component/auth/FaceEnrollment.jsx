@@ -33,16 +33,21 @@ const FaceEnrollment = ({ visible, onCancel, onSuccess }) => {
                 const api = getFaceApi();
                 console.log("FaceAPI object:", api); // Keep existing console.log
 
-                await Promise.all([
-                    api.loadSsdMobilenetv1Model(MODEL_URL),
-                    api.loadFaceLandmarkModel(MODEL_URL),
-                    api.loadFaceRecognitionModel(MODEL_URL),
-                ]);
+                // Load sequentially to prevent resource contention/corruption
+                console.log("Loading SSD MobileNet...");
+                await api.loadSsdMobilenetv1Model(MODEL_URL);
+
+                console.log("Loading Face Landmark...");
+                await api.loadFaceLandmarkModel(MODEL_URL);
+
+                console.log("Loading Face Recognition...");
+                await api.loadFaceRecognitionModel(MODEL_URL);
+
                 console.log("Face API Models Loaded");
                 setInitializing(false);
             } catch (err) {
                 console.error("Failed to load models", err);
-                message.error("Failed to load face recognition models: " + err.message);
+                message.error("Failed to load AI models. Please check your internet or model files.");
             }
         };
 
