@@ -394,6 +394,36 @@ exports.update = async (req, res) => {
 
     // Only hash the password if it's being updated (if password exists)
     if (password) {
+      // ✅ Password Complexity Check (Dynamic)
+      let complexitySetting = 'standard';
+      try {
+        const [settings] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'password_complexity'");
+        if (settings.length > 0) {
+          complexitySetting = settings[0].setting_value;
+        }
+      } catch (e) {
+        console.error("Failed to fetch password complexity setting, defaulting to standard:", e);
+      }
+
+      if (complexitySetting === 'high') {
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+        if (!passwordRegex.test(password)) {
+          return res.status(400).json({
+            success: false,
+            message: "Password must be at least 8 chars, include 1 uppercase, 1 lowercase, 1 number, and 1 special char.",
+            message_kh: "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ មានអក្សរធំ អក្សរតូច លេខ និងសញ្ញាពិលសេស។"
+          });
+        }
+      } else {
+        // Standard: Just min 8 chars
+        if (password.length < 8) {
+          return res.status(400).json({
+            success: false,
+            message: "Password must be at least 8 characters.",
+            message_kh: "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ។"
+          });
+        }
+      }
       password = bcrypt.hashSync(password, 10); // Hash the password
     }
 
@@ -473,6 +503,39 @@ exports.register = async (req, res) => {
           message_kh: "ត្រូវការ Username, ពាក្យសម្ងាត់, ឈ្មោះ និងតួនាទី!"
         }
       });
+    }
+
+    // ✅ Password Complexity Check (Dynamic)
+    let complexitySetting = 'standard';
+    try {
+      const [settings] = await db.query("SELECT setting_value FROM system_settings WHERE setting_key = 'password_complexity'");
+      if (settings.length > 0) {
+        complexitySetting = settings[0].setting_value;
+      }
+    } catch (e) {
+      console.error("Failed to fetch password complexity setting, defaulting to standard:", e);
+    }
+
+    if (complexitySetting === 'high') {
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+      if (!passwordRegex.test(password)) {
+        return res.status(400).json({
+          error: {
+            message: "Password must be at least 8 chars, include 1 uppercase, 1 lowercase, 1 number, and 1 special char.",
+            message_kh: "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ មានអក្សរធំ អក្សរតូច លេខ និងសញ្ញាពិលសេស។"
+          }
+        });
+      }
+    } else {
+      // Standard: Just min 8 chars
+      if (password.length < 8) {
+        return res.status(400).json({
+          error: {
+            message: "Password must be at least 8 characters.",
+            message_kh: "ពាក្យសម្ងាត់ត្រូវមានយ៉ាងតិច ៨ តួអក្សរ។"
+          }
+        });
+      }
     }
 
 
@@ -2061,3 +2124,186 @@ exports.appleOAuthCallback = async (req, res) => {
     res.redirect(`${FRONTEND_URL}/login?error=oauth_failed`);
   }
 };
+
+// ===================================
+// POST: Register Face Data
+// ===================================
+exports.registerFace = async (req, res) => {
+  try {
+    const { descriptor } = req.body; // Expect array of 128 numbers
+    const userId = req.current_id;
+
+    if (!descriptor || !Array.isArray(descriptor) || descriptor.length !== 128) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid face descriptor data"
+      });
+    }
+
+    // Convert array to string for storage
+    const descriptorStr = JSON.stringify(descriptor);
+
+    await db.query(
+      "UPDATE user SET face_descriptor = ? WHERE id = ?",
+      [descriptorStr, userId]
+    );
+
+    res.json({
+      success: true,
+      message: "Face data registered successfully"
+    });
+
+  } catch (error) {
+    console.error("❌ Register Face Error:", error);
+    logError("auth.registerFace", error, res);
+  }
+};
+
+// ===================================
+// POST: Login with Face
+// ===================================
+exports.loginFace = async (req, res) => {
+  try {
+    const { descriptor } = req.body;
+
+    if (!descriptor || !Array.isArray(descriptor) || descriptor.length !== 128) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid face descriptor data"
+      });
+    }
+
+    // 1. Get all users with face data
+    // optimization: In a large system, we might filter by active users only or use a vector DB.
+    // For "hundreds", full scan is acceptable (< 100ms).
+    const [users] = await db.query(
+      "SELECT id, username, face_descriptor, is_active FROM user WHERE face_descriptor IS NOT NULL AND is_active = 1"
+    );
+
+    let matchUser = null;
+    let minDistance = 0.5; // Threshold (tweak as needed, 0.4-0.6 is typical)
+
+    // 2. Find closest match
+    for (const user of users) {
+      try {
+        const storedDescriptor = JSON.parse(user.face_descriptor);
+        const distance = euclideanDistance(descriptor, storedDescriptor);
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          matchUser = user;
+        }
+      } catch (e) {
+        console.warn(`Invalid face data for user ${user.id}`);
+      }
+    }
+
+    if (matchUser) {
+      // MATCH FOUND! Login the user.
+
+      const [fullUser] = await db.query(`
+            SELECT 
+              u.*, r.name as role_name, r.code as role_code 
+            FROM user u 
+            INNER JOIN role r ON u.role_id = r.id 
+            WHERE u.id = ?
+         `, [matchUser.id]);
+
+      const userData = fullUser[0];
+      const permissions = await getPermissionByUser(userData.id);
+
+      // ✅ Update user status & last_activity
+      try {
+        await db.query(`
+            UPDATE user 
+            SET is_online = 1, 
+                last_activity = NOW(), 
+                online_status = 'online',
+                last_login = NOW()
+            WHERE id = ?
+         `, [matchUser.id]);
+      } catch (e) {
+        console.error("Failed to update activity", e);
+      }
+
+      const accessToken = await getAccessToken(userData.id, userData.role_id, userData.token_version || 0);
+      const refreshToken = await getRefreshToken({ user_id: userData.id });
+
+      delete userData.password;
+      delete userData.face_descriptor;
+
+      return res.json({
+        success: true,
+        message: "Face login successful",
+        profile: userData,
+        permission: permissions,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        match_score: (1 - minDistance).toFixed(2)
+      });
+    }
+    return res.status(401).json({
+      success: false,
+      message: "Face not recognized. Please try again or use password."
+    });
+
+  } catch (error) {
+    console.error("❌ Login Face Error:", error);
+    logError("auth.loginFace", error, res);
+  }
+};
+
+
+// ===================================
+// POST: Verify Password (for sensitive actions)
+// ===================================
+exports.verifyPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const userId = req.current_id;
+
+    if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required"
+      });
+    }
+
+    // Get current user password hash
+    const [users] = await db.query("SELECT password FROM user WHERE id = ?", [userId]);
+
+    if (users.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const isMatch = await bcrypt.compare(password, users[0].password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: "Incorrect password"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Password verified"
+    });
+
+  } catch (error) {
+    console.error("Verify Password Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+
+// Helper: Euclidean Distance
+function euclideanDistance(desc1, desc2) {
+  return Math.sqrt(
+    desc1.map((val, i) => val - desc2[i])
+      .reduce((sum, diff) => sum + diff * diff, 0)
+  );
+}

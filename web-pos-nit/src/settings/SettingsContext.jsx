@@ -4,6 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { ConfigProvider, theme } from 'antd';
 import { templates, getTemplate, templateList } from './templates';
+import { Config } from '../util/config';
 
 const SettingsContext = createContext();
 
@@ -15,7 +16,9 @@ const defaultSettings = {
     fontSize: 'medium', // small, medium, large
     sidebarCollapsed: false,
     animations: true,
-    compactTables: false
+    compactTables: false,
+    faceLogin: false,
+    passwordComplexity: 'standard' // standard, high
 };
 
 /**
@@ -173,6 +176,39 @@ export const SettingsProvider = ({ children }) => {
         return defaultSettings;
     });
 
+    // Fetch system settings from API
+    useEffect(() => {
+        const fetchSystemSettings = async () => {
+            try {
+                // We use the helper directly if available or fetch
+                // Assuming request helper is available globally or we import it. 
+                // Since this is a context file, let's use standard fetch or import request if we can see where it lives.
+                // Looking at other files, request is in ../util/helper.
+                // But I can't easily import it here if I don't see the file structure fully or if it has deps.
+                // Let's rely on simple fetch for now or try to find where request helper is.
+                // Index.js showed `export { request } from ...` maybe? No.
+                // LogingPage.jsx imports request from "../../util/helper". Let's try that.
+
+                // For now, I will use a simple fetch to avoid circular dependency issues if helper uses context.
+                const response = await fetch(`${Config.base_url}settings`); // Use env var in real app
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success && data.data) {
+                        setSettings(prev => ({
+                            ...prev,
+                            faceLogin: data.data.face_login_enabled === 'true',
+                            passwordComplexity: data.data.password_complexity || 'standard'
+                        }));
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to fetch system settings:", error);
+            }
+        };
+
+        fetchSystemSettings();
+    }, []);
+
     // Get current template
     const currentTemplate = getTemplate(settings.templateId);
 
@@ -188,8 +224,17 @@ export const SettingsProvider = ({ children }) => {
             document.documentElement.classList.remove('dark');
         }
 
-        // Save to localStorage
-        localStorage.setItem('appSettings', JSON.stringify(settings));
+        // Save local preferences to localStorage
+        const localPrefs = {
+            templateId: settings.templateId,
+            darkMode: settings.darkMode,
+            language: settings.language,
+            fontSize: settings.fontSize,
+            sidebarCollapsed: settings.sidebarCollapsed,
+            animations: settings.animations,
+            compactTables: settings.compactTables
+        };
+        localStorage.setItem('appSettings', JSON.stringify(localPrefs));
     }, [settings]);
 
     // Apply template
@@ -200,8 +245,31 @@ export const SettingsProvider = ({ children }) => {
     }, []);
 
     // Update individual setting
-    const updateSetting = useCallback((key, value) => {
+    const updateSetting = useCallback(async (key, value) => {
         setSettings(prev => ({ ...prev, [key]: value }));
+
+        // If it's a system setting, save to API
+        if (key === 'faceLogin' || key === 'passwordComplexity') {
+            try {
+                const apiValue = key === 'faceLogin' ? String(value) : value;
+                const apiKey = key === 'faceLogin' ? 'face_login_enabled' : 'password_complexity';
+
+                // We need authentication for updates. 
+                // Assuming we have a token in localStorage.
+                const token = localStorage.getItem('access_token');
+
+                await fetch(`${Config.base_url}settings`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ key: apiKey, value: apiValue })
+                });
+            } catch (err) {
+                console.error("Failed to save system setting:", err);
+            }
+        }
     }, []);
 
     // Toggle dark mode

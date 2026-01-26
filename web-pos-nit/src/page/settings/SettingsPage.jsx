@@ -6,7 +6,8 @@ import {
     BgColorsOutlined,
     LayoutOutlined,
     FontSizeOutlined,
-    SettingOutlined
+    SettingOutlined,
+    LockOutlined
 } from '@ant-design/icons';
 import MainPage from '../../component/layout/MainPage';
 import { useSettings } from '../../settings';
@@ -198,6 +199,53 @@ function SettingsPage() {
                     </div>
                 </Card>
 
+                {/* Security Settings */}
+                {/* Security Settings */}
+                <Card className="settings-section">
+                    <div className="section-header">
+                        <LockOutlined className="section-icon" />
+                        <div>
+                            <h2>Security</h2>
+                            <p>Manage login and password security</p>
+                        </div>
+                    </div>
+
+                    <div className="settings-list">
+                        <div className="setting-item">
+                            <div className="setting-info">
+                                <span className="setting-label">Face Login</span>
+                                <span className="setting-description">Enable facial recognition for login</span>
+                            </div>
+                            <Switch
+                                checked={settings.faceLogin}
+                                onChange={(checked) => {
+                                    updateSetting('faceLogin', checked);
+                                    message.success(checked ? 'Face Login Enabled' : 'Face Login Disabled');
+                                }}
+                            />
+                        </div>
+
+                        <Divider />
+
+                        <div className="setting-item">
+                            <div className="setting-info">
+                                <span className="setting-label">Password Complexity</span>
+                                <span className="setting-description">Set requirements for user passwords</span>
+                            </div>
+                            <Radio.Group
+                                value={settings.passwordComplexity}
+                                onChange={(e) => {
+                                    updateSetting('passwordComplexity', e.target.value);
+                                    message.success(`Password Policy set to ${e.target.value === 'high' ? 'Strong' : 'Standard'}`);
+                                }}
+                            >
+                                <Radio.Button value="standard">Standard</Radio.Button>
+                                <Radio.Button value="high">High (Strong)</Radio.Button>
+                            </Radio.Group>
+                        </div>
+                    </div>
+                </Card>
+
                 {/* Font Size */}
                 <Card className="settings-section">
                     <div className="section-header">
@@ -231,8 +279,8 @@ function SettingsPage() {
                         </div>
                     </div>
                 </Card>
-            </div>
-        </MainPage>
+            </div >
+        </MainPage >
     );
 }
 

@@ -12,6 +12,8 @@ import { Config } from "../../util/config";
 import { getProfile, setProfile } from "../../store/profile.store";
 import { useSettings } from "../../settings";
 import styles from "./ProfilePage.module.css";
+import FaceEnrollment from "../../component/auth/FaceEnrollment";
+import { ScanOutlined } from '@ant-design/icons';
 
 const ProfilePage = () => {
   const { isDarkMode, toggleDarkMode } = useSettings();
@@ -25,6 +27,7 @@ const ProfilePage = () => {
   const [fileList, setFileList] = useState([]);
   const [isInfoChanged, setIsInfoChanged] = useState(false);
   const [initialValues, setInitialValues] = useState({});
+  const [faceEnrollVisible, setFaceEnrollVisible] = useState(false);
   const navigate = useNavigate();
   const currentUser = getProfile();
 
@@ -298,7 +301,26 @@ const ProfilePage = () => {
               </div>
             </div>
           </div>
+
+          {/* Face ID Section */}
+          <div style={{ marginTop: 24, padding: '0 20px', width: '100%' }}>
+            <Button
+              block
+              type="dashed"
+              icon={<ScanOutlined />}
+              onClick={() => setFaceEnrollVisible(true)}
+            >
+              Enroll / Update Face ID
+            </Button>
+          </div>
         </div>
+
+        {/* Face Enrollment Modal */}
+        <FaceEnrollment
+          visible={faceEnrollVisible}
+          onCancel={() => setFaceEnrollVisible(false)}
+          onSuccess={() => setFaceEnrollVisible(false)}
+        />
 
         {/* Right Content - Forms */}
         <div className={styles.formsContainer}>

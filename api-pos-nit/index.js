@@ -125,6 +125,7 @@ require("./src/route/truck.route")(app);
 require("./src/route/upload.route")(app);
 require("./src/route/supplier_payment.route")(app); // ✅ Supplier Payment Ledger
 require("./src/route/ocr.route")(app); // ✅ OCR Bank Slips
+require("./src/route/setting.route")(app); // ✅ System Settings
 
 // Optional route
 try {

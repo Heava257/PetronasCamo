@@ -5,9 +5,12 @@ import { setAcccessToken, setPermission, setProfile } from "../../store/profile.
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/petronas_header.png";
 import WelcomeAnimation3D from "../../component/layout/WelcomeAnimation ";
-import { UserOutlined, LockOutlined, ArrowRightOutlined, CustomerServiceOutlined, ClockCircleOutlined, InfoCircleOutlined, CloseOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, ArrowRightOutlined, CustomerServiceOutlined, ClockCircleOutlined, InfoCircleOutlined, CloseOutlined, ScanOutlined, CameraOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { FaTelegramPlane, FaGoogle, FaApple } from "react-icons/fa";
 import "./LoginPage.css";
+import { useSettings } from "../../settings";
+import { Modal } from "antd";
+import { getFaceApi } from '../../util/faceApiLoader';
 
 function LoginPage() {
   const [form] = Form.useForm();
@@ -18,6 +21,13 @@ function LoginPage() {
   const [attemptCount, setAttemptCount] = useState(0);
   const [activeTab, setActiveTab] = useState('signin');
   const [notification, setNotification] = useState(null);
+  const [faceLoginVisible, setFaceLoginVisible] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanStatus, setScanStatus] = useState('idle'); // idle, scanning, success, failed
+  const videoRef = React.useRef(null);
+  const streamRef = React.useRef(null);
+
+  const { settings } = useSettings();
   const navigate = useNavigate();
 
   // Show notification function
@@ -203,6 +213,143 @@ function LoginPage() {
 
   const handleAppleSignIn = () => {
     showNotification('apple');
+  };
+
+  // Face Login Logic
+  useEffect(() => {
+    // Load models
+    const loadModels = async () => {
+      const MODEL_URL = '/models';
+      try {
+        const api = getFaceApi();
+        await Promise.all([
+          api.loadSsdMobilenetv1Model(MODEL_URL),
+          api.loadFaceLandmarkModel(MODEL_URL),
+          api.loadFaceRecognitionModel(MODEL_URL),
+        ]);
+      } catch (e) {
+        console.error("Failed to load face models", e);
+      }
+    };
+    // Preload models immediately on mount
+    loadModels();
+  }, []);
+
+  // Handle Face Login Start/Stop and Stream
+  useEffect(() => {
+    let isMounted = true;
+    let stream = null;
+
+    const startScanning = async () => {
+      // Wait for models to be loaded
+      const api = getFaceApi();
+      if (!api) return;
+
+      try {
+        const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream = mediaStream;
+        streamRef.current = mediaStream;
+
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          try {
+            await videoRef.current.play();
+          } catch (e) { console.error("Play error", e) }
+        }
+
+        setIsScanning(true);
+        setScanStatus('scanning');
+
+        // Fast Detection Loop
+        const detectLoop = async () => {
+          if (!isMounted || !videoRef.current || videoRef.current.paused || videoRef.current.ended || !faceLoginVisible) {
+            return;
+          }
+
+          try {
+            const t0 = performance.now();
+            const detection = await api.detectSingleFace(videoRef.current, new api.SsdMobilenetv1Options({ minConfidence: 0.5 }))
+              .withFaceLandmarks()
+              .withFaceDescriptor();
+
+            if (detection) {
+              setIsScanning(false);
+              setScanStatus('verifying');
+
+              // API Call
+              const descriptor = Array.from(detection.descriptor);
+              const res = await request("auth/login-face", "post", { descriptor });
+
+              if (res && res.success) {
+                setScanStatus('success');
+                message.success("Face Recognized!");
+
+                if (streamRef.current) {
+                  streamRef.current.getTracks().forEach(track => track.stop());
+                }
+
+                setAcccessToken(res.access_token);
+                setProfile(JSON.stringify(res.profile));
+                setPermission(JSON.stringify(res.permission));
+                if (res.profile?.id) localStorage.setItem("user_id", res.profile.id);
+
+                setTimeout(() => {
+                  setFaceLoginVisible(false);
+                  navigate("/");
+                }, 500); // Fast redirect
+                return; // Stop loop
+              } else {
+                // Only show error if explicitly failed multiple times or just silent retry?
+                // For banking feel, silent retry is better until timeout
+              }
+            }
+          } catch (err) {
+            // Ignore specific detection errors
+          }
+
+          // Loop rapidly (100ms delay)
+          setTimeout(detectLoop, 100);
+        };
+
+        detectLoop();
+
+      } catch (err) {
+        console.error("Camera Error", err);
+        // Don't show error immediately on auto-login to avoid annoyance
+        // message.error("Camera access denied"); 
+        setFaceLoginVisible(false);
+      }
+    };
+
+    if (faceLoginVisible) {
+      // Short timeout to allow Modal to mount
+      setTimeout(startScanning, 100);
+    } else {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+      setIsScanning(false);
+    }
+
+    return () => {
+      isMounted = false;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [faceLoginVisible]);
+
+  const startFaceLogin = () => {
+    setFaceLoginVisible(true);
+  };
+
+  const cancelFaceLogin = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+    setFaceLoginVisible(false);
+    setScanStatus('idle');
+    setIsScanning(false);
   };
 
   // Format time display
@@ -404,6 +551,18 @@ function LoginPage() {
                   Sign in
                   <ArrowRightOutlined />
                 </Button>
+
+                {settings.faceLogin && (
+                  <Button
+                    type="default"
+                    block
+                    onClick={startFaceLogin}
+                    style={{ marginTop: '10px' }}
+                    icon={<ScanOutlined />}
+                  >
+                    Login with Face ID
+                  </Button>
+                )}
               </Form.Item>
             </Form>
 
@@ -448,7 +607,92 @@ function LoginPage() {
           </div>
         </div>
       </div>
-    </div>
+
+      <Modal
+        title="Face Login Security"
+        open={faceLoginVisible}
+        onCancel={cancelFaceLogin}
+        footer={null}
+        width={400}
+        centered
+      >
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div style={{
+            width: '100%',
+            height: '300px',
+            backgroundColor: '#000',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            position: 'relative',
+            marginBottom: '20px'
+          }}>
+            {/* Hidden Video for API */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{
+                position: 'absolute',
+                width: '1px',
+                height: '1px',
+                opacity: 0,
+                pointerEvents: 'none'
+              }}
+            />
+
+            {/* Scanning Animation UI */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: '#fff',
+              zIndex: 10
+            }}>
+              {isScanning ? (
+                <>
+                  <div className="face-scan-pulse">
+                    <ScanOutlined style={{ fontSize: '60px', color: '#1890ff' }} />
+                  </div>
+                  <p style={{ marginTop: 20, fontSize: '16px', color: '#666' }}>Scanning...</p>
+                </>
+              ) : scanStatus === 'success' ? (
+                <>
+                  <SafetyCertificateOutlined style={{ fontSize: '60px', color: '#52c41a' }} />
+                  <p style={{ marginTop: 20, fontSize: '18px', color: '#52c41a', fontWeight: 'bold' }}>Verified</p>
+                </>
+              ) : (
+                <p>Initializing Camera...</p>
+              )}
+            </div>
+          </div>
+
+          <style>{`
+            .face-scan-pulse {
+               width: 100px;
+               height: 100px;
+               border-radius: 50%;
+               background: rgba(24, 144, 255, 0.1);
+               display: flex;
+               alignItems: center;
+               justifyContent: center;
+               animation: pulse 1.5s infinite;
+            }
+            @keyframes pulse {
+              0% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4); }
+              70% { box-shadow: 0 0 0 20px rgba(24, 144, 255, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0); }
+            }
+          `}</style>
+        </div>
+      </Modal>
+    </div >
   );
 }
 

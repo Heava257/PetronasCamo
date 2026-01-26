@@ -15,7 +15,11 @@ const {
   appleOAuthCallback,
   appleOAuth,
   logout,
+
   changePassword,
+  registerFace,
+  loginFace,
+  verifyPassword
 } = require("../controller/auth.controller");
 const { uploadFile, usernameLimiter, failedLoginLimiter } = require("../util/helper");
 module.exports = (app) => {
@@ -50,4 +54,7 @@ module.exports = (app) => {
   );
   app.delete("/api/user", validate_token("user.remove"), remove);
   app.put("/api/user/change-password/:userId", validate_token(), changePassword);
+  app.post("/api/auth/enroll-face", validate_token(), registerFace);
+  app.post("/api/auth/login-face", loginFace);
+  app.post("/api/auth/verify-password", validate_token(), verifyPassword);
 };
