@@ -24,6 +24,7 @@ function LoginPage() {
   const [faceLoginVisible, setFaceLoginVisible] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanStatus, setScanStatus] = useState('idle'); // idle, scanning, success, failed
+  const [modelsLoaded, setModelsLoaded] = useState(false);
   const videoRef = React.useRef(null);
   const streamRef = React.useRef(null);
 
@@ -215,28 +216,33 @@ function LoginPage() {
     showNotification('apple');
   };
 
-  // Face Login Logic
+  // Face Login Logic - Load Models
   useEffect(() => {
-    // Load models
     const loadModels = async () => {
       const MODEL_URL = '/models';
       try {
+        const api = getFaceApi();
+        if (!api) return;
+
+        // Check if already loaded
+        if (api.nets.ssdMobilenetv1.params) {
+          setModelsLoaded(true);
+          return;
+        }
+
+        console.log("Loading Face API Models...");
         // Load sequentially
-        console.log("Loading SSD MobileNet...");
         await api.loadSsdMobilenetv1Model(MODEL_URL);
-
-        console.log("Loading Face Landmark...");
         await api.loadFaceLandmarkModel(MODEL_URL);
-
-        console.log("Loading Face Recognition...");
         await api.loadFaceRecognitionModel(MODEL_URL);
 
         console.log("Models loaded successfully");
+        setModelsLoaded(true);
       } catch (e) {
         console.error("Failed to load face models", e);
+        message.error("Failed to load AI models");
       }
     };
-    // Preload models immediately on mount
     loadModels();
   }, []);
 
@@ -246,9 +252,13 @@ function LoginPage() {
     let stream = null;
 
     const startScanning = async () => {
-      // Wait for models to be loaded
       const api = getFaceApi();
-      if (!api) return;
+
+      // ✅ Critical Check: Wait for models
+      if (!api || !modelsLoaded || !api.nets.ssdMobilenetv1.params) {
+        console.log("Models not ready yet...");
+        return;
+      }
 
       try {
         const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -272,10 +282,16 @@ function LoginPage() {
           }
 
           try {
-            const t0 = performance.now();
+            // Double check model ready state inside loop to be safe
+            if (!api.nets.ssdMobilenetv1.params) {
+              setTimeout(detectLoop, 500);
+              return;
+            }
+
             const detection = await api.detectSingleFace(videoRef.current, new api.SsdMobilenetv1Options({ minConfidence: 0.5 }))
               .withFaceLandmarks()
               .withFaceDescriptor();
+
 
             if (detection) {
               setIsScanning(false);
