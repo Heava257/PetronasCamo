@@ -1092,7 +1092,7 @@ exports.report_Expense_Summary = async (req, res) => {
       ${expense_type_id ? 'AND e.expense_type_id = :expense_type_id' : ''}
       ${branch_id ? 'AND e.user_id = :branch_id' : ''}
       GROUP BY DATE_FORMAT(e.expense_date, '%d/%m/%Y'), et.name, et.code, u.branch_name
-      ORDER BY e.expense_date ASC
+      ORDER BY MIN(e.expense_date) ASC
     `;
 
     const [list] = await db.query(sql, {
@@ -1152,8 +1152,8 @@ exports.report_Customer = async (req, res) => {
     }
 
     sql += `
-      GROUP BY DATE(cu.create_at)
-      ORDER BY cu.create_at ASC;
+      GROUP BY title, DATE(cu.create_at)
+      ORDER BY DATE(cu.create_at) ASC;
     `;
 
     const [list] = await db.query(sql, params);
@@ -1267,7 +1267,8 @@ exports.report_Purchase_Summary = async (req, res) => {
       FROM purchase pu
       WHERE DATE_FORMAT(pu.create_at, '%Y-%m-%d') BETWEEN :from_date AND :to_date
       AND (:supplier_id IS NULL OR pu.supplier_id = :supplier_id)
-      GROUP BY pu.create_at;
+      GROUP BY title, DATE(pu.create_at)
+      ORDER BY DATE(pu.create_at) ASC;
     `;
 
     const [list] = await db.query(sql, { from_date, to_date, supplier_id });
