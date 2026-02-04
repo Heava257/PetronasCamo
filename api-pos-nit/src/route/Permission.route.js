@@ -16,15 +16,15 @@ const {
 
 module.exports = (app) => {
 
-  app.get("/api/permissions", validate_token("permission.view"), getAllPermissions);
+  app.get("/api/permissions", validate_token(), getAllPermissions);
 
-  app.get("/api/permissions/user/:user_id", validate_token("permission.view"), getUserPermissions);
+  app.get("/api/permissions/user/:user_id", validate_token(), getUserPermissions);
 
-  app.get("/api/permissions/branch/:branch_name", validate_token("permission.view"), getPermissionsByBranch);
+  app.get("/api/permissions/branch/:branch_name", validate_token(), getPermissionsByBranch);
 
   app.put("/api/permissions/role/:role_id", validate_token("permission.update"), updateRolePermissions);
 
-  app.get("/api/permissions/comparison", validate_token("permission.view"), getPermissionComparison);
+  app.get("/api/permissions/comparison", validate_token(), getPermissionComparison);
 
   app.post("/api/permissions/clone", validate_token("permission.create"), cloneRolePermissions);
 
@@ -35,7 +35,7 @@ module.exports = (app) => {
 
   app.delete("/api/permissions/:permission_id", validate_token("permission.remove"), deletePermission);
 
-  app.get("/api/permissions/groups", validate_token("permission.view"), getAllGroups);
+  app.get("/api/permissions/groups", validate_token(), getAllGroups);
 
   // ✅ NEW: Force refresh endpoints
   app.post("/api/permissions/refresh/user/:user_id", validate_token("permission.update"), refreshUserPermissions);

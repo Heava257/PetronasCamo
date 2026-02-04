@@ -46,7 +46,11 @@ async function run() {
             'role.view',
             'role.create',
             'role.update',
-            'role.remove'
+            'role.remove',
+            'permission.view',
+            'permission.create',
+            'permission.update',
+            'permission.remove'
         ];
 
         for (const permName of permsToEnsure) {
