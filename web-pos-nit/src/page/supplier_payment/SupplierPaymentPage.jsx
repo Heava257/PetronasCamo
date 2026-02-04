@@ -214,7 +214,6 @@ function SupplierPaymentPage() {
         suppliers: [],
         selectedSupplier: null,
         ledger: [],
-        summary: {},
         supplier: {},
         dateRange: [dayjs().startOf('month'), dayjs().endOf('month')],
         paymentModalVisible: false,

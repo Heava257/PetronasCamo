@@ -24,7 +24,6 @@ const translations = {
     "Expense": "ចំណាយ",
     "actual_price_label": "តម្លៃមេចែក",
     "size": "ទំហំ",
-    "Total": "សរុប",
     "Expense Type": "ប្រភេទនៃការចំណាយ",
     "Employee": "និយោជិក",
     "User": "អ្នកប្រើប្រាស់",

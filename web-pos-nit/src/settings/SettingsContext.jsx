@@ -18,8 +18,6 @@ const defaultSettings = {
     animations: true,
     compactTables: false,
     faceLogin: false,
-    compactTables: false,
-    faceLogin: false,
     passwordComplexity: 'standard', // standard, high
     menuItemTemplate: 'modern' // modern, classic
 };

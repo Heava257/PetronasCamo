@@ -17,7 +17,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from 'dayjs';
 import { request, formatPrice, formatQty } from "../../util/helper";
-import './IntegratedInvoiceSidebar.css';
+import './Integratedinvoicesidebar.css';
 
 const { TextArea } = Input;
 const { Option } = Select;
