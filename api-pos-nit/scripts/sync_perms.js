@@ -15,7 +15,25 @@ async function run() {
             'order.remove',
             'product.view',
             'customer.view',
-            'category.view'
+            'category.view',
+            'expanse_type.view',
+            'expanse_type.create',
+            'expanse_type.update',
+            'expanse_type.remove',
+            'expanse.view',
+            'expanse.create',
+            'expanse.update',
+            'expanse.remove',
+            'supplier.view',
+            'supplier.create',
+            'supplier.update',
+            'supplier.remove',
+            'purchase.getlist',
+            'purchase.getstatistics',
+            'purchase.getbyid',
+            'purchase.create',
+            'purchase.update',
+            'purchase.delete'
         ];
 
         for (const permName of permsToEnsure) {

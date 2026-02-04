@@ -16,13 +16,13 @@ const upload = multer({ storage: storage });
 
 module.exports = (app) => {
   // GET /api/purchase - Get all purchase orders
-  app.get("/api/purchase", validate_token("purchase.getlist"), getList);
+  app.get("/api/purchase", validate_token(), getList);
 
   // GET /api/purchase/statistics - Get purchase statistics
-  app.get("/api/purchase/statistics", validate_token("purchase.getstatistics"), getStatistics);
+  app.get("/api/purchase/statistics", validate_token(), getStatistics);
 
   // GET /api/purchase/:id - Get purchase order by ID
-  app.get("/api/purchase/:id", validate_token("purchase.getbyid"), getById);
+  app.get("/api/purchase/:id", validate_token(), getById);
 
   // POST /api/purchase - Create new purchase order (With Image)
   app.post("/api/purchase", validate_token("purchase.create"), upload.single('image'), create);
@@ -35,8 +35,8 @@ module.exports = (app) => {
 
   // INTEGRATION: Inventory endpoints
   // GET /api/purchase/inventory/statistics - Get warehouse inventory statistics
-  app.get("/api/purchase/inventory/statistics", validate_token("purchase.getstatistics"), getInventoryStatistics);
+  app.get("/api/purchase/inventory/statistics", validate_token(), getInventoryStatistics);
 
   // GET /api/purchase/inventory/transactions - Get recent inventory transactions
-  app.get("/api/purchase/inventory/transactions", validate_token("purchase.getlist"), getRecentTransactions);
+  app.get("/api/purchase/inventory/transactions", validate_token(), getRecentTransactions);
 };
