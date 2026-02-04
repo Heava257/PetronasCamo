@@ -21,42 +21,89 @@ exports.sendSmartNotification = async ({
       return { success: false, reason: 'globally_disabled' };
     }
 
-    // 2. Fetch ONE Config (The "One Group")
+    // 2. Fetch Matching Configs
+    // Logic: 
+    // - Config must be active
+    // - If event_types is NULL, it's a global listener
+    // - If event_types is set, it must contain our event_type
+    // - If branch_name matches, or config is system-wide (branch_name is NULL)
     const [configs] = await db.query(`
-      SELECT bot_token, chat_id, config_name
+      SELECT bot_token, chat_id, config_name, branch_name, event_types, config_type
       FROM telegram_config
       WHERE is_active = 1
-      ORDER BY id ASC LIMIT 1
     `);
 
     if (configs.length === 0) return { success: false, reason: 'no_config' };
-    const recipient = configs[0];
 
-    // 3. Send Message
-    await axios.post(
-      `https://api.telegram.org/bot${recipient.bot_token}/sendMessage`,
-      {
-        chat_id: recipient.chat_id,
-        text: message,
-        parse_mode: 'HTML'
-      },
-      { timeout: 10000 }
-    );
-
-    // 4. Send Photo if exists
-    if (image_url) {
+    // 3. Filter Recipients based on event & branch
+    const recipients = configs.filter(conf => {
+      // Parse event types if they exist
+      let enabledEvents = [];
       try {
-        await axios.post(
-          `https://api.telegram.org/bot${recipient.bot_token}/sendPhoto`,
-          { chat_id: recipient.chat_id, photo: image_url },
-          { timeout: 10000 }
-        );
-      } catch (e) { console.error('Telegram Photo Error:', e.message); }
+        enabledEvents = conf.event_types ? (typeof conf.event_types === 'string' ? JSON.parse(conf.event_types) : conf.event_types) : null;
+      } catch (e) {
+        console.error(`Error parsing event_types for ${conf.config_name}:`, e.message);
+      }
+
+      // Check Event Match:
+      // - If no event_types specified, matches everything
+      // - If event_types specified, must contain the current event_type
+      const eventMatches = !enabledEvents || (Array.isArray(enabledEvents) && enabledEvents.includes(event_type));
+
+      // Check Branch Match:
+      // - Super Admin or System configs match everything
+      // - Global configs (branch_name is NULL) match everything
+      // - Branch-specific configs must match exactly
+      const branchMatches = conf.config_type === 'super_admin' ||
+        conf.config_type === 'system' ||
+        !conf.branch_name ||
+        conf.branch_name === branch_name;
+
+      return eventMatches && branchMatches;
+    });
+
+    // 4. If no specific recipients found, use the first active one as fallback 
+    // (preserving old behavior but only if nothing else matched)
+    let finalRecipients = recipients;
+    if (finalRecipients.length === 0) {
+      console.warn(`⚠️ No specific Telegram recipients found for event ${event_type} and branch ${branch_name}. Falling back to first active config.`);
+      finalRecipients = [configs[0]];
     }
 
-    return { success: true };
+    // 5. Send to all matching recipients
+    const results = await Promise.all(finalRecipients.map(async (recipient) => {
+      try {
+        // Send Message
+        await axios.post(
+          `https://api.telegram.org/bot${recipient.bot_token}/sendMessage`,
+          {
+            chat_id: recipient.chat_id,
+            text: message,
+            parse_mode: 'HTML'
+          },
+          { timeout: 10000 }
+        );
+
+        // Send Photo if exists
+        if (image_url) {
+          try {
+            await axios.post(
+              `https://api.telegram.org/bot${recipient.bot_token}/sendPhoto`,
+              { chat_id: recipient.chat_id, photo: image_url },
+              { timeout: 10000 }
+            );
+          } catch (e) { console.error(`Telegram Photo Error (${recipient.config_name}):`, e.message); }
+        }
+        return { name: recipient.config_name, success: true };
+      } catch (e) {
+        console.error(`Telegram Error (${recipient.config_name}):`, e.message);
+        return { name: recipient.config_name, success: false, error: e.message };
+      }
+    }));
+
+    return { success: true, recipients: results };
   } catch (error) {
-    console.error('Telegram Error:', error.message);
+    console.error('Telegram Global Error:', error.message);
     return { success: false, error: error.message };
   }
 };
