@@ -18,7 +18,10 @@ const defaultSettings = {
     animations: true,
     compactTables: false,
     faceLogin: false,
-    passwordComplexity: 'standard' // standard, high
+    compactTables: false,
+    faceLogin: false,
+    passwordComplexity: 'standard', // standard, high
+    menuItemTemplate: 'modern' // modern, classic
 };
 
 /**
@@ -224,6 +227,41 @@ export const SettingsProvider = ({ children }) => {
             document.documentElement.classList.remove('dark');
         }
 
+        // Apply Menu Item Template Class
+        document.documentElement.classList.remove(
+            'menu-style-modern',
+            'menu-style-classic',
+            'menu-style-minimal',
+            'menu-style-rounded',
+            'menu-style-glass',
+            'menu-style-neon'
+        );
+        document.documentElement.classList.add(`menu-style-${settings.menuItemTemplate}`);
+
+        // Apply Global Template Class (Critical for Modals/Portals)
+        // Remove known template classes first (or all starting with template-)
+        const allClasses = Array.from(document.documentElement.classList);
+        const templateClasses = allClasses.filter(c => c.startsWith('template-'));
+        document.documentElement.classList.remove(...templateClasses);
+
+        // Add current template class
+        document.documentElement.classList.add(`template-${settings.templateId}`);
+
+        // Custom CSS Injection for Templates (e.g., Animations)
+        const customStyleId = 'template-custom-css';
+        let styleTag = document.getElementById(customStyleId);
+
+        if (template.customCss) {
+            if (!styleTag) {
+                styleTag = document.createElement('style');
+                styleTag.id = customStyleId;
+                document.head.appendChild(styleTag);
+            }
+            styleTag.textContent = template.customCss;
+        } else if (styleTag) {
+            styleTag.remove();
+        }
+
         // Save local preferences to localStorage
         const localPrefs = {
             templateId: settings.templateId,
@@ -232,7 +270,8 @@ export const SettingsProvider = ({ children }) => {
             fontSize: settings.fontSize,
             sidebarCollapsed: settings.sidebarCollapsed,
             animations: settings.animations,
-            compactTables: settings.compactTables
+            compactTables: settings.compactTables,
+            menuItemTemplate: settings.menuItemTemplate
         };
         localStorage.setItem('appSettings', JSON.stringify(localPrefs));
     }, [settings]);
@@ -294,15 +333,69 @@ export const SettingsProvider = ({ children }) => {
         isDarkMode: settings.darkMode
     };
 
+    // Resolve active colors for Ant Design Tokens (Dynamic calculation)
+    const activeColors = settings.darkMode
+        ? (currentTemplate.darkColors ? { ...currentTemplate.colors, ...currentTemplate.darkColors } : { ...currentTemplate.colors, bgCard: '#1e293b', bgMain: '#0f172a', textPrimary: '#ffffff' })
+        : currentTemplate.colors;
+
+    const isTransparentCard = activeColors.bgCard.includes('rgba') || activeColors.bgCard === 'transparent';
+
+    // Automatically use Dark Algorithm if the template's primary text is white (implies dark theme)
+    const shouldUseDarkAlgorithm = settings.darkMode || activeColors.textPrimary === '#ffffff';
+
     return (
         <SettingsContext.Provider value={value}>
             <ConfigProvider
                 theme={{
-                    algorithm: settings.darkMode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+                    algorithm: shouldUseDarkAlgorithm ? theme.darkAlgorithm : theme.defaultAlgorithm,
                     token: {
-                        colorPrimary: currentTemplate?.colors?.primary,
+                        colorPrimary: activeColors.primary,
                         fontFamily: currentTemplate?.typography?.fontFamily,
                         borderRadius: parseInt(currentTemplate?.layout?.borderRadius) || 6,
+
+                        // Critical for Glassmorphism
+                        colorBgContainer: activeColors.bgCard,
+                        colorBgElevated: activeColors.bgCard,
+                        colorBgLayout: 'transparent', // Allow background image to show
+
+                        // Text colors
+                        colorText: activeColors.textPrimary,
+                        colorTextHeading: activeColors.textPrimary,
+                        colorTextSecondary: activeColors.textSecondary,
+                        colorTextPlaceholder: (settings.darkMode || isTransparentCard) ? 'rgba(255, 255, 255, 0.45)' : '#94a3b8',
+                        colorTextLabel: activeColors.textPrimary,
+                        colorBorder: activeColors.borderColor,
+                    },
+                    components: {
+                        Card: {
+                            colorBgContainer: activeColors.bgCard, // Explicit override for Card
+                        },
+                        Table: {
+                            colorBgContainer: activeColors.bgCard, // Explicit override for Table
+                            colorFillAlter: isTransparentCard ? 'rgba(255,255,255,0.05)' : activeColors.bgCard, // Semi-transparent hover/stripe
+                            colorTextHeading: activeColors.textPrimary,
+                        },
+                        Modal: {
+                            contentBg: activeColors.bgCard,
+                            headerBg: 'transparent',
+                        },
+                        Input: {
+                            colorBgContainer: isTransparentCard ? 'rgba(0, 0, 0, 0.2)' : activeColors.bgCard,
+                            activeBg: isTransparentCard ? 'rgba(0, 0, 0, 0.4)' : undefined,
+                            colorText: activeColors.textPrimary,
+                            colorTextPlaceholder: (settings.darkMode || isTransparentCard) ? 'rgba(255, 255, 255, 0.45)' : '#94a3b8',
+                            colorBorder: activeColors.borderColor
+                        },
+                        Select: {
+                            colorBgContainer: isTransparentCard ? 'rgba(0, 0, 0, 0.2)' : activeColors.bgCard,
+                            colorText: activeColors.textPrimary,
+                            optionSelectedBg: activeColors.primaryLight,
+                            colorBorder: activeColors.borderColor,
+                            colorTextPlaceholder: (settings.darkMode || isTransparentCard) ? 'rgba(255, 255, 255, 0.45)' : '#94a3b8'
+                        },
+                        Form: {
+                            labelColor: activeColors.textPrimary
+                        }
                     }
                 }}
             >

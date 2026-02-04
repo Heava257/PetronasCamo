@@ -23,11 +23,11 @@ class ActivityTracker {
 
   async fetchConfig() {
     try {
-      const response = await request('config/auto-logout',"get");
+      const response = await request('config/auto-logout', "get");
 
 
-      if (response.data?.timeout_minutes) {
-        this.timeoutMinutes = response.data.timeout_minutes;
+      if (response?.timeout_minutes) {
+        this.timeoutMinutes = response.timeout_minutes;
       }
     } catch (error) {
       console.error('Failed to fetch config:', error);
@@ -37,7 +37,7 @@ class ActivityTracker {
   setupEventListeners() {
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
     let throttleTimer = null;
-    
+
     const throttledUpdate = () => {
       if (!throttleTimer) {
         this.updateActivity();
@@ -63,7 +63,7 @@ class ActivityTracker {
   checkInactivity() {
     const inactiveMinutes = (Date.now() - this.lastActivityTime) / 60000;
 
-   
+
 
     if (inactiveMinutes >= this.timeoutMinutes) {
       this.handleAutoLogout();

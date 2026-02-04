@@ -9,20 +9,9 @@ exports.getAllPermissions = async (req, res) => {
   try {
     const currentUserId = req.current_id;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.view")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Access denied. Super Admin only."
-      });
-    }
 
     // ✅ Get all permissions grouped by category
     const [permissions] = await db.query(`
@@ -68,14 +57,7 @@ exports.getUserPermissions = async (req, res) => {
     const { user_id } = req.params;
 
     // ✅ Verify Super Admin or same user
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
-
-    const isSuperAdmin = currentUser[0]?.role_code === 'SUPER_ADMIN';
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
     const isSameUser = parseInt(currentUserId) === parseInt(user_id);
 
     if (!isSuperAdmin && !isSameUser) {
@@ -153,20 +135,9 @@ exports.getPermissionsByBranch = async (req, res) => {
     const currentUserId = req.current_id;
     const { branch_name } = req.params;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.view")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Access denied. Super Admin only."
-      });
-    }
 
     // ✅ Get all users in branch with their permissions
     const [branchUsers] = await db.query(`
@@ -231,20 +202,9 @@ exports.updateRolePermissions = async (req, res) => {
     const { role_id } = req.params;
     const { permission_ids } = req.body; // Array of permission IDs
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name, u.username FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.update")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Only Super Admin can modify role permissions"
-      });
-    }
 
     // ✅ Get role info
     const [roleInfo] = await db.query(
@@ -325,7 +285,7 @@ exports.updateRolePermissions = async (req, res) => {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 👨‍💼 <b>Updated By:</b>
-${currentUser[0]?.name} (${currentUser[0]?.username})
+${req.auth?.name} (${req.auth?.username})
 
 ⏰ <b>Time:</b> ${new Date().toLocaleString('en-US', {
         timeZone: 'Asia/Phnom_Penh',
@@ -368,20 +328,9 @@ exports.getPermissionComparison = async (req, res) => {
   try {
     const currentUserId = req.current_id;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.view")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Access denied. Super Admin only."
-      });
-    }
 
     // ✅ Get all roles
     const [roles] = await db.query(`
@@ -437,20 +386,9 @@ exports.cloneRolePermissions = async (req, res) => {
     const currentUserId = req.current_id;
     const { source_role_id, target_role_id } = req.body;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.create")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Only Super Admin can clone permissions"
-      });
-    }
 
     // ✅ Get source role permissions
     const [sourcePermissions] = await db.query(`
@@ -515,20 +453,9 @@ exports.createPermission = async (req, res) => {
     const currentUserId = req.current_id;
     const { name, group, is_menu_web, web_route_key, description } = req.body;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name, u.username FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.create")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Only Super Admin can create permissions"
-      });
-    }
 
     // ✅ Check if permission already exists
     const [existing] = await db.query(
@@ -589,7 +516,7 @@ exports.createPermission = async (req, res) => {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 👨‍💼 <b>Created By:</b>
-${currentUser[0]?.name} (${currentUser[0]?.username})
+${req.auth?.name} (${req.auth?.username})
 
 ⏰ <b>Time:</b> ${new Date().toLocaleString('en-US', {
       timeZone: 'Asia/Phnom_Penh',
@@ -628,20 +555,9 @@ exports.updatePermission = async (req, res) => {
     const { permission_id } = req.params;
     const { name, group, is_menu_web, web_route_key, description } = req.body;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.update")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Only Super Admin can update permissions"
-      });
-    }
 
     // ✅ Check if permission exists
     const [existing] = await db.query(
@@ -674,8 +590,8 @@ exports.updatePermission = async (req, res) => {
 
     // ✅ Update permission
     await db.query(`
-      UPDATE permissions 
-      SET 
+      UPDATE permissions
+      SET
         name = :name,
         \`group\` = :group,
         is_menu_web = :is_menu_web,
@@ -733,20 +649,9 @@ exports.deletePermission = async (req, res) => {
     const currentUserId = req.current_id;
     const { permission_id } = req.params;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name, u.username FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.remove")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Only Super Admin can delete permissions"
-      });
-    }
 
     // ✅ Get permission info
     const [permission] = await db.query(
@@ -817,7 +722,7 @@ exports.deletePermission = async (req, res) => {
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 👨‍💼 <b>Deleted By:</b>
-${currentUser[0]?.name} (${currentUser[0]?.username})
+${req.auth?.name} (${req.auth?.username})
 
 ⏰ <b>Time:</b> ${new Date().toLocaleString('en-US', {
         timeZone: 'Asia/Phnom_Penh',
@@ -855,20 +760,9 @@ exports.getAllGroups = async (req, res) => {
   try {
     const currentUserId = req.current_id;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.view")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Access denied"
-      });
-    }
 
     // ✅ Get distinct groups
     const [groups] = await db.query(`
@@ -903,20 +797,9 @@ exports.refreshUserPermissions = async (req, res) => {
     const currentUserId = req.current_id;
     const { user_id } = req.params;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.update")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Only Super Admin can refresh permissions"
-      });
-    }
 
     // ✅ Update user's token_version to invalidate current sessions
     await db.query(`
@@ -967,20 +850,9 @@ exports.refreshRolePermissions = async (req, res) => {
     const currentUserId = req.current_id;
     const { role_id } = req.params;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    // Role check handled by middleware validate_token("permission.update")
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        message: "Only Super Admin can refresh permissions"
-      });
-    }
 
     // ✅ Get all users with this role
     const [users] = await db.query(`

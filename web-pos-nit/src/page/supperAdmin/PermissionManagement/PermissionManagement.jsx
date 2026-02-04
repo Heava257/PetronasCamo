@@ -43,6 +43,7 @@ import {
 import { request } from "../../../util/helper";
 import { getProfile } from "../../../store/profile.store";
 import PermissionCRUD from "./PermissionCRUD";
+import BranchPermissionOverride from "../BranchPermissionOverride/BranchPermissionOverridePageWrapper";
 
 const { TabPane } = Tabs;
 const { Panel } = Collapse;
@@ -552,7 +553,7 @@ function PermissionManagement() {
 
   // Mobile User Card
   const UserMobileCard = ({ user }) => (
-    <Card className="mb-3 shadow-sm hover:shadow-md transition-shadow" bodyStyle={{ padding: '12px' }}>
+    <Card className="mb-3 shadow-sm hover:shadow-md transition-shadow" styles={{ body: { padding: '12px' } }}>
       <div className="space-y-2">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -593,7 +594,7 @@ function PermissionManagement() {
     const count = state.comparisonMatrix.filter(row => row[`role_${role.id}`]).length;
 
     return (
-      <Card className="mb-3 shadow-sm hover:shadow-md transition-shadow" bodyStyle={{ padding: '12px' }}>
+      <Card className="mb-3 shadow-sm hover:shadow-md transition-shadow" styles={{ body: { padding: '12px' } }}>
         <div className="space-y-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">
@@ -675,7 +676,7 @@ function PermissionManagement() {
               }
               key="by-branch"
             >
-              <Card className="mb-4 bg-blue-50" bodyStyle={{ padding: '12px 16px' }}>
+              <Card className="mb-4 bg-blue-50" styles={{ body: { padding: '12px 16px' } }}>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
                   <span className="font-semibold text-sm">ជ្រើសរើសសាខា:</span>
                   <Select
@@ -690,6 +691,14 @@ function PermissionManagement() {
                       <Option key={branch} value={branch}>{branch}</Option>
                     ))}
                   </Select>
+                  <Button
+                    type="primary"
+                    icon={<BranchesOutlined />}
+                    onClick={() => setActiveTab('branch-overrides')}
+                    disabled={!state.selectedBranch}
+                  >
+                    គ្រប់គ្រងសិទ្ធិពិសេសសាខានេះ
+                  </Button>
                 </div>
               </Card>
 
@@ -856,7 +865,22 @@ function PermissionManagement() {
               )}
             </TabPane>
 
-            {/* Tab 4: Permission CRUD */}
+            {/* Tab 4: Branch Overrides (Exceptions) */}
+            <TabPane
+              tab={
+                <span className="text-xs sm:text-sm">
+                  <BranchesOutlined /> <span className="hidden xs:inline">សិទ្ធិពិសេសតាមសាខា</span>
+                </span>
+              }
+              key="branch-overrides"
+            >
+              <BranchPermissionOverride
+                isIntegrated={true}
+                initialBranch={state.selectedBranch}
+              />
+            </TabPane>
+
+            {/* Tab 5: Permission CRUD */}
             <TabPane
               tab={
                 <span className="text-xs sm:text-sm">
@@ -882,7 +906,7 @@ function PermissionManagement() {
               <span className="break-words">សិទ្ធិរបស់ {state.userInfo.name}</span>
             </div>
           }
-          bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
+          styles={{ body: { padding: window.innerWidth < 640 ? '12px' : '24px' } }}
         >
           {/* User Info - RESPONSIVE */}
           <Card className="mb-4 bg-gradient-to-r from-blue-50 to-purple-50">
@@ -1035,7 +1059,7 @@ function PermissionManagement() {
               <Tag color="blue" className="text-xs sm:text-sm">{getRoleById(state.selectedRole)?.code}</Tag>
             </div>
           }
-          bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
+          styles={{ body: { padding: window.innerWidth < 640 ? '12px' : '24px' } }}
         >
           {/* Statistics - RESPONSIVE */}
           <Card className="mb-4 bg-gradient-to-r from-purple-50 to-blue-50">
@@ -1106,8 +1130,8 @@ function PermissionManagement() {
                         <div
                           key={perm.id}
                           className={`flex items-center justify-between p-2 sm:p-3 rounded border transition-all ${isSelected
-                              ? 'bg-green-50 border-green-300'
-                              : 'bg-gray-50 border-gray-200'
+                            ? 'bg-green-50 border-green-300'
+                            : 'bg-gray-50 border-gray-200'
                             }`}
                         >
                           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1153,7 +1177,7 @@ function PermissionManagement() {
               <span>ចម្លងសិទ្ធិ</span>
             </div>
           }
-          bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
+          styles={{ body: { padding: window.innerWidth < 640 ? '12px' : '24px' } }}
         >
           {/* Warning Message - RESPONSIVE */}
           <div className="mb-4 p-2 sm:p-3 bg-yellow-50 rounded border border-yellow-200">

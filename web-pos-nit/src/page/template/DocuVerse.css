@@ -1,0 +1,25 @@
+/* DocuVerse Template Styles */
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200;300;400;500;600;700;800&display=swap');
+
+.docu-container {
+    font-family: 'Manrope', sans-serif;
+}
+
+/* Custom Scrollbar for this template */
+.docu-container ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.docu-container ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.docu-container ::-webkit-scrollbar-thumb {
+    background: #e5e7eb;
+    border-radius: 10px;
+}
+
+.docu-container ::-webkit-scrollbar-thumb:hover {
+    background: #d1d5db;
+}

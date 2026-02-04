@@ -152,9 +152,7 @@ function CustomerPage() {
       const res = await request(`customer/my-group`, "get", param);
       setLoading(false);
       if (res?.success) {
-        // Sort by ID ascending (smallest to largest)
-        const sortedList = (res.list || []).sort((a, b) => a.id - b.id);
-        setList(sortedList);
+        setList(res.list || []);
       } else {
         message.error(res?.message || t("Failed to fetch customer list"));
       }
@@ -464,7 +462,7 @@ function CustomerPage() {
             />
           )}
           {permissionsLoaded &&
-            isPermission("customer.update") &&
+            isPermission("customer.remove") &&
             !blockedPermissions.delete.includes(profile?.id) && (
               <Button
                 type="primary"
@@ -573,6 +571,17 @@ function CustomerPage() {
       render: (_, __, index) => index + 1,
     },
     {
+      key: "code",
+      title: (
+        <div>
+          <div className="customer-table-header-main">{t("code")}</div>
+        </div>
+      ),
+      dataIndex: "code",
+      width: 120,
+      render: (text) => <Tag color="blue" className="font-bold">{text || "-"}</Tag>,
+    },
+    {
       key: "name",
       title: (
         <div>
@@ -659,6 +668,21 @@ function CustomerPage() {
       }
     },
     {
+      key: "address",
+      title: (
+        <div>
+          <div className="customer-table-header-main">{t("address")}</div>
+        </div>
+      ),
+      dataIndex: "address",
+      width: 200,
+      render: (address) => (
+        <span style={{ display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={address}>
+          {address || "-"}
+        </span>
+      ),
+    },
+    {
       key: "action",
       title: (
         <div>
@@ -670,18 +694,20 @@ function CustomerPage() {
       fixed: "right",
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title={t("manage_locations") || "គ្រប់គ្រងទីតាំង"}>
-            <Button
-              type="default"
-              icon={<MdLocationOn />}
-              onClick={() => {
-                setSelectedCustomer(record);
-                setLocationModalVisible(true);
-              }}
-              size="small"
-              style={{ color: '#1890ff' }}
-            />
-          </Tooltip>
+          {permissionsLoaded && isPermission("customer.update") && (
+            <Tooltip title={t("manage_locations") || "គ្រប់គ្រងទីតាំង"}>
+              <Button
+                type="default"
+                icon={<MdLocationOn />}
+                onClick={() => {
+                  setSelectedCustomer(record);
+                  setLocationModalVisible(true);
+                }}
+                size="small"
+                style={{ color: '#1890ff' }}
+              />
+            </Tooltip>
+          )}
 
           {permissionsLoaded && isPermission("customer.update") && (
             <Button
@@ -693,7 +719,7 @@ function CustomerPage() {
           )}
 
           {permissionsLoaded &&
-            isPermission("customer.update") &&
+            isPermission("customer.remove") &&
             !blockedPermissions.delete.includes(profile?.id) && (
               <Button
                 type="primary"
@@ -742,6 +768,14 @@ function CustomerPage() {
       <Row gutter={[16, 8]}>
         <Col xs={24} sm={12}>
           <Form.Item
+            label={<span className="customer-form-label">{t("code")}</span>}
+            name="code"
+          >
+            <Input placeholder={t("បញ្ចូលកូដអតិថិជន")} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12}>
+          <Form.Item
             label={<span className="customer-form-label">{t("name")}</span>}
             name="name"
             rules={[{ required: true, message: t("Name is required") }]}
@@ -749,6 +783,9 @@ function CustomerPage() {
             <Input />
           </Form.Item>
         </Col>
+      </Row>
+
+      <Row gutter={[16, 8]}>
         <Col xs={24} sm={12}>
           <Form.Item
             label={<span className="customer-form-label">{t("gender")}</span>}
@@ -762,9 +799,6 @@ function CustomerPage() {
             </Select>
           </Form.Item>
         </Col>
-      </Row>
-
-      <Row gutter={[16, 8]}>
         <Col xs={24} sm={12}>
           <Form.Item
             label={<span className="customer-form-label">{t("email")}</span>}
@@ -774,6 +808,9 @@ function CustomerPage() {
             <Input />
           </Form.Item>
         </Col>
+      </Row>
+
+      <Row gutter={[16, 8]}>
         <Col xs={24} sm={12}>
           <Form.Item
             label={<span className="customer-form-label">{t("telephone")}</span>}
@@ -1031,7 +1068,8 @@ function CustomerPage() {
               </Button>
             </div>
 
-            {permissionsLoaded && isPermission("customer.getone") && (
+            {/* 
+            {permissionsLoaded && isPermission("customer.view") && (
               <Button
                 className="customer-btn-text w-full sm:w-auto"
                 type="primary"
@@ -1041,7 +1079,7 @@ function CustomerPage() {
                 <span className="hidden sm:inline">{t("Set Permissions")}</span>
               </Button>
             )}
-            {permissionsLoaded && isPermission("customer.getone") && (
+            {permissionsLoaded && isPermission("customer.update") && (
               <Button
                 className="customer-btn-text w-full sm:w-auto"
                 type="primary"
@@ -1052,6 +1090,7 @@ function CustomerPage() {
                 <span className="md:hidden">{t("ចាត់ចែង")}</span>
               </Button>
             )}
+            */}
             {canCreateCustomer && (
               <Button
                 className="customer-btn-text w-full sm:w-auto"
@@ -1213,7 +1252,11 @@ function CustomerPage() {
                   <Col key={record.id} xs={24} sm={12} md={12} lg={8} xl={6}>
                     <div
                       className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full group"
-                      onClick={() => onClickEdit(record)}
+                      onClick={() => {
+                        if (isPermission("customer.update")) {
+                          onClickEdit(record);
+                        }
+                      }}
                     >
                       {/* Card Header with Status and Actions */}
                       <div className="p-4 pb-2 flex justify-between items-start">
@@ -1224,34 +1267,45 @@ function CustomerPage() {
                           {record.type === "special" ? t("Special") : t("Regular")}
                         </Tag>
                         <Space className="opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            type="text"
-                            icon={<MdLocationOn className="text-blue-500" />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedCustomer(record);
-                              setLocationModalVisible(true);
-                            }}
-                            size="small"
-                          />
-                          <Button
-                            type="text"
-                            danger
-                            icon={<MdDelete />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onClickDelete(record);
-                            }}
-                            size="small"
-                          />
+                          {isPermission("customer.update") && (
+                            <Button
+                              type="text"
+                              icon={<MdLocationOn className="text-blue-500" />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedCustomer(record);
+                                setLocationModalVisible(true);
+                              }}
+                              size="small"
+                            />
+                          )}
+                          {isPermission("customer.remove") && (
+                            <Button
+                              type="text"
+                              danger
+                              icon={<MdDelete />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onClickDelete(record);
+                              }}
+                              size="small"
+                            />
+                          )}
                         </Space>
                       </div>
 
                       {/* Card Content */}
                       <div className="p-4 pt-0 flex-1">
-                        <h3 className="text-lg font-extrabold text-gray-900 mb-0 leading-tight">
-                          {record.name || t("No Name")}
-                        </h3>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="text-lg font-extrabold text-gray-900 mb-0 leading-tight">
+                            {record.name || t("No Name")}
+                          </h3>
+                          {record.code && (
+                            <Tag color="blue" className="m-0 text-[10px] font-bold">
+                              {record.code}
+                            </Tag>
+                          )}
+                        </div>
                         <p className="text-xs font-medium text-gray-500 mb-4">{record.gender || '-'}</p>
 
                         <div className="space-y-3">

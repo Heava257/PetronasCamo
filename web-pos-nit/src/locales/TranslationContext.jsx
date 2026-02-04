@@ -20,9 +20,11 @@ const translations = {
     "Product Details": "លម្អិតវិក័យបត្រទិញចូល",
     "Category": "ប្រភេទ",
     "Purchase": "ការទិញ",
-    "Supplier": "អ្នកផ្គត់ផ្គង់",
     "Customer": "អតិថិជន",
     "Expense": "ចំណាយ",
+    "actual_price_label": "តម្លៃមេចែក",
+    "size": "ទំហំ",
+    "Total": "សរុប",
     "Expense Type": "ប្រភេទនៃការចំណាយ",
     "Employee": "និយោជិក",
     "User": "អ្នកប្រើប្រាស់",
@@ -35,8 +37,21 @@ const translations = {
     "V 1.0.1": "V 1.0.1",
     "company_name": "PETRONAS CAMBODIA CO., LTD",
     "branch": "សាខា",
+    "branch_placeholder": "ជ្រើសរើសសាខា (លំនាំដើម: ការិយាល័យកណ្តាល)",
     "my_profile": "ព័ត៌មានរបស់ខ្ញុំ",
     "logout": "ចាកចេញ",
+
+    // POS Robust Fallbacks
+    "pos.invoice": "លេខវិក្កយបត្រ",
+    "pos.customer": "អតិថិជន",
+    "pos.delivery_date": "ថ្ងៃដឹកជញ្ជូន",
+    "pos.total_price": "ទឹកប្រាក់សរុប",
+    "pos.status": "ស្ថានភាព",
+    "pos.actions": "សកម្មភាព",
+    "pos.pre_orders_ready": "Pre-Orders រៀបចំរួច",
+    "pos.pre_orders_ready_subtitle": "បញ្ជីកម្មង់ដែលរៀបចំរួចរាល់ហើយ",
+    "pos.add_to_cart": "បញ្ចូលក្នុងកន្ត្រក",
+    "pos.order_details": "ព័ត៌មានលម្អិតនៃការបញ្ជាទិញ",
     "copyright": "រក្សាសិទ្ធិដោយ PETRONAS CO.,LTD",
     "search": "ស្វែងរក",
     "add": "បន្ថែម",
@@ -55,7 +70,7 @@ const translations = {
     "ok": "យល់ព្រម",
     "back": "ត្រឡប់ក្រោយ",
     "download": "ទាញយក",
-    "upload": "ផ្ទុកឡើង",
+    "upload": "បញ្ចូលរូបភាព",
     "submit": "ដាក់ស្នើ",
     "reset": "កំណត់ឡើងវិញ",
     "clear": "សម្អាត",
@@ -134,7 +149,7 @@ const translations = {
     "total_profit": "ចំណេញសរុប",
     "profit_margin": "អត្រាចំណេញ",
     "total_invoices": "ចំនួនវិក័យប័ត្រ",
-    "completed_orders": "បានបញ្ចប់",
+    "completed_orders": "ត្រួតពិនិត្យ",
     "number": "លេខ",
     "company": "ក្រុមហ៊ុន",
     "card_number": "លេខប័ណ្ណ",
@@ -149,7 +164,7 @@ const translations = {
     "select_user": "ជ្រើសរើសអ្នកប្រើប្រាស់",
     "select_order_date": "ជ្រើសរើសថ្ងៃបញ្ជាទិញ",
     "select_delivery_date": "ជ្រើសរើសថ្ងៃប្រគល់ទំនិញ",
-    "refresh_from_server": "ផ្ទុកឡើងវិញពីម៉ាស៊ីនមេ",
+    "refresh_from_server": "ផ្ទុកឡើងវិញ",
     "export_excel": "នាំចេញទៅ Excel",
     "invoice_list": "បញ្ជីវិក្កយបត្រ",
     "new_invoice": "វិក្កយបត្រថ្មី",
@@ -196,6 +211,9 @@ const translations = {
     "total_paid_stat": "ចំនួនបានបង់សរុប",
     "total_unpaid_stat": "ចំនួនមិនទាន់បង់សរុប",
     "cannot_load_data": "មិនអាចទាញយកទិន្នន័យបានទេ! សូមព្យាយាមម្តងទៀត",
+    "attachment_card_image": "ឯកសារភ្ជាប់",
+    "image_upload_note": "អនុញ្ញាតតែរូបភាព (JPG ឬ PNG)",
+    "image": "រូបភាព",
     "cannot_load_invoice_list": "មិនអាចទាញយកបញ្ជីវិក្កយបត្របានទេ",
     "error_loading_data": "កំហុសក្នុងការទាញយកទិន្នន័យ",
     "delete_invoice_confirm": "តើអ្នកពិតជាចង់លុបវិក្កយបត្រនេះមែនទេ?",
@@ -574,7 +592,7 @@ const translations = {
     "good_morning": "អរុណសួស្តី",
     "good_afternoon": "ល្ងាចសួស្តី",
     "good_evening": "សាយ័ណសួស្តី",
-    "filter": "ត្រង",
+    "filter": "ស្វែងរក",
     "please_select_date_range": "សូមជ្រើសរើសជួរកាលបរិច្ឆេទ",
     "loading_data": "កំពុងផ្ទុកទិន្នន័យ...",
     "performance_rate": "អត្រាការអនុវត្ត",
@@ -607,7 +625,7 @@ const translations = {
     "report": "របាយការណ៍",
     "date": "កាលបរិច្ឆេទ",
     "total_deliveries": "ការដឹកជញ្ជូនសរុប",
-    "completed": "បានបញ្ចប់",
+    "completed": "ត្រួតពិនិត្យ",
     "driver": "អ្នកបើកបរ",
     "avg_per_day": "មធ្យមក្នុងមួយថ្ងៃ",
     "utilization_rate": "អត្រាប្រើប្រាស់",
@@ -759,6 +777,18 @@ const translations = {
     "input_telephone": "Please input the telephone number",
     "valid_email": "Please input a valid email",
     "required_field": "This field is required",
+
+    // POS Robust Fallbacks
+    "pos.invoice": "Invoice #",
+    "pos.customer": "Customer",
+    "pos.delivery_date": "Delivery Date",
+    "pos.total_price": "Total Price",
+    "pos.status": "Status",
+    "pos.actions": "Actions",
+    "pos.pre_orders_ready": "Ready Pre-Orders",
+    "pos.pre_orders_ready_subtitle": "List of prepared orders",
+    "pos.add_to_cart": "Add to Cart",
+    "pos.order_details": "Order Details",
     "total_revenue": "Total Revenue",
     "oil_expense": "Oil Expense",
     "total_expense": "Total Expense",
@@ -1024,6 +1054,8 @@ const translations = {
     "ID": "ID",
     "Orders": "Orders",
     "Total": "Total",
+    "actual_price_label": "Actual Price",
+    "size": "Size",
     "Joined": "Joined",
     "Spouse": "Spouse",
     "N/A": "N/A",
@@ -1283,6 +1315,7 @@ const translations = {
     "please_select_supplier": "Please select supplier",
     "select_supplier": "Select supplier",
     "order_date_is_required": "Order date is required",
+    "branch_placeholder": "Select Branch (Default: Head Office)",
     "expected_delivery_date": "Expected Delivery Date",
     "payment_terms": "Payment Terms",
     "select_payment_terms": "Select payment terms",
@@ -1298,6 +1331,9 @@ const translations = {
     "total": "Total",
     "add_item": "Add Item",
     "notes": "Notes",
+    "attachment_card_image": "Attachment (Card Image)",
+    "image_upload_note": "Accepts photo (JPG or PNG)",
+    "image": "Image",
     "add_notes": "Add notes...",
     "purchase_order_saved_successfully": "Purchase order saved successfully",
     "failed_to_save_purchase_order": "Failed to save purchase order",
@@ -1340,7 +1376,28 @@ export const TranslationProvider = ({ children }) => {
   }, [language]);
 
   const t = (key) => {
-    return translations[language][key] || key;
+    if (!key) return '';
+
+    const langData = translations[language] || translations['km'];
+
+    // 1. Precise Match (Fastest)
+    if (langData[key] !== undefined && typeof langData[key] === 'string') {
+      return langData[key];
+    }
+
+    // 2. Nested Traversal (For localized objects)
+    const keys = key.split('.');
+    let result = langData;
+
+    for (const k of keys) {
+      if (result && result[k] !== undefined) {
+        result = result[k];
+      } else {
+        return key; // Fallback to raw key
+      }
+    }
+
+    return typeof result === 'string' ? result : key;
   };
 
   const changeLanguage = (lng) => {

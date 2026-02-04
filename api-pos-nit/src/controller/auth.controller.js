@@ -81,7 +81,7 @@ exports.getList = async (req, res) => {
     let params = {};
 
     // ✅ Check role by role_id (more reliable than role_code)
-    if (userRoleId === 29) {  // role_id = 29 is Super Admin
+    if (Number(userRoleId) === 29) {  // role_id = 29 is Super Admin
 
       sql = `
         SELECT  
@@ -103,7 +103,7 @@ exports.getList = async (req, res) => {
         INNER JOIN role r ON u.role_id = r.id 
         ORDER BY u.branch_name, u.create_at DESC
       `;
-    } else if (userRoleId === 1) {  // role_id = 1 is Admin
+    } else if (Number(userRoleId) === 1) {  // role_id = 1 is Admin
       const filterGroupId = currentUser[0].group_id;
 
 
@@ -153,7 +153,7 @@ exports.getList = async (req, res) => {
 
     if (list.length > 0) {
 
-    } else if (userRoleId === 1) {  // If Admin and no users found
+    } else if (Number(userRoleId) === 1) {  // If Admin and no users found
       console.warn(`⚠️ No users found for group_id: ${params.current_group_id}`);
     }
 
@@ -165,7 +165,7 @@ exports.getList = async (req, res) => {
     res.json({
       list,
       role,
-      is_super_admin: userRoleId === 29,  // Check by role_id, not role_code
+      is_super_admin: Number(userRoleId) === 29,  // Check by role_id, not role_code
       debug: {
         current_user_id: currentUserId,
         role: userRole,
@@ -1709,21 +1709,94 @@ const revokeRefreshToken = async (userId, refreshToken) => {
 
 
 const getPermissionByUser = async (user_id) => {
-  let sql =
-    " SELECT DISTINCT " +
-    " p.id, " +
-    " p.name, " +
-    " p.group, " +
-    " p.is_menu_web, " +
-    " p.web_route_key " +
-    " FROM permissions p " +
-    " INNER JOIN permission_roles pr ON p.id = pr.permission_id " +
-    " INNER JOIN role r ON pr.role_id = r.id " +
-    " INNER JOIN user u ON r.id = u.role_id " +
-    " WHERE u.id = :user_id; ";
+  try {
+    // 1. Get User Context (Role & Branch)
+    const [users] = await db.query(`
+      SELECT u.role_id, u.branch_name, r.code as role_code 
+      FROM user u 
+      INNER JOIN role r ON u.role_id = r.id 
+      WHERE u.id = :id
+    `, { id: user_id });
+    if (!users.length) return [];
 
-  const [permission] = await db.query(sql, { user_id });
-  return permission;
+    const { role_id, branch_name, role_code } = users[0];
+
+    // ✅ Super Admin Bypass: Management & System ONLY
+    if (Number(role_id) === 29 || role_code === 'SUPER_ADMIN') {
+      const [allPerms] = await db.query(`
+        SELECT id, name, \`group\`, is_menu_web, web_route_key 
+        FROM permissions 
+        WHERE \`group\` NOT IN (
+          'Sales', 'invoices', 'order', 'EnhancedPOSOrder', 'fakeinvoices', 
+          'customer', 'category', 'product', 'supplier', 'expanse_type', 'expanse', 
+          'purchase', 'inventory-transactions', 'deliverynote', 'delivery-note', 
+          'delivery-map', 'DeliveryReports', 'active-deliveries', 'driver', 
+          'driver-auth', 'Truck', 'pre-order-detail', 'total_due', 'customer-payment', 
+          'supplier-payment', 'company-payment', 'company-payment-management', 
+          'admin-StockReconciliation', 'admin-ShiftClosing', 'admin-DailyClosing', 
+          'admin-ShiftClosingChecklist', 'Finance', 'Inventory', 'purchase_Summary', 
+          'Top_Sale', 'ProductDetail', 'payment_history', 'report_Sale_Summary', 
+          'report_Expense_Summary', 'report_Customer', 'report_Stock_Status', 
+          'report_Stock_Movement', 'report_Purchase_History', 'report_Outstanding_Debt', 
+          'report_Payment_History', 'report_Profit_Loss', 'report_BranchComparison',
+          'notifications/statistics'
+        )
+        AND name NOT LIKE 'report.%'
+        AND name NOT LIKE 'sales.%'
+        AND name NOT LIKE 'inventory.%'
+        AND name NOT LIKE 'finance.%'
+      `);
+      return allPerms;
+    }
+
+    // 2. Get Base Permissions from Role
+    const [basePerms] = await db.query(`
+      SELECT DISTINCT p.id, p.name, p.\`group\`, p.is_menu_web, p.web_route_key 
+      FROM permissions p 
+      INNER JOIN permission_roles pr ON p.id = pr.permission_id 
+      WHERE pr.role_id = :role_id
+    `, { role_id });
+
+    // If no branch, return base permissions
+    if (!branch_name) return basePerms;
+
+    // 3. Get Branch Overrides
+    const [overrides] = await db.query(`
+      SELECT bpo.permission_id, bpo.override_type, p.name, p.\`group\`, p.is_menu_web, p.web_route_key
+      FROM branch_permission_overrides bpo
+      INNER JOIN permissions p ON bpo.permission_id = p.id
+      WHERE bpo.branch_name = :branch_name AND bpo.role_id = :role_id
+    `, { branch_name, role_id });
+
+    if (overrides.length === 0) return basePerms;
+
+    // 4. Calculate Effective Permissions
+    const removedIds = new Set(overrides.filter(o => o.override_type === 'remove').map(o => o.permission_id));
+    const addedPerms = overrides.filter(o => o.override_type === 'add').map(o => ({
+      id: o.permission_id,
+      name: o.name,
+      group: o.group,
+      is_menu_web: o.is_menu_web,
+      web_route_key: o.web_route_key
+    }));
+
+    // Filter out removed permissions
+    let effective = basePerms.filter(p => !removedIds.has(p.id));
+
+    // Add added permissions (ensure no duplicates)
+    const effectiveIds = new Set(effective.map(p => p.id));
+    for (const p of addedPerms) {
+      if (!effectiveIds.has(p.id)) {
+        effective.push(p);
+      }
+    }
+
+    return effective;
+
+  } catch (error) {
+    console.error("Error in getPermissionByUser:", error);
+    return [];
+  }
 };
 
 const getAccessToken = async (userId, roleId, tokenVersion = 0) => {

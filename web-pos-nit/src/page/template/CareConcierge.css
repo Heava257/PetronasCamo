@@ -1,0 +1,14 @@
+/* Care Concierge Template Styles */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+.care-container {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+/* Custom Scrollbar for this template */
+.care-container ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+    /* Hide scrollbars for cleaner look */
+}

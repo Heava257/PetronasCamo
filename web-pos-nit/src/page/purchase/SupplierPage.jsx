@@ -1,56 +1,68 @@
 // ✅ IMPROVED SupplierPage.jsx - Responsive table with better organization
 
 import React, { useEffect, useState } from "react";
-import { request } from "../../util/helper";
+import { isPermission, request } from "../../util/helper";
 import MainPage from "../../component/layout/MainPage";
 import { Button, Form, Input, message, Modal, Space, Table, Card, Typography, Row, Col, Select, Tag, Divider, Tooltip } from "antd";
 import dayjs from "dayjs";
 import { MdOutlineCreateNewFolder } from "react-icons/md";
 import { EyeOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeInvisibleOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useTranslation } from "../../locales/TranslationContext";
+import { useSettings } from "../../settings/SettingsContext"; // ✅ Added for theme detection
 
 const { Text, Title } = Typography;
 const { Option } = Select;
 
 // ✅ Add Global Style Override for Supplier Page
 const supplierStyles = `
-  /* Dark Mode Glass Effect */
-  :global(.dark) .ant-card {
-    background: rgba(255, 255, 255, 0.85) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
+  .supplier-main-content .ant-card,
+  .supplier-table-card {
+    background: rgba(15, 23, 42, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
     backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
   }
-  
-  :global(.dark) .ant-table {
+  .supplier-main-content .ant-table {
     background: transparent !important;
   }
-
-  :global(.dark) .ant-table-thead > tr > th {
-    background: rgba(243, 244, 246, 0.9) !important;
-    color: #1f2937 !important;
+  .supplier-main-content .ant-table-thead > tr > th {
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #e8c12f !important;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.05em;
   }
-
-  :global(.dark) .ant-table-tbody > tr > td {
-     color: #374151 !important;
+  .supplier-main-content .ant-table-tbody > tr > td {
+    background: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+    color: #cbd5e1 !important;
   }
-
-  :global(.dark) .ant-modal-content,
-  :global(.dark) .ant-modal-header {
-    background: rgba(255, 255, 255, 0.95) !important;
-    color: #1f2937 !important;
+  .supplier-main-content .ant-table-tbody > tr:hover > td {
+    background: rgba(255, 215, 0, 0.02) !important;
   }
-
-  :global(.dark) .ant-input,
-  :global(.dark) .ant-select-selector {
-    background: white !important;
-    border-color: #d1d5db !important;
-    color: #1f2937 !important;
+  .supplier-main-content .ant-input, 
+  .supplier-main-content .ant-input-affix-wrapper {
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(255, 215, 0, 0.1) !important;
+    color: #f8fafc !important;
+  }
+  .supplier-main-content .ant-input-search-button {
+    background: transparent !important;
+    border: 1px solid rgba(255, 215, 0, 0.3) !important;
+    color: #e8c12f !important;
+  }
+  .supplier-main-content .ant-input-search-button:hover {
+    background: rgba(232, 193, 47, 0.1) !important;
+    color: #e8c12f !important;
   }
 `;
 
 function SupplierPage() {
   const [form] = Form.useForm();
   const { t, language } = useTranslation();
+  const { settings } = useSettings(); // ✅ Get current settings
+  const isAcledaGold = settings.templateId === "acledagold";
 
   const [state, setState] = useState({
     list: [],
@@ -195,10 +207,10 @@ function SupplierPage() {
   // Fuel type translation helper
   const getFuelTypeLabel = (type) => {
     const fuelTypes = {
-      'diesel': 'ម៉ាស៊ូត (Diesel)',
-      'gasoline': 'សាំង (Gasoline)',
-      'lpg': 'LPG',
-      'super': 'Super'
+      'diesel': t('fuel_diesel'),
+      'gasoline': t('fuel_gasoline'),
+      'lpg': t('fuel_lpg'),
+      'super': t('fuel_super')
     };
     return fuelTypes[type] || type;
   };
@@ -209,8 +221,8 @@ function SupplierPage() {
 
     return (
       <Card
-        className={`mb-3 shadow-sm hover:shadow-md transition-all duration-200 ${isActive ? 'bg-white dark:bg-gray-800' : 'bg-gray-100 dark:bg-gray-900 opacity-75'
-          } border border-gray-200 dark:border-gray-700`}
+        className={`mb-3 shadow-sm hover:shadow-md transition-all duration-200 ${isActive ? 'bg-slate-800/40' : 'bg-slate-900/60 opacity-75'
+          } border border-slate-700/50 backdrop-blur-sm`}
         bodyStyle={{ padding: '16px' }}
       >
         <div className="flex justify-between items-start mb-3">
@@ -223,7 +235,7 @@ function SupplierPage() {
                 {supplier.code}
               </Tag>
               {!isActive && (
-                <Tag color="red" className="text-xs">Inactive</Tag>
+                <Tag color="red" className="text-xs">{t("inactive")}</Tag>
               )}
             </div>
             <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">
@@ -258,7 +270,7 @@ function SupplierPage() {
         {supplier.fuel_types && (
           <div className="mb-2">
             <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-              Fuel Types:
+              {t("fuel_types")}:
             </Text>
             <div className="flex flex-wrap gap-1">
               {supplier.fuel_types.split(',').map((type, idx) => (
@@ -274,7 +286,7 @@ function SupplierPage() {
         {supplier.credit_terms && (
           <div className="mb-2">
             <Text className="text-xs text-gray-500 dark:text-gray-400">
-              Credit Terms: <span className="font-medium text-gray-700 dark:text-gray-300">{supplier.credit_terms}</span>
+              {t("credit_terms")}: <span className="font-medium text-gray-700 dark:text-gray-300">{supplier.credit_terms}</span>
             </Text>
           </div>
         )}
@@ -286,25 +298,29 @@ function SupplierPage() {
             {dayjs(supplier.create_at).format("DD/MM/YYYY")}
           </span>
           <Space size="small">
-            <Button
-              type="primary"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => onClickBtnEdit(supplier)}
-              disabled={!isActive}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              {t("EDIT")}
-            </Button>
-            <Button
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              onClick={() => onClickBtnDelete(supplier)}
-              disabled={!isActive}
-            >
-              {t("DELETE")}
-            </Button>
+            {isPermission("supplier.update") && (
+              <Button
+                type="primary"
+                size="small"
+                icon={<EditOutlined />}
+                onClick={() => onClickBtnEdit(supplier)}
+                disabled={!isActive}
+                className="bg-blue-500 hover:bg-blue-600"
+              >
+                {t("edit")}
+              </Button>
+            )}
+            {isPermission("supplier.remove") && (
+              <Button
+                danger
+                size="small"
+                icon={<DeleteOutlined />}
+                onClick={() => onClickBtnDelete(supplier)}
+                disabled={!isActive}
+              >
+                {t("delete")}
+              </Button>
+            )}
           </Space>
         </div>
       </Card>
@@ -328,10 +344,10 @@ function SupplierPage() {
   const columns = [
     {
       key: "no",
-      title: t("NO"),
+      title: t("table_no"),
       width: 60,
-      fixed: 'left',
-      align: 'center',
+      align: 'left',
+      onHeaderCell: () => ({ style: { textAlign: 'center' } }),
       render: (_, __, index) => (
         <span className="font-semibold text-gray-700 dark:text-gray-300">
           {index + 1}
@@ -343,7 +359,8 @@ function SupplierPage() {
       title: t("code"),
       dataIndex: "code",
       width: 100,
-      fixed: 'left',
+      align: 'left',
+      onHeaderCell: () => ({ style: { textAlign: 'center' } }),
       render: (code, record) => (
         <div className="flex items-center gap-2">
           <Tag color={record.is_active === 1 ? "blue" : "default"} className="font-medium">
@@ -360,6 +377,8 @@ function SupplierPage() {
       title: t("name"),
       dataIndex: "name",
       width: 200,
+      align: 'left',
+      onHeaderCell: () => ({ style: { textAlign: 'center' } }),
       render: (name) => (
         <Text strong className="text-gray-900 dark:text-white">
           {name}
@@ -368,24 +387,28 @@ function SupplierPage() {
     },
     {
       key: "contact",
-      title: "Contact Info",
+      title: t("contact_info"),
       width: 250,
+      align: 'left',
+      onHeaderCell: () => ({ style: { textAlign: 'center' } }),
       render: (_, record) => (
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <PhoneOutlined className="text-blue-500" />
-            <a href={`tel:${record.tel}`} className="text-gray-700 dark:text-gray-300 hover:text-blue-600">
+        <div className="flex flex-col items-start py-1">
+          <div className="flex items-center gap-2 mb-1">
+            <PhoneOutlined style={{ color: isAcledaGold ? '#e8c12f' : 'var(--primary-color)', opacity: 0.8 }} />
+            <a href={`tel:${record.tel}`} className="hover:text-blue-400 transition-colors font-medium" style={{ color: isAcledaGold ? 'var(--text-primary)' : 'inherit' }}>
               {record.tel}
             </a>
           </div>
-          <div className="flex items-center gap-2">
-            <MailOutlined className="text-green-500" />
-            <Tooltip title={record.email}>
-              <a href={`mailto:${record.email}`} className="text-gray-700 dark:text-gray-300 hover:text-blue-600 truncate block max-w-[200px]">
-                {record.email}
-              </a>
-            </Tooltip>
-          </div>
+          {record.email && (
+            <div className="flex items-center gap-2">
+              <MailOutlined className="text-blue-400" style={{ opacity: 0.8 }} />
+              <Tooltip title={record.email}>
+                <a href={`mailto:${record.email}`} className="text-slate-400 hover:text-blue-400 truncate block max-w-[180px] text-xs transition-colors">
+                  {record.email}
+                </a>
+              </Tooltip>
+            </div>
+          )}
         </div>
       ),
     },
@@ -394,10 +417,12 @@ function SupplierPage() {
       title: t("address"),
       dataIndex: "address",
       width: 200,
+      align: 'left',
+      onHeaderCell: () => ({ style: { textAlign: 'center' } }),
       render: (address) => (
         <div className="flex items-start gap-2">
           <EnvironmentOutlined className="text-red-500 mt-1" />
-          <Text className="text-gray-700 dark:text-gray-300">
+          <Text style={{ color: 'var(--text-secondary)' }}>
             {address}
           </Text>
         </div>
@@ -405,9 +430,11 @@ function SupplierPage() {
     },
     {
       key: "fuel_types",
-      title: "Fuel Types",
+      title: t("fuel_types"),
       dataIndex: "fuel_types",
       width: 180,
+      align: 'left',
+      onHeaderCell: () => ({ style: { textAlign: 'center' } }),
       render: (fuel_types) => (
         <div className="flex flex-wrap gap-1">
           {fuel_types ? fuel_types.split(',').map((type, index) => (
@@ -420,10 +447,11 @@ function SupplierPage() {
     },
     {
       key: "credit_terms",
-      title: "Credit Terms",
+      title: t("credit_terms"),
       dataIndex: "credit_terms",
       width: 120,
-      align: 'center',
+      align: 'left',
+      onHeaderCell: () => ({ style: { textAlign: 'center' } }),
       render: (credit_terms) => (
         <Tag color="orange" className="font-medium">
           {credit_terms || '-'}
@@ -432,9 +460,10 @@ function SupplierPage() {
     },
     {
       key: "contact_person",
-      title: "Contact Person",
+      title: t("contact_person"),
       dataIndex: "contact_person",
       width: 150,
+      align: 'center',
       render: (contact_person) => (
         <Text className="text-gray-700 dark:text-gray-300">
           {contact_person || '-'}
@@ -443,9 +472,10 @@ function SupplierPage() {
     },
     {
       key: "website",
-      title: t("website"),
+      title: t("Website"),
       dataIndex: "website",
       width: 150,
+      align: 'center',
       render: (website) => website ? (
         <div className="flex items-center gap-2">
           <GlobalOutlined className="text-purple-500" />
@@ -475,38 +505,44 @@ function SupplierPage() {
     {
       key: "action",
       title: t("action"),
-      width: 250,
-      fixed: 'right',
+      width: 200,
       align: 'center',
       render: (value, data) => (
         <Space size="small">
-          <Tooltip title={t("EDIT")}>
-            <Button
-              type="primary"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => onClickBtnEdit(data)}
-              disabled={data.is_active === 0}
-            />
-          </Tooltip>
-          <Tooltip title={t("DELETE")}>
-            <Button
-              type="primary"
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              onClick={() => onClickBtnDelete(data)}
-              disabled={data.is_active === 0}
-            />
-          </Tooltip>
-          <Tooltip title={data.is_active === 1 ? t("Deactivate") : t("Activate")}>
-            <Button
-              type="default"
-              size="small"
-              onClick={() => toggleSupplierStatus(data)}
-              icon={data.is_active === 1 ? <EyeInvisibleOutlined /> : <EyeOutlined />}
-            />
-          </Tooltip>
+          {isPermission("supplier.update") && (
+            <Tooltip title={t("edit")}>
+              <Button
+                type="primary"
+                shape="circle"
+                style={{ backgroundColor: '#e8c12f', borderColor: '#e8c12f' }}
+                icon={<EditOutlined />}
+                onClick={() => onClickBtnEdit(data)}
+                disabled={data.is_active === 0}
+              />
+            </Tooltip>
+          )}
+          {isPermission("supplier.remove") && (
+            <Tooltip title={t("delete")}>
+              <Button
+                type="primary"
+                danger
+                shape="circle"
+                icon={<DeleteOutlined />}
+                onClick={() => onClickBtnDelete(data)}
+                disabled={data.is_active === 0}
+              />
+            </Tooltip>
+          )}
+          {isPermission("supplier.update") && (
+            <Tooltip title={data.is_active === 1 ? t("Deactivate") : t("Activate")}>
+              <Button
+                type="default"
+                shape="circle"
+                onClick={() => toggleSupplierStatus(data)}
+                icon={data.is_active === 1 ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
     },
@@ -514,91 +550,117 @@ function SupplierPage() {
 
   return (
     <MainPage loading={state.loading}>
-      <style>{supplierStyles}</style>
-      <div className="px-2 sm:px-4 lg:px-6">
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-900 rounded-lg shadow-md p-6 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-            {/* Title */}
+      {isAcledaGold && <style>{supplierStyles}</style>}
+      <div className="supplier-main-content px-2 sm:px-4 lg:px-6 mt-4">
+        {/* 1. Title & New Button Section */}
+        <Card
+          className="mb-4 shadow-lg backdrop-blur-md"
+          bodyStyle={{ padding: '16px 24px' }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
-              <Title level={3} className="mb-2 text-gray-900 dark:text-white flex items-center gap-2">
+              <Title level={3} className="m-0 flex items-center gap-2" style={{ color: isAcledaGold ? '#e8c12f' : 'var(--primary-color)' }}>
                 <MdOutlineCreateNewFolder className="text-blue-600" />
-                {t("Supplier")}
+                {t("supplier_management")}
               </Title>
-              <Text className="text-gray-600 dark:text-gray-400">
-                Manage your supplier database and contacts
+              <Text style={{ color: 'var(--text-secondary)' }}>
+                {t("supplier_management_subtitle")}
               </Text>
             </div>
 
-            {/* New Button */}
-            <Button
-              type="primary"
-              onClick={openModal}
-              icon={<MdOutlineCreateNewFolder />}
-              size="large"
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 shadow-lg"
-            >
-              {t("NEW")}
-            </Button>
+            {isPermission("supplier.create") && (
+              <Button
+                type="primary"
+                onClick={openModal}
+                icon={<MdOutlineCreateNewFolder />}
+                size="large"
+                style={{
+                  backgroundColor: isAcledaGold ? '#e8c12f' : 'var(--primary-color)',
+                  borderColor: isAcledaGold ? '#e8c12f' : 'var(--primary-color)',
+                  color: isAcledaGold ? '#000' : 'var(--text-on-primary)',
+                  height: '60px',
+                  paddingLeft: '30px',
+                  paddingRight: '30px',
+                  fontSize: '16px',
+                  fontWeight: '700'
+                }}
+                className="w-full sm:w-auto shadow-md flex items-center justify-center"
+              >
+                {t("new")}
+              </Button>
+            )}
           </div>
+        </Card>
 
-          {/* Search Bar */}
+        {/* 2. Statistics Section */}
+        <Row gutter={[16, 16]} className="mb-4">
+          <Col xs={12} sm={6}>
+            <Card
+              className="shadow-sm backdrop-blur-sm"
+              bodyStyle={{ padding: '12px 16px' }}
+            >
+              <div className="text-xs mb-1 text-left" style={{ color: 'var(--text-secondary)' }}>
+                {t("total_suppliers")}
+              </div>
+              <div className="text-2xl font-bold text-center" style={{ color: 'var(--primary-color)' }}>
+                {state.list.length}
+              </div>
+            </Card>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Card
+              className="shadow-sm backdrop-blur-sm"
+              bodyStyle={{ padding: '12px 16px' }}
+            >
+              <div className="text-xs mb-1 text-left" style={{ color: 'var(--text-secondary)' }}>
+                {t("filtered_results")}
+              </div>
+              <div className="text-2xl font-bold text-green-500 text-center">
+                {filteredList.length}
+              </div>
+            </Card>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Card
+              className="shadow-sm backdrop-blur-sm"
+              bodyStyle={{ padding: '12px 16px' }}
+            >
+              <div className="text-xs mb-1 text-left" style={{ color: 'var(--text-secondary)' }}>
+                {t("active")}
+              </div>
+              <div className="text-2xl font-bold text-amber-500 text-center">
+                {state.list.filter(s => s.is_active === 1).length}
+              </div>
+            </Card>
+          </Col>
+          <Col xs={12} sm={6}>
+            <Card
+              className="shadow-sm backdrop-blur-sm"
+              bodyStyle={{ padding: '12px 16px' }}
+            >
+              <div className="text-xs mb-1 text-left" style={{ color: 'var(--text-secondary)' }}>
+                {t("inactive")}
+              </div>
+              <div className="text-2xl font-bold text-red-500 text-center">
+                {state.list.filter(s => s.is_active === 0).length}
+              </div>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* 3. Search Bar Section (Search moved to below) */}
+        <div className="mb-4 flex flex-col sm:flex-row sm:items-center gap-4">
           <Input.Search
             onChange={(value) =>
               setState((p) => ({ ...p, txtSearch: value.target.value }))
             }
             allowClear
             onSearch={getList}
-            placeholder={t("Search")}
+            placeholder={t("search_suppliers")}
             size="large"
-            prefix={<SearchOutlined />}
-            className="max-w-md"
+            className="max-w-md shadow-lg rounded-lg overflow-hidden backdrop-blur-sm"
           />
-
-          {/* Statistics */}
-          <Divider className="my-4" />
-          <Row gutter={[16, 16]}>
-            <Col xs={12} sm={6}>
-              <Card className="text-center bg-white dark:bg-gray-800 border-0 shadow-sm">
-                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                  {state.list.length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {t("Total Suppliers")}
-                </div>
-              </Card>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Card className="text-center bg-white dark:bg-gray-800 border-0 shadow-sm">
-                <div className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {filteredList.length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {t("Filtered Results")}
-                </div>
-              </Card>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Card className="text-center bg-white dark:bg-gray-800 border-0 shadow-sm">
-                <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {state.list.filter(s => s.is_active === 1).length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Active
-                </div>
-              </Card>
-            </Col>
-            <Col xs={12} sm={6}>
-              <Card className="text-center bg-white dark:bg-gray-800 border-0 shadow-sm">
-                <div className="text-3xl font-bold text-red-600 dark:text-red-400">
-                  {state.list.filter(s => s.is_active === 0).length}
-                </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  Inactive
-                </div>
-              </Card>
-            </Col>
-          </Row>
+          <div className="flex-1 border-b border-gray-200 dark:border-gray-700 hidden sm:block opacity-50"></div>
         </div>
 
         {/* Form Modal */}
@@ -607,7 +669,7 @@ function SupplierPage() {
           title={
             <div className="flex items-center gap-2">
               <MdOutlineCreateNewFolder className="text-blue-600" />
-              <span className="text-lg font-semibold">
+              <span className="text-lg font-semibold" style={{ color: '#e8c12f' }}>
                 {t(form.getFieldValue("id") ? "edit_supplier" : "new_supplier")}
               </span>
             </div>
@@ -622,15 +684,15 @@ function SupplierPage() {
             <Row gutter={[16, 16]}>
               {/* Left Column */}
               <Col xs={24} md={12}>
-                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                <div className="supplier-form-card p-4 rounded-lg">
                   <Title level={5} className="mb-4 text-blue-600 dark:text-blue-400">
-                    Basic Information
+                    {t("basic_info")}
                   </Title>
 
                   <Form.Item
                     name="name"
                     label={<span className="font-medium">{t("name")}</span>}
-                    rules={[{ required: true, message: t("Name is required!") }]}
+                    rules={[{ required: true, message: t("name_required") }]}
                   >
                     <Input placeholder={t("name")} size="large" />
                   </Form.Item>
@@ -638,7 +700,7 @@ function SupplierPage() {
                   <Form.Item
                     name="code"
                     label={<span className="font-medium">{t("code")}</span>}
-                    rules={[{ required: true, message: t("Code is required!") }]}
+                    rules={[{ required: true, message: t("code_required") }]}
                   >
                     <Input placeholder={t("code")} size="large" />
                   </Form.Item>
@@ -646,7 +708,7 @@ function SupplierPage() {
                   <Form.Item
                     name="tel"
                     label={<span className="font-medium">{t("telephone")}</span>}
-                    rules={[{ required: true, message: t("Tel is required!") }]}
+                    rules={[{ required: true, message: t("tel_required") }]}
                   >
                     <Input prefix={<PhoneOutlined />} placeholder={t("telephone")} size="large" />
                   </Form.Item>
@@ -655,8 +717,8 @@ function SupplierPage() {
                     name="email"
                     label={<span className="font-medium">{t("email")}</span>}
                     rules={[
-                      { required: true, message: t("Email is required!") },
-                      { type: 'email', message: t("Please enter a valid email!") }
+                      { required: true, message: t("please_input_email") },
+                      { type: 'email', message: t("please_input_valid_email") }
                     ]}
                   >
                     <Input prefix={<MailOutlined />} placeholder={t("email")} size="large" />
@@ -665,7 +727,7 @@ function SupplierPage() {
                   <Form.Item
                     name="address"
                     label={<span className="font-medium">{t("address")}</span>}
-                    rules={[{ required: true, message: t("Address is required!") }]}
+                    rules={[{ required: true, message: t("address_required") }]}
                   >
                     <Input.TextArea prefix={<EnvironmentOutlined />} placeholder={t("address")} size="large" rows={3} />
                   </Form.Item>
@@ -674,7 +736,7 @@ function SupplierPage() {
                     name="website"
                     label={<span className="font-medium">{t("Website")}</span>}
                     rules={[
-                      { required: true, message: t("Website is required!") },
+                      { required: true, message: t("website_required") },
                       { type: 'url', message: t("Please enter a valid URL!") }
                     ]}
                   >
@@ -685,70 +747,70 @@ function SupplierPage() {
 
               {/* Right Column */}
               <Col xs={24} md={12}>
-                <div className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg">
+                <div className="supplier-form-card p-4 rounded-lg">
                   <Title level={5} className="mb-4 text-green-600 dark:text-green-400">
-                    Business Details
+                    {t("business_details")}
                   </Title>
 
                   <Form.Item
                     name="fuel_types"
-                    label={<span className="font-medium">Fuel Types</span>}
-                    rules={[{ required: true, message: "Fuel types are required!" }]}
+                    label={<span className="font-medium">{t("fuel_types")}</span>}
+                    rules={[{ required: true, message: t("fuel_types_required") }]}
                   >
                     <Select
                       mode="multiple"
-                      placeholder="Select fuel types..."
+                      placeholder={t("select_fuel_types")}
                       size="large"
                       options={[
-                        { label: 'ម៉ាស៊ូត (Diesel)', value: 'diesel' },
-                        { label: 'សាំង (Gasoline)', value: 'gasoline' },
-                        { label: 'LPG', value: 'lpg' },
-                        { label: 'Super', value: 'super' },
+                        { label: t('fuel_diesel'), value: 'diesel' },
+                        { label: t('fuel_gasoline'), value: 'gasoline' },
+                        { label: t('fuel_lpg'), value: 'lpg' },
+                        { label: t('fuel_super'), value: 'super' },
                       ]}
                     />
                   </Form.Item>
 
                   <Form.Item
                     name="credit_terms"
-                    label={<span className="font-medium">Credit Terms</span>}
-                    rules={[{ required: true, message: "Credit terms are required!" }]}
+                    label={<span className="font-medium">{t("credit_terms")}</span>}
+                    rules={[{ required: true, message: t("credit_terms_required") }]}
                   >
-                    <Select placeholder="Select credit terms..." size="large">
-                      <Option value="7_days">7 ថ្ងៃ (7 days)</Option>
-                      <Option value="15_days">15 ថ្ងៃ (15 days)</Option>
-                      <Option value="30_days">30 ថ្ងៃ (30 days)</Option>
-                      <Option value="45_days">45 ថ្ងៃ (45 days)</Option>
-                      <Option value="60_days">60 ថ្ងៃ (60 days)</Option>
-                      <Option value="90_days">90 ថ្ងៃ (90 days)</Option>
+                    <Select placeholder={t("credit_terms")} size="large">
+                      <Option value="7_days">{t("day_7")}</Option>
+                      <Option value="15_days">{t("day_15")}</Option>
+                      <Option value="30_days">{t("day_30")}</Option>
+                      <Option value="45_days">{t("day_45")}</Option>
+                      <Option value="60_days">{t("day_60")}</Option>
+                      <Option value="90_days">{t("day_90")}</Option>
                     </Select>
                   </Form.Item>
 
                   <Form.Item
                     name="contact_person"
-                    label={<span className="font-medium">Contact Person</span>}
-                    rules={[{ required: true, message: "Contact person is required!" }]}
+                    label={<span className="font-medium">{t("contact_person")}</span>}
+                    rules={[{ required: true, message: t("contact_person_required") }]}
                   >
-                    <Input placeholder="Enter contact person name" size="large" />
+                    <Input placeholder={t("enter_contact_person")} size="large" />
                   </Form.Item>
 
                   <Form.Item
                     name="payment_method"
-                    label={<span className="font-medium">Payment Method</span>}
+                    label={<span className="font-medium">{t("payment_method")}</span>}
                   >
-                    <Select placeholder="Select payment method..." size="large">
-                      <Option value="cash">💵 Cash</Option>
-                      <Option value="check">📝 Check</Option>
-                      <Option value="transfer">🏦 Bank Transfer</Option>
-                      <Option value="online">💳 Online Payment</Option>
+                    <Select placeholder={t("payment_method")} size="large">
+                      <Option value="cash">💵 {t("cash")}</Option>
+                      <Option value="check">📝 {t("check")}</Option>
+                      <Option value="transfer">🏦 {t("transfer")}</Option>
+                      <Option value="online">💳 {t("online")}</Option>
                     </Select>
                   </Form.Item>
 
                   <Form.Item
                     name="note"
-                    label={<span className="font-medium">Additional Notes</span>}
+                    label={<span className="font-medium">{t("additional_notes")}</span>}
                   >
                     <Input.TextArea
-                      placeholder="Enter additional notes or special requirements..."
+                      placeholder={t("note")}
                       rows={4}
                       size="large"
                     />
@@ -782,8 +844,8 @@ function SupplierPage() {
           title={
             <div className="flex items-center gap-2">
               <EyeOutlined className="text-blue-600" />
-              <span className="text-lg font-semibold">
-                {t("Supplier Details")}
+              <span className="text-lg font-semibold" style={{ color: '#e8c12f' }}>
+                {t("supplier_details")}
               </span>
             </div>
           }
@@ -798,7 +860,7 @@ function SupplierPage() {
               {selectedSupplier.is_active === 0 && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
                   <Text className="text-red-600 dark:text-red-400 font-medium">
-                    ⚠️ This supplier is currently inactive
+                    ⚠️ {t("inactive_supplier_warning")}
                   </Text>
                 </div>
               )}
@@ -807,13 +869,13 @@ function SupplierPage() {
                 {/* Basic Info */}
                 <Card className="bg-gray-50 dark:bg-gray-900 border-0">
                   <Title level={5} className="mb-3 text-blue-600 dark:text-blue-400">
-                    Basic Information
+                    {t("basic_info")}
                   </Title>
 
                   <Space direction="vertical" className="w-full" size="middle">
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Name")}
+                        {t("name")}
                       </Text>
                       <Text className="text-base font-semibold text-gray-900 dark:text-white">
                         {selectedSupplier.name}
@@ -822,7 +884,7 @@ function SupplierPage() {
 
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Code")}
+                        {t("code")}
                       </Text>
                       <Tag color="blue" className="font-medium">
                         {selectedSupplier.code}
@@ -831,7 +893,7 @@ function SupplierPage() {
 
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Tel")}
+                        {t("telephone")}
                       </Text>
                       <div className="flex items-center gap-2">
                         <PhoneOutlined className="text-blue-500" />
@@ -843,7 +905,7 @@ function SupplierPage() {
 
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Email")}
+                        {t("email")}
                       </Text>
                       <div className="flex items-center gap-2">
                         <MailOutlined className="text-green-500" />
@@ -855,7 +917,7 @@ function SupplierPage() {
 
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Address")}
+                        {t("address")}
                       </Text>
                       <div className="flex items-start gap-2">
                         <EnvironmentOutlined className="text-red-500 mt-1" />
@@ -989,10 +1051,10 @@ function SupplierPage() {
         </Modal>
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div className="hidden md:block supplier-table-card rounded-lg shadow-md overflow-hidden">
           <Table
-            rowClassName={(record, index) =>
-              `supplier-row ${record.is_active === 0 ? 'inactive-row' : ''} ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-900' : 'bg-white dark:bg-gray-800'}`
+            rowClassName={(record) =>
+              `supplier-row ${record.is_active === 0 ? 'inactive-row' : ''}`
             }
             dataSource={filteredList}
             columns={columns}
@@ -1034,47 +1096,7 @@ function SupplierPage() {
         </div>
       </div>
 
-      <style jsx>{`
-        .supplier-row {
-          transition: all 0.3s ease;
-        }
-        
-        .supplier-row:hover {
-          background-color: rgba(59, 130, 246, 0.08) !important;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-        
-        .inactive-row {
-          opacity: 0.6;
-          background-color: rgba(229, 231, 235, 0.5) !important;
-        }
-        
-        .dark .supplier-row:hover {
-          background-color: rgba(59, 130, 246, 0.15) !important;
-        }
-        
-        .ant-table-thead > tr > th {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-          color: white !important;
-          font-weight: 600 !important;
-          text-align: center !important;
-        }
-        
-        .ant-table-tbody > tr > td {
-          border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .dark .ant-table-tbody > tr > td {
-          border-bottom: 1px solid #374151;
-        }
-        
-        @media (max-width: 768px) {
-          .ant-modal-body {
-            padding: 16px;
-          }
-        }
-      `}</style>
+
     </MainPage>
   );
 }

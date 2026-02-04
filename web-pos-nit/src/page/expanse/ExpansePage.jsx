@@ -30,8 +30,8 @@ const { Text, Title } = Typography;
 function ExpansePage() {
     const [formRef] = Form.useForm();
     const { config } = configStore();
-    const { t } = useTranslation(); 
-    
+    const { t } = useTranslation();
+
     const [list, setList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [state, setState] = useState({
@@ -123,7 +123,7 @@ function ExpansePage() {
         };
         const method = formRef.getFieldValue("id") ? "put" : "post";
         const url = formRef.getFieldValue("id") ? `expense/${data.id}` : "expense";
-        
+
         const res = await request(url, method, data);
         if (res && !res.error) {
             message.success(res.message);
@@ -159,7 +159,7 @@ function ExpansePage() {
     const statistics = useMemo(() => {
         const totalAmount = filteredList.reduce((sum, item) => sum + parseFloat(item.amount || 0), 0);
         const expensesByType = {};
-        
+
         filteredList.forEach(expense => {
             const type = expense.expense_type_name || 'Other';
             if (!expensesByType[type]) {
@@ -183,7 +183,7 @@ function ExpansePage() {
     // Mobile Expense Card Component
     const ExpenseMobileCard = ({ expense, index }) => {
         return (
-            <Card 
+            <Card
                 className="mb-3 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
                 bodyStyle={{ padding: '16px' }}
             >
@@ -204,9 +204,9 @@ function ExpansePage() {
                             {expense.expense_type_name}
                         </span>
                     </div>
-                    <Button 
-                        type="link" 
-                        icon={<EyeOutlined />} 
+                    <Button
+                        type="link"
+                        icon={<EyeOutlined />}
                         onClick={() => showDetailModal(expense)}
                         className="text-blue-500 dark:text-blue-400"
                     />
@@ -222,7 +222,7 @@ function ExpansePage() {
                             ${parseFloat(expense.amount || 0).toFixed(2)}
                         </span>
                     </div>
-                    
+
                     <div className="flex items-center gap-2 text-sm">
                         <CalendarOutlined className="text-gray-500 dark:text-gray-400" />
                         <span className="text-gray-700 dark:text-gray-300">
@@ -238,27 +238,27 @@ function ExpansePage() {
                 </div>
 
                 <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    {isPermission("customer.getone") && (
-                        <>
-                            <Button
-                                type="primary"
-                                size="small"
-                                icon={<MdEdit />}
-                                onClick={() => onClickEdit(expense)}
-                                className="flex-1 bg-blue-500 hover:bg-blue-600"
-                            >
-                                {t("EDIT")}
-                            </Button>
-                            <Button
-                                danger
-                                size="small"
-                                icon={<MdDelete />}
-                                onClick={() => onClickDelete(expense)}
-                                className="flex-1"
-                            >
-                                {t("DELETE")}
-                            </Button>
-                        </>
+                    {isPermission("expanse.update") && (
+                        <Button
+                            type="primary"
+                            size="small"
+                            icon={<MdEdit />}
+                            onClick={() => onClickEdit(expense)}
+                            className="flex-1 bg-blue-500 hover:bg-blue-600"
+                        >
+                            {t("EDIT")}
+                        </Button>
+                    )}
+                    {isPermission("expanse.remove") && (
+                        <Button
+                            danger
+                            size="small"
+                            icon={<MdDelete />}
+                            onClick={() => onClickDelete(expense)}
+                            className="flex-1"
+                        >
+                            {t("DELETE")}
+                        </Button>
                     )}
                 </div>
             </Card>
@@ -318,7 +318,7 @@ function ExpansePage() {
             width: 150,
             render: (_, record) => (
                 <Space>
-                    {isPermission("customer.getone") && (
+                    {isPermission("expanse.update") && (
                         <Button
                             type="primary"
                             size="small"
@@ -326,7 +326,7 @@ function ExpansePage() {
                             onClick={() => onClickEdit(record)}
                         />
                     )}
-                    {isPermission("customer.getone") && (
+                    {isPermission("expanse.remove") && (
                         <Button
                             type="primary"
                             danger
@@ -363,9 +363,9 @@ function ExpansePage() {
                                         size="large"
                                         className="w-full sm:w-64"
                                     />
-                                    <Button 
-                                        type="primary" 
-                                        onClick={getList} 
+                                    <Button
+                                        type="primary"
+                                        onClick={getList}
                                         icon={<FiSearch />}
                                         size="large"
                                         className="bg-blue-500 hover:bg-blue-600"
@@ -377,15 +377,17 @@ function ExpansePage() {
                         </div>
 
                         {/* New Button */}
-                        <Button 
-                            type="primary" 
-                            onClick={onClickAddBtn} 
-                            icon={<MdOutlineCreateNewFolder />}
-                            size="large"
-                            className="w-full lg:w-auto bg-green-500 hover:bg-green-600"
-                        >
-                            {t("NEW")}
-                        </Button>
+                        {isPermission("expanse.create") && (
+                            <Button
+                                type="primary"
+                                onClick={onClickAddBtn}
+                                icon={<MdOutlineCreateNewFolder />}
+                                size="large"
+                                className="w-full lg:w-auto bg-green-500 hover:bg-green-600"
+                            >
+                                {t("NEW")}
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -395,7 +397,7 @@ function ExpansePage() {
                         <Statistic
                             title={<span className="text-gray-700 dark:text-gray-300">{t("Total Expenses")}</span>}
                             value={statistics.totalCount}
-                            valueStyle={{ 
+                            valueStyle={{
                                 color: '#1e40af',
                                 fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                                 fontWeight: 'bold'
@@ -409,7 +411,7 @@ function ExpansePage() {
                             value={statistics.totalAmount}
                             precision={2}
                             prefix="$"
-                            valueStyle={{ 
+                            valueStyle={{
                                 color: '#15803d',
                                 fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                                 fontWeight: 'bold'
@@ -423,7 +425,7 @@ function ExpansePage() {
                             value={statistics.averageAmount}
                             precision={2}
                             prefix="$"
-                            valueStyle={{ 
+                            valueStyle={{
                                 color: '#7e22ce',
                                 fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                                 fontWeight: 'bold'
@@ -435,7 +437,7 @@ function ExpansePage() {
                         <Statistic
                             title={<span className="text-gray-700 dark:text-gray-300">{t("Expense Types")}</span>}
                             value={Object.keys(statistics.expensesByType).length}
-                            valueStyle={{ 
+                            valueStyle={{
                                 color: '#c2410c',
                                 fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                                 fontWeight: 'bold'
@@ -453,8 +455,8 @@ function ExpansePage() {
                         <Row gutter={[16, 16]}>
                             {Object.entries(statistics.expensesByType).map(([type, data]) => (
                                 <Col xs={24} sm={12} md={8} lg={6} key={type}>
-                                    <Card 
-                                        size="small" 
+                                    <Card
+                                        size="small"
                                         className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
                                     >
                                         <div className="text-center">
@@ -498,8 +500,8 @@ function ExpansePage() {
                             label={<span className="font-medium">{t("ប្រភេទនៃការចំណាយ")}</span>}
                             rules={[{ required: true, message: t("Expense Type is required") }]}
                         >
-                            <Select 
-                                options={config.expense_type} 
+                            <Select
+                                options={config.expense_type}
                                 placeholder={t("ជ្រើសរើសប្រភេទចំណាយ")}
                                 size="large"
                             />
@@ -526,20 +528,20 @@ function ExpansePage() {
                             label={<span className="font-medium">{t("ចំនួនទឹកប្រាក់")}</span>}
                             rules={[{ required: true, message: t("Amount is required") }]}
                         >
-                            <InputNumber 
-                                style={{ width: "100%" }} 
-                                placeholder={t("បញ្ចូលចំនួន")} 
+                            <InputNumber
+                                style={{ width: "100%" }}
+                                placeholder={t("បញ្ចូលចំនួន")}
                                 min={0}
                                 size="large"
                             />
                         </Form.Item>
 
-                        <Form.Item 
-                            name="remark" 
+                        <Form.Item
+                            name="remark"
                             label={<span className="font-medium">{t("ផ្សេងៗ")}</span>}
                         >
-                            <Input.TextArea 
-                                placeholder={t("បញ្ចូលព័ត៌មានបន្ថែម")} 
+                            <Input.TextArea
+                                placeholder={t("បញ្ចូលព័ត៌មានបន្ថែម")}
                                 rows={4}
                                 size="large"
                             />
@@ -550,9 +552,9 @@ function ExpansePage() {
                             label={<span className="font-medium">{t("កាលបរិច្ឆេទចំណាយ")}</span>}
                             rules={[{ required: true, message: t("Expense Date is required") }]}
                         >
-                            <DatePicker 
-                                style={{ width: "100%" }} 
-                                format="YYYY-MM-DD" 
+                            <DatePicker
+                                style={{ width: "100%" }}
+                                format="YYYY-MM-DD"
                                 placeholder={t("ជ្រើសរើសកាលបរិច្ឆេទ")}
                                 size="large"
                             />
@@ -644,8 +646,8 @@ function ExpansePage() {
                                 </div>
                             </div>
 
-                            {isPermission("customer.getone") && (
-                                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                            <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                {isPermission("expanse.update") && (
                                     <Button
                                         type="primary"
                                         icon={<MdEdit />}
@@ -658,6 +660,8 @@ function ExpansePage() {
                                     >
                                         {t("EDIT")}
                                     </Button>
+                                )}
+                                {isPermission("expanse.remove") && (
                                     <Button
                                         danger
                                         icon={<MdDelete />}
@@ -670,8 +674,8 @@ function ExpansePage() {
                                     >
                                         {t("DELETE")}
                                     </Button>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     )}
                 </Modal>
@@ -679,7 +683,7 @@ function ExpansePage() {
                 {/* Desktop Table View */}
                 <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
                     <Table
-                        rowClassName={(record, index) => 
+                        rowClassName={(record, index) =>
                             `pos-row ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`
                         }
                         dataSource={filteredList}
@@ -703,9 +707,9 @@ function ExpansePage() {
                     ) : filteredList.length > 0 ? (
                         <div className="space-y-3">
                             {filteredList.map((expense, index) => (
-                                <ExpenseMobileCard 
-                                    key={expense.id} 
-                                    expense={expense} 
+                                <ExpenseMobileCard
+                                    key={expense.id}
+                                    expense={expense}
                                     index={index}
                                 />
                             ))}

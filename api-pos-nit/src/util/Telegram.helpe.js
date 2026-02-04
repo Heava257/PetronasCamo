@@ -12,235 +12,101 @@ exports.sendSmartNotification = async ({
   image_url = null
 }) => {
   try {
-    // ✅ Check if notifications are globally enabled
+    // 1. Check Global Setting
     const [globalSetting] = await db.query(`
-      SELECT config_value 
-      FROM system_config 
-      WHERE config_key = 'telegram_notifications_enabled'
-      LIMIT 1
+      SELECT config_value FROM system_config 
+      WHERE config_key = 'telegram_notifications_enabled' LIMIT 1
     `);
-
-    if (globalSetting[0]?.config_value !== 'true') {
+    if (globalSetting[0]?.config_value === 'false') {
       return { success: false, reason: 'globally_disabled' };
     }
 
-    const recipients = [];
-
-    // ✅✅✅ STEP 1: Get Super Admin configs (receive ALL events) ✅✅✅
-    const [superAdminConfigs] = await db.query(`
-      SELECT id, config_name, bot_token, chat_id, event_types
+    // 2. Fetch ONE Config (The "One Group")
+    const [configs] = await db.query(`
+      SELECT bot_token, chat_id, config_name
       FROM telegram_config
-      WHERE config_type = 'super_admin'
-        AND is_active = 1
+      WHERE is_active = 1
+      ORDER BY id ASC LIMIT 1
     `);
 
-    superAdminConfigs.forEach(config => {
-      recipients.push({
-        config_id: config.id,
-        config_name: config.config_name,
-        bot_token: config.bot_token,
-        chat_id: config.chat_id,
-        level: 'SUPER_ADMIN',
-        message: `🔴 ${title || 'SUPER ADMIN ALERT'}\n${message}`
-      });
-    });
+    if (configs.length === 0) return { success: false, reason: 'no_config' };
+    const recipient = configs[0];
 
-    // ✅✅✅ STEP 2: Get Branch-specific configs with EVENT FILTERING ✅✅✅
-    if (branch_name) {
-      const [branchConfigs] = await db.query(`
-        SELECT id, config_name, bot_token, chat_id, event_types
-        FROM telegram_config
-        WHERE config_type = 'branch'
-          AND branch_name = :branch_name
-          AND is_active = 1
-      `, { branch_name });
+    // 3. Send Message
+    await axios.post(
+      `https://api.telegram.org/bot${recipient.bot_token}/sendMessage`,
+      {
+        chat_id: recipient.chat_id,
+        text: message,
+        parse_mode: 'HTML'
+      },
+      { timeout: 10000 }
+    );
 
-      branchConfigs.forEach(config => {
-        // ✅ Check if this group should receive this event type
-        let shouldReceive = false;
-
-        if (!config.event_types || config.event_types === null) {
-          // NULL = receive all events (like manager group)
-          shouldReceive = true;
-        } else {
-          try {
-            const eventTypes = JSON.parse(config.event_types);
-
-            // Check if event_type matches
-            if (Array.isArray(eventTypes)) {
-              // Check for wildcard "*" or specific event match
-              shouldReceive = eventTypes.includes('*') || eventTypes.includes(event_type);
-            }
-          } catch (parseError) {
-            console.error(`Failed to parse event_types for ${config.config_name}:`, parseError);
-            // If parsing fails, don't send to be safe
-            shouldReceive = false;
-          }
-        }
-
-        // ✅ Only add to recipients if group should receive this event
-        if (shouldReceive) {
-          recipients.push({
-            config_id: config.id,
-            config_name: config.config_name,
-            bot_token: config.bot_token,
-            chat_id: config.chat_id,
-            level: 'BRANCH',
-            event_types: config.event_types,
-            message: `🟡 ${title || (branch_name ? branch_name.toUpperCase() + ' ALERT' : 'ALERT')}\n${message}`
-          });
-        } else {
-        }
-      });
-    }
-
-    // ✅✅✅ STEP 3: Get System configs (if system event) ✅✅✅
-    if (event_type === 'system_event') {
-      const [systemConfigs] = await db.query(`
-        SELECT id, config_name, bot_token, chat_id
-        FROM telegram_config
-        WHERE config_type = 'system'
-          AND is_active = 1
-      `);
-
-      systemConfigs.forEach(config => {
-        recipients.push({
-          config_id: config.id,
-          config_name: config.config_name,
-          bot_token: config.bot_token,
-          chat_id: config.chat_id,
-          level: 'SYSTEM',
-          message: message
-        });
-      });
-    }
-
-    if (recipients.length === 0) {
-      return {
-        success: false,
-        reason: 'no_matching_recipients',
-        message: `No Telegram groups configured for event type: ${event_type}`,
-        event_type,
-        branch_name
-      };
-    }
-
-
-    // ✅ Send to all matching recipients
-    const results = [];
-
-    for (const recipient of recipients) {
+    // 4. Send Photo if exists
+    if (image_url) {
       try {
-        const response = await axios.post(
-          `https://api.telegram.org/bot${recipient.bot_token}/sendMessage`,
-          {
-            chat_id: recipient.chat_id,
-            text: recipient.message,
-            parse_mode: 'HTML'
-          },
+        await axios.post(
+          `https://api.telegram.org/bot${recipient.bot_token}/sendPhoto`,
+          { chat_id: recipient.chat_id, photo: image_url },
           { timeout: 10000 }
         );
-
-        // ✅ If image_url exists, send it as a follow-up
-        if (image_url) {
-          try {
-            await axios.post(
-              `https://api.telegram.org/bot${recipient.bot_token}/sendPhoto`,
-              {
-                chat_id: recipient.chat_id,
-                photo: image_url,
-                caption: `📸 Bank Slip for: ${recipient.config_name}`
-              },
-              { timeout: 10000 }
-            );
-          } catch (photoError) {
-            console.error(`❌ Failed to send photo to ${recipient.config_name}:`, photoError.message);
-            // Don't fail the whole loop if just the photo fails
-          }
-        }
-
-        results.push({
-          success: true,
-          config_name: recipient.config_name,
-          level: recipient.level,
-          message_id: response.data.result.message_id
-        });
-
-
-        // ✅ Update last successful send
-        await db.query(`
-          UPDATE telegram_config 
-          SET last_test_at = NOW(),
-              last_test_status = 'success'
-          WHERE id = :config_id
-        `, { config_id: recipient.config_id });
-
-      } catch (error) {
-        console.error(`❌ Failed to send to ${recipient.config_name}:`, error.message);
-
-        results.push({
-          success: false,
-          config_name: recipient.config_name,
-          error: error.message
-        });
-
-        await db.query(`
-          UPDATE telegram_config 
-          SET last_test_at = NOW(),
-              last_test_status = 'failed'
-          WHERE id = :config_id
-        `, { config_id: recipient.config_id });
-      }
+      } catch (e) { console.error('Telegram Photo Error:', e.message); }
     }
 
-    // ✅ Log notification
-    try {
-      await db.query(`
-        INSERT INTO notification_log (
-          event_type, 
-          branch_name, 
-          message, 
-          recipients_count,
-          success_count,
-          sent_at,
-          status
-        ) VALUES (
-          :event_type,
-          :branch_name,
-          :message,
-          :recipients_count,
-          :success_count,
-          NOW(),
-          :status
-        )
-      `, {
-        event_type,
-        branch_name,
-        message: message.substring(0, 500),
-        recipients_count: recipients.length,
-        success_count: results.filter(r => r.success).length,
-        status: results.every(r => r.success) ? 'success' : 'partial'
-      });
-    } catch (logError) {
-      console.error('Failed to log notification:', logError);
-    }
-
-    return {
-      success: true,
-      recipients_count: recipients.length,
-      success_count: results.filter(r => r.success).length,
-      event_type,
-      branch_name,
-      results
-    };
-
+    return { success: true };
   } catch (error) {
-    console.error('❌ Smart notification error:', error);
-    return {
-      success: false,
-      error: error.message
-    };
+    console.error('Telegram Error:', error.message);
+    return { success: false, error: error.message };
   }
+};
+
+// --- Formatters ---
+exports.formatOpeningStock = (branchName, products) => {
+  let msg = `<b>(1) + ស្តុកដើគ្រា (សាខា ${branchName})</b>\n`;
+  products.forEach((p, index) => {
+    msg += `${index + 1}. ${p.name || 'Unknown'}/${p.unit || 'L'}: <b>${p.qty || 0}</b>\n`;
+  });
+  return msg;
+};
+
+exports.formatStockIn = (branchName, user, products) => {
+  let msg = `<b>(2) + ស្តុកចូលក្នុងគ្រា (សាខា ${branchName})</b>\n`;
+  msg += `1. អ្នកទទួល: ${user}\n`;
+  msg += `2. ក្រុមហ៊ុន: ${products[0]?.supplier_name || 'N/A'}\n`;
+  products.forEach((p, index) => {
+    msg += `${index + 3}. ${p.name}: <b>+${p.qty}</b>\n`;
+  });
+  return msg;
+};
+
+exports.formatStockOut = (branchName, seller, buyer, products) => {
+  let msg = `<b>(3) + ស្តុកចេញក្នុងគ្រា (សាខា ${branchName})</b>\n`;
+  msg += `1. អ្នកលក់: ${seller}\n`;
+  msg += `2. អ្នកទិញ: ${buyer}\n`;
+  msg += `3. អាសយដ្ឋាន: -\n`;
+  products.forEach((p, index) => {
+    msg += `${index + 4}. ${p.name}: <b>${p.qty}</b>\n`;
+  });
+  return msg;
+};
+
+exports.formatDebtAlert = (branchName, customer, oldDebt, currentPurchase, paid, due) => {
+  let msg = `<b>(4) + បំណុលអតិថិជន (សាខា ${branchName})</b>\n`;
+  msg += `1. បំណុលដើមគ្រា: $${(oldDebt || 0).toFixed(2)}\n`;
+  msg += `2. ទិញក្នុងគ្រា: $${(currentPurchase || 0).toFixed(2)}\n`;
+  msg += `3. សងក្នុងគ្រា: $${(paid || 0).toFixed(2)}\n`;
+  msg += `4. នៅសល់ចុងគ្រា: <b>$${(due || 0).toFixed(2)}</b>\n`;
+  return msg;
+};
+
+exports.formatClosingStock = (branchName, products) => {
+  let msg = `<b>(5) + ស្តុកចុងគ្រា (សាខា ${branchName})</b>\n`;
+  products.forEach((p, index) => {
+    msg += `${index + 1}. ${p.name}/${p.unit || 'L'}: <b>${p.remaining_qty}</b>\n`;
+  });
+  msg += `\nupdate by: System`;
+  return msg;
 };
 
 /**

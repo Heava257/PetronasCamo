@@ -4,7 +4,7 @@ import {
     Descriptions, TimePicker, Checkbox, Alert, Row, Col, Card, Divider,
     Statistic, Progress, DatePicker, Tabs, Badge, Typography
 } from "antd";
-import { formatDateClient, request } from "../../util/helper";
+import { formatDateClient, isPermission, request } from "../../util/helper";
 import * as XLSX from 'xlsx/xlsx.mjs';
 import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
 import { AiOutlineEye, AiOutlineClockCircle, AiOutlineUserAdd } from "react-icons/ai";
@@ -182,12 +182,12 @@ function EmployeePage() {
             message.error('Please allow popups for printing');
             return;
         }
-        
+
         // 构建 HTML 内容
         const fromDate = salaryDateRange[0].format('DD/MM/YYYY');
         const toDate = salaryDateRange[1].format('DD/MM/YYYY');
         const generatedDate = moment().format('DD/MM/YYYY HH:mm');
-        
+
         // 使用模板字符串创建 HTML
         const htmlContent = `
             <!DOCTYPE html>
@@ -287,7 +287,7 @@ function EmployeePage() {
             </body>
             </html>
         `;
-        
+
         printWindow.document.open();
         printWindow.document.write(htmlContent);
         printWindow.document.close();
@@ -317,10 +317,10 @@ function EmployeePage() {
                 </thead>
                 <tbody>
         `;
-        
+
         salaryReportData.forEach((emp, index) => {
             const lateDays = (emp.days_late_grace || 0) + (emp.days_late_penalty || 0);
-            
+
             tableHTML += `
                 <tr>
                     <td>${index + 1}</td>
@@ -336,11 +336,11 @@ function EmployeePage() {
                 </tr>
             `;
         });
-        
+
         if (salaryReportSummary) {
-            const totalLateDays = (salaryReportSummary.total_days_late_grace || 0) + 
-                                 (salaryReportSummary.total_days_late_penalty || 0);
-            
+            const totalLateDays = (salaryReportSummary.total_days_late_grace || 0) +
+                (salaryReportSummary.total_days_late_penalty || 0);
+
             tableHTML += `
                 <tr class="total-row">
                     <td colspan="3"><strong>TOTAL</strong></td>
@@ -354,12 +354,12 @@ function EmployeePage() {
                 </tr>
             `;
         }
-        
+
         tableHTML += `
                 </tbody>
             </table>
         `;
-        
+
         return tableHTML;
     };
 
@@ -373,20 +373,20 @@ function EmployeePage() {
                 logging: false,
                 backgroundColor: '#ffffff'
             });
-            
+
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF({
                 orientation: 'landscape',
                 unit: 'mm',
                 format: 'a4'
             });
-            
+
             const imgWidth = 297;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
-            
+
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
             pdf.save(`Salary_Report_${moment().format('YYYY-MM-DD')}.pdf`);
-            
+
             message.success('PDF exported successfully!');
         } catch (error) {
             console.error('PDF export error:', error);
@@ -431,30 +431,30 @@ function EmployeePage() {
 
         const ws1 = XLSX.utils.json_to_sheet(exportData);
         const ws2 = XLSX.utils.json_to_sheet(summaryData);
-        
+
         // 设置列宽
         const wscols = [
-            {wch: 5},
-            {wch: 10},
-            {wch: 25},
-            {wch: 20},
-            {wch: 12},
-            {wch: 10},
-            {wch: 12},
-            {wch: 15},
-            {wch: 12},
-            {wch: 12},
-            {wch: 15},
-            {wch: 15},
-            {wch: 15},
-            {wch: 12},
+            { wch: 5 },
+            { wch: 10 },
+            { wch: 25 },
+            { wch: 20 },
+            { wch: 12 },
+            { wch: 10 },
+            { wch: 12 },
+            { wch: 15 },
+            { wch: 12 },
+            { wch: 12 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 15 },
+            { wch: 12 },
         ];
         ws1['!cols'] = wscols;
 
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws1, 'Salary Report');
         XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
-        
+
         XLSX.writeFile(wb, `Salary_Report_${moment().format('YYYY-MM-DD')}.xlsx`);
         message.success('Exported successfully!');
     };
@@ -647,24 +647,30 @@ function EmployeePage() {
             }
             extra={
                 <Space>
-                    <Button
-                        size="small"
-                        type="default"
-                        icon={<AiOutlineEye />}
-                        onClick={() => onClickView(employee)}
-                    />
-                    <Button
-                        size="small"
-                        type="primary"
-                        icon={<MdEdit />}
-                        onClick={() => onClickEdit(employee)}
-                    />
-                    <Button
-                        size="small"
-                        danger
-                        icon={<MdDelete />}
-                        onClick={() => onClickDelete(employee)}
-                    />
+                    {isPermission("employee.view") && (
+                        <Button
+                            size="small"
+                            type="default"
+                            icon={<AiOutlineEye />}
+                            onClick={() => onClickView(employee)}
+                        />
+                    )}
+                    {isPermission("employee.update") && (
+                        <Button
+                            size="small"
+                            type="primary"
+                            icon={<MdEdit />}
+                            onClick={() => onClickEdit(employee)}
+                        />
+                    )}
+                    {isPermission("employee.remove") && (
+                        <Button
+                            size="small"
+                            danger
+                            icon={<MdDelete />}
+                            onClick={() => onClickDelete(employee)}
+                        />
+                    )}
                 </Space>
             }
         >
@@ -707,7 +713,7 @@ function EmployeePage() {
                 <p>Period: {salaryDateRange[0].format('DD/MM/YYYY')} - {salaryDateRange[1].format('DD/MM/YYYY')}</p>
                 <p>Generated: {moment().format('DD/MM/YYYY HH:mm')}</p>
             </div>
-            
+
             {salaryReportData.length > 0 && (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
                     <thead>
@@ -756,7 +762,7 @@ function EmployeePage() {
         <MainPage loading={loading}>
             {/* 打印预览组件 */}
             <PrintPreviewComponent />
-            
+
             {/* Header */}
             <div className="pageHeader flex-col sm:flex-row gap-3">
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto flex-1">
@@ -775,27 +781,33 @@ function EmployeePage() {
                         <Button type="primary" onClick={ExportToExcel} icon={<IoBook />}>
                             <span className="hidden sm:inline">{t('export_excel')}</span>
                         </Button>
-                        <Button
-                            type="default"
-                            onClick={() => getLateStatistics(30)}
-                            icon={<BiStats />}
-                            className="bg-orange-500 text-white hover:bg-orange-600"
-                        >
-                            <span className="hidden sm:inline">Late Stats</span>
-                        </Button>
-                        <Button
-                            type="primary"
-                            onClick={openSalaryReportModal}
-                            icon={<DollarOutlined />}
-                            style={{ background: '#059669', borderColor: '#059669' }}
-                        >
-                            <span className="hidden sm:inline">Salary Report</span>
-                        </Button>
+                        {isPermission("employee.view") && (
+                            <Button
+                                type="default"
+                                onClick={() => getLateStatistics(30)}
+                                icon={<BiStats />}
+                                className="bg-orange-500 text-white hover:bg-orange-600"
+                            >
+                                <span className="hidden sm:inline">Late Stats</span>
+                            </Button>
+                        )}
+                        {isPermission("employee.view") && (
+                            <Button
+                                type="primary"
+                                onClick={openSalaryReportModal}
+                                icon={<DollarOutlined />}
+                                style={{ background: '#059669', borderColor: '#059669' }}
+                            >
+                                <span className="hidden sm:inline">Salary Report</span>
+                            </Button>
+                        )}
                     </div>
                 </div>
-                <Button type="primary" onClick={onClickAddBtn} icon={<MdNewLabel />}>
-                    {t('new')}
-                </Button>
+                {isPermission("employee.create") && (
+                    <Button type="primary" onClick={onClickAddBtn} icon={<MdNewLabel />}>
+                        {t('new')}
+                    </Button>
+                )}
             </div>
 
             {/* Desktop Table */}
@@ -855,22 +867,28 @@ function EmployeePage() {
                             align: "center",
                             render: (_, record) => (
                                 <Space>
-                                    <Button
-                                        type="default"
-                                        icon={<AiOutlineEye />}
-                                        onClick={() => onClickView(record)}
-                                    />
-                                    <Button
-                                        type="primary"
-                                        icon={<MdEdit />}
-                                        onClick={() => onClickEdit(record)}
-                                    />
-                                    <Button
-                                        type="primary"
-                                        danger
-                                        icon={<MdDelete />}
-                                        onClick={() => onClickDelete(record)}
-                                    />
+                                    {isPermission("employee.view") && (
+                                        <Button
+                                            type="default"
+                                            icon={<AiOutlineEye />}
+                                            onClick={() => onClickView(record)}
+                                        />
+                                    )}
+                                    {isPermission("employee.update") && (
+                                        <Button
+                                            type="primary"
+                                            icon={<MdEdit />}
+                                            onClick={() => onClickEdit(record)}
+                                        />
+                                    )}
+                                    {isPermission("employee.remove") && (
+                                        <Button
+                                            type="primary"
+                                            danger
+                                            icon={<MdDelete />}
+                                            onClick={() => onClickDelete(record)}
+                                        />
+                                    )}
                                 </Space>
                             ),
                             width: 150
@@ -886,13 +904,15 @@ function EmployeePage() {
                                         Has Account
                                     </Tag>
                                 ) : (
-                                    <Button
-                                        type="link"
-                                        icon={<UserAddOutlined />}
-                                        onClick={() => handleCreateAccount(record)}
-                                    >
-                                        Create Account
-                                    </Button>
+                                    isPermission("employee.update") && (
+                                        <Button
+                                            type="link"
+                                            icon={<UserAddOutlined />}
+                                            onClick={() => handleCreateAccount(record)}
+                                        >
+                                            Create Account
+                                        </Button>
+                                    )
                                 )
                             ),
                         }

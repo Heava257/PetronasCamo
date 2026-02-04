@@ -113,6 +113,7 @@ require("./src/route/online_status.route")(app);
 require("./src/route/activity_tracker.route")(app);
 require("./src/route/supperadmin.route")(app);
 require("./src/route/Permission.route")(app);
+require("./src/route/Branchpermissionoverride.route")(app); // ✅ Added
 require("./src/route/Security.route")(app);
 require("./src/route/purchase.route")(app);
 require("./src/route/Telegram.route")(app);
@@ -121,6 +122,7 @@ require("./src/route/inventory.route")(app);
 require("./src/route/Closing.route")(app);
 require("./src/route/Pre_order.route")(app);
 require("./src/route/Location.route")(app);
+require("./src/route/branch.route")(app);
 require("./src/route/truck.route")(app);
 require("./src/route/upload.route")(app);
 require("./src/route/supplier_payment.route")(app); // ✅ Supplier Payment Ledger

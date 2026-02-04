@@ -16,16 +16,10 @@
 
 /* Glass Card Effect is now handled globally in glass-theme.css */
 
-/* Khmer Text Styling */
-.khmer-text-product {
-  font-family: 'Khmer OS Battambang', 'Hanuman', 'Moul', sans-serif !important;
-}
-
-/* Statistics Cards */
-
-/* Khmer Text Styling */
-.khmer-text-product {
-  font-family: 'Khmer OS Battambang', 'Hanuman', 'Moul', sans-serif !important;
+/* Khmer Text Styling - Higher Specificity */
+.khmer-text-product,
+html.template-modern .khmer-text-product {
+  font-family: 'Kantumruy Pro', sans-serif !important;
 }
 
 /* Statistics Cards */
@@ -37,4 +31,56 @@
 .ant-statistic-content {
   font-size: 24px;
   font-weight: 700;
+}
+
+/* Default Theme Styles - Backgrounds removed to support dynamic theming */
+.pre-order-footer {
+  background-color: transparent;
+}
+
+.pre-order-note {
+  background-color: transparent;
+}
+
+/* FIX: Modern Template Overrides to ensure clean look & Khmer Font support */
+html.template-modern .pre-order-modal .ant-modal-content {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+html.template-modern .pre-order-modal .ant-modal-header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+}
+
+html.template-modern .pre-order-modal .ant-modal-title {
+  color: #1e293b !important;
+  font-family: 'Kantumruy Pro', sans-serif !important;
+}
+
+html.template-modern .pre-order-modal .ant-input,
+html.template-modern .pre-order-modal .ant-input-number,
+html.template-modern .pre-order-modal .ant-picker,
+html.template-modern .pre-order-modal .ant-select-selector {
+  background-color: #ffffff !important;
+  border-color: #d9d9d9 !important;
+  color: #1e293b !important;
+  font-family: 'Kantumruy Pro', sans-serif !important;
+}
+
+html.template-modern .pre-order-modal .ant-input::placeholder,
+html.template-modern .pre-order-modal .ant-select-selection-placeholder {
+  color: #94a3b8 !important;
+  font-family: 'Kantumruy Pro', sans-serif !important;
+}
+
+html.template-modern .pre-order-modal .ant-form-item-label>label {
+  color: #475569 !important;
+  font-family: 'Kantumruy Pro', sans-serif !important;
+}
+
+/* UNIVERSAL FONT ENFORCEMENT FOR MODERN THEME MODAL AND DROPDOWNS */
+html.template-modern .pre-order-modal *,
+html.template-modern .ant-select-dropdown * {
+  font-family: 'Kantumruy Pro', sans-serif !important;
 }

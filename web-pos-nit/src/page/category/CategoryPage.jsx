@@ -181,16 +181,18 @@ function CategoryPage() {
               <span className="khmer-title1">{t("group")}</span>
             </Radio.Button>
           </Radio.Group>
-          <Button type="primary" onClick={onClickAddBtn} icon={<MdOutlineCreateNewFolder />}>
-            {t("new")}
-          </Button>
+          {isPermission("category.create") && (
+            <Button type="primary" onClick={onClickAddBtn} icon={<MdOutlineCreateNewFolder />}>
+              {t("new")}
+            </Button>
+          )}
         </Space>
       </div>
 
       <Modal
         open={state.visibleModal}
         title={
-          <div className="khmer-title1">
+          <div className="khmer-title1" style={{ color: '#e8c12f' }}>
             {formRef.getFieldValue("id") ? t("edit_category") : t("new_category")}
           </div>
         }
@@ -267,10 +269,12 @@ function CategoryPage() {
               title: <div className="khmer-text1">{t("table_no")}</div>,
               render: (text, record, index) => index + 1,
               width: 60,
+              align: "center",
             },
             {
               key: "name",
               title: <div className="khmer-text1">{t("name")}</div>,
+              align: "center",
               dataIndex: "name",
               render: (text) => <div className="khmer-title1">{text}</div>,
               width: 150,
@@ -278,6 +282,7 @@ function CategoryPage() {
             {
               key: "description",
               title: <div className="khmer-text1">{t("description")}</div>,
+              align: "center",
               dataIndex: "description",
               render: (text) => <div className="khmer-title1">{text}</div>,
               width: 200,
@@ -285,6 +290,7 @@ function CategoryPage() {
             {
               key: "barcode",
               title: <div className="khmer-text1">{t("barcode_number")}</div>,
+              align: "center",
               dataIndex: "barcode",
               render: (text) => <div className="khmer-title1">{text}</div>,
               width: 120,
@@ -293,6 +299,7 @@ function CategoryPage() {
             {
               key: "status",
               title: <div className="khmer-text1">{t("status")}</div>,
+              align: "center",
               dataIndex: "status",
               render: (status) => (
                 status === 1
@@ -304,6 +311,7 @@ function CategoryPage() {
             ...(viewMode === 'group' ? [{
               key: "creator",
               title: <div className="khmer-text1">{t("creator")}</div>,
+              align: "center",
               render: (text, record) => {
                 const { id: currentUserId } = getProfile();
                 const isCurrentUser = record.user_id === currentUserId;
@@ -339,14 +347,14 @@ function CategoryPage() {
               align: "center",
               render: (item, data) => (
                 <Space>
-                  {isPermission("customer.getone") && (
+                  {isPermission("category.update") && (
                     <Button
                       type="primary"
                       icon={<MdEdit />}
                       onClick={() => onClickEdit(data)}
                     />
                   )}
-                  {isPermission("customer.getone") && (
+                  {isPermission("category.remove") && (
                     <Button
                       type="primary"
                       danger
@@ -357,7 +365,7 @@ function CategoryPage() {
                 </Space>
               ),
               width: 120,
-              fixed: "right",
+
             },
           ]}
         />
@@ -489,33 +497,34 @@ function CategoryPage() {
                       </div>
                     )}
 
-                    {/* Action Buttons */}
-                    {isPermission("customer.getone") && (
-                      <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      {isPermission("category.update") && (
                         <button
                           onClick={() => onClickEdit(item)}
                           disabled={!canEdit}
                           className={`flex-1 ${canEdit
-                              ? 'bg-blue-500 hover:bg-blue-600 active:scale-95'
-                              : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
+                            ? 'bg-blue-500 hover:bg-blue-600 active:scale-95'
+                            : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
                             } text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 shadow-sm`}
                         >
                           <MdEdit size={18} />
                           <span className="text-sm khmer-title1">{t("edit")}</span>
                         </button>
+                      )}
+                      {isPermission("category.remove") && (
                         <button
                           onClick={() => onClickDelete(item)}
                           disabled={!canEdit}
                           className={`flex-1 ${canEdit
-                              ? 'bg-red-500 hover:bg-red-600 active:scale-95'
-                              : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
+                            ? 'bg-red-500 hover:bg-red-600 active:scale-95'
+                            : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'
                             } text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 shadow-sm`}
                         >
                           <MdDelete size={18} />
                           <span className="text-sm khmer-title1">{t("delete")}</span>
                         </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* Permission Warning */}
                     {viewMode === 'group' && !canEdit && (

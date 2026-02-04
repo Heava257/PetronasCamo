@@ -1,7 +1,7 @@
 const { db, isArray, isEmpty, logError, sendTelegramMessage } = require("../util/helper");
 
 const dayjs = require('dayjs');
-const { sendSmartNotification } = require("../util/Telegram.helpe");
+const { sendSmartNotification, formatStockOut, formatDebtAlert, formatClosingStock } = require("../util/Telegram.helpe");
 const { createSystemNotification } = require("./System_notification.controller");
 
 const formatNumber = (num) => {
@@ -598,6 +598,21 @@ exports.create = async (req, res) => {
             purchaseOrderRef = item.description.trim();
           }
 
+          // ✅ AUTO-UPDATE PRE-ORDER: Deduct remaining QTY
+          if (order.pre_order_id) {
+            await db.query(`
+              UPDATE pre_order_detail
+              SET remaining_qty = remaining_qty - :qty,
+                  delivered_qty = delivered_qty + :qty
+              WHERE pre_order_id = :pre_order_id
+                AND product_id = :product_id
+            `, {
+              qty: item.qty,
+              pre_order_id: order.pre_order_id,
+              product_id: item.product_id
+            });
+          }
+
           // Strategy 2: Query inventory_transaction for latest PURCHASE_IN
           if (!purchaseOrderRef) {
             try {
@@ -691,42 +706,103 @@ exports.create = async (req, res) => {
       })
     );
 
-    // ✅ Send Inventory Notification (Enhanced with formatting and real-time stock)
-    try {
-      let inventoryText = `📦 <b>Stock Out (Sale)</b>\n`;
-      inventoryText += `━━━━━━━━━━━━━━━\n`;
-      if (pre_order_no) {
-        inventoryText += `🔖 <b>PO #:</b> <code>${pre_order_no}</code>\n`;
-      } else {
-        inventoryText += `✅ <b>Order:</b> <code>${order_no}</code>\n`;
+    // ✅ AUTO-UPDATE PRE-ORDER STATUS
+    // ✅ AUTO-UPDATE PRE-ORDER STATUS
+    if (pre_order_no) {
+      // Find Pre-Order ID first if we only have the NO
+      const [poResult] = await db.query("SELECT id, special_instructions FROM pre_order WHERE pre_order_no = :no", { no: pre_order_no });
+
+      if (poResult.length > 0) {
+        const preOrderId = poResult[0].id;
+        let specialInstructions = poResult[0].special_instructions || "";
+
+        const [remaining] = await db.query(`
+          SELECT COUNT(*) as count 
+          FROM pre_order_detail 
+          WHERE pre_order_id = :id AND remaining_qty > 0.01
+        `, { id: preOrderId });
+
+        const newStatus = (remaining[0].count === 0) ? 'delivered' : 'partially_delivered';
+
+        // ✅ Auto-update Received Date if delivered
+        if (newStatus === 'delivered') {
+          const todayStr = dayjs().format('DD/MM/YYYY');
+          if (specialInstructions.includes('Received:')) {
+            specialInstructions = specialInstructions.replace(/Received:.*?(?=\||$)/, `Received: ${todayStr}`);
+          } else {
+            specialInstructions += ` | Received: ${todayStr}`;
+          }
+        }
+
+        await db.query(`
+          UPDATE pre_order 
+          SET status = :status, 
+              special_instructions = :special_instructions,
+              updated_at = NOW() 
+          WHERE id = :id
+        `, {
+          status: newStatus,
+          special_instructions: specialInstructions,
+          id: preOrderId
+        });
       }
-      if (branch_name) inventoryText += `🏢 <b>Branch:</b> ${branch_name}\n`;
-      inventoryText += `👤 <b>Customer:</b> ${customer.name}\n\n`;
-
-      order_details.forEach((item, idx) => {
-        let name = productCategories[item.product_id] || '';
-        name = name.replace(/\/?\s*oil\s*\/?/i, '').trim();
-        const qtySold = Number(item.qty || 0);
-        const remaining = item.new_inventory_rem || 0;
-
-        inventoryText += `  ${idx + 1}. <b>${name}</b>\n`;
-        inventoryText += `     • Out: <b>-${formatNumber(qtySold)} L</b>\n`;
-        inventoryText += `     • Rem: <code>${formatNumber(remaining)} L</code>\n`;
-      });
-
-      inventoryText += `\n🔢 <b>Total Liters:</b> ${formatNumber(totalLiters)} L\n`;
-      inventoryText += `━━━━━━━━━━━━━━━`;
-
-      sendSmartNotification({
-        event_type: 'inventory_movement',
-        branch_name: branch_name,
-        title: `📦 Stock Out: ${pre_order_no || order_no}`,
-        message: inventoryText,
-        severity: 'info'
-      }).catch(err => console.error('❌ Inventory notification failed:', err));
-    } catch (notifErr) {
-      console.error('❌ Notification construction failed:', notifErr);
     }
+
+    // ✅✅✅ TELEGRAM NOTIFICATIONS (Stock Out, Debt, Closing Stock) ✅✅✅
+    setImmediate(async () => {
+      try {
+        const branchTitle = branch_name || 'Head Office';
+        const sellerName = req.auth?.name || 'Admin';
+
+        // ----------------------------------------
+        // (3) STOCK OUT NOTIFICATION
+        // ----------------------------------------
+        const productsForMsg = order_details.map(item => ({
+          name: productCategories[item.product_id]?.replace(/\/?\s*oil\s*\/?/i, '').trim(),
+          qty: item.qty,
+          unit: 'L'
+        }));
+
+        const msgStockOut = formatStockOut(branchTitle, sellerName, customer.name, productsForMsg);
+        await sendSmartNotification({ message: msgStockOut, branch_name: branchTitle });
+
+
+        // ----------------------------------------
+        // (4) DEBT NOTIFICATION (If applicable)
+        // ----------------------------------------
+        // Calculate Old Debt (Excluding current order)
+        const [debtRes] = await db.query(
+          "SELECT SUM(total_amount - paid_amount) as debt FROM customer_debt WHERE customer_id = :cid AND order_id != :oid",
+          { cid: order.customer_id, oid: orderResult.insertId }
+        );
+        const oldDebt = parseFloat(debtRes[0]?.debt || 0);
+        const currentTotal = parseFloat(order.total_amount || 0);
+        const paidAmount = parseFloat(order.paid_amount || 0);
+        const remaining = (oldDebt + currentTotal) - paidAmount;
+
+        // Send alert if there is any debt or transaction happened
+        if (remaining > 0 || currentTotal > 0) {
+          const msgDebt = formatDebtAlert(branchTitle, customer.name, oldDebt, currentTotal, paidAmount, remaining);
+          await sendSmartNotification({ message: msgDebt, branch_name: branchTitle });
+        }
+
+
+        // ----------------------------------------
+        // (5) CLOSING STOCK NOTIFICATION
+        // ----------------------------------------
+        const closingProducts = order_details.map(item => ({
+          name: productCategories[item.product_id]?.replace(/\/?\s*oil\s*\/?/i, '').trim(),
+          unit: 'L',
+          remaining_qty: formatNumber(item.new_inventory_rem || 0)
+        }));
+
+        const msgClosing = formatClosingStock(branchTitle, closingProducts);
+        await sendSmartNotification({ message: msgClosing, branch_name: branchTitle });
+
+      } catch (err) {
+        console.error("❌ Telegram Notification Sequence Error:", err);
+      }
+    });
 
     // Create customer_debt
     const sqlDebt = `
@@ -740,7 +816,8 @@ exports.create = async (req, res) => {
 
     await Promise.all(order_details.map(async (item) => {
       const actualPrice = categoryActualPrices[item.product_id] || 0;
-      const calculatedTotal = actualPrice > 0 ? (item.qty * item.price) / actualPrice : 0;
+      const discount = parseFloat(item.discount || 0) / 100;
+      const calculatedTotal = actualPrice > 0 ? (item.qty * item.price * (1 - discount)) / actualPrice : 0;
       const description = productDescriptions[item.product_id] || '';
 
       await db.query(sqlDebt, {
@@ -909,7 +986,7 @@ exports.getOrderDetail = async (req, res) => {
         p.category_id,
         od.price,
         c.name as category_name,
-        (od.qty * od.price) as grand_total,
+        od.total as grand_total,
         od.qty as total_quantity,
         o.customer_id,
         o.pre_order_no,
@@ -1006,7 +1083,7 @@ exports.getone = async (req, res) => {
         p.unit,
         p.category_id,
         SUM(od.qty) AS total_quantity,
-        SUM(od.qty * od.price * (1 - COALESCE(p.discount, 0)/100) / NULLIF(p.actual_price, 0)) AS grand_total,
+        SUM(od.total) AS grand_total,
         
         -- ✅ Simplified description lookup (no product_details)
         COALESCE(
@@ -2067,7 +2144,7 @@ exports.getList = async (req, res) => {
           cat.name AS category_name,
           p.unit,
           p.actual_price,
-          COALESCE(p.supplier_name, 'N/A') AS supplier_name,
+          COALESCE(NULLIF(od.destination, ''), p.supplier_name, 'N/A') AS supplier_name,
           SUM(od.qty) AS total_quantity,
           od.price AS unit_price,
           ROUND(
@@ -2079,7 +2156,7 @@ exports.getList = async (req, res) => {
         LEFT JOIN product p ON od.product_id = p.id
         LEFT JOIN category cat ON p.category_id = cat.id
         WHERE od.order_id IN (${placeholders})
-        GROUP BY od.order_id, od.id, p.id, od.price, p.actual_price
+        GROUP BY od.order_id, od.id, p.id, od.price, p.actual_price, od.destination
         ORDER BY p.name ASC
       `;
 

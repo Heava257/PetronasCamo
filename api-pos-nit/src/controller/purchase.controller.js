@@ -1,5 +1,6 @@
 const { db, isArray, isEmpty, logError } = require("../util/helper");
-const { sendSmartNotification } = require("../util/Telegram.helpe");
+const { sendSmartNotification, formatStockIn, formatOpeningStock } = require("../util/Telegram.helpe"); // Imported new formatters
+
 const formatNumber = (num) => {
   return parseFloat(num || 0).toLocaleString('en-US', {
     minimumFractionDigits: 2,
@@ -113,16 +114,33 @@ exports.getById = async (req, res) => {
     logError("purchase.getById", error, res);
   }
 };
+
 exports.create = async (req, res) => {
   try {
-    // ✅ Handle Multipart/FormData
-    let { items } = req.body;
+    // 🔒 RESTRICT CREATION: Only Admin or Head Office can create
+    const userBranch = (req.auth?.branch_name || '').toLowerCase();
+    const userRole = (req.auth?.role || '').toLowerCase();
+
+    // Check permissions
+    const isHeadOffice = userBranch.includes('head office') ||
+      userBranch.includes('ការិយាល័យកណ្តាល') ||
+      userBranch.includes('hq');
+    const isAdmin = userRole === 'admin' || userRole === 'super_admin';
+
+    if (!isAdmin && !isHeadOffice) {
+      return res.status(403).json({
+        success: false,
+        message: "🚫 Access Denied: Only Head Office can create Purchase Orders."
+      });
+    }
+
+    let { items, branch_id } = req.body;
     if (typeof items === 'string') {
       try { items = JSON.parse(items); } catch (e) { }
     }
     const image = req.file ? req.file.path : null;
 
-    const {
+    let {
       supplier_id,
       order_no,
       order_date,
@@ -133,59 +151,41 @@ exports.create = async (req, res) => {
       notes
     } = req.body;
 
-    // Validation
-    if (!supplier_id) {
-      return res.status(400).json({
-        success: false,
-        message: "Supplier is required"
-      });
-    }
+    // ✅ FORCE STATUS TO PENDING (No immediate stock in)
+    status = 'pending';
 
-    if (!items || !isArray(items) || items.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Order items are required"
-      });
-    }
+    if (!supplier_id) return res.status(400).json({ success: false, message: "Supplier is required" });
+    if (!items || !isArray(items) || items.length === 0) return res.status(400).json({ success: false, message: "Order items are required" });
 
     // ✅ GET SUPPLIER INFO
-    const [supplierInfo] = await db.query(
-      "SELECT id, name, code FROM supplier WHERE id = :supplier_id",
-      { supplier_id }
-    );
-
-    if (supplierInfo.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid supplier"
-      });
-    }
-
+    const [supplierInfo] = await db.query("SELECT id, name, code FROM supplier WHERE id = :supplier_id", { supplier_id });
+    if (supplierInfo.length === 0) return res.status(400).json({ success: false, message: "Invalid supplier" });
     const supplier = supplierInfo[0];
 
-    // ✅ GET USER INFO (for branch_name)
-    const [userInfo] = await db.query(
-      "SELECT id, name, branch_name FROM user WHERE id = :user_id",
-      { user_id: req.auth?.id || 1 }
-    );
+    // ✅ DETERMINE BRANCH
+    let targetBranchName = "Head Office"; // Default
+    if (branch_id) {
+      try {
+        const [branchRes] = await db.query("SELECT name FROM branch WHERE id = :branch_id", { branch_id });
+        if (branchRes.length > 0) targetBranchName = branchRes[0].name;
+      } catch (err) {
+        targetBranchName = branch_id;
+      }
+    } else {
+      const [userInfo] = await db.query("SELECT branch_name FROM user WHERE id = :user_id", { user_id: req.auth?.id || 1 });
+      targetBranchName = userInfo[0]?.branch_name || targetBranchName;
+    }
 
-    const branch_name = userInfo[0]?.branch_name || 'Unknown Branch';
-    const user_name = userInfo[0]?.name || 'Unknown User';
-
-    // ✅ ADD SUPPLIER INFO TO EACH ITEM
     const itemsWithSupplier = items.map(item => ({
       ...item,
       supplier_id: supplier.id,
       supplier_name: supplier.name,
-      supplier_code: supplier.code
+      supplier_code: supplier.code,
+      target_branch_name: targetBranchName // ✅ PERSIST BRANCH NAME IN ITEMS (Critical for Receive step)
     }));
 
-    // Calculate total amount
-    let calculatedTotal = total_amount || itemsWithSupplier.reduce((sum, item) => {
-      return sum + ((item.quantity || 0) * (item.unit_price || 0));
-    }, 0);
+    let calculatedTotal = total_amount || itemsWithSupplier.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0);
 
-    // ✅ INSERT INTO DATABASE
     const sql = `
       INSERT INTO purchase (
         supplier_id, order_no, order_date, expected_delivery_date,
@@ -196,210 +196,38 @@ exports.create = async (req, res) => {
       )
     `;
 
-    const params = {
+    const [result] = await db.query(sql, {
       supplier_id, order_no,
       order_date: order_date || new Date().toISOString().split('T')[0],
       expected_delivery_date: expected_delivery_date || null,
-      status, payment_terms: payment_terms || null,
+      status,
+      payment_terms: payment_terms || null,
       items: JSON.stringify(itemsWithSupplier),
-      total_amount: calculatedTotal, notes: notes || null,
+      total_amount: calculatedTotal,
+      notes: notes || null,
       user_id: req.auth?.id || 1,
       image: image
-    };
-
-    const [result] = await db.query(sql, params);
+    });
     const purchaseId = result.insertId;
 
-    // ✅✅✅ ENHANCED TELEGRAM NOTIFICATION ✅✅✅
+    // ✅ TELEGRAM NOTIFICATION (Purchase Created - Pending)
     setImmediate(async () => {
       try {
-        // ✅ Get actual_price and format details
-        const productDetailsPromises = itemsWithSupplier.slice(0, 5).map(async (item, index) => {
-          let actualPrice = 1190;
-          if (item.category_id) {
-            const [cat] = await db.query(
-              "SELECT actual_price FROM category WHERE id = :id",
-              { id: item.category_id }
-            );
-            if (cat.length > 0 && cat[0].actual_price) {
-              actualPrice = parseFloat(cat[0].actual_price);
-            }
-          }
-          const qty = parseFloat(item.quantity || 0);
-          const price = parseFloat(item.unit_price || 0);
-          const total = (qty * price) / actualPrice;
-          return `🔄 ${index + 1}. <b>${item.product_name}</b>\n• ប្រភេទ: ${item.category_name || 'N/A'}\n• ចំនួន: ${formatNumber(qty)} L\n• តម្លៃ: $${formatNumber(price)}/L\n• តម្លៃអាហ្វិក: $${formatNumber(actualPrice)}\n• សរុប: $${formatNumber(total)}`;
-        });
-
-        const productDetails = (await Promise.all(productDetailsPromises)).join('\n\n');
-        const remaining = itemsWithSupplier.length > 5 ? `\n\n<i>... និង ${itemsWithSupplier.length - 5} ផលិតផលផ្សេងទៀត</i>` : '';
-        const totalQty = itemsWithSupplier.reduce((s, i) => s + parseFloat(i.quantity || 0), 0);
-
-        const message = `🛒 <b>ការទិញថ្មី / New Purchase Order</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n📋 <b>Order Info:</b>\n• លេខបញ្ជាទិញ: <code>${order_no}</code>\n• ស្ថានភាព: <b>${status.toUpperCase()}</b>\n• កាលបរិច្ឆេទ: ${order_date || new Date().toISOString().split('T')[0]}\n\n🏢 <b>Supplier:</b>\n• ឈ្មោះ: ${supplier.name}\n• លេខកូដ: ${supplier.code}\n\n📍 <b>Branch:</b>\n• សាខា: ${branch_name}\n• បង្កើតដោយ: ${user_name}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📦 <b>PRODUCTS (${itemsWithSupplier.length} items)</b>\n${productDetails}${remaining}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📊 <b>SUMMARY:</b>\n• ផលិតផលសរុប: ${itemsWithSupplier.length} items\n• បរិមាណសរុប: ${formatNumber(totalQty)} L\n💰 <b>GRAND TOTAL: $${formatNumber(calculatedTotal)}</b>\n\n${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh', dateStyle: 'medium', timeStyle: 'short' })}\n━━━━━━━━━━━━━━━━━━━━━━━━━━`;
-
-        const notificationResult = await sendSmartNotification({
+        await sendSmartNotification({
           event_type: 'purchase_created',
-          branch_name: branch_name,
-          title: `🆕 New Purchase: ${order_no}`,
-          message: message,
+          branch_name: targetBranchName,
+          title: `📝 New Purchase Order: ${order_no}`,
+          message: `📦 <b>ការបញ្ជាទិញថ្មី / NEW PO CREATED</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✅ <b>PO:</b> <code>${order_no}</code>\n✅ <b>Status:</b> PENDING\n\n🏢 <b>Supplier:</b> ${supplier.name}\n📍 <b>Destination:</b> ${targetBranchName}\n\n👤 <b>By:</b> ${req.auth?.name || 'Admin'}`,
           severity: 'normal'
         });
-
-        if (notificationResult.success) {
-        }
-      } catch (notifError) {
-        console.error('❌ Telegram error:', notifError);
+      } catch (e) {
+        console.error("Telegram Error:", e);
       }
     });
 
-    // 🔄 INVENTORY INTEGRATION: Update if created as delivered or completed
-    const validStatuses = ['delivered', 'completed'];
-    if (validStatuses.includes(status)) {
-      setImmediate(async () => {
-        try {
-          const itemsWithSupp = JSON.parse(JSON.stringify(itemsWithSupplier));
-          for (const item of itemsWithSupp) {
-            let productId = null;
-            let actualPrice = 1190;
-            let existingProduct = [];
-
-            // 1. Try Find by ID
-            if (item.product_id || item.id) {
-              const searchId = item.product_id || item.id;
-              const [byId] = await db.query(
-                "SELECT id, qty, category_id, actual_price FROM product WHERE id = :id LIMIT 1",
-                { id: searchId }
-              );
-              if (byId.length > 0) existingProduct = byId;
-            }
-
-            // 2. Fallback to Name
-            if (existingProduct.length === 0 && item.product_name) {
-              const [byName] = await db.query(
-                "SELECT id, qty, category_id, actual_price FROM product WHERE name = :product_name LIMIT 1",
-                { product_name: item.product_name }
-              );
-              if (byName.length > 0) existingProduct = byName;
-            }
-
-            if (existingProduct.length > 0) {
-              productId = existingProduct[0].id;
-              actualPrice = parseFloat(existingProduct[0].actual_price) || 1190;
-
-              await db.query(`
-                            UPDATE product SET 
-                                qty = qty + :quantity,
-                                unit_price = :unit_price,
-                                supplier_id = :supplier_id,
-                                supplier_name = :supplier_name,
-                                actual_price = :actual_price,
-                                updated_at = CURRENT_TIMESTAMP
-                            WHERE id = :id
-                        `, {
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                supplier_id: supplier.id,
-                supplier_name: supplier.name,
-                actual_price: actualPrice,
-                id: productId
-              });
-            } else {
-              // Create new product
-              const [result] = await db.query(`
-                            INSERT INTO product (
-                                name, category_id, qty, unit_price, unit, 
-                                supplier_id, supplier_name, actual_price, user_id, 
-                                create_at, updated_at, status, barcode
-                            ) VALUES (
-                                :name, :category_id, :qty, :unit_price, 'L',
-                                :supplier_id, :supplier_name, :actual_price, :user_id,
-                                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, :barcode
-                            )
-                        `, {
-                name: item.product_name,
-                category_id: item.category_id || null,
-                qty: item.quantity || 0,
-                unit_price: item.unit_price || 0,
-                supplier_id: supplier.id,
-                supplier_name: supplier.name,
-                actual_price: actualPrice,
-                user_id: req.auth?.id || 1,
-                barcode: `PO${purchaseId}-${Date.now()}`
-              });
-              productId = result.insertId;
-            }
-
-            if (productId) {
-              await db.query(`
-                            INSERT INTO inventory_transaction (
-                                product_id, purchase_id, transaction_type, quantity, 
-                                unit_price, selling_price, actual_price, reference_no,
-                                supplier_id, supplier_name, notes, user_id, created_at
-                            ) VALUES (
-                                :product_id, :purchase_id, 'PURCHASE_IN', :quantity,
-                                :unit_price, :unit_price, :actual_price, :reference_no,
-                                :supplier_id, :supplier_name, :notes, :user_id, NOW()
-                            )
-                        `, {
-                product_id: productId,
-                purchase_id: purchaseId,
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                actual_price: actualPrice,
-                reference_no: order_no,
-                supplier_id: supplier.id,
-                supplier_name: supplier.name,
-                notes: `Initial Create (${status}) - Purchase from ${supplier.name}`,
-                user_id: req.auth?.id || 1
-              });
-
-              // ✅ Get product specific data and calculate SUM of transactions (Dashboard style)
-              const [productData] = await db.query(
-                "SELECT actual_price FROM product WHERE id = :id",
-                { id: productId }
-              );
-              item.actual_price = parseFloat(productData[0]?.actual_price) || actualPrice;
-
-              const [newQtyResult] = await db.query(
-                "SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id",
-                { id: productId }
-              );
-              item.remaining_qty = newQtyResult[0]?.qty || 0;
-            }
-          }
-
-          // Send Delivery Notification
-          const deliveredDetailsPromises = itemsWithSupp.map(async (item, index) => {
-            const qty = parseFloat(item.quantity || 0);
-            const price = parseFloat(item.unit_price || 0);
-            const actualPrice = item.actual_price || 1190;
-            const total = (qty * price) / actualPrice;
-            return `🔄 ${index + 1}. <b>${item.product_name}</b>
-• In: <b>+${formatNumber(qty)} L</b>
-• Unit: $${formatNumber(price)}/L
-• Total: <b>$${formatNumber(total)}</b>
-• Rem: <code>${formatNumber(item.remaining_qty || 0)} L</code>`;
-          });
-
-          const deliveredProductDetails = (await Promise.all(deliveredDetailsPromises)).join('\n\n');
-
-          sendSmartNotification({
-            event_type: 'inventory_movement',
-            branch_name: branch_name,
-            title: `🚚 Purchase Created & Stock In: ${order_no}`,
-            message: `📦 <b>ទទួលទំនិញបានជោគជ័យ / DELIVERY COMPLETED</b>\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n✅ <b>PO:</b> <code>${order_no}</code>\n✅ <b>Status:</b> ${status.toUpperCase()}\n\n🏢 <b>Supplier:</b> ${supplier.name}\n📍 <b>Branch:</b> ${branch_name}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n📦 <b>STOCK UPDATES</b>\n${deliveredProductDetails}\n\n👤 <b>By:</b> ${user_name}`,
-            severity: 'high'
-          });
-
-        } catch (err) {
-          console.error("❌ Inventory Create error:", err);
-        }
-      });
-    }
-
     res.status(201).json({
       success: true,
-      message: "Purchase order created successfully",
+      message: "Purchase order created successfully (Pending Receive)",
       data: {
         id: purchaseId, order_no,
         supplier_name: supplier.name,
@@ -431,7 +259,8 @@ exports.update = async (req, res) => {
       payment_terms,
       total_amount,
       notes,
-      received_by // ✅ Extract received_by
+      received_by,
+      branch_id,
     } = req.body;
 
     // Get previous status and data
@@ -451,10 +280,63 @@ exports.update = async (req, res) => {
     }
 
     const previousStatus = previousOrder[0]?.status;
-    const branch_name = previousOrder[0]?.branch_name || 'Unknown Branch';
-    const user_name = previousOrder[0]?.user_name || 'Unknown User';
 
-    // ✅ Handle Image Update
+    // ✅ DETECT TARGET BRANCH (Critical for Inventory Update)
+    let targetBranchName = null;
+
+    // 1. Unpack items to check for saved branch
+    let previousItems = [];
+    try { previousItems = JSON.parse(previousOrder[0].items || '[]'); } catch (e) { }
+
+    // Check saved items first
+    if (previousItems.length > 0 && previousItems[0].target_branch_name) {
+      targetBranchName = previousItems[0].target_branch_name;
+    }
+    // Check new items (if passed)
+    if (items && items.length > 0 && items[0].target_branch_name) {
+      targetBranchName = items[0].target_branch_name;
+    }
+    // Fallback to Creator's Branch if not found (Legacy support)
+    if (!targetBranchName) {
+      targetBranchName = previousOrder[0]?.branch_name || 'Head Office';
+    }
+
+    // Override if branch_id is explicitly passed in Update
+    if (branch_id) {
+      try {
+        const [bRes] = await db.query("SELECT name FROM branch WHERE id = :id", { id: branch_id });
+        if (bRes.length > 0) targetBranchName = bRes[0].name;
+        else targetBranchName = branch_id; // Fallback
+      } catch (e) { }
+    }
+
+    // ✅ Determine Target User (Stock Owner) in that Branch
+    let targetUserId = previousOrder[0]?.user_id; // Default to creator
+    const creatorBranch = previousOrder[0]?.branch_name;
+
+    // If we have a specific target branch, try to assign to a user in that branch
+    if (targetBranchName) {
+      try {
+        // Try precise match
+        let [uRes] = await db.query("SELECT id FROM user WHERE branch_name = :b AND is_active = 1 LIMIT 1", { b: targetBranchName });
+
+        // Try LIKE match
+        if (uRes.length === 0) {
+          [uRes] = await db.query("SELECT id FROM user WHERE branch_name LIKE :b AND is_active = 1 LIMIT 1", { b: `%${targetBranchName}%` });
+        }
+
+        if (uRes.length > 0) {
+          targetUserId = uRes[0].id; // Assign to branch user
+        } else {
+          // Only warn if target branch is different from creator branch
+          if (targetBranchName !== creatorBranch) {
+            console.warn(`Warning: No active user found for branch '${targetBranchName}'. Stock will be assigned to Creator (${targetUserId}).`);
+          }
+        }
+      } catch (e) { console.error("Update Branch User Lookup Error", e); }
+    }
+
+    const user_name = previousOrder[0]?.user_name || 'Unknown User';
     const previousImage = previousOrder[0]?.image;
     const image = req.file ? req.file.path : previousImage;
 
@@ -467,34 +349,21 @@ exports.update = async (req, res) => {
     }
 
     // ✅ GET SUPPLIER INFO
-    const [supplierInfo] = await db.query(
-      "SELECT id, name, code FROM supplier WHERE id = :supplier_id",
-      { supplier_id }
-    );
-
-    if (supplierInfo.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid supplier"
-      });
-    }
-
+    const [supplierInfo] = await db.query("SELECT id, name, code FROM supplier WHERE id = :supplier_id", { supplier_id });
+    if (supplierInfo.length === 0) return res.status(400).json({ success: false, message: "Invalid supplier" });
     const supplier = supplierInfo[0];
 
-    // ✅ ADD SUPPLIER INFO TO EACH ITEM
+    // ✅ ADD SUPPLIER & BRANCH INFO TO ITEMS
     const itemsWithSupplier = items.map(item => ({
       ...item,
       supplier_id: supplier.id,
       supplier_name: supplier.name,
-      supplier_code: supplier.code
+      supplier_code: supplier.code,
+      target_branch_name: targetBranchName // ✅ Ensure persistence
     }));
 
-    // Calculate total
-    let calculatedTotal = total_amount || itemsWithSupplier.reduce((sum, item) => {
-      return sum + ((item.quantity || 0) * (item.unit_price || 0));
-    }, 0);
+    let calculatedTotal = total_amount || itemsWithSupplier.reduce((sum, item) => sum + ((item.quantity || 0) * (item.unit_price || 0)), 0);
 
-    // Update purchase order
     const sql = `
       UPDATE purchase SET
         supplier_id = :supplier_id,
@@ -507,6 +376,7 @@ exports.update = async (req, res) => {
         total_amount = :total_amount,
         notes = :notes,
         received_by = :received_by,
+        user_id = :user_id,
         image = :image,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = :id
@@ -524,6 +394,7 @@ exports.update = async (req, res) => {
       total_amount: calculatedTotal,
       notes,
       received_by: received_by || previousOrder[0]?.received_by || null,
+      user_id: targetUserId, // ✅ Update Owner to Branch User
       image: image
     };
 
@@ -602,7 +473,7 @@ ${statusEmoji[status] || '📋'} <b>ស្ថានភាពការទិញ�
 • លេខកូដ: ${supplier.code}
 
 📍 <b>Branch:</b>
-• សាខា: ${branch_name}
+• សាខា: ${targetBranchName}
 • អ្នកកែប្រែ: ${user_name}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -626,7 +497,7 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
         // Send notification (non-blocking)
         sendSmartNotification({
           event_type: 'purchase_status_changed',
-          branch_name: branch_name,
+          branch_name: targetBranchName,
           title: `🔄 Purchase ${order_no} Status: ${statusText[status] || status}`,
           message: telegramMessage,
           severity: status === 'delivered' ? 'high' : 'normal'
@@ -662,56 +533,53 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
               if (byId.length > 0) existingProduct = byId;
             }
 
-            // ✅✅✅ 2. Fallback to Name if ID didn't work
+            // ✅✅✅ 2. Fallback to Name + Branch Scope (✅ Uses verified targetBranchName)
             if (existingProduct.length === 0 && item.product_name) {
-              const [byName] = await db.query(
-                "SELECT id, qty, category_id, actual_price FROM product WHERE name = :product_name LIMIT 1",
-                { product_name: item.product_name }
-              );
+              const [byName] = await db.query(`
+                SELECT id, qty, category_id, actual_price FROM product 
+                WHERE name = :product_name 
+                AND (
+                    (SELECT branch_name FROM user WHERE id = product.user_id) = :branch_name
+                    OR :branch_name = 'Head Office' 
+                )
+                LIMIT 1
+              `, {
+                product_name: item.product_name,
+                branch_name: targetBranchName
+              });
+              // NOTE: The subquery above is a more robust way to check product owner's branch
+              // but simplifies to just checking if product is accessible.
+
               if (byName.length > 0) existingProduct = byName;
+
+              // If still empty, try to match via user scope logic used in Create
+              if (existingProduct.length === 0) {
+                const [byName2] = await db.query(`
+                    SELECT p.id, p.qty, p.category_id, p.actual_price 
+                    FROM product p
+                    LEFT JOIN user u ON p.user_id = u.id
+                    WHERE p.name = :product_name 
+                    AND u.branch_name = :branch_name
+                    LIMIT 1
+                  `, {
+                  product_name: item.product_name,
+                  branch_name: targetBranchName
+                });
+                if (byName2.length > 0) existingProduct = byName2;
+              }
             }
 
             if (existingProduct.length > 0) {
               productId = existingProduct[0].id;
-
-              if (existingProduct[0].actual_price && existingProduct[0].actual_price > 0) {
-                actualPrice = parseFloat(existingProduct[0].actual_price);
-              } else if (item.category_id) {
-                const [categoryInfo] = await db.query(
-                  "SELECT actual_price FROM category WHERE id = :category_id",
-                  { category_id: item.category_id }
-                );
-
-                if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
-                  actualPrice = parseFloat(categoryInfo[0].actual_price);
-                }
+              if (existingProduct[0].actual_price) actualPrice = parseFloat(existingProduct[0].actual_price);
+              else if (item.category_id) {
+                const [cat] = await db.query("SELECT actual_price FROM category WHERE id = :id", { id: item.category_id });
+                if (cat.length) actualPrice = parseFloat(cat[0].actual_price);
               }
-            } else {
-              // If still no product, check category for new product creation
-              if (item.category_id) {
-                const [categoryInfo] = await db.query(
-                  "SELECT actual_price FROM category WHERE id = :category_id",
-                  { category_id: item.category_id }
-                );
-
-                if (categoryInfo && categoryInfo.length > 0 && categoryInfo[0].actual_price) {
-                  actualPrice = parseFloat(categoryInfo[0].actual_price);
-                }
-              }
-            }
-
-            if (existingProduct.length > 0) {
-              productId = existingProduct[0].id; // Ensure we have the ID
 
               await db.query(`
                   UPDATE product 
-                  SET 
-                    qty = qty + :quantity,
-                    unit_price = :unit_price,
-                    supplier_id = :supplier_id,
-                    supplier_name = :supplier_name,
-                    actual_price = :actual_price,
-                    updated_at = CURRENT_TIMESTAMP
+                  SET qty = qty + :quantity, unit_price = :unit_price, supplier_id = :supplier_id, supplier_name = :supplier_name, actual_price = :actual_price, updated_at = CURRENT_TIMESTAMP
                   WHERE id = :id
                 `, {
                 quantity: item.quantity,
@@ -724,38 +592,21 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
 
             } else {
               // Create new product if it really doesn't exist
+
+              if (item.category_id) {
+                const [cat] = await db.query("SELECT actual_price FROM category WHERE id = :id", { id: item.category_id });
+                if (cat.length) actualPrice = parseFloat(cat[0].actual_price);
+              }
+
               const insertProductSql = `
                   INSERT INTO product (
-                    name,
-                    category_id,
-                    qty,
-                    unit_price,
-                    unit,
-                    supplier_id,
-                    supplier_name,
-                    actual_price,
-                    user_id,
-                    create_at,
-                    updated_at,
-                    status,
-                    barcode
+                    name, category_id, qty, unit_price, unit, supplier_id, supplier_name, actual_price, user_id, 
+                    create_at, updated_at, status, barcode
                   ) VALUES (
-                    :name,
-                    :category_id,
-                    :qty,
-                    :unit_price,
-                    'L',
-                    :supplier_id,
-                    :supplier_name,
-                    :actual_price,
-                    :user_id,
-                    CURRENT_TIMESTAMP,
-                    CURRENT_TIMESTAMP,
-                    1,
-                    :barcode
+                    :name, :category_id, :qty, :unit_price, 'L', :supplier_id, :supplier_name, :actual_price, :user_id,
+                    CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, :barcode
                   )
                 `;
-
               const [insertResult] = await db.query(insertProductSql, {
                 name: item.product_name,
                 category_id: item.category_id || null,
@@ -764,47 +615,22 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
                 supplier_id: supplier.id,
                 supplier_name: supplier.name,
                 actual_price: actualPrice,
-                user_id: req.auth?.id || 1,
+                user_id: targetUserId, // ✅ Assign to Target Branch User
                 barcode: `PO${id}-${Date.now()}`
               });
-
               productId = insertResult.insertId;
             }
 
             if (productId) {
-              const inventorySql = `
+              await db.query(`
                   INSERT INTO inventory_transaction (
-                    product_id, 
-                    purchase_id, 
-                    transaction_type, 
-                    quantity, 
-                    unit_price,
-                    selling_price,
-                    actual_price,
-                    reference_no,
-                    supplier_id,
-                    supplier_name,
-                    notes,
-                    user_id, 
-                    created_at
+                    product_id, purchase_id, transaction_type, quantity, unit_price, selling_price, actual_price, reference_no,
+                    supplier_id, supplier_name, notes, user_id, created_at
                   ) VALUES (
-                    :product_id, 
-                    :purchase_id, 
-                    'PURCHASE_IN', 
-                    :quantity,
-                    :unit_price,
-                    :selling_price,
-                    :actual_price,
-                    :reference_no,
-                    :supplier_id,
-                    :supplier_name,
-                    :notes,
-                    :user_id, 
-                    CURRENT_TIMESTAMP
+                    :product_id, :purchase_id, 'PURCHASE_IN', :quantity, :unit_price, :unit_price, :actual_price, :reference_no,
+                    :supplier_id, :supplier_name, :notes, :user_id, NOW()
                   )
-                `;
-
-              await db.query(inventorySql, {
+                `, {
                 product_id: productId,
                 purchase_id: id,
                 quantity: item.quantity,
@@ -815,20 +641,13 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
                 supplier_id: supplier.id,
                 supplier_name: supplier.name,
                 notes: `Purchase from ${supplier.name}`,
-                user_id: req.auth?.id || 1
+                user_id: targetUserId // ✅ Assign tx to Target Branch User
               });
 
-              // ✅ Get product specific data and calculate SUM of transactions (Dashboard style)
-              const [productData] = await db.query(
-                "SELECT actual_price FROM product WHERE id = :id",
-                { id: productId }
-              );
+              // Update item DB object for response/notification
+              const [productData] = await db.query("SELECT actual_price FROM product WHERE id = :id", { id: productId });
               item.actual_price = parseFloat(productData[0]?.actual_price) || actualPrice;
-
-              const [newQtyResult] = await db.query(
-                "SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id",
-                { id: productId }
-              );
+              const [newQtyResult] = await db.query("SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id", { id: productId });
               item.remaining_qty = newQtyResult[0]?.qty || 0;
             }
           }
@@ -866,12 +685,8 @@ ${notes ? `📝 <b>Notes:</b> ${notes}\n` : ''}⏰ <b>Updated at:</b> ${new Date
 ✅ <b>Purchase Order:</b> <code>${order_no}</code>
 ✅ <b>Status:</b> ${status.toUpperCase()}
 
-🏢 <b>Supplier Information:</b>
-• ឈ្មោះ: ${supplier.name}
-• លេខកូដ: ${supplier.code}
-
-📍 <b>Branch:</b>
-• សាខា: ${branch_name}
+🏢 <b>Supplier:</b> ${supplier.name}
+📍 <b>Branch:</b> ${targetBranchName}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 📦 <b>STOCK UPDATES (${totalItems} products)</b>

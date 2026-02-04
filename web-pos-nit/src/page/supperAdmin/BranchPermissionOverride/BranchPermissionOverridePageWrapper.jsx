@@ -39,7 +39,7 @@ const { TextArea } = Input;
 /**
  * Standalone Branch Permission Override Page
  */
-function BranchPermissionOverridePage() {
+function BranchPermissionOverridePage({ isIntegrated = false, initialBranch = null }) {
   const [loading, setLoading] = useState(false);
   const [branches, setBranches] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -60,7 +60,10 @@ function BranchPermissionOverridePage() {
   // ✅ Load initial data on mount
   useEffect(() => {
     loadInitialData();
-  }, []);
+    if (initialBranch) {
+      setSelectedBranch(initialBranch);
+    }
+  }, [initialBranch]);
 
   // ✅ Load overrides when branch and role are selected
   useEffect(() => {
@@ -276,7 +279,7 @@ function BranchPermissionOverridePage() {
   const OverrideMobileCard = ({ override }) => (
     <Card
       className="mb-3 shadow-sm hover:shadow-md transition-shadow"
-      bodyStyle={{ padding: '12px' }}
+      styles={{ body: { padding: '12px' } }}
     >
       <div className="space-y-3">
         <div className="flex items-start justify-between gap-2">
@@ -337,43 +340,47 @@ function BranchPermissionOverridePage() {
   );
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6">
-        {/* Header */}
-        <Card className="mb-4 shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 border-0">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-white text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 sm:gap-3 mb-1">
-                <BranchesOutlined className="text-lg sm:text-xl lg:text-2xl" />
-                <span className="break-words">Branch Permission Override</span>
-              </h1>
-              <p className="text-white text-xs sm:text-sm opacity-90">
-                Customize role permissions for specific branches
-              </p>
+    <div className={`w-full ${!isIntegrated ? 'min-h-screen bg-gray-50' : ''}`}>
+      <div className={`${!isIntegrated ? 'max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-3 sm:py-4 md:py-6' : ''}`}>
+        {/* Header - Only show if standalone */}
+        {!isIntegrated && (
+          <Card className="mb-4 shadow-lg bg-gradient-to-r from-purple-600 to-blue-600 border-0">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-white text-xl sm:text-2xl lg:text-3xl font-bold flex items-center gap-2 sm:gap-3 mb-1">
+                  <BranchesOutlined className="text-lg sm:text-xl lg:text-2xl" />
+                  <span className="break-words">Branch Permission Override</span>
+                </h1>
+                <p className="text-white text-xs sm:text-sm opacity-90">
+                  Customize role permissions for specific branches
+                </p>
+              </div>
+              <Button
+                type="default"
+                size="middle"
+                icon={<ReloadOutlined />}
+                onClick={loadInitialData}
+                loading={loading}
+                className="bg-white text-purple-600 border-0 hover:bg-gray-100 w-full sm:w-auto"
+              >
+                <span className="hidden xs:inline">Reload</span>
+              </Button>
             </div>
-            <Button
-              type="default"
-              size="middle"
-              icon={<ReloadOutlined />}
-              onClick={loadInitialData}
-              loading={loading}
-              className="bg-white text-purple-600 border-0 hover:bg-gray-100 w-full sm:w-auto"
-            >
-              <span className="hidden xs:inline">Reload</span>
-            </Button>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Selection Card */}
-        <Card className="mb-4 shadow-md">
-          <Alert
-            message="Instructions"
-            description="Select a branch and role to view and manage permission overrides for that specific combination. This allows you to customize permissions on a per-branch basis."
-            type="info"
-            showIcon
-            icon={<InfoCircleOutlined />}
-            className="mb-4"
-          />
+        <Card className={`mb-4 shadow-md ${isIntegrated ? 'bg-indigo-50 border-indigo-100' : ''}`}>
+          {!isIntegrated && (
+            <Alert
+              message="Instructions"
+              description="Select a branch and role to view and manage permission overrides for that specific combination. This allows you to customize permissions on a per-branch basis."
+              type="info"
+              showIcon
+              icon={<InfoCircleOutlined />}
+              className="mb-4"
+            />
+          )}
 
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={12}>
@@ -439,8 +446,8 @@ function BranchPermissionOverridePage() {
             </Col>
           </Row>
 
-          {/* Debug Info */}
-          {!loading && (
+          {/* Debug Info - Only show for developers in console if integrated */}
+          {!loading && !isIntegrated && (
             <div className="mt-4 p-3 bg-gray-100 rounded text-xs">
               <strong>Debug Info:</strong><br />
               Branches loaded: {branches.length}<br />

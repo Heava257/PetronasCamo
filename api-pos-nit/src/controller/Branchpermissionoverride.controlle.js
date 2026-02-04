@@ -9,20 +9,27 @@ exports.getBranchOverrides = async (req, res) => {
     const { branch_name, role_id } = req.params;
 
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = ?`,
-      [currentUserId]
-    );
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
+    const isAdmin = req.auth.role_code === 'admin' || req.auth.role_code === 'ADMIN';
 
-    if (!currentUser[0] || currentUser[0].role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        success: false,
-        message: "Only Super Admin can view branch overrides"
-      });
+
+    if (!isSuperAdmin) {
+      // If not super admin, must be admin of the same branch
+      if (!isAdmin) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "Only Super Admin or Branch Admin can view branch overrides"
+        });
+      }
+
+      if (req.auth.branch_name !== branch_name) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "You can only view overrides for your own branch"
+        });
+      }
     }
 
 
@@ -103,22 +110,28 @@ exports.addBranchOverride = async (req, res) => {
     const { branch_name, role_id, permission_id, override_type, reason } = req.body;
 
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name, u.username, u.branch_name 
-       FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = ?`,
-      [currentUserId]
-    );
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
+    const isAdmin = req.auth.role_code === 'admin' || req.auth.role_code === 'ADMIN';
 
-    if (!currentUser[0] || currentUser[0].role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        success: false,
-        message: "Only Super Admin can create branch overrides"
-      });
+
+    if (!isSuperAdmin) {
+      if (!isAdmin) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "Only Super Admin or Branch Admin can create branch overrides"
+        });
+      }
+
+      if (req.auth.branch_name !== branch_name) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "You can only create overrides for your own branch"
+        });
+      }
     }
+
 
     // ✅ Validate override_type
     if (!['add', 'remove'].includes(override_type)) {
@@ -145,6 +158,17 @@ exports.addBranchOverride = async (req, res) => {
         error: true,
         success: false,
         message: "Permission or Role not found"
+      });
+    }
+
+    // 🔒 RESTRICTION: Branch Admin cannot modify permissions for ADMIN or SUPER_ADMIN
+    const targetRoleCode = role[0].code?.toUpperCase();
+    if (!isSuperAdmin && (targetRoleCode === 'ADMIN' || targetRoleCode === 'SUPER_ADMIN')) {
+      return res.status(403).json({
+        error: true,
+        success: false,
+        message: "Branch Managers cannot modify modify permissions for Admin roles.",
+        message_kh: "អ្នកគ្រប់គ្រងសាខាមិនអាចកែប្រែសិទ្ធិរបស់ Admin បានទេ"
       });
     }
 
@@ -217,7 +241,7 @@ exports.addBranchOverride = async (req, res) => {
 ${override_type === 'add' ? '➕' : '➖'} Action: ${override_type.toUpperCase()}
 📝 Reason: ${reason || 'N/A'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-👨‍💼 Created By: ${currentUser[0]?.name}
+👨‍💼 Created By: ${req.auth?.name}
 ⏰ Time: ${new Date().toLocaleString()}
       `;
     } catch (notifError) {
@@ -256,22 +280,6 @@ exports.deleteBranchOverride = async (req, res) => {
     const { override_id } = req.params;
 
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code, u.name FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = ?`,
-      [currentUserId]
-    );
-
-    if (!currentUser[0] || currentUser[0].role_code !== 'SUPER_ADMIN') {
-      return res.status(403).json({
-        error: true,
-        success: false,
-        message: "Only Super Admin can delete branch overrides"
-      });
-    }
-
     // ✅ Get override info before deleting
     const [override] = await db.query(`
       SELECT 
@@ -290,6 +298,40 @@ exports.deleteBranchOverride = async (req, res) => {
         success: false,
         message: "Override not found"
       });
+    }
+
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
+    const isAdmin = req.auth.role_code === 'admin' || req.auth.role_code === 'ADMIN';
+
+
+    if (!isSuperAdmin) {
+      if (!isAdmin) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "Only Super Admin or Branch Admin can delete branch overrides"
+        });
+      }
+
+      if (req.auth.branch_name !== override[0].branch_name) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "You can only delete overrides for your own branch"
+        });
+      }
+
+
+      // 🔒 RESTRICTION: Branch Admin cannot delete overrides for ADMIN or SUPER_ADMIN roles
+      const [targetRole] = await db.query("SELECT code FROM role WHERE id = ?", [override[0].role_id]);
+      const targetRoleCode = targetRole[0]?.code?.toUpperCase();
+      if (targetRole.length > 0 && (targetRoleCode === 'ADMIN' || targetRoleCode === 'SUPER_ADMIN')) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "Branch Managers cannot modify modify permissions for Admin roles."
+        });
+      }
     }
 
     // ✅ Delete override
@@ -316,6 +358,120 @@ exports.deleteBranchOverride = async (req, res) => {
 };
 
 /**
+ * Update branch override
+ */
+exports.updateBranchOverride = async (req, res) => {
+  try {
+    const currentUserId = req.current_id;
+    const { override_id } = req.params;
+    const { override_type, reason } = req.body;
+
+    // ✅ Get override info
+    const [override] = await db.query(`
+      SELECT 
+        bpo.*,
+        r.name as role_name,
+        r.code as role_code,
+        p.name as permission_name
+      FROM branch_permission_overrides bpo
+      INNER JOIN role r ON bpo.role_id = r.id
+      INNER JOIN permissions p ON bpo.permission_id = p.id
+      WHERE bpo.id = ?
+    `, [override_id]);
+
+    if (override.length === 0) {
+      return res.status(404).json({
+        error: true,
+        success: false,
+        message: "Override not found"
+      });
+    }
+
+    // ✅ Verify Permissions
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
+    const isAdmin = req.auth.role_code === 'admin' || req.auth.role_code === 'ADMIN';
+
+    if (!isSuperAdmin) {
+      if (!isAdmin) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "Only Super Admin or Branch Admin can update branch overrides"
+        });
+      }
+
+      if (req.auth.branch_name !== override[0].branch_name) {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "You can only update overrides for your own branch"
+        });
+      }
+
+
+      // 🔒 RESTRICTION: Branch Admin cannot modify permissions for ADMIN or SUPER_ADMIN roles
+      const targetRoleCode = override[0].role_code?.toUpperCase();
+      if (targetRoleCode === 'ADMIN' || targetRoleCode === 'SUPER_ADMIN') {
+        return res.status(403).json({
+          error: true,
+          success: false,
+          message: "Branch Managers cannot modify permissions for Admin roles."
+        });
+      }
+    }
+
+    // ✅ Validate override_type
+    if (override_type && !['add', 'remove'].includes(override_type)) {
+      return res.status(400).json({
+        error: true,
+        success: false,
+        message: "override_type must be 'add' or 'remove'"
+      });
+    }
+
+    // ✅ Update
+    let updateFields = [];
+    let params = [];
+
+    if (override_type) {
+      updateFields.push("override_type = ?");
+      params.push(override_type);
+    }
+    if (reason !== undefined) {
+      updateFields.push("reason = ?");
+      params.push(reason);
+    }
+
+    if (updateFields.length > 0) {
+      params.push(override_id); // for WHERE clause
+      await db.query(
+        `UPDATE branch_permission_overrides SET ${updateFields.join(", ")} WHERE id = ?`,
+        params
+      );
+    }
+
+    return res.json({
+      success: true,
+      message: "Branch override updated successfully",
+      message_kh: "កែប្រែ override បានជោគជ័យ",
+      data: {
+        id: override_id,
+        override_type: override_type || override[0].override_type,
+        reason: reason !== undefined ? reason : override[0].reason
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error in updateBranchOverride:', error);
+    return res.status(500).json({
+      error: true,
+      success: false,
+      message: error.message || "Failed to update branch override"
+    });
+  }
+};
+
+/**
  * Get effective permissions for a user
  */
 exports.getUserEffectivePermissions = async (req, res) => {
@@ -323,16 +479,9 @@ exports.getUserEffectivePermissions = async (req, res) => {
     const currentUserId = req.current_id;
     const { user_id } = req.params;
 
-    // ✅ Verify Super Admin or same user
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = ?`,
-      [currentUserId]
-    );
-
-    const isSuperAdmin = currentUser[0]?.role_code === 'SUPER_ADMIN';
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
     const isSameUser = parseInt(currentUserId) === parseInt(user_id);
+
 
     if (!isSuperAdmin && !isSameUser) {
       return res.status(403).json({
@@ -439,19 +588,15 @@ exports.getBranchOverrideSummary = async (req, res) => {
   try {
     const currentUserId = req.current_id;
 
-    // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = ?`,
-      [currentUserId]
-    );
+    const isSuperAdmin = req.auth.role_code === 'SUPER_ADMIN';
+    const isAdmin = req.auth.role_code === 'admin' || req.auth.role_code === 'ADMIN';
 
-    if (!currentUser[0] || currentUser[0].role_code !== 'SUPER_ADMIN') {
+
+    if (!isSuperAdmin && !isAdmin) {
       return res.status(403).json({
         error: true,
         success: false,
-        message: "Only Super Admin can view branch override summary"
+        message: "Only Super Admin or Branch Admin can view branch override summary"
       });
     }
 
@@ -467,6 +612,7 @@ exports.getBranchOverrideSummary = async (req, res) => {
       FROM user u
       LEFT JOIN branch_permission_overrides bpo ON u.branch_name = bpo.branch_name
       WHERE u.branch_name IS NOT NULL AND u.branch_name != ''
+      ${!isSuperAdmin && isAdmin ? `AND u.branch_name = '${req.auth.branch_name}'` : ''}
       GROUP BY u.branch_name
       ORDER BY u.branch_name
     `);

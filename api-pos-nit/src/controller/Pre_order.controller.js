@@ -1,4 +1,7 @@
-// ✅ pre_order.controller.js - Complete Pre-Order Controller
+// ✅ UPDATED pre_order.controller.js - 3-Stage Workflow Support
+// Stage 1: Initial Order Creation
+// Stage 2: Delivery Recording (from POS/Invoice)
+// Stage 3: Auto-calculated Remaining Quantities
 
 const { db, logError } = require("../util/helper");
 const dayjs = require('dayjs');
@@ -10,6 +13,10 @@ const formatNumber = (num) => {
     maximumFractionDigits: 2
   });
 };
+
+// ========================================
+// STAGE 1: CREATE PRE-ORDER (Initial Order)
+// ========================================
 exports.createPreOrder = async (req, res) => {
   try {
     const {
@@ -19,12 +26,11 @@ exports.createPreOrder = async (req, res) => {
       delivery_time,
       delivery_address,
       special_instructions,
-      products, // [{product_id, qty, price, discount}]
+      products,
       deposit_amount,
       payment_method
     } = req.body;
 
-    // Validation
     if (!pre_order_no) {
       return res.status(400).json({
         success: false,
@@ -40,7 +46,7 @@ exports.createPreOrder = async (req, res) => {
       });
     }
 
-    // ✅ Check if pre_order_no already exists
+    // Check if pre_order_no already exists
     const [existing] = await db.query(
       "SELECT id FROM pre_order WHERE pre_order_no = :pre_order_no",
       { pre_order_no }
@@ -54,7 +60,6 @@ exports.createPreOrder = async (req, res) => {
       });
     }
 
-    // ✅ FIXED: Get customer info with correct column names
     const [customer] = await db.query(
       "SELECT name, tel, address, id_card_number FROM customer WHERE id = :customer_id",
       { customer_id }
@@ -67,7 +72,6 @@ exports.createPreOrder = async (req, res) => {
       });
     }
 
-    // ✅ Get user info for branch and user name
     const [userInfo] = await db.query(
       "SELECT id, name, branch_name FROM user WHERE id = :user_id",
       { user_id: req.auth?.id || 1 }
@@ -76,12 +80,11 @@ exports.createPreOrder = async (req, res) => {
     const branch_name = userInfo[0]?.branch_name || 'Unknown Branch';
     const user_name = userInfo[0]?.name || 'Unknown User';
 
-    // Calculate total amount using CORRECT formula: (qty × price × (1 - discount)) ÷ actual_price
+    // Calculate total amount
     let total_amount = 0;
     const productsWithDetails = [];
 
     for (const product of products) {
-      // Get product details including actual_price
       const [productInfo] = await db.query(`
         SELECT p.id, p.name, p.unit, p.actual_price, c.name as category_name
         FROM product p
@@ -96,7 +99,6 @@ exports.createPreOrder = async (req, res) => {
       const qty = parseFloat(product.qty || 0);
       const price = parseFloat(product.price || 0);
 
-      // ✅ CORRECT FORMULA: (qty × price × (1 - discount)) ÷ actual_price
       const amount = (qty * price * (1 - discount)) / actual_price;
       total_amount += amount;
 
@@ -123,13 +125,14 @@ exports.createPreOrder = async (req, res) => {
         :order_date, :delivery_date, :delivery_time,
         :delivery_address, :special_instructions,
         :total_amount, :deposit_amount, :remaining_amount,
-        :payment_status, 'pending', :created_by, NOW()
+        :payment_status, :status, :created_by, NOW()
       )
     `;
 
     const deposit = parseFloat(deposit_amount || 0);
     const remaining = total_amount - deposit;
     const payment_status = deposit === 0 ? 'unpaid' : deposit >= total_amount ? 'paid' : 'partial';
+    const status_value = req.body.status || 'pending';
     const today = dayjs().format('YYYY-MM-DD');
 
     const [resultPreOrder] = await db.query(sqlPreOrder, {
@@ -146,25 +149,26 @@ exports.createPreOrder = async (req, res) => {
       deposit_amount: deposit,
       remaining_amount: remaining,
       payment_status,
+      status: status_value,
       created_by: req.auth?.id
     });
 
     const pre_order_id = resultPreOrder.insertId;
 
-    // Insert pre-order details
+    // ✅ Insert pre-order details with remaining_qty = qty initially
     for (const product of productsWithDetails) {
       const discount_value = parseFloat(product.discount || 0) / 100;
       const amount = (product.qty * product.price * (1 - discount_value)) / product.actual_price;
 
-      console.log("📝 DEBUG: inserting detail for product:", product.product_name, "Destination:", product.destination);
-
       await db.query(`
         INSERT INTO pre_order_detail (
           pre_order_id, product_id, product_name, category_name,
-          qty, unit, price, discount, amount, remaining_qty, destination
+          qty, unit, price, discount, amount, 
+          delivered_qty, remaining_qty, destination
         ) VALUES (
           :pre_order_id, :product_id, :product_name, :category_name,
-          :qty, :unit, :price, :discount, :amount, :remaining_qty, :destination
+          :qty, :unit, :price, :discount, :amount,
+          0, :qty, :destination
         )
       `, {
         pre_order_id,
@@ -176,7 +180,6 @@ exports.createPreOrder = async (req, res) => {
         price: product.price,
         discount: product.discount || 0,
         amount,
-        remaining_qty: product.qty,
         destination: product.destination || null
       });
     }
@@ -199,17 +202,14 @@ exports.createPreOrder = async (req, res) => {
       });
     }
 
-    // ✅✅✅ SEND TELEGRAM NOTIFICATION (NON-BLOCKING) ✅✅✅
+    // Send Telegram notification
     setImmediate(async () => {
       try {
-
-        // ✅ Format product details with correct calculation
         const productDetails = productsWithDetails.slice(0, 5).map((item, index) => {
           const qty = parseFloat(item.qty || 0);
           const price = parseFloat(item.price || 0);
           const discount = parseFloat(item.discount || 0);
           const actualPrice = parseFloat(item.actual_price || price);
-          const discountAmount = (qty * price * discount) / 100;
           const amount = item.calculated_amount;
 
           return `
@@ -217,28 +217,10 @@ exports.createPreOrder = async (req, res) => {
 • ប្រភេទ: ${item.category_name || 'N/A'}
 • ចំនួន: ${formatNumber(qty)} ${item.unit || 'L'}
 • តម្លៃ: $${formatNumber(price)}/${item.unit || 'L'}
-${discount > 0 ? `• បញ្ចុះតម្លៃ: ${discount}% (-$${formatNumber(discountAmount)})` : ''}• តម្លៃអាហ្វិក (Actual): $${formatNumber(actualPrice)}
-• សរុប: $${formatNumber(amount)}`;
+${discount > 0 ? `• បញ្ចុះតម្លៃ: ${discount}%` : ''}• តម្លៃអាហ្វិក: $${formatNumber(actualPrice)}
+• សរុប: $${formatNumber(amount)}
+${item.destination ? `• គោលដៅ: ${item.destination}` : ''}`;
         }).join('\n\n');
-
-        const remaining_products = productsWithDetails.length > 5
-          ? `\n\n<i>... និង ${productsWithDetails.length - 5} ផលិតផលផ្សេងទៀត</i>`
-          : '';
-
-        const totalQty = productsWithDetails.reduce((sum, i) => sum + parseFloat(i.qty || 0), 0);
-
-        // Payment status emoji
-        const paymentEmoji = {
-          'paid': '✅',
-          'partial': '⚠️',
-          'unpaid': '⏳'
-        };
-
-        const paymentText = {
-          'paid': 'បានបង់ពេញ / Fully Paid',
-          'partial': 'បានបង់ដំបូង / Partial Payment',
-          'unpaid': 'មិនទាន់បង់ / Unpaid'
-        };
 
         const telegramMessage = `
 📝 <b>កម្មង់ទុកថ្មី / New Pre-Order</b>
@@ -246,54 +228,33 @@ ${discount > 0 ? `• បញ្ចុះតម្លៃ: ${discount}% (-$${forma
 
 📋 <b>Order Info:</b>
 • លេខកម្មង់: <code>${pre_order_no}</code>
-• ស្ថានភាពបង់ប្រាក់: ${paymentEmoji[payment_status]} <b>${paymentText[payment_status]}</b>
 • កាលបរិច្ឆេទបង្កើត: ${today}
-${delivery_date ? `• កាលបរិច្ឆេទដឹកជញ្ជូន: ${delivery_date}${delivery_time ? ` ${delivery_time}` : ''}` : ''}
+${delivery_date ? `• កាលបរិច្ឆេទដឹកជញ្ជូន: ${delivery_date}` : ''}
 
-👤 <b>Customer Information:</b>
+👤 <b>Customer:</b>
 • ឈ្មោះ: ${customer[0].name}
 • លេខទូរស័ព្ទ: ${customer[0].tel}
-${customer[0].id_card_number ? `• លេខអត្តសញ្ញាណបណ្ណ: ${customer[0].id_card_number}` : ''}${delivery_address ? `• អាសយដ្ឋាន: ${delivery_address}` : customer[0].address ? `• អាសយដ្ឋាន: ${customer[0].address}` : ''}
+${delivery_address ? `• អាសយដ្ឋាន: ${delivery_address}` : ''}
 
-📍 <b>Branch:</b>
-• សាខា: ${branch_name}
-• បង្កើតដោយ: ${user_name}
+📍 <b>Branch:</b> ${branch_name}
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+📦 <b>PRODUCT DETAILS:</b>
+${productDetails}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-📦 <b>PRODUCT DETAILS (${productsWithDetails.length} items)</b>
-${productDetails}${remaining_products}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-📊 <b>SUMMARY:</b>
-• ផលិតផលសរុប: ${productsWithDetails.length} items
-• បរិមាណសរុប: ${formatNumber(totalQty)} L
-
-💰 <b>PAYMENT DETAILS:</b>
-• តម្លៃសរុប: $${formatNumber(total_amount)}
-${deposit > 0 ? `• ប្រាក់កក់: $${formatNumber(deposit)}\n• នៅសល់: $${formatNumber(remaining)}` : '• មិនទាន់បង់ប្រាក់កក់'}
-
-${special_instructions ? `📝 <b>Special Instructions:</b>\n${special_instructions}\n` : ''}⏰ <b>Created at:</b> ${new Date().toLocaleString('en-US', {
-          timeZone: 'Asia/Phnom_Penh',
-          dateStyle: 'medium',
-          timeStyle: 'short'
-        })}
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+💰 តម្លៃសរុប: $${formatNumber(total_amount)}
+⏰ Created: ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Phnom_Penh' })}
 `;
 
-        const notificationResult = await sendSmartNotification({
-          event_type: 'pre_order_created', // Pre-orders use order_created event
+        await sendSmartNotification({
+          event_type: 'order_created',
           branch_name: branch_name,
           title: `🔖 Pre-Order Created: ${pre_order_no}`,
           message: telegramMessage,
           severity: 'normal'
         });
-
-        if (notificationResult.success) {
-        } else {
-        }
-
       } catch (notifError) {
-        console.error('❌ Pre-Order Telegram error:', notifError);
+        console.error('❌ Telegram notification error:', notifError);
       }
     });
 
@@ -315,73 +276,99 @@ ${special_instructions ? `📝 <b>Special Instructions:</b>\n${special_instructi
     logError("pre_order.createPreOrder", error, res);
   }
 };
-exports.deductPreOrderQty = async (req, res) => {
-  try {
-    const { pre_order_id, delivered_items } = req.body;
 
-    if (!pre_order_id || !delivered_items || !Array.isArray(delivered_items)) {
+// ========================================
+// STAGE 2: RECORD DELIVERY (from POS/Invoice)
+// ========================================
+exports.recordDelivery = async (req, res) => {
+  try {
+    const { pre_order_id, invoice_id, deliveries } = req.body;
+    // deliveries = [{pre_order_detail_id, delivered_qty, destination}]
+
+    if (!pre_order_id || !deliveries || !Array.isArray(deliveries)) {
       return res.status(400).json({
         success: false,
-        message: "pre_order_id and delivered_items array required"
+        message: "pre_order_id and deliveries array required"
       });
     }
 
-    for (const item of delivered_items) {
+    // Validate pre-order exists
+    const [preOrder] = await db.query(
+      "SELECT id, pre_order_no FROM pre_order WHERE id = :id",
+      { id: pre_order_id }
+    );
+
+    if (preOrder.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Pre-order not found"
+      });
+    }
+
+    // Record each delivery
+    for (const delivery of deliveries) {
+      const { pre_order_detail_id, delivered_qty, destination } = delivery;
+
+      if (!pre_order_detail_id || !delivered_qty || delivered_qty <= 0) {
+        continue;
+      }
+
+      // Check remaining quantity
+      const [detail] = await db.query(
+        "SELECT remaining_qty FROM pre_order_detail WHERE id = :id",
+        { id: pre_order_detail_id }
+      );
+
+      if (detail.length === 0) {
+        continue;
+      }
+
+      const remaining = parseFloat(detail[0].remaining_qty || 0);
+      if (delivered_qty > remaining) {
+        return res.status(400).json({
+          success: false,
+          message: `Cannot deliver ${delivered_qty}L - only ${remaining}L remaining`
+        });
+      }
+
+      // Insert delivery record (trigger will update remaining_qty)
       await db.query(`
-        UPDATE pre_order_detail
-        SET remaining_qty = remaining_qty - :qty,
-            delivered_qty = delivered_qty + :qty,
-            updated_at = NOW()
-        WHERE pre_order_id = :pre_order_id
-          AND product_id = :product_id
-          AND remaining_qty >= :qty
+        INSERT INTO pre_order_delivery (
+          pre_order_id, pre_order_detail_id, invoice_id,
+          delivered_qty, delivery_date, destination, created_by
+        ) VALUES (
+          :pre_order_id, :pre_order_detail_id, :invoice_id,
+          :delivered_qty, NOW(), :destination, :created_by
+        )
       `, {
         pre_order_id,
-        product_id: item.product_id,
-        qty: item.qty
+        pre_order_detail_id,
+        invoice_id: invoice_id || null,
+        delivered_qty,
+        destination: destination || null,
+        created_by: req.auth?.id
       });
-    }
-
-    const [remainingItems] = await db.query(`
-      SELECT COUNT(*) as has_remaining
-      FROM pre_order_detail
-      WHERE pre_order_id = :pre_order_id
-        AND remaining_qty > 0
-    `, { pre_order_id });
-
-    if (remainingItems[0].has_remaining === 0) {
-      await db.query(`
-        UPDATE pre_order
-        SET status = 'delivered',
-            updated_at = NOW()
-        WHERE id = :pre_order_id
-      `, { pre_order_id });
-    } else {
-      await db.query(`
-        UPDATE pre_order
-        SET status = 'partially_delivered',
-            updated_at = NOW()
-        WHERE id = :pre_order_id
-      `, { pre_order_id });
     }
 
     res.json({
       success: true,
-      message: "Pre-order quantities updated successfully",
-      fully_delivered: remainingItems[0].has_remaining === 0
+      message: "Delivery recorded successfully",
+      message_kh: "បានកត់ត្រាការដឹកជញ្ជូនជោគជ័យ"
     });
 
   } catch (error) {
-    logError("pre_order.deductPreOrderQty", error, res);
+    logError("pre_order.recordDelivery", error, res);
   }
 };
 
+// ========================================
+// GET PRE-ORDER LIST (with 3-stage data)
+// ========================================
 exports.getPreOrderList = async (req, res) => {
   try {
     const { status, customer_id, from_date, to_date } = req.query;
     const user_id = req.auth?.id;
 
-    // ✅ Get current user info for permission check
     const [currentUser] = await db.query(
       "SELECT role_id, branch_name FROM user WHERE id = :user_id",
       { user_id }
@@ -394,25 +381,20 @@ exports.getPreOrderList = async (req, res) => {
     const { role_id, branch_name } = currentUser[0];
     const isSuperAdmin = role_id === 29;
 
-    // Base SQL
     let sql = `
-          SELECT
-            po.*,
-            (SELECT COUNT(*) FROM pre_order_detail WHERE pre_order_id = po.id) as item_count,
-            (SELECT GROUP_CONCAT(product_name SEPARATOR ', ') FROM pre_order_detail WHERE pre_order_id = po.id) as products_display,
-            (SELECT SUM(qty) FROM pre_order_detail WHERE pre_order_id = po.id) as total_qty,
-            (SELECT price FROM pre_order_detail WHERE pre_order_id = po.id LIMIT 1) as first_price,
-            u_creator.branch_name as creator_branch,
-            u_confirmed.name as confirmed_by_name
-          FROM pre_order po
-          LEFT JOIN user u_creator ON po.created_by = u_creator.id
-          LEFT JOIN user u_confirmed ON po.confirmed_by = u_confirmed.id
-          WHERE 1=1
-        `;
+      SELECT
+        po.*,
+        (SELECT COUNT(*) FROM pre_order_detail WHERE pre_order_id = po.id) as item_count,
+        u_creator.branch_name as creator_branch,
+        u_confirmed.name as confirmed_by_name
+      FROM pre_order po
+      LEFT JOIN user u_creator ON po.created_by = u_creator.id
+      LEFT JOIN user u_confirmed ON po.confirmed_by = u_confirmed.id
+      WHERE 1=1
+    `;
 
     const params = {};
 
-    // ✅ Filter by branch for non-Super Admins
     if (!isSuperAdmin) {
       sql += ` AND u_creator.branch_name = :branch_name`;
       params.branch_name = branch_name;
@@ -442,6 +424,46 @@ exports.getPreOrderList = async (req, res) => {
 
     const [list] = await db.query(sql, params);
 
+    // ✅ Fetch details with 3-stage data
+    if (list.length > 0) {
+      const ids = list.map(item => item.id);
+
+      const [details] = await db.query(`
+        SELECT 
+          pod.pre_order_id,
+          pod.qty,
+          pod.delivered_qty,
+          pod.remaining_qty,
+          pod.price,
+          pod.destination,
+          p.name as product_name,
+          COALESCE(p.actual_price, 1) as actual_price
+        FROM pre_order_detail pod
+        LEFT JOIN product p ON pod.product_id = p.id
+        WHERE pod.pre_order_id IN (:ids)
+      `, { ids });
+
+      const detailsMap = {};
+      for (const d of details) {
+        if (!detailsMap[d.pre_order_id]) {
+          detailsMap[d.pre_order_id] = [];
+        }
+        detailsMap[d.pre_order_id].push({
+          product_name: d.product_name,
+          qty: d.qty,
+          delivered_qty: d.delivered_qty,
+          remaining_qty: d.remaining_qty,
+          price: d.price,
+          actual_price: d.actual_price,
+          destination: d.destination
+        });
+      }
+
+      for (const item of list) {
+        item.details_json = detailsMap[item.id] || [];
+      }
+    }
+
     res.json({
       success: true,
       list,
@@ -457,6 +479,9 @@ exports.getPreOrderList = async (req, res) => {
   }
 };
 
+// ========================================
+// GET PRE-ORDER BY ID
+// ========================================
 exports.getPreOrderById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -475,17 +500,26 @@ exports.getPreOrderById = async (req, res) => {
 
     const [details] = await db.query(
       `SELECT 
-                pod.*, 
-                p.actual_price as product_actual_price,
-                p.category_id,
-                p.qty as available_qty,
-                p.supplier_name,
-                c.actual_price as category_actual_price,
-                c.name as category_name
-             FROM pre_order_detail pod 
-             LEFT JOIN product p ON pod.product_id = p.id 
-             LEFT JOIN category c ON p.category_id = c.id
-             WHERE pod.pre_order_id = :id`,
+        pod.*, 
+        p.actual_price as product_actual_price,
+        p.category_id,
+        p.qty as available_qty,
+        c.name as category_name
+      FROM pre_order_detail pod 
+      LEFT JOIN product p ON pod.product_id = p.id 
+      LEFT JOIN category c ON p.category_id = c.id
+      WHERE pod.pre_order_id = :id`,
+      { id }
+    );
+
+    const [deliveries] = await db.query(
+      `SELECT 
+        d.*,
+        u.name as delivered_by_name
+      FROM pre_order_delivery d
+      LEFT JOIN user u ON d.created_by = u.id
+      WHERE d.pre_order_id = :id
+      ORDER BY d.delivery_date DESC`,
       { id }
     );
 
@@ -494,26 +528,12 @@ exports.getPreOrderById = async (req, res) => {
       { id }
     );
 
-    const processedDetails = details.map(detail => {
-      let actual_price = 1000;
-
-      if (detail.product_actual_price && detail.product_actual_price > 0) {
-        actual_price = parseFloat(detail.product_actual_price);
-      } else if (detail.category_actual_price && detail.category_actual_price > 0) {
-        actual_price = parseFloat(detail.category_actual_price);
-      }
-
-      return {
-        ...detail,
-        actual_price: actual_price
-      };
-    });
-
     res.json({
       success: true,
       data: {
         ...preOrder[0],
-        details: processedDetails,
+        details,
+        deliveries,
         payments
       }
     });
@@ -522,52 +542,10 @@ exports.getPreOrderById = async (req, res) => {
     logError("pre_order.getPreOrderById", error, res);
   }
 };
-exports.convertToOrder = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const [preOrder] = await db.query(
-      "SELECT * FROM pre_order WHERE id = :id AND status IN ('confirmed', 'ready')",
-      { id }
-    );
-
-    if (preOrder.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Pre-order not found or not ready to convert"
-      });
-    }
-
-    const [details] = await db.query(
-      "SELECT * FROM pre_order_detail WHERE pre_order_id = :id",
-      { id }
-    );
-
-    res.json({
-      success: true,
-      message: "Pre-order data ready for POS",
-      data: {
-        pre_order_id: id,
-        pre_order_no: preOrder[0].pre_order_no,
-        customer_id: preOrder[0].customer_id,
-        customer_name: preOrder[0].customer_name,
-        customer_tel: preOrder[0].customer_tel,
-        products: details.map(d => ({
-          product_id: d.product_id,
-          product_name: d.product_name,
-          qty: d.remaining_qty,
-          price: d.price,
-          discount: d.discount,
-          description: d.description
-        })),
-        total_amount: preOrder[0].remaining_amount || preOrder[0].total_amount
-      }
-    });
-
-  } catch (error) {
-    logError("pre_order.convertToOrder", error, res);
-  }
-};
+// ========================================
+// UPDATE STATUS
+// ========================================
 exports.updateStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -595,11 +573,11 @@ exports.updateStatus = async (req, res) => {
 
     if (status === 'ready') {
       const [details] = await db.query(`
-                SELECT pod.product_id, pod.remaining_qty, p.name, p.qty as available_qty
-                FROM pre_order_detail pod
-                INNER JOIN product p ON pod.product_id = p.id
-                WHERE pod.pre_order_id = :id
-            `, { id });
+        SELECT pod.product_id, pod.remaining_qty, p.name, p.qty as available_qty
+        FROM pre_order_detail pod
+        INNER JOIN product p ON pod.product_id = p.id
+        WHERE pod.pre_order_id = :id
+      `, { id });
 
       for (const item of details) {
         const required = Number(item.remaining_qty || 0);
@@ -627,7 +605,6 @@ exports.updateStatus = async (req, res) => {
       new_notes: notes || `Status changed to ${status}`
     };
 
-    // ✅ If confirming, save who did it
     if (status === 'confirmed') {
       sql = `
         UPDATE pre_order SET
@@ -652,26 +629,10 @@ exports.updateStatus = async (req, res) => {
     logError("pre_order.updateStatus", error, res);
   }
 };
-exports.checkDuplicate = async (req, res) => {
-  try {
-    const { no } = req.query;
-    if (!no) {
-      return res.json({ exists: false });
-    }
 
-    const [existing] = await db.query(
-      "SELECT id FROM pre_order WHERE pre_order_no = :no",
-      { no }
-    );
-
-    res.json({
-      exists: existing.length > 0
-    });
-  } catch (error) {
-    logError("pre_order.checkDuplicate", error, res);
-  }
-};
-
+// ========================================
+// UPDATE PRE-ORDER
+// ========================================
 exports.updatePreOrder = async (req, res) => {
   try {
     const { id } = req.params;
@@ -684,7 +645,6 @@ exports.updatePreOrder = async (req, res) => {
       deposit_amount
     } = req.body;
 
-    // ✅ Verify pre-order exists and is still pending
     const [existing] = await db.query(
       "SELECT status, total_amount FROM pre_order WHERE id = :id",
       { id }
@@ -706,21 +666,17 @@ exports.updatePreOrder = async (req, res) => {
       });
     }
 
-    // ✅ Recalculate total if products changed
     let total_amount = existing[0].total_amount;
 
     if (products && products.length > 0) {
       total_amount = 0;
 
-      // Delete old details
       await db.query(
         "DELETE FROM pre_order_detail WHERE pre_order_id = :id",
         { id }
       );
 
-      // Insert new details
       for (const product of products) {
-        // Get product info
         const [productInfo] = await db.query(`
           SELECT p.id, p.name, p.unit, p.actual_price, c.name as category_name
           FROM product p
@@ -728,45 +684,25 @@ exports.updatePreOrder = async (req, res) => {
           WHERE p.id = :product_id
         `, { product_id: product.product_id });
 
-        if (productInfo.length === 0) {
-          continue;
-        }
+        if (productInfo.length === 0) continue;
 
         const actual_price = parseFloat(productInfo[0].actual_price || product.price || 1000);
         const discount = parseFloat(product.discount || 0) / 100;
         const qty = parseFloat(product.qty || 0);
         const price = parseFloat(product.price || 0);
 
-        // ✅ CORRECT FORMULA: (qty × price × (1 - discount)) ÷ actual_price
         const amount = (qty * price * (1 - discount)) / actual_price;
         total_amount += amount;
 
-        // ✅ FIXED: Insert WITHOUT 'description' field, but WITH 'destination'
         await db.query(`
           INSERT INTO pre_order_detail (
-            pre_order_id,
-            product_id,
-            product_name,
-            category_name,
-            qty,
-            unit,
-            price,
-            discount,
-            amount,
-            remaining_qty,
-            destination 
+            pre_order_id, product_id, product_name, category_name,
+            qty, unit, price, discount, amount,
+            delivered_qty, remaining_qty, destination
           ) VALUES (
-            :pre_order_id,
-            :product_id,
-            :product_name,
-            :category_name,
-            :qty,
-            :unit,
-            :price,
-            :discount,
-            :amount,
-            :remaining_qty,
-            :destination
+            :pre_order_id, :product_id, :product_name, :category_name,
+            :qty, :unit, :price, :discount, :amount,
+            0, :qty, :destination
           )
         `, {
           pre_order_id: id,
@@ -778,14 +714,11 @@ exports.updatePreOrder = async (req, res) => {
           price: price,
           discount: product.discount || 0,
           amount: amount,
-          remaining_qty: qty,
-          destination: product.destination || null // ✅ Add destination
+          destination: product.destination || null
         });
-
       }
     }
 
-    // Calculate payment status
     const deposit = parseFloat(deposit_amount || 0);
     const remaining = total_amount - deposit;
     let payment_status = 'unpaid';
@@ -798,7 +731,6 @@ exports.updatePreOrder = async (req, res) => {
       payment_status = 'partial';
     }
 
-    // ✅ Update pre_order table
     await db.query(`
       UPDATE pre_order SET
         delivery_date = :delivery_date,
@@ -823,8 +755,6 @@ exports.updatePreOrder = async (req, res) => {
       payment_status: payment_status
     });
 
-
-
     res.json({
       success: true,
       message: "Pre-order updated successfully",
@@ -839,37 +769,76 @@ exports.updatePreOrder = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ Error in updatePreOrder:', error);
     logError("pre_order.updatePreOrder", error, res);
   }
 };
+
+// ========================================
+// DELETE PRE-ORDER
+// ========================================
 exports.deletePreOrder = async (req, res) => {
   try {
     const { id } = req.params;
 
     const [existing] = await db.query("SELECT status FROM pre_order WHERE id = :id", { id });
-    if (existing.length === 0) return res.status(404).json({ success: false, message: "Not found" });
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: "Not found" });
+    }
+    
     if (!['pending', 'cancelled'].includes(existing[0].status)) {
-      return res.status(400).json({ success: false, message: "Cannot delete active pre-orders" });
+      return res.status(400).json({ 
+        success: false, 
+        message: "Cannot delete active pre-orders",
+        message_kh: "មិនអាចលុបកម្មង់ដែលកំពុងដំណើរការ"
+      });
     }
 
+    await db.query("DELETE FROM pre_order_delivery WHERE pre_order_id = :id", { id });
     await db.query("DELETE FROM pre_order_detail WHERE pre_order_id = :id", { id });
     await db.query("DELETE FROM pre_order_payment WHERE pre_order_id = :id", { id });
     await db.query("DELETE FROM pre_order WHERE id = :id", { id });
 
-    res.json({ success: true, message: "Pre-order deleted successfully" });
+    res.json({ 
+      success: true, 
+      message: "Pre-order deleted successfully",
+      message_kh: "បានលុបកម្មង់ជោគជ័យ"
+    });
   } catch (error) {
     logError("pre_order.deletePreOrder", error, res);
   }
 };
 
+// ========================================
+// HELPER: Check Duplicate PO Number
+// ========================================
+exports.checkDuplicate = async (req, res) => {
+  try {
+    const { no } = req.query;
+    if (!no) {
+      return res.json({ exists: false });
+    }
 
+    const [existing] = await db.query(
+      "SELECT id FROM pre_order WHERE pre_order_no = :no",
+      { no }
+    );
+
+    res.json({
+      exists: existing.length > 0
+    });
+  } catch (error) {
+    logError("pre_order.checkDuplicate", error, res);
+  }
+};
+
+// ========================================
+// ADD PAYMENT
+// ========================================
 exports.addPayment = async (req, res) => {
   try {
     const { id } = req.params;
     const { amount, payment_method, payment_type, reference_no, notes } = req.body;
 
-    // Get current pre-order
     const [preOrder] = await db.query(
       "SELECT * FROM pre_order WHERE id = :id",
       { id }
@@ -893,7 +862,6 @@ exports.addPayment = async (req, res) => {
       payment_status = 'unpaid';
     }
 
-    // Insert payment record
     await db.query(`
       INSERT INTO pre_order_payment (
         pre_order_id, payment_date, amount,
@@ -912,7 +880,6 @@ exports.addPayment = async (req, res) => {
       created_by: req.auth?.id
     });
 
-    // Update pre-order
     await db.query(`
       UPDATE pre_order SET
         deposit_amount = :deposit_amount,

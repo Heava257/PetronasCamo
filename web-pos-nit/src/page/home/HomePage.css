@@ -145,20 +145,34 @@
 ======================================== */
 .metrics-row {
   margin-bottom: 1.5rem;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: stretch !important;
+}
+
+.metrics-row .ant-col {
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .metric-card {
-  height: 100%;
-  min-height: 180px;
-  /* ← EQUAL HEIGHT! */
+  flex: 1 !important;
+  height: 100% !important;
+  width: 100% !important;
+  min-height: 280px !important;
+  /* Cleaner, tighter height */
   background: var(--card-bg) !important;
   border: none !important;
   border-radius: 16px !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   cursor: pointer;
-  /* ← CLICKABLE! */
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden;
 }
+
+
 
 .metric-card:hover {
   transform: translateY(-4px);
@@ -166,35 +180,47 @@
 }
 
 .metric-card .ant-card-body {
-  padding: 20px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  padding: 24px !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  /* Space content and footer */
+}
+
+.metric-value-section {
+  flex: 1;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px 0;
+  width: 100%;
 }
 
 .metric-card-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 8px;
-  flex: 1;
-}
-
-.metric-card-content {
-  flex: 1;
+  flex-shrink: 0;
+  width: 100%;
 }
 
 .metric-label {
   color: var(--text-secondary);
   font-size: 13px;
   display: block;
+  min-height: 20px;
 }
 
 .metric-value {
   color: var(--text-primary) !important;
-  margin: 8px 0 0 0 !important;
-  font-size: 28px !important;
+  margin: 0 !important;
+  font-size: 32px !important;
+  /* Slightly smaller for cleaner look */
   font-weight: 700 !important;
+  text-align: center;
+  width: 100%;
 }
 
 .metric-icon-wrapper {
@@ -206,7 +232,8 @@
 }
 
 .metric-card-footer {
-  margin-top: 12px;
+  margin-top: auto;
+  /* Push the footer to the bottom */
   padding-top: 12px;
   border-top: 1px solid var(--border-color);
 }

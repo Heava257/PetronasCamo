@@ -120,7 +120,7 @@ export const modernTemplate = {
     sidebar: {
         background: 'rgba(255, 255, 255, 0.8)',
         textColor: '#64748b',
-        textColorActive: '#3b82f6',
+        textColorActive: '#ffffff',
         itemHoverBg: 'rgba(59, 130, 246, 0.08)',
         itemActiveBg: '#3b82f6'
     },

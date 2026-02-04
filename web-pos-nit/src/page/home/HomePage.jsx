@@ -19,7 +19,8 @@ import {
   EyeOutlined,
   UsergroupAddOutlined,
   ArrowRightOutlined,
-  PrinterOutlined
+  PrinterOutlined,
+  SafetyCertificateOutlined
 } from "@ant-design/icons";
 import {
   AreaChart,
@@ -47,7 +48,7 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 function HomePage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const profile = getProfile();
   const navigate = useNavigate();
   const { isDarkMode } = useSettings();
@@ -192,7 +193,10 @@ function HomePage() {
   // In HomePage.jsx - Add new title mapping
   const getCardIcon = (title) => {
     const iconMap = {
+      'អ្នកគ្រប់គ្រងប្រព័ន្ធ': <SafetyCertificateOutlined />,
       'អ្នកប្រើប្រាស់': <TeamOutlined />,
+      'បុគ្គលិក': <UsergroupAddOutlined />,
+      'សាខាស្ថាប័ន': <ShopOutlined />,
       'អតិថិជន': <UserOutlined />,
       'ប្រព័ន្ធចំណាយទូទៅ': <WalletOutlined />,
       'ផលិតផល': <ShopOutlined />,
@@ -204,7 +208,10 @@ function HomePage() {
 
   const getCardRoute = (title) => {
     const routeMap = {
+      'អ្នកគ្រប់គ្រងប្រព័ន្ធ': '/admin-management',
       'អ្នកប្រើប្រាស់': '/user',
+      'បុគ្គលិក': '/employee',
+      'សាខាស្ថាប័ន': '/',
       'អតិថិជន': '/customer',
       'ប្រព័ន្ធចំណាយទូទៅ': '/expense',
       'ផលិតផល': '/product',
@@ -316,10 +323,51 @@ function HomePage() {
     window.print();
   };
 
+  const formatDisplayValue = (val) => {
+    if (typeof val !== 'string') return val?.toLocaleString() || '0';
+
+    // Check if it's a price string (ends with $)
+    if (val.endsWith('$')) {
+      const numPart = val.replace('$', '').replace(/,/g, '');
+      const num = parseFloat(numPart);
+      if (!isNaN(num)) {
+        return num.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        }) + '$';
+      }
+    }
+
+    // Check if it's a number string
+    const num = parseFloat(val.replace(/,/g, ''));
+    if (!isNaN(num) && /^\d+(\.\d+)?$/.test(val.replace(/,/g, ''))) {
+      return num.toLocaleString();
+    }
+
+    return val;
+  };
+
   const getMainValue = (summary) => {
     if (!summary) return '0';
-    const firstKey = Object.keys(summary)[0];
-    return summary[firstKey] || '0';
+    const keys = Object.keys(summary);
+    if (keys.length === 0) return '0';
+
+    // Priority keys for main display - check for substrings to be safer with Khmer
+    const priorityKeys = ['សរុប', 'Total', 'តម្លៃ', 'Amount', 'ចំនួន', 'Count'];
+    const bestKey = keys.find(k => priorityKeys.some(pk => k.includes(pk))) || keys[0];
+
+    let val = summary[bestKey] || '0';
+
+    // If selected value is a date range or current stock text, try to find a better one (a price or number)
+    if (typeof val === 'string' && (val.includes(' - ') || val.toLowerCase().includes('stock')) && keys.length > 1) {
+      const betterKey = keys.find(k => {
+        const v = summary[k]?.toString() || '';
+        return !v.includes(' - ') && !v.toLowerCase().includes('stock');
+      });
+      if (betterKey) val = summary[betterKey];
+    }
+
+    return formatDisplayValue(val);
   };
 
   // Handle card click
@@ -595,31 +643,26 @@ function HomePage() {
               const isUserCard = item.title === 'អ្នកប្រើប្រាស់';
 
               return (
-                <Col xs={24} sm={12} lg={index < 4 ? 6 : 24} key={index}>
+                <Col xs={24} sm={12} lg={index < 4 ? 6 : 12} key={index}>
                   <Card
                     hoverable
                     className="metric-card"
                     onClick={() => handleCardClick(item.title)}
                   >
                     <div className="metric-card-header">
-                      <div className="metric-card-content">
-                        <Text className="metric-label">
-                          {t(item.title)}
-                          {isUserCard && userDetails && (
-                            <EyeOutlined
-                              style={{
-                                marginLeft: 8,
-                                fontSize: 12,
-                                color: '#3b82f6',
-                                cursor: 'pointer'
-                              }}
-                            />
-                          )}
-                        </Text>
-                        <Title level={3} className="metric-value">
-                          {typeof mainValue === 'string' ? mainValue.replace(/នាក់/g, t('People')).replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female')) : mainValue}
-                        </Title>
-                      </div>
+                      <Text className="metric-label">
+                        {t(item.title)}
+                        {isUserCard && userDetails && (
+                          <EyeOutlined
+                            style={{
+                              marginLeft: 8,
+                              fontSize: 12,
+                              color: '#3b82f6',
+                              cursor: 'pointer'
+                            }}
+                          />
+                        )}
+                      </Text>
                       <div
                         className="metric-icon-wrapper"
                         style={{ background: cardColor.bg }}
@@ -630,12 +673,24 @@ function HomePage() {
                       </div>
                     </div>
 
+                    <div className="metric-value-section">
+                      <Title level={3} className="metric-value">
+                        {typeof mainValue === 'string' ?
+                          mainValue.replace(/នាក់/g, '').replace(/People/g, '').trim()
+                            .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
+                          : mainValue}
+                      </Title>
+                    </div>
+
                     <div className="metric-card-footer">
                       {Object.entries(item.Summary).slice(1, 3).map(([key, value], idx) => (
                         <div key={idx} className="metric-detail-row">
                           <Text className="metric-detail-label">{t(key)}:</Text>
                           <Text className="metric-detail-value">
-                            {typeof value === 'string' ? value.replace(/នាក់/g, t('People')).replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female')) : value}
+                            {typeof value === 'string' ?
+                              formatDisplayValue(value).replace(/នាក់/g, '').replace(/People/g, '').trim()
+                                .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
+                              : formatDisplayValue(value)}
                           </Text>
                         </div>
                       ))}
@@ -663,145 +718,7 @@ function HomePage() {
             })}
           </Row>
 
-          {/* Rest of the dashboard - Welcome, Gauges, Charts */}
-          <Row gutter={[24, 24]} className="welcome-row">
-            <Col xs={24} lg={12}>
-              <Card className="welcome-card">
-                <div className="welcome-bg-gradient" />
-                <div className="welcome-content">
-                  <Text className="welcome-greeting">
-                    {getGreeting()},
-                  </Text>
-                  <Title level={2} className="welcome-name">
-                    {profile?.name || 'User'}
-                  </Title>
-                  <Text className="welcome-message">
-                    {t('Glad to see you again!')}
-                    <br />
-                    {t('Check your dashboard metrics below.')}
-                  </Text>
 
-                  {dashboard.length > 0 && (
-                    <div className="welcome-stats">
-                      <Row gutter={[12, 12]}>
-                        <Col span={12}>
-                          <Text className="welcome-stat-label">
-                            {t('Total Records')}
-                          </Text>
-                          <div className="welcome-stat-value primary">
-                            {dashboard.reduce((sum, item) => {
-                              const val = getMainValue(item.Summary);
-                              // Extract first number from string (e.g., "4 នាក់" → 4)
-                              const match = val.match(/\d+/);
-                              const num = match ? parseInt(match[0], 10) : 0;
-                              return sum + num;
-                            }, 0).toLocaleString()}
-                          </div>
-                        </Col>
-                        <Col span={12}>
-                          <Text className="welcome-stat-label">
-                            {t('Data Sources')}
-                          </Text>
-                          <div className="welcome-stat-value success">
-                            {dashboard.length}
-                          </div>
-                        </Col>
-                      </Row>
-                    </div>
-                  )}
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="gauge-card">
-                <Title level={5} className="gauge-title">
-                  {t('Performance Rate')}
-                </Title>
-                <Text className="gauge-subtitle">
-                  {t('Based on sales data')}
-                </Text>
-
-                <div className="gauge-chart-container">
-                  <ResponsiveContainer width="100%" height={140}>
-                    <RadialBarChart
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="70%"
-                      outerRadius="100%"
-                      data={satisfactionData}
-                      startAngle={90}
-                      endAngle={-270}
-                    >
-                      <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                      <RadialBar
-                        background
-                        dataKey="value"
-                        cornerRadius={10}
-                        fill="#3b82f6"
-                      />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
-                  <div className="gauge-value-overlay">
-                    <Title level={1} className="gauge-percentage">
-                      {satisfactionRate}%
-                    </Title>
-                  </div>
-                </div>
-
-                <div className="gauge-info">
-                  <Text className="gauge-info-text">
-                    {saleByMonth.length} {t('months of data')}
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-
-            <Col xs={24} sm={12} lg={6}>
-              <Card className="gauge-card">
-                <Title level={5} className="gauge-title">
-                  {t('Customer Score')}
-                </Title>
-                <Text className="gauge-subtitle">
-                  {t('Overall rating')}
-                </Text>
-
-                <div className="gauge-chart-container">
-                  <ResponsiveContainer width="100%" height={100}>
-                    <RadialBarChart
-                      cx="50%"
-                      cy="50%"
-                      innerRadius="70%"
-                      outerRadius="100%"
-                      data={customerScoreData}
-                      startAngle={180}
-                      endAngle={0}
-                    >
-                      <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                      <RadialBar
-                        background
-                        dataKey="value"
-                        cornerRadius={10}
-                        fill="#10b981"
-                      />
-                    </RadialBarChart>
-                  </ResponsiveContainer>
-                  <div className="gauge-value-overlay score">
-                    <Title level={1} className="gauge-score">
-                      {customerScore}
-                    </Title>
-                    <Text className="gauge-score-divider">/ 10</Text>
-                  </div>
-                </div>
-
-                <div className="gauge-info">
-                  <Text className="gauge-info-text">
-                    {dashboard.find(d => d.title === 'អតិថិជន')?.Summary?.['សរុប'] || '0'}
-                  </Text>
-                </div>
-              </Card>
-            </Col>
-          </Row>
 
           <Row gutter={[24, 24]} className="charts-row">
             <Col xs={24} lg={14}>

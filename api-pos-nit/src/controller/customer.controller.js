@@ -12,6 +12,7 @@ exports.getListByCurrentUserGroup = async (req, res) => {
     let sql = `
       SELECT 
         c.id, 
+        c.code,
         c.name, 
         c.gender, 
         c.tel, 
@@ -44,11 +45,11 @@ exports.getListByCurrentUserGroup = async (req, res) => {
     }
 
     if (txtSearch) {
-      sql += " AND (c.name LIKE :txtSearch OR c.tel LIKE :txtSearch OR c.email LIKE :txtSearch)";
+      sql += " AND (c.name LIKE :txtSearch OR c.tel LIKE :txtSearch OR c.email LIKE :txtSearch OR c.code LIKE :txtSearch)";
       params.txtSearch = `%${txtSearch}%`;
     }
 
-    sql += " ORDER BY c.create_at DESC";
+    sql += " ORDER BY c.create_at ASC";
 
     const [list] = await db.query(sql, params);
 
@@ -85,6 +86,7 @@ exports.getDetailById = async (req, res) => {
     const customerSql = `
       SELECT 
         c.id, 
+        c.code,
         c.name, 
         c.gender, 
         c.tel, 
@@ -452,6 +454,7 @@ exports.create = async (req, res) => {
   try {
     const {
       name,
+      code,
       tel,
       email,
       address,
@@ -498,19 +501,44 @@ exports.create = async (req, res) => {
       });
     }
 
+    let customerCode = code;
+    if (!customerCode) {
+      const [maxCodeResult] = await db.query(
+        "SELECT code FROM customer WHERE code LIKE 'C%' ORDER BY id DESC LIMIT 1"
+      );
+      let nextNum = 1;
+      if (maxCodeResult.length > 0) {
+        const lastCode = maxCodeResult[0].code;
+        const match = lastCode.match(/\d+/);
+        if (match) {
+          nextNum = parseInt(match[0]) + 1;
+        }
+      }
+      customerCode = `C${String(nextNum).padStart(4, '0')}`;
+    } else {
+      const [existingCode] = await db.query(`SELECT id FROM customer WHERE code = ?`, [customerCode]);
+      if (existingCode.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: true,
+          message: "កូដអតិថិជននេះមានរួចហើយ។ សូមប្រើកូដផ្សេង។"
+        });
+      }
+    }
+
     const sql = `
       INSERT INTO customer 
-      (name, tel, email, address, type, gender, create_by, user_id,
+      (name, code, tel, email, address, type, gender, create_by, user_id,
        id_card_number, id_card_expiry, spouse_name, spouse_tel, 
        guarantor_name, guarantor_tel, status, branch_name)
       VALUES 
-      (?, ?, ?, ?, ?, ?, ?, ?,
+      (?, ?, ?, ?, ?, ?, ?, ?, ?,
        ?, ?, ?, ?, 
        ?, ?, ?, ?)
     `;
 
     const params = [
-      name, tel, email, address || null, type, gender || null, createdBy, userId,
+      name, customerCode || null, tel, email, address || null, type, gender || null, createdBy, userId,
       id_card_number || null, id_card_expiry || null, spouse_name || null, spouse_tel || null,
       guarantor_name || null, guarantor_tel || null, status, branch_name
     ];
@@ -651,6 +679,7 @@ exports.update = async (req, res) => {
     const { id } = req.params;
     const {
       name,
+      code,
       tel,
       email,
       address,
@@ -714,9 +743,20 @@ exports.update = async (req, res) => {
       });
     }
 
+    if (code) {
+      const [existingCode] = await db.query(`SELECT id FROM customer WHERE code = ? AND id != ?`, [code, id]);
+      if (existingCode && existingCode.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: true,
+          message: "កូដអតិថិជននេះមានរួចហើយ។ សូមប្រើកូដផ្សេង។",
+        });
+      }
+    }
+
     const sql = `
       UPDATE customer 
-      SET name = ?, tel = ?, email = ?, address = ?, type = ?,
+      SET name = ?, code = ?, tel = ?, email = ?, address = ?, type = ?,
           gender = ?, id_card_number = ?, id_card_expiry = ?,
           spouse_name = ?, spouse_tel = ?,
           guarantor_name = ?, guarantor_tel = ?,
@@ -725,7 +765,7 @@ exports.update = async (req, res) => {
     `;
 
     const params = [
-      name, tel, email, address, type,
+      name, code || null, tel, email, address, type,
       gender, id_card_number, id_card_expiry,
       spouse_name, spouse_tel,
       guarantor_name, guarantor_tel,

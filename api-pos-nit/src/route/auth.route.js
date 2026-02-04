@@ -38,11 +38,11 @@ module.exports = (app) => {
     uploadFile.single("upload_image"),
     updateuserProfile
   );
-  app.get("/api/groups/get-list", validate_token("user.getlist"), getList);
+  app.get("/api/groups/get-list", validate_token("user.view"), getList);
   app.post("/api/auth/new_barcode", validate_token(), newBarcode);
   app.post(
     "/api/auth/register",
-    validate_token(),
+    validate_token("user.create"),
     uploadFile.single("upload_image"),
     register
   );

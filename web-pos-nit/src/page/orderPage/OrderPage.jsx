@@ -22,7 +22,7 @@ import dayjs from "dayjs";
 import { BsSearch } from "react-icons/bs";
 import { LuUserRoundSearch } from "react-icons/lu";
 import { getProfile } from "../../store/profile.store";
-import { FaMoneyBillWave, FaGasPump, FaChartLine, FaPiggyBank, FaPercentage, FaFileInvoice } from "react-icons/fa";
+import { FaMoneyBillWave, FaGasPump, FaChartLine, FaPiggyBank, FaPercentage, FaFileInvoice, FaCheckCircle } from "react-icons/fa";
 import { useTranslation } from '../../locales/TranslationContext';
 
 // In-memory checkbox store for Order completion
@@ -116,6 +116,14 @@ function OrderPage() {
   useEffect(() => {
     getList();
   }, [filter.user_id, filter.from_date, filter.to_date, filter.order_date, filter.delivery_date]);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      getList();
+    }, 1000);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [state.txtSearch]);
 
   const getList = async () => {
     setLoading(true);
@@ -303,7 +311,6 @@ function OrderPage() {
       title: (
         <div className="table-header">
           <div className="khmer-text">{t('ផលិតផល')}</div>  {/* ✅ Changed from Category */}
-          <div style={{ fontSize: '11px', fontWeight: 'normal' }}>Product</div>
         </div>
       ),
       render: (_, record) => (
@@ -313,25 +320,23 @@ function OrderPage() {
             {record.product_name || 'N/A'}
           </div>
           {/* ✅ Show Category as subtitle */}
-          <div style={{ fontSize: '12px', color: '#8c8c8c', marginTop: '4px' }}>
-            {record.category_name || ''}
-          </div>
+
         </div>
       )
     },
     {
       key: "customer",
       title: (
-        <div className={Style.tableHeaderGroup}>
+        <div className={`${Style.tableHeaderGroup} tableHeaderGroup`}>
           <div className="khmer-text">{t('customer')}</div>
         </div>
       ),
       dataIndex: "customer_name",
       render: (value, data) => (
-        <div className={Style.customerCell}>
-          <div className={Style.customerName}>{data.customer_name}</div>
-          <div className={Style.customerTel}>{data.customer_tel}</div>
-          <div className={Style.customerAddress}>{data.customer_address}</div>
+        <div className={`${Style.customerCell} customerCell`}>
+          <div className={`${Style.customerName} customerName`}>{data.customer_name}</div>
+          <div className={`${Style.customerTel} customerTel`}>{data.customer_tel}</div>
+          <div className={`${Style.customerAddress} customerAddress`}>{data.customer_address}</div>
         </div>
       )
     },
@@ -340,12 +345,19 @@ function OrderPage() {
       title: (
         <div className="khmer-text">
           <div>{t("ក្រុមហ៊ុនផ្គត់ផ្គង់")}</div>
-          <div style={{ fontSize: '11px', fontWeight: 'normal' }}>Supplier</div>
         </div>
       ),
       dataIndex: "supplier_name",
       render: (value) => (
-        <Tag color="blue" style={{ margin: 0 }}>
+        <Tag
+          color="blue"
+          style={{
+            margin: 0,
+            width: '100%',  // ឬកំណត់ width ជាក់លាក់ដូចជា '200px'
+            display: 'block',
+            textAlign: 'center'
+          }}
+        >
           {value || "N/A"}
         </Tag>
       ),
@@ -359,19 +371,28 @@ function OrderPage() {
     //   width: 100
     // },
     {
-    title: <div className="khmer-text">{t("លេខប័ណ្ណ")}</div>,
-    dataIndex: "pre_order_no",
-    key: "pre_order_no",
-    render: (no) => (
-      no ? (
-        <Tag color="orange" className="font-mono">
-          {no}
-        </Tag>
-      ) : (
-        <span className="text-gray-400">-</span>
+      title: <div className="khmer-text">{t("លេខប័ណ្ណ")}</div>,
+      dataIndex: "pre_order_no",
+      key: "pre_order_no",
+      render: (no) => (
+        no ? (
+          <Tag
+            color="orange"
+            className="font-mono"
+            style={{
+              margin: 0,
+              width: '100%',
+              display: 'block',
+              textAlign: 'center'
+            }}
+          >
+            {no}
+          </Tag>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
       )
-    )
-  },
+    },
     {
       key: "qty",
       title: (
@@ -387,7 +408,15 @@ function OrderPage() {
           maximumFractionDigits: 2
         }) : '0';
         return (
-          <Tag color="green">
+          <Tag
+            color="green"
+            style={{
+              margin: 0,
+              width: '100%',
+              display: 'block',
+              textAlign: 'center'
+            }}
+          >
             {formattedQty} {record.unit || ''}
           </Tag>
         );
@@ -402,7 +431,19 @@ function OrderPage() {
       ),
       dataIndex: "unit_price",
       width: 120,
-      render: (value) => <Tag color="pink">${formatCurrencyString(value)}</Tag>
+      render: (value) => (
+        <Tag
+          color="pink"
+          style={{
+            margin: 0,
+            width: '100%',
+            display: 'block',
+            textAlign: 'center'
+          }}
+        >
+          ${formatCurrencyString(value)}
+        </Tag>
+      )
     },
     {
       key: "total",
@@ -448,7 +489,7 @@ function OrderPage() {
       dataIndex: "create_at",
       render: (value) => formatDateClient(value, "DD/MM/YYYY"),
     },
-    ...(isPermission("customer.update") ? [{
+    ...(isPermission("order.update") ? [{
       key: "completed",
       title: (
         <div className="table-header">
@@ -478,30 +519,36 @@ function OrderPage() {
       <div className="pageHeader">
         <Space>
           <div className={Style.summaryContainer}>
-            <div className={Style.summaryCard}>
-              <div className={Style.summaryIcon}><FaMoneyBillWave /></div>
-              <div className={Style.summaryTitle}>{t('total_revenue')}</div>
-              <div className={`${Style.summaryValue} ${Style.summaryPositive}`}>
+            <div className={`${Style.summaryCard} global-summary-card`}>
+              <div className={Style.summaryIcon} style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                <FaMoneyBillWave />
+                <span style={{ fontSize: '16px' }}>{t('total_revenue')}</span>
+              </div>
+              <div className={`${Style.summaryValue} ${Style.summaryPositive}`} style={{ textAlign: 'center' }}>
                 ${formatCurrencyString(financeSummary.total_revenue)}
               </div>
             </div>
 
 
 
-            <div className={Style.summaryCard}>
-              <div className={Style.summaryIcon}><FaFileInvoice /></div>
-              <div className={Style.summaryTitle}>{t('total_invoices')}</div>
-              <div className={`${Style.summaryValue} ${Style.summaryNeutral}`}>
+            <div className={`${Style.summaryCard} global-summary-card`}>
+              <div className={Style.summaryIcon} style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                <FaFileInvoice />
+                <span style={{ fontSize: '16px' }}>{t('total_invoices')}</span>
+              </div>
+              <div className={`${Style.summaryValue} ${Style.summaryNeutral}`} style={{ textAlign: 'center' }}>
                 {financeSummary.total_invoices}
               </div>
             </div>
 
-            {isPermission("customer.update") && (
-              <div className={Style.summaryCard}>
-                <div className={Style.summaryIcon}>✓</div>
-                <div className={Style.summaryTitle}>{t('completed_orders')}</div>
-                <div className={`${Style.summaryValue} ${Style.summaryNeutral}`}>
-                  {financeSummary.completed_orders} {t('out_of')} {financeSummary.total_invoices}
+            {isPermission("order.update") && (
+              <div className={`${Style.summaryCard} global-summary-card`}>
+                <div className={Style.summaryIcon} style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                  <FaCheckCircle />
+                  <span style={{ fontSize: '16px' }}>{t('completed_orders')}</span>
+                </div>
+                <div className={`${Style.summaryValue} ${Style.summaryNeutral}`} style={{ textAlign: 'center' }}>
+                  {financeSummary.completed_orders}/{financeSummary.total_invoices}
                 </div>
               </div>
             )}
@@ -519,7 +566,7 @@ function OrderPage() {
             onSearch={handleSearch}
             placeholder={t('search')}
           />
-          {isPermission("customer.create") && (
+          {isPermission("order.view") && (
             <DatePicker.RangePicker
               allowClear={false}
               value={[filter.from_date, filter.to_date]}
@@ -537,7 +584,7 @@ function OrderPage() {
             />
           )}
 
-          {isPermission("customer.create") && (
+          {isPermission("order.view") && (
             <Tooltip title={t('tooltip_order_date')}>
               <DatePicker
                 placeholder={t('order_date_placeholder')}
@@ -556,7 +603,7 @@ function OrderPage() {
             </Tooltip>
           )}
 
-          {isPermission("customer.create") && (
+          {isPermission("order.view") && (
             <Tooltip title={t('tooltip_delivery_date')}>
               <DatePicker
                 placeholder={t('delivery_date_placeholder')}
@@ -577,11 +624,9 @@ function OrderPage() {
 
 
 
-          <Button type="primary" onClick={handleSearch} icon={<BsSearch />}>
-            {t('filter')}
-          </Button>
 
-          {isPermission("customer.getone") && (
+
+          {isPermission("order.view") && (
             <Button
               onClick={handleRefreshFromServer}
               danger

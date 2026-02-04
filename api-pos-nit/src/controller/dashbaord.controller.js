@@ -2,10 +2,13 @@ const { db, logError } = require("../util/helper");
 
 const formatCurrency = (value) => {
   const num = parseFloat(value || 0);
-  if (isNaN(num)) return "$0.00";
+  if (isNaN(num)) return "0.00$";
 
-  // ✅ Format with 2 decimal places and dollar sign at end
-  return num.toFixed(2) + "$";
+  // ✅ Format with 2 decimal places, thousands separator, and $ at end
+  return num.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }) + "$";
 };
 
 const formatNumber = (value) => {
@@ -365,9 +368,28 @@ exports.getList = async (req, res) => {
     `;
     const [userStatus] = await db.query(userStatusQuery);
 
+    // ✅✅✅ EMPLOYEE QUERY ✅✅✅
+    const employeeQuery = `
+      SELECT 
+        COUNT(e.id) AS total,
+        SUM(CASE WHEN e.gender = 'male' THEN 1 ELSE 0 END) AS male,
+        SUM(CASE WHEN e.gender = 'female' THEN 1 ELSE 0 END) AS female,
+        SUM(CASE WHEN e.is_active = 1 THEN 1 ELSE 0 END) AS active
+      FROM employee e
+      ${userRoleId !== 29 && userBranch ? 'LEFT JOIN user u ON e.creator_id = u.id' : ''}
+      WHERE 1=1
+      ${userRoleId !== 29 && userBranch ? `AND u.branch_name = '${userBranch}'` : ''}
+    `;
+    const [employee] = await db.query(employeeQuery);
+
     // ✅✅✅ BUILD DASHBOARD with all roles and PROFIT CARD ✅✅✅
+    const [onlineUsers] = await db.query("SELECT COUNT(*) as count FROM user WHERE is_online = 1");
+    const [totalRoles] = await db.query("SELECT COUNT(*) as count FROM role");
+
     const userSummaryObject = {
       "សរុប": formatNumber(totalUsers) + " នាក់",
+      "កំពុងប្រើប្រាស់": formatNumber(onlineUsers[0]?.count) + " នាក់", // Online Users
+      "ចំនួនតួនាទី": formatNumber(totalRoles[0]?.count) + "", // Total Roles
     };
 
     // Add each role to the summary
@@ -375,7 +397,14 @@ exports.getList = async (req, res) => {
       userSummaryObject[role.role_name] = role.total_users + " នាក់";
     });
 
-    let dashboard = [
+    let dashboardData = [];
+    const isSuperAdmin = userRoleId === 29;
+
+    const [totalBranches] = await db.query('SELECT COUNT(DISTINCT branch_name) as count FROM user WHERE branch_name IS NOT NULL AND branch_name != ""');
+
+    const [totalAdmins] = await db.query("SELECT COUNT(*) as count FROM user u JOIN role r ON u.role_id = r.id WHERE r.code IN ('ADMIN', 'SUPER_ADMIN')");
+
+    dashboardData = [
       {
         title: "អ្នកប្រើប្រាស់",
         Summary: userSummaryObject
@@ -392,50 +421,60 @@ exports.getList = async (req, res) => {
         title: "ចំណាយលើប្រេង",
         Summary: {
           "ចំណាយ": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-          "សរុប": formatCurrency(totalExpense),  // ✅ $7,394.96
-          "OPEX": formatCurrency(totalOpex),
-          "COGS": formatCurrency(totalCogs)
+          "សរុប": formatCurrency(totalExpense),
         }
       },
       {
         title: "ផលិតផលក្នុងស្តុក",
         Summary: {
           "ស្តុក": "Current Stock",
-          "តម្លៃ": formatCurrency(product[0]?.total_stock_value),  // ✅ $7,394.96
+          "តម្លៃ": formatCurrency(product[0]?.total_stock_value),
           "ចំនួនផលិតផល": formatNumber(product[0]?.total_products) + " items",
-          "ចំនួនស្តុកសរុប": formatNumber(inventoryQty[0]?.total_quantity) + " L"  // ✅ From inventory_transaction
+          "ចំនួនស្តុកសរុប": formatNumber(inventoryQty[0]?.total_quantity) + " L"
         }
       },
       {
         title: "ការលក់",
         Summary: {
           "លក់": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-          "សរុប": formatCurrency(totalRevenue),  // ✅ $8,226.89
-          "ការបញ្ជាទិញសរុប": formatNumber(sale[0]?.total_order)  // ✅ 4 (no extra chars!)
+          "សរុប": formatCurrency(totalRevenue),
+          "ការបញ្ជាទិញសរុប": formatNumber(sale[0]?.total_order)
         }
       },
-      // ✅✅✅ PROFIT CARD ✅✅✅
       {
         title: "ចំណេញ",
         Summary: {
           "រយៈពេល": from_date && to_date ? `${from_date} - ${to_date}` : "ខែនេះ",
-          "ចំណូលសរុប": formatCurrency(totalRevenue),    // ✅ $8,226.89
-          "ចំណាយសរុប": formatCurrency(totalExpense),   // ✅ $7,394.96
-          "ចំណេញសុទ្ធ": formatCurrency(totalProfit),   // ✅ $831.93
-          "អត្រាចំណេញ": profitMargin.toFixed(2) + "%",  // ✅ 10.11%
+          "ចំណូលសរុប": formatCurrency(totalRevenue),
+          "ចំណាយសរុប": formatCurrency(totalExpense),
+          "ចំណេញសុទ្ធ": formatCurrency(totalProfit),
+          "អត្រាចំណេញ": profitMargin.toFixed(2) + "%",
           "ស្ថានភាព": totalProfit > 0 ? "📈 Profit" : totalProfit < 0 ? "📉 Loss" : "➖ Break Even"
         }
       }
     ];
-    // ✅ Send response with all data including Profit
+
+    // If super admin, we can optionally add management cards at the end or keep it unified
+    if (isSuperAdmin) {
+      dashboardData.unshift({
+        title: "ព័ត៌មានគ្រប់គ្រង", // Management Info
+        Summary: {
+          "សាខាសរុប": formatNumber(totalBranches[0]?.count) + " សាខា",
+          "ក្នុងប្រព័ន្ធ": formatNumber(totalAdmins[0]?.count) + " Admins",
+          "បុគ្គលិក": formatNumber(employee[0]?.total) + " នាក់"
+        }
+      });
+    }
+
+    // ✅ Send response
     res.json({
-      dashboard,
-      Sale_Summary_By_Month,
-      Expense_Summary_By_Month,
-      Profit_Summary_By_Month,  // ✅ NEW
-      Product_Summary_By_Month,
-      Top_Sale,
-      financial_summary: {  // ✅ NEW
+      dashboard: dashboardData,
+      Sale_Summary_By_Month: isSuperAdmin ? [] : Sale_Summary_By_Month,
+      Expense_Summary_By_Month: isSuperAdmin ? [] : Expense_Summary_By_Month,
+      Profit_Summary_By_Month: isSuperAdmin ? [] : Profit_Summary_By_Month,
+      Product_Summary_By_Month: isSuperAdmin ? [] : Product_Summary_By_Month,
+      Top_Sale: isSuperAdmin ? [] : Top_Sale,
+      financial_summary: isSuperAdmin ? {} : {
         total_revenue: parseFloat(totalRevenue.toFixed(2)),
         total_expense: parseFloat(totalExpense.toFixed(2)),
         total_profit: parseFloat(totalProfit.toFixed(2)),

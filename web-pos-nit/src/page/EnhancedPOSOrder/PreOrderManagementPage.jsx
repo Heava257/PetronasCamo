@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   Button,
@@ -16,7 +15,6 @@ import {
   Tag,
   DatePicker,
   Badge,
-  InputNumber,
   Divider
 } from "antd";
 import {
@@ -28,7 +26,8 @@ import {
   FilterOutlined,
   ThunderboltOutlined,
   EditOutlined,
-  DeleteOutlined
+  DeleteOutlined,
+  PrinterOutlined
 } from "@ant-design/icons";
 import MainPage from "../../component/layout/MainPage";
 import { request, formatDateClient, formatPrice } from "../../util/helper";
@@ -37,14 +36,12 @@ import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 import "./PreOrderManagement.css";
 import { useTranslation } from "../../locales/TranslationContext";
-import { Trash2 } from "lucide-react";
+import PreOrderForm from "./PreOrderForm";
 
 function PreOrderManagementPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [form] = Form.useForm();
-
-
 
   const [state, setState] = useState({
     loading: false,
@@ -89,7 +86,15 @@ function PreOrderManagementPage() {
     }
   };
 
-
+  const parseSpecialInstructions = (str) => {
+    if (!str) return {};
+    const parts = str.split('|').map(s => s.trim());
+    return {
+      supplier: parts.find(s => s.startsWith('Supplier:'))?.replace('Supplier:', '').trim() || '',
+      plate: parts.find(s => s.startsWith('Plate:'))?.replace('Plate:', '').trim() || '',
+      received: parts.find(s => s.startsWith('Received:'))?.replace('Received:', '').trim() || ''
+    };
+  };
 
   const loadPreOrders = async () => {
     setState(prev => ({ ...prev, loading: true }));
@@ -108,7 +113,65 @@ function PreOrderManagementPage() {
       const res = await request(`pre-order/list?${params.toString()}`, "get");
 
       if (res && res.success) {
-        const list = res.list || [];
+        const rawList = res.list || [];
+
+        const list = rawList.map((item, index) => {
+          const details = item.details_json || [];
+          const instructions = parseSpecialInstructions(item.special_instructions);
+
+          const row = {
+            ...item,
+            key: item.id,
+            index: index + 1,
+            supplier_name: instructions.supplier,
+            plate_number: instructions.plate,
+            received_date: instructions.received,
+
+            // Initialize all product type columns
+            qty_extra: 0, price_extra: 0, delivered_extra: 0, qty_extra_rem: 0,
+            qty_super: 0, price_super: 0, delivered_super: 0, qty_super_rem: 0,
+            qty_diesel: 0, price_diesel: 0, delivered_diesel: 0, qty_diesel_rem: 0,
+            qty_lpg: 0, price_lpg: 0, delivered_lpg: 0, qty_lpg_rem: 0,
+          };
+
+          const destinations = new Set();
+
+          details.forEach(d => {
+            const name = (d.product_name || "").toLowerCase();
+            const qty = Number(d.qty || 0);
+            const delivered = Number(d.delivered_qty || 0);
+            const remaining = Number(d.remaining_qty !== undefined ? d.remaining_qty : qty);
+            const price = Number(d.price || 0);
+
+            if (d.destination) destinations.add(d.destination);
+
+            if (name.includes('extra') || name.includes('red')) {
+              row.qty_extra = qty;
+              row.price_extra = price;
+              row.delivered_extra = delivered;
+              row.qty_extra_rem = remaining;
+            } else if (name.includes('super') || name.includes('green')) {
+              row.qty_super = qty;
+              row.price_super = price;
+              row.delivered_super = delivered;
+              row.qty_super_rem = remaining;
+            } else if (name.includes('diesel')) {
+              row.qty_diesel = qty;
+              row.price_diesel = price;
+              row.delivered_diesel = delivered;
+              row.qty_diesel_rem = remaining;
+            } else if (name.includes('lpg')) {
+              row.qty_lpg = qty;
+              row.price_lpg = price;
+              row.delivered_lpg = delivered;
+              row.qty_lpg_rem = remaining;
+            }
+          });
+
+          row.destination_display = Array.from(destinations).join(', ');
+
+          return row;
+        });
 
         const stats = {
           total: list.length,
@@ -120,7 +183,7 @@ function PreOrderManagementPage() {
 
         setState(prev => ({
           ...prev,
-          list,
+          list: list,
           total: res.total || list.length,
           stats,
           loading: false
@@ -151,54 +214,20 @@ function PreOrderManagementPage() {
     }
   };
 
-  const handleCustomerChange = (customerId) => {
-    const customer = customers.find(c => c.value === customerId);
-    if (customer && customer.address) {
-      form.setFieldsValue({
-        delivery_address: customer.address
-      });
-    }
-  };
-
   const handleViewDetail = (record) => {
     navigate(`/pre-order-detail/${record.id}`);
   };
 
-  const handleEdit = async (record) => {
-    try {
-      setState(prev => ({ ...prev, loading: true }));
-      const res = await request(`pre-order/${record.id}`, "get");
-      if (res && res.success) {
-        const data = res.data;
-        setState(prev => ({
-          ...prev,
-          editRecord: data,
-          visibleModal: true,
-          loading: false
-        }));
-
-        form.setFieldsValue({
-          pre_order_no: data.pre_order_no, // ✅ Include pre_order_no
-          customer_id: data.customer_id,
-          delivery_date: data.delivery_date ? dayjs(data.delivery_date) : null,
-          deposit_amount: data.deposit_amount,
-          delivery_address: data.delivery_address,
-          payment_method: data.payment_method || 'cash',
-          products: data.details.map(d => ({
-            product_id: d.product_id,
-            qty: d.qty,
-            price: d.price,
-            discount: d.discount
-          }))
-        });
-
-        calculateTotal(null, form.getFieldsValue());
-      }
-    } catch (error) {
-      console.error("Error fetching pre-order details:", error);
-      message.error("Failed to fetch details");
-      setState(prev => ({ ...prev, loading: false }));
+  const handleEdit = (record) => {
+    if (record.status !== 'pending') {
+      message.warning('អាចកែបានតែកម្មង់ដែលកំពុងរង់ចាំប៉ុណ្ណោះ');
+      return;
     }
+    setState(prev => ({
+      ...prev,
+      editRecord: record,
+      visibleModal: true
+    }));
   };
 
   const handleUpdateStatus = async (id, status) => {
@@ -257,99 +286,6 @@ function PreOrderManagementPage() {
     });
   };
 
-  const onFinish = async (values) => {
-    try {
-      setState(prev => ({ ...prev, loading: true }));
-      const isEdit = !!state.editRecord;
-      const url = isEdit ? `pre-order/${state.editRecord.id}` : "pre-order/create";
-      const method = isEdit ? "put" : "post";
-
-      // ✅ Include pre_order_no in request
-      const res = await request(url, method, {
-        pre_order_no: values.pre_order_no, // ✅ Manual input
-        customer_id: values.customer_id,
-        delivery_date: values.delivery_date ? values.delivery_date.format('YYYY-MM-DD') : null,
-        delivery_address: values.delivery_address,
-        deposit_amount: values.deposit_amount || 0,
-        payment_method: values.payment_method || 'cash',
-        products: values.products.map(p => ({
-          product_id: p.product_id,
-          qty: p.qty,
-          price: p.price,
-          discount: p.discount || 0,
-          destination: p.destination || null // ✅ Include destination
-        }))
-      });
-
-      if (res && res.success) {
-        message.success(isEdit ? "Updated successfully" : (t("pre_order_created") || "Pre-order created successfully"));
-        setState(prev => ({ ...prev, visibleModal: false, editRecord: null, loading: false }));
-        form.resetFields();
-        loadPreOrders();
-      } else {
-        message.error(res.message || "Something went wrong");
-        setState(prev => ({ ...prev, loading: false }));
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      message.error(t("failed_operation") || "Operation failed");
-      setState(prev => ({ ...prev, loading: false }));
-    }
-  };
-
-  const [totalAmount, setTotalAmount] = useState(0);
-
-  const calculateTotal = (changedValues, allValues) => {
-    if (allValues.products) {
-      const total = allValues.products.reduce((sum, item) => {
-        if (!item || !item.product_id || !item.qty || !item.price) return sum;
-        const prod = products.find(p => p.id === item.product_id);
-        const actual_price = prod ? parseFloat(prod.actual_price || 1) : 1;
-        const discount = parseFloat(item.discount || 0) / 100;
-        const amount = (item.qty * item.price * (1 - discount)) / (actual_price || 1);
-        return sum + amount;
-      }, 0);
-      setTotalAmount(total);
-    }
-  };
-
-  const getLatestSellingPrice = async (productId, customerId) => {
-    try {
-      if (!productId || !customerId) return 0;
-      const res = await request(
-        `inventory/latest-selling-price?product_id=${productId}&customer_id=${customerId}`,
-        'get'
-      );
-      if (res && res.success && res.selling_price !== null) {
-        return res.selling_price;
-      }
-      const product = products.find(p => p.id === productId);
-      return product ? product.unit_price : 0;
-    } catch (error) {
-      console.error('Error fetching selling price:', error);
-      return 0;
-    }
-  };
-
-  const handleProductSelect = async (productId, index) => {
-    const customerId = form.getFieldValue('customer_id');
-    if (!customerId) {
-      message.warning('សូមជ្រើសរើសអតិថិជនជាមុនសិន!');
-      return;
-    }
-    const selling_price = await getLatestSellingPrice(productId, customerId);
-    const currentProducts = form.getFieldValue('products');
-    if (currentProducts && currentProducts[index]) {
-      currentProducts[index] = {
-        ...currentProducts[index],
-        price: selling_price,
-        qty: 1
-      };
-      form.setFieldsValue({ products: currentProducts });
-      calculateTotal(null, form.getFieldsValue());
-    }
-  };
-
   const getStatusColor = (status) => {
     const colors = {
       pending: 'orange',
@@ -374,145 +310,251 @@ function PreOrderManagementPage() {
     return texts[status] || status;
   };
 
+  // ✅ UPDATED COLUMNS - Matching the image structure exactly
   const columns = [
     {
-      title: "Pre-Order #",
-      dataIndex: "pre_order_no",
-      key: "pre_order_no",
-      render: (no) => (
-        <Tag color="blue" className="font-mono">
-          {no}
-        </Tag>
-      )
+      title: 'ល.រ',
+      dataIndex: 'index',
+      width: 50,
+
+      align: 'center',
     },
     {
-      title: "អតិថិជន",
-      dataIndex: "customer_name",
-      key: "customer_name",
-      render: (name, record) => (
-        <div>
-          <div className="font-semibold khmer-text-product">{name}</div>
-          <div className="text-xs text-gray-500">{record.customer_tel}</div>
-        </div>
-      )
+      title: 'អតិថិជនឈ្មោះ',
+      dataIndex: 'customer_name',
+      width: 150,
+
+      align: 'center',
+      render: (text) => <div className="font-semibold khmer-text-product">{text}</div>
     },
     {
-      title: "ថ្ងៃកម្មង់",
-      dataIndex: "order_date",
-      key: "order_date",
+      title: 'លេខទូរស័ព្ទ',
+      dataIndex: 'customer_tel',
+      width: 130,
+      align: 'center',
+      render: (text) => <span className="text-xs">{text}</span>
+    },
+    {
+      title: 'ថ្ងៃទីបញ្ជាទិញ',
+      dataIndex: 'order_date',
+      width: 120,
+      align: 'center',
       render: (date) => formatDateClient(date, "DD/MM/YYYY")
     },
     {
-      title: "ទំនិញ",
-      dataIndex: "products_display",
-      key: "products_display",
-      render: (text) => <div className="max-w-[150px] truncate" title={text}>{text}</div>
+      title: 'ថ្ងៃទីទទួលទំនិញ',
+      dataIndex: 'delivery_date',
+      width: 130,
+      align: 'center',
+      render: (date) => date ? formatDateClient(date, "DD/MM/YYYY") : "-"
     },
     {
-      title: "បរិមាណ",
-      dataIndex: "total_qty",
-      key: "total_qty",
-      render: (qty) => <Tag color="blue">{Number(qty || 0).toLocaleString()} L</Tag>
+      title: 'ឈ្មោះក្រុមហ៊ុនផ្តល់ផ្គង់',
+      dataIndex: 'supplier_name',
+      width: 180,
+      align: 'center',
+      render: (text) => <span className="khmer-text-product">{text || "-"}</span>
     },
     {
-      title: "តម្លៃឯកតា",
-      dataIndex: "first_price",
-      key: "first_price",
-      render: (price) => <span className="text-orange-600">${Number(price || 0).toLocaleString()}</span>
+      title: <span className="khmer-text-product">ប្រភេទប្រេង</span>,
+      children: [
+        {
+          title: 'Extra',
+          dataIndex: 'qty_extra',
+          width: 80,
+          align: 'center',
+          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'Super',
+          dataIndex: 'qty_super',
+          width: 80,
+          align: 'center',
+          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'Diesel',
+          dataIndex: 'qty_diesel',
+          width: 80,
+          align: 'center',
+          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'LPG',
+          dataIndex: 'qty_lpg',
+          width: 80,
+          align: 'center',
+          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+        },
+      ]
     },
     {
-      title: "តម្លៃសរុប",
-      dataIndex: "total_amount",
-      key: "total_amount",
-      render: (amount) => (
-        <span className="font-bold text-green-600 dark:text-green-400">
-          {formatPrice(amount)}
-        </span>
+      title: <span className="khmer-text-product">តម្លៃតោន</span>,
+      children: [
+        {
+          title: 'Extra',
+          dataIndex: 'price_extra',
+          width: 80,
+          align: 'center',
+          render: v => v ? `$${Number(v).toFixed(2)}` : '-'
+        },
+        {
+          title: 'Super',
+          dataIndex: 'price_super',
+          width: 80,
+          align: 'center',
+          render: v => v ? `$${Number(v).toFixed(2)}` : '-'
+        },
+        {
+          title: 'Diesel',
+          dataIndex: 'price_diesel',
+          width: 80,
+          align: 'center',
+          render: v => v ? `$${Number(v).toFixed(2)}` : '-'
+        },
+        {
+          title: 'LPG',
+          dataIndex: 'price_lpg',
+          width: 80,
+          align: 'center',
+          render: v => v ? `$${Number(v).toFixed(2)}` : '-'
+        },
+      ]
+    },
+    {
+      title: <span className="khmer-text-product">ថ្ងៃទីបានទទួលទំនិញជាក់ស្តែង</span>,
+      children: [
+        {
+          title: 'Extra',
+          dataIndex: 'delivered_extra',
+          width: 90,
+          align: 'center',
+          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'Super',
+          dataIndex: 'delivered_super',
+          width: 90,
+          align: 'center',
+          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'Diesel',
+          dataIndex: 'delivered_diesel',
+          width: 90,
+          align: 'center',
+          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'LPG',
+          dataIndex: 'delivered_lpg',
+          width: 90,
+          align: 'center',
+          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+
+      ]
+    },
+    {
+      title: <span className="khmer-text-product">ផ្ទៀងផ្ទាត់បរិមាណនៅសល់</span>,
+      children: [
+        {
+          title: 'Extra',
+          dataIndex: 'qty_extra_rem',
+          width: 90,
+          align: 'center',
+          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'Super',
+          dataIndex: 'qty_super_rem',
+          width: 90,
+          align: 'center',
+          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'Diesel',
+          dataIndex: 'qty_diesel_rem',
+          width: 90,
+          align: 'center',
+          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+        {
+          title: 'LPG',
+          dataIndex: 'qty_lpg_rem',
+          width: 90,
+          align: 'center',
+          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+        },
+      ]
+    },
+    {
+      title: <span className="khmer-text-product">ពិនិត្យមើល</span>,
+      width: 80,
+      align: 'center',
+
+      render: (_, record) => (
+        <Button
+          type="text"
+          icon={<EyeOutlined />}
+          className="text-blue-500"
+          onClick={() => handleViewDetail(record)}
+        />
       )
     },
     {
-      title: "Status",
-      dataIndex: "status",
-      key: "status",
-      render: (status, record) => (
-        <div className="flex flex-col items-start gap-1">
-          <Tag color={getStatusColor(status)} className="khmer-text-product">
-            {getStatusText(status)}
-          </Tag>
-          {record.confirmed_by_name && (
-            <span className="text-[10px] text-gray-500">
-              By: {record.confirmed_by_name}
-            </span>
-          )}
-        </div>
+      title: <span className="khmer-text-product">កែសម្រួល</span>,
+      width: 80,
+      align: 'center',
+
+      render: (_, record) => record.status === 'pending' && (
+        <Button
+          type="text"
+          icon={<EditOutlined />}
+          className="text-orange-500"
+          onClick={() => handleEdit(record)}
+        />
       )
     },
     {
-      title: "សកម្មភាព",
-      key: "action",
-      render: (_, record) => {
-        const profile = getProfile();
-        const isAdmin = [1, 29].includes(profile.role_id);
+      title: <span className="khmer-text-product">កំណត់សម្គាល់</span>,
+      width: 110,
+      align: 'center',
+      render: (_, record) => (
+        <Input.TextArea
+          placeholder="បញ្ចូលកំណត់សម្គាល់..."
+          size="small"
+          rows={1}
+          style={{ fontSize: 11 }}
+        />
+      )
+    },
+    {
+      title: <span className="khmer-text-product">ព្រីន</span>,
+      width: 70,
+      align: 'center',
+      render: (_, record) => (
+        <Button
+          type="text"
+          icon={<PrinterOutlined />}
+          className="text-gray-500"
+          onClick={() => message.info('មុខងារព្រីននឹងមកដល់ឆាប់ៗ')}
+        />
+      )
+    },
+    {
+      title: <span className="khmer-text-product">លុបចេញ</span>,
+      width: 70,
+      align: 'center',
 
-        return (
-          <Space>
-            <Button
-              type="link"
-              icon={<EyeOutlined />}
-              onClick={() => handleViewDetail(record)}
-              className="text-blue-500"
-              size="small"
-            >
-              មើល
-            </Button>
-
-            {record.status === 'pending' && (
-              <Button
-                type="link"
-                icon={<EditOutlined />}
-                onClick={() => handleEdit(record)}
-                size="small"
-                className="text-orange-500"
-              >
-                កែប្រែ
-              </Button>
-            )}
-
-            {(record.status === 'pending' || record.status === 'cancelled') && (
-              <Button
-                type="link"
-                danger
-                icon={<DeleteOutlined />}
-                onClick={() => handleDelete(record)}
-                size="small"
-              >
-                លុប
-              </Button>
-            )}
-
-            {record.status === 'pending' && isAdmin && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => handleUpdateStatus(record.id, 'confirmed')}
-                className="bg-green-500 hover:bg-green-600"
-              >
-                បញ្ជាក់
-              </Button>
-            )}
-
-            {record.status === 'confirmed' && isAdmin && (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => handleUpdateStatus(record.id, 'ready')}
-              >
-                ម្រេចរួច
-              </Button>
-            )}
-          </Space>
-        );
-      }
+      render: (_, record) => (record.status === 'pending' || record.status === 'cancelled') && (
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleDelete(record)}
+        />
+      )
     }
   ];
 
@@ -533,11 +575,11 @@ function PreOrderManagementPage() {
 
       <div className="grid grid-cols-2 gap-2 text-sm mb-3">
         <div>
-          <span className="text-gray-500">ថ្ងៃកម្មង់:</span>
+          <span className="text-gray-500 khmer-text-product">ថ្ងៃកម្មង់:</span>
           <div>{formatDateClient(record.order_date, "DD/MM/YYYY")}</div>
         </div>
         <div>
-          <span className="text-gray-500">តម្លៃសរុប:</span>
+          <span className="text-gray-500 khmer-text-product">តម្លៃសរុប:</span>
           <div className="font-bold text-green-600">{formatPrice(record.total_amount)}</div>
         </div>
       </div>
@@ -559,15 +601,6 @@ function PreOrderManagementPage() {
             បញ្ជាក់
           </Button>
         )}
-        {record.status === 'confirmed' && (
-          <Button
-            block
-            type="primary"
-            onClick={() => handleUpdateStatus(record.id, 'ready')}
-          >
-            ម្រេចរួច
-          </Button>
-        )}
       </div>
     </Card>
   );
@@ -582,10 +615,8 @@ function PreOrderManagementPage() {
               <div className="flex items-center gap-3">
                 <ThunderboltOutlined className="text-3xl text-blue-500" />
                 <div>
-                  <h2 className="text-2xl font-bold m-0">Pre-Order Management</h2>
-                  <p className="text-sm text-gray-500 m-0">
-                    គ្រប់គ្រងកម្មង់ជាមុន
-                  </p>
+                  <h2 className="text-2xl font-bold m-0 khmer-text-product">គ្រប់គ្រងប្រេងកម្មង់ទុក</h2>
+
                 </div>
               </div>
             </Col>
@@ -596,11 +627,10 @@ function PreOrderManagementPage() {
                 size="large"
                 onClick={() => {
                   setState(prev => ({ ...prev, visibleModal: true, editRecord: null }));
-                  form.resetFields();
-                  setTotalAmount(0);
                 }}
+                className="khmer-text-product"
               >
-                បង្កើត
+                បង្កើតថ្មី
               </Button>
             </Col>
           </Row>
@@ -613,8 +643,8 @@ function PreOrderManagementPage() {
               <Statistic
                 title={<span className="khmer-text-product">សរុប</span>}
                 value={state.stats.total}
-                prefix={<ClockCircleOutlined />}
-                valueStyle={{ color: '#1890ff' }}
+                valueStyle={{ color: '#1890ff', display: 'flex', justifyContent: 'center' }}
+                style={{ textAlign: 'left' }}
               />
             </Card>
           </Col>
@@ -623,7 +653,8 @@ function PreOrderManagementPage() {
               <Statistic
                 title={<span className="khmer-text-product">រង់ចាំ</span>}
                 value={state.stats.pending}
-                valueStyle={{ color: '#faad14' }}
+                valueStyle={{ color: '#faad14', display: 'flex', justifyContent: 'center' }}
+                style={{ textAlign: 'left' }}
               />
             </Card>
           </Col>
@@ -632,16 +663,18 @@ function PreOrderManagementPage() {
               <Statistic
                 title={<span className="khmer-text-product">បានបញ្ជាក់</span>}
                 value={state.stats.confirmed}
-                valueStyle={{ color: '#1890ff' }}
+                valueStyle={{ color: '#1890ff', display: 'flex', justifyContent: 'center' }}
+                style={{ textAlign: 'left' }}
               />
             </Card>
           </Col>
           <Col xs={12} sm={12} md={6} lg={6}>
             <Card>
               <Statistic
-                title={<span className="khmer-text-product">ម្រេចរួច</span>}
+                title={<span className="khmer-text-product">រួចរាល់</span>}
                 value={state.stats.ready}
-                valueStyle={{ color: '#52c41a' }}
+                valueStyle={{ color: '#52c41a', display: 'flex', justifyContent: 'center' }}
+                style={{ textAlign: 'left' }}
               />
             </Card>
           </Col>
@@ -658,10 +691,11 @@ function PreOrderManagementPage() {
                   allowClear
                   value={filter.status}
                   onChange={(value) => setFilter(prev => ({ ...prev, status: value }))}
+                  className="khmer-text-product"
                 >
                   <Select.Option value="pending">រង់ចាំ</Select.Option>
                   <Select.Option value="confirmed">បានបញ្ជាក់</Select.Option>
-                  <Select.Option value="ready">ម្រេចរួច</Select.Option>
+                  <Select.Option value="ready">រួចរាល់</Select.Option>
                   <Select.Option value="delivered">បានដឹកជញ្ជូន</Select.Option>
                 </Select>
               </Form.Item>
@@ -675,6 +709,7 @@ function PreOrderManagementPage() {
                   value={filter.customer_id}
                   onChange={(value) => setFilter(prev => ({ ...prev, customer_id: value }))}
                   options={customers}
+                  className="khmer-text-product"
                   filterOption={(input, option) => {
                     const search = input.toLowerCase();
                     const name = (option?.name || "").toLowerCase();
@@ -699,6 +734,7 @@ function PreOrderManagementPage() {
                     ...prev,
                     from_date: date ? date.format('YYYY-MM-DD') : null
                   }))}
+                  className="khmer-text-product"
                 />
               </Form.Item>
 
@@ -710,12 +746,13 @@ function PreOrderManagementPage() {
                     ...prev,
                     to_date: date ? date.format('YYYY-MM-DD') : null
                   }))}
+                  className="khmer-text-product"
                 />
               </Form.Item>
 
               <Form.Item>
-                <Button onClick={handleClearFilters}>
-                  clear_filters
+                <Button onClick={handleClearFilters} className="khmer-text-product">
+                  សម្អាត
                 </Button>
               </Form.Item>
             </Form>
@@ -726,6 +763,7 @@ function PreOrderManagementPage() {
               block
               icon={<FilterOutlined />}
               onClick={() => {/* Mobile filter modal */ }}
+              className="khmer-text-product"
             >
               តម្រង
             </Button>
@@ -740,7 +778,12 @@ function PreOrderManagementPage() {
               dataSource={state.list}
               rowKey="id"
               loading={state.loading}
-              pagination={{ pageSize: 10 }}
+              pagination={{
+                pageSize: 20,
+                showTotal: (total) => `សរុប ${total} កំណត់ត្រា`
+              }}
+              scroll={{ x: 'max-content', y: 600 }}
+              bordered
             />
           </div>
 
@@ -751,220 +794,16 @@ function PreOrderManagementPage() {
           </div>
         </Card>
 
-        {/* Create Pre-Order Modal */}
-        <Modal
-          title={
-            <div className="flex items-center gap-2">
-              <PlusOutlined className="text-blue-500" />
-              <span className="khmer-text-product text-xl">
-                {state.editRecord ? "កែប្រែ Pre-Order" : "បង្កើត Pre-Order ថ្មី"}
-              </span>
-            </div>
-          }
-          open={state.visibleModal}
-          onCancel={() => {
+        {/* PreOrderForm Modal */}
+        <PreOrderForm
+          visible={state.visibleModal}
+          editRecord={state.editRecord}
+          onCancel={() => setState(prev => ({ ...prev, visibleModal: false, editRecord: null }))}
+          onSuccess={() => {
+            loadPreOrders();
             setState(prev => ({ ...prev, visibleModal: false, editRecord: null }));
-            form.resetFields();
-            setTotalAmount(0);
           }}
-          footer={null}
-          width={1000}
-          className="pre-order-modal"
-        >
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={onFinish}
-            onValuesChange={calculateTotal}
-            initialValues={{
-              products: [{}]
-            }}
-          >
-            {/* ✅ UPDATED: Manual Pre-Order Number Input */}
-            <Row gutter={16}>
-              <Col span={12}>
-                <Form.Item
-                  name="pre_order_no"
-                  label={<span className="khmer-text-product">លេខប័ណ្ណ</span>}
-                  hasFeedback
-                  validateTrigger={['onChange', 'onBlur']}
-                  rules={[
-                    { required: true, message: 'សូមបញ្ចូលលេខប័ណ្ណ' },
-                    {
-                      validator: async (_, value) => {
-                        if (!value || state.editRecord) return Promise.resolve(); // Skip check on edit or empty
-                        try {
-                          // Check duplicate via API
-                          const res = await request(`pre-order/check-duplicate?no=${value}`, "get");
-                          if (res && res.exists) {
-                            return Promise.reject(new Error("លេខកម្មង់នេះមានរួចហើយ (Duplicate)"));
-                          }
-                          return Promise.resolve();
-                        } catch (error) {
-                          console.error("Duplicate check error:", error);
-                          return Promise.resolve(); // Ignore API errors to not block user
-                        }
-                      }
-                    }
-                  ]}
-                >
-                  <Input
-                    placeholder="Ex: PO-2025-001"
-                    disabled={!!state.editRecord} // Disable when editing
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  name="customer_id"
-                  label={<span className="khmer-text-product">អតិថិជន</span>}
-                  rules={[{ required: true, message: 'Please select customer' }]}
-                >
-                  <Select
-                    placeholder="ជ្រើសរើសអតិថិជន"
-                    showSearch
-                    options={customers}
-                    onChange={handleCustomerChange}
-                    filterOption={(input, option) => {
-                      const search = input.toLowerCase();
-                      const name = (option?.name || "").toLowerCase();
-                      const tel = (option?.tel || "").toLowerCase();
-                      const id = String(option?.value || "").toLowerCase();
-
-                      return (
-                        name.includes(search) ||
-                        tel.includes(search) ||
-                        id.includes(search) ||
-                        (option?.label || "").toLowerCase().includes(search)
-                      );
-                    }}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col span={8}>
-                <Form.Item
-                  name="delivery_date"
-                  label={<span className="khmer-text-product">ថ្ងៃដឹកជញ្ជូន</span>}
-                >
-                  <DatePicker style={{ width: '100%' }} />
-                </Form.Item>
-              </Col>
-
-
-            </Row>
-
-            <Form.Item
-              name="delivery_address"
-              label={<span className="khmer-text-product">គោលដៅតែមួយ</span>}
-            >
-              <Input.TextArea rows={2} placeholder="បញ្ជាក់ទីតាំងដឹកជញ្ជូន..." />
-            </Form.Item>
-
-            <div className="mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-lg font-bold khmer-text-product">បញ្ជីមុខទំនិញ</span>
-              </div>
-              <Form.List name="products">
-                {(fields, { add, remove }) => (
-                  <>
-                    {fields.map(({ key, name, ...restField }) => (
-                      <Row key={key} gutter={8} align="bottom" className="mb-2">
-                        <Col span={8}>
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'product_id']}
-                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">មុខទំនិញ</span> : null}
-                            rules={[{ required: true, message: 'Missing product' }]}
-                          >
-                            <Select
-                              placeholder="ជ្រើសរើសផលិតផល"
-                              showSearch
-                              options={products
-                                .filter(p => Number(p.actual_price) > 0)
-                                .map(p => ({
-                                  label: `${p.name} (${p.category_name || 'N/A'})`,
-                                  value: p.id
-                                }))}
-                              onChange={(productId) => handleProductSelect(productId, name)}
-                              filterOption={(input, option) =>
-                                (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
-                              }
-                            />
-                          </Form.Item>
-                        </Col>
-                        <Col span={4}>
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'qty']}
-                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">បរិមាណ</span> : null}
-                            rules={[{ required: true, message: 'Missing qty' }]}
-                          >
-                            <InputNumber placeholder="0" style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={4}>
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'price']}
-                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">តម្លៃ/ឯកតា</span> : null}
-                            rules={[{ required: true, message: 'Missing price' }]}
-                          >
-                            <InputNumber placeholder="0.00" style={{ width: '100%' }} />
-                          </Form.Item>
-                        </Col>
-                        <Col span={6}>
-                          <Form.Item
-                            {...restField}
-                            name={[name, 'destination']}
-                            label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">គោលដៅពីរឬច្រើន</span> : null}
-                          >
-                            <Input placeholder="គោលដៅ" />
-                          </Form.Item>
-                        </Col>
-                        <Col span={2}>
-                          <Form.Item label={name === 0 ? <span className="khmer-text-product text-xs text-gray-500">លុប</span> : null}>
-                            <Button
-                              type="text"
-                              danger
-                              icon={<Trash2 />}
-                              onClick={() => remove(name)}
-                              disabled={fields.length === 1}
-                            />
-                          </Form.Item>
-                        </Col>
-                      </Row>
-                    ))}
-                    <Form.Item>
-                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                        បន្ថែមមុខទំនិញ
-                      </Button>
-                    </Form.Item>
-                  </>
-                )}
-              </Form.List>
-            </div>
-
-            <Divider />
-
-            <div className="flex justify-between items-center">
-              <div className="text-xl">
-                <span className="khmer-text-product text-gray-500 mr-2">សរុប:</span>
-                <span className="font-bold text-blue-600">{formatPrice(totalAmount)}</span>
-              </div>
-              <Space>
-                <Button onClick={() => setState(prev => ({ ...prev, visibleModal: false }))}>
-                  បោះបង់
-                </Button>
-                <Button type="primary" htmlType="submit" size="large">
-                  រក្សាទុក
-                </Button>
-              </Space>
-            </div>
-          </Form>
-        </Modal>
+        />
       </div>
     </MainPage>
   );

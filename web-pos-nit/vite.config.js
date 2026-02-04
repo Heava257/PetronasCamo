@@ -5,7 +5,7 @@ import pkg from "./package.json";
 
 export default defineConfig({
   base: '/', // Add this line explicitly
-  
+
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
@@ -15,10 +15,10 @@ export default defineConfig({
 
     VitePWA({
       registerType: "autoUpdate",
-      
+
       workbox: {
         maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,json,bin}'],
         // Add this to handle navigation routes
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/_/, /\/api\//]
@@ -32,27 +32,34 @@ export default defineConfig({
       ],
 
       manifest: {
-        name: "Web POS",
-        short_name: "PTN",
-        description: "Web POS Application",
+        name: "Petronas POS System",
+        short_name: "Petronas",
+        description: "Petronas Cambodia POS System",
         display: "standalone",
         start_url: "/",
-        scope: "/", // Add this
-        theme_color: "#ffffff",
-        background_color: "#ffffff",
+        scope: "/",
+        orientation: "portrait",
+        theme_color: "#00A99D",
+        background_color: "#F5F5F5",
         icons: [
           {
-            src: "pwa-192x192.png",
+            src: "/cropped.jpg",
             sizes: "192x192",
-            type: "image/png",
-            purpose: "any maskable"
+            type: "image/jpeg",
+            purpose: "any"
           },
           {
-            src: "pwa-512x512.png",
+            src: "/cropped.jpg",
             sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable"
+            type: "image/jpeg",
+            purpose: "any"
           },
+          {
+            src: "/cropped.jpg",
+            sizes: "512x512",
+            type: "image/jpeg",
+            purpose: "maskable"
+          }
         ],
       },
     }),

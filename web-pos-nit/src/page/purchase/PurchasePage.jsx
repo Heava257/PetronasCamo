@@ -1,7 +1,7 @@
 // ✅ FIXED PurchasePage.jsx - With correct actual_price calculation
 
 import React, { useEffect, useState } from "react";
-import { request, formatPrice } from "../../util/helper";
+import { request, formatPrice, getProfile, isPermission } from "../../util/helper";
 import { Config } from "../../util/config";
 import MainPage from "../../component/layout/MainPage";
 import {
@@ -50,47 +50,21 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 // ✅ Add Global Style Override for Purchase Page
-const purchaseStyles = `
-  /* Dark Mode Glass Effect */
-  :global(.dark) .ant-card {
-    background: rgba(255, 255, 255, 0.85) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-    backdrop-filter: blur(12px);
-  }
-  
-  :global(.dark) .ant-table {
-    background: transparent !important;
-  }
-
-  :global(.dark) .ant-table-thead > tr > th {
-    background: rgba(243, 244, 246, 0.9) !important;
-    color: #1f2937 !important;
-  }
-
-  :global(.dark) .ant-table-tbody > tr > td {
-     color: #374151 !important;
-  }
-
-  :global(.dark) .ant-modal-content,
-  :global(.dark) .ant-modal-header {
-    background: rgba(255, 255, 255, 0.95) !important;
-    color: #1f2937 !important;
-  }
-
-  :global(.dark) .ant-input,
-  :global(.dark) .ant-select-selector,
-  :global(.dark) .ant-picker,
-  :global(.dark) .ant-input-number {
-    background: white !important;
-    border-color: #d1d5db !important;
-    color: #1f2937 !important;
-  }
-`;
+const purchaseStyles = ``;
 
 function PurchasePage() {
   const [form] = Form.useForm();
   const { t } = useTranslation();
   const { config } = configStore();
+
+  // 🔒 Permission Check - FIXED: Use reliable profile data
+  const profile = getProfile();
+
+  // 🔒 Permission Check - FIXED: Rely on isPermission to respect branch overrides
+  // isPermission("...") already handles Super Admin bypass and branch overrides
+  const canCreate = isPermission("purchase.create");
+  const canRemove = isPermission("purchase.remove") || isPermission("purchase.delete");
+  const canUpdate = isPermission("purchase.update");
 
   const [state, setState] = useState({
     list: [],
@@ -98,6 +72,7 @@ function PurchasePage() {
     visible: false,
     txtSearch: "",
     suppliers: [],
+    branches: [], // ✅ Added branches
   });
 
   const [selectedPurchase, setSelectedPurchase] = useState(null);
@@ -151,10 +126,25 @@ function PurchasePage() {
     }
   };
 
+  // ... (existing code)
+
   useEffect(() => {
     getList();
     getSuppliers();
+    getBranches(); // ✅ Fetch branches
   }, []);
+
+  // ...
+
+  const getBranches = async () => {
+    const res = await request("branch", "get");
+    if (res && !res.error) {
+      setState((p) => ({
+        ...p,
+        branches: res.list || [],
+      }));
+    }
+  };
 
   const getList = async () => {
     setState((p) => ({
@@ -224,6 +214,7 @@ function PurchasePage() {
     // ✅ Use FormData for Image Upload
     const formData = new FormData();
     formData.append("supplier_id", items.supplier_id);
+    if (items.branch_id) formData.append("branch_id", items.branch_id); // ✅ Add Branch ID
     if (items.order_no) formData.append("order_no", items.order_no);
 
     const orderDate = items.order_date ? dayjs(items.order_date).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
@@ -270,6 +261,7 @@ function PurchasePage() {
     form.setFieldsValue({
       id: purchase.id,
       supplier_id: purchase.supplier_id,
+      branch_id: purchase.branch_name, // ✅ Populate Branch
       order_no: purchase.order_no,
       order_date: purchase.order_date ? dayjs(purchase.order_date) : null,
       expected_delivery_date: purchase.expected_delivery_date ? dayjs(purchase.expected_delivery_date) : null,
@@ -568,14 +560,16 @@ function PurchasePage() {
     );
   };
 
-  const filteredList = state.list.filter(purchase => {
-    const searchLower = state.txtSearch.toLowerCase();
-    return (
-      purchase.order_no?.toLowerCase().includes(searchLower) ||
-      purchase.supplier_name?.toLowerCase().includes(searchLower) ||
-      purchase.status?.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredList = state.list
+    .filter(purchase => {
+      const searchLower = state.txtSearch.toLowerCase();
+      return (
+        purchase.order_no?.toLowerCase().includes(searchLower) ||
+        purchase.supplier_name?.toLowerCase().includes(searchLower) ||
+        purchase.status?.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => (a.id || 0) - (b.id || 0));
 
   const columns = [
     {
@@ -688,23 +682,29 @@ function PurchasePage() {
           >
             {t("view")}
           </Button>
-          <Button
-            type="primary"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => onClickBtnEdit(data)}
-          >
-            {t("edit")}
-          </Button>
-          <Button
-            type="primary"
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => onClickBtnDelete(data)}
-          >
-            {t("delete")}
-          </Button>
+
+          {canUpdate && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => onClickBtnEdit(data)}
+            >
+              {t("edit")}
+            </Button>
+          )}
+
+          {canRemove && (
+            <Button
+              type="primary"
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => onClickBtnDelete(data)}
+            >
+              {t("delete")}
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -713,37 +713,28 @@ function PurchasePage() {
   return (
     <MainPage loading={state.loading}>
       <style>{purchaseStyles}</style>
-      <div className="px-2 sm:px-4 lg:px-6">
+      <div className="purchase-page-container px-2 sm:px-4 lg:px-6">
         {/* Header Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
-              <Title level={4} className="mb-3 sm:mb-2 text-gray-900 dark:text-white flex items-center gap-2">
+              <Title level={4} className="mb-0 text-gray-900 dark:text-white flex items-center gap-2">
                 <MdShoppingCart className="text-blue-500" />
                 {t("purchase_orders")}
               </Title>
-              <Input.Search
-                onChange={(value) =>
-                  setState((p) => ({ ...p, txtSearch: value.target.value }))
-                }
-                allowClear
-                onSearch={getList}
-                placeholder={t("search_by_order_number_or_supplier")}
-                size="large"
-                prefix={<SearchOutlined />}
-                className="w-full sm:w-64"
-              />
             </div>
 
-            <Button
-              type="primary"
-              onClick={openModal}
-              icon={<MdOutlineCreateNewFolder />}
-              size="large"
-              className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600"
-            >
-              {t("new_purchase_order")}
-            </Button>
+            {canCreate && (
+              <Button
+                type="primary"
+                onClick={openModal}
+                icon={<MdOutlineCreateNewFolder />}
+                size="large"
+                className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600"
+              >
+                {t("new_purchase_order")}
+              </Button>
+            )}
           </div>
 
           {/* Statistics */}
@@ -789,6 +780,19 @@ function PurchasePage() {
                   </div>
                 </div>
               </Col>
+              <Col xs={24} sm={24} md={8} className="flex sm:justify-end items-center mt-2 sm:mt-0">
+                <Input.Search
+                  onChange={(value) =>
+                    setState((p) => ({ ...p, txtSearch: value.target.value }))
+                  }
+                  allowClear
+                  onSearch={getList}
+                  placeholder={t("search_by_order_number_or_supplier")}
+                  size="large"
+                  prefix={<SearchOutlined />}
+                  style={{ maxWidth: 350, width: '100%' }}
+                />
+              </Col>
             </Row>
           </div>
         </div>
@@ -832,6 +836,25 @@ function PurchasePage() {
             <Form.Item name="id" hidden>
               <Input />
             </Form.Item>
+
+            {/* Branch Selection */}
+            <Row gutter={16}>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  name="branch_id"
+                  label={<span className="font-medium">{t("branch")}</span>}
+                  tooltip="Select the branch for this stock"
+                >
+                  <Select placeholder={t("branch_placeholder")} allowClear size="large">
+                    {state.branches.map((b) => (
+                      <Option key={b.id} value={b.value || b.id}>
+                        {b.name}
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+              </Col>
+            </Row>
 
             <Row gutter={16}>
               <Col xs={24} sm={12}>
@@ -1013,7 +1036,7 @@ function PurchasePage() {
               {t("add_item")}
             </Button>
 
-            <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900 rounded">
+            <div className="mt-4 p-3 purchase-total-card rounded">
               <div className="flex justify-between items-center">
                 <Text strong className="text-lg">{t("total_amount")}:</Text>
                 <Tooltip title="ប្រមាណជាគ្មាន liters - តម្លៃបម្លែងរួចហើយ">
@@ -1035,7 +1058,7 @@ function PurchasePage() {
               />
             </Form.Item>
 
-            <Form.Item label="Attachment (Card Image)">
+            <Form.Item label={t("attachment_card_image")}>
               <Upload
                 listType="picture-card"
                 fileList={fileList}
@@ -1046,10 +1069,15 @@ function PurchasePage() {
                 {fileList.length < 1 && (
                   <div>
                     <PlusOutlined />
-                    <div style={{ marginTop: 8 }}>Upload</div>
+                    <div style={{ marginTop: 8 }}>{t("upload")}</div>
                   </div>
                 )}
               </Upload>
+              <div style={{ marginTop: 4, fontStyle: 'italic' }}>
+                <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                  * {t("image_upload_note")}
+                </Typography.Text>
+              </div>
             </Form.Item>
 
             {/* Buttons */}
@@ -1083,7 +1111,7 @@ function PurchasePage() {
           {selectedPurchase && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-4">
-                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded">
+                <Card className="purchase-item-card border-0 mb-3" size="small">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
@@ -1116,7 +1144,7 @@ function PurchasePage() {
                       </Text>
                     </div>
                   </div>
-                </div>
+                </Card>
 
                 <div>
                   <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300 block mb-2">
@@ -1201,11 +1229,9 @@ function PurchasePage() {
           )}
         </Modal>
 
-        <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+        <div className="hidden md:block purchase-table-card rounded-lg shadow-sm overflow-hidden">
           <Table
-            rowClassName={(record, index) =>
-              `pos-row ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`
-            }
+            rowClassName={() => 'pos-row'}
             dataSource={filteredList}
             columns={columns}
             pagination={{
@@ -1241,26 +1267,10 @@ function PurchasePage() {
             </Card>
           )}
         </div>
-      </div>
+      </div >
 
-      <style jsx>{`
-        .pos-row {
-          transition: background-color 0.2s;
-        }
-        .pos-row:hover {
-          background-color: rgba(59, 130, 246, 0.1) !important;
-        }
-        .dark .pos-row:hover {
-          background-color: rgba(59, 130, 246, 0.2) !important;
-        }
-        
-        @media (max-width: 640px) {
-          .ant-modal-body {
-            padding: 16px;
-          }
-        }
-      `}</style>
-    </MainPage>
+
+    </MainPage >
   );
 }
 

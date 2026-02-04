@@ -5,15 +5,13 @@
 
 /* Apply template background to body and layout */
 body {
-  background: var(--bg-main, #f0f2f5);
-  /* Use transparent in template if needed */
+  background: var(--bg-main, #F6F8F5);
   margin: 0;
   padding: 0;
 }
 
 body.dark-mode {
   background: transparent !important;
-  /* Force transparent in dark mode */
 }
 
 .ant-layout {
@@ -92,21 +90,17 @@ div {
   left: 12px;
   top: 12px;
   bottom: 12px;
-  /* Requested soft background style applied to entire sidebar */
-  background-image: radial-gradient(73% 147%, #EADFDF 59%, #ECE2DF 100%), radial-gradient(91% 146%, rgba(255, 255, 255, 0.50) 47%, rgba(0, 0, 0, 0.50) 100%);
-  background-blend-mode: screen;
-
-  backdrop-filter: var(--glass-blur, blur(16px));
-  border: 1px solid rgba(203, 213, 225, 0.4);
+  background: var(--sidebar-bg, #051e12);
+  /* Dark Green Background */
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-xl);
-  color: var(--text-primary, #0f172a);
+  color: var(--sidebar-text, #94a3b8);
   display: flex;
   flex-direction: column;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1000;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   overflow: visible;
-  /* Allow resizer to be visible */
 }
 
 /* Resize handle */
@@ -147,9 +141,9 @@ div {
 }
 
 .dark .hierarchical-sidebar {
-  background: var(--bg-sidebar, rgba(15, 23, 42, 0.9));
+  background: var(--sidebar-bg, #051e12);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  color: var(--text-primary, #f8fafc);
+  color: var(--sidebar-text, #94a3b8);
 }
 
 .hierarchical-sidebar.expanded {
@@ -200,13 +194,13 @@ div {
 .company-name {
   font-size: 18px;
   font-weight: 800;
-  color: var(--primary-color, #3b82f6);
+  color: #ffffff;
   letter-spacing: -0.5px;
 }
 
 .company-subtitle {
   font-size: 10px;
-  color: var(--text-muted, #64748b);
+  color: #94a3b8;
   font-weight: 600;
   letter-spacing: 1px;
 }
@@ -229,208 +223,366 @@ div {
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Menu items */
+/* ✅ IMPROVED MENU ITEMS - Simplified and Clean */
 .menu-container {
   flex: 1;
   min-height: 0;
-  /* Critical for flex scrolling */
   overflow-y: auto;
   overflow-x: hidden;
   padding: 8px 12px 24px;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+  /* Cleaner padding */
+  scrollbar-width: none;
+  /* Hide scrollbar for cleaner look */
+  -ms-overflow-style: none;
 }
 
 .menu-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.menu-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.menu-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 3px;
-}
-
-.menu-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
-}
-
-.dark .menu-container {
-  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
-}
-
-.dark .menu-container::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.dark .menu-container::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  display: none;
+  /* Hide scrollbar */
 }
 
 .menu-category {
-  margin-top: calc(var(--font-size-base, 14px) * 1.4);
+  margin-bottom: 20px;
+}
+
+.menu-category:first-child {
+  margin-top: 0;
 }
 
 .category-header {
-  font-size: var(--font-size-sm, 11px);
-  font-weight: 800;
-  color: var(--primary-color, #3b82f6);
-  padding: 16px 12px 6px 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sidebar-text, rgba(0, 0, 0, 0.4));
+
+
+  padding: 12px 12px 8px 12px;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  opacity: 0.9;
-  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
-  margin-bottom: 8px;
+  letter-spacing: 1.2px;
 }
 
+.dark .category-header {
+  color: rgba(255, 255, 255, 0.3);
+  font-weight: 600;
+}
+
+/* ✅ Clean menu items without complex borders */
 .hierarchical-menu-item {
   width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: calc(var(--font-size-base, 14px) * 0.75) 16px;
-  margin-bottom: 8px;
-  border-radius: var(--radius-lg);
-
-  /* Semi-transparent items to show the sidebar texture through */
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-
-  color: #0f172a;
-  font-weight: 600;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-  font-size: var(--font-size-base, 14px);
+  padding: 10px 16px;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--sidebar-text, #94a3b8);
+  font-weight: 500;
+  font-size: 14px;
   text-align: left;
   justify-content: flex-start;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   cursor: pointer;
   position: relative;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+  outline: none !important;
+  border: 1px solid transparent;
+  /* Ensure no border shift */
 }
 
-/* Add vertical dotted line for parent items */
-.hierarchical-menu-item::after {
-  content: '';
-  position: absolute;
-  left: 8px;
-  top: 0;
-  bottom: -4px;
-  width: 1px;
-  border-left: 2px dotted var(--border-color, rgba(0, 0, 0, 0.3));
-  display: none;
+.hierarchical-menu-item:focus,
+.hierarchical-menu-item:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-.dark .hierarchical-menu-item::after {
-  border-left-color: rgba(22, 21, 21, 0.3);
+.dark .hierarchical-menu-item {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .hierarchical-menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.4);
+  background: var(--sidebar-item-hover, rgba(255, 255, 255, 0.05));
   color: var(--primary-color, #3b82f6);
-  transform: translateX(6px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.hierarchical-menu-item.selected {
-  background-color: var(--primary-color, #3b82f6);
-  background-image: none;
-  /* Remove gradient for selected to keep high contrast */
-  color: var(--text-on-primary, white) !important;
-  box-shadow: 0 4px 12px var(--primary-light, rgba(59, 130, 246, 0.3));
+.dark .hierarchical-menu-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+/* Modern Style (Default-ish) */
+/* ========================
+   MENU ITEM STYLES
+   ======================== */
+
+/* 1. Modern Use (Default) */
+:root:not([class*="menu-style-"]) .hierarchical-menu-item.selected,
+.menu-style-modern .hierarchical-menu-item.selected {
+  background: var(--sidebar-item-active, linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%));
+  color: var(--sidebar-text-active, #ffffff) !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+:root:not([class*="menu-style-"]) .hierarchical-menu-item.selected::before,
+.menu-style-modern .hierarchical-menu-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  background: var(--primary-color, #4ade80);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px var(--primary-light, rgba(74, 222, 128, 0.4));
+}
+
+:root:not([class*="menu-style-"]) .hierarchical-menu-item.selected .menu-icon,
+.menu-style-modern .hierarchical-menu-item.selected .menu-icon {
+  color: var(--primary-color, #4ade80) !important;
+}
+
+/* 2. Classic (Boxed Green) */
+.menu-style-classic .hierarchical-menu-item.selected {
+  background: var(--sidebar-item-active, rgba(255, 255, 255, 0.05)) !important;
+  color: var(--sidebar-text-active, #ffffff) !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.menu-style-classic .hierarchical-menu-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 4px;
+  background: var(--primary-color, #4ade80);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 8px var(--primary-light, rgba(74, 222, 128, 0.4));
+}
+
+.menu-style-classic .hierarchical-menu-item.selected .menu-icon {
+  color: var(--primary-color, #4ade80) !important;
+}
+
+/* 3. Minimal */
+.menu-style-minimal .hierarchical-menu-item.selected {
+  background: transparent !important;
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 700;
+  padding-left: 10px;
+  /* Removed large shift */
+}
+
+.menu-style-minimal .hierarchical-menu-item.selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 4px;
+  background: var(--primary-color, #4ade80);
+  border-radius: 0 4px 4px 0;
+}
+
+.menu-style-minimal .hierarchical-menu-item.selected .menu-icon {
+  color: var(--primary-color, #4ade80) !important;
+}
+
+/* 4. Rounded (Pill) */
+.menu-style-rounded .hierarchical-menu-item {
+  border-radius: 50px;
+  margin-bottom: 4px;
+}
+
+.menu-style-rounded .hierarchical-menu-item.selected {
+  background: var(--primary-color, #4ade80) !important;
+  color: var(--text-on-primary, #ffffff) !important;
+  font-weight: 600;
+  box-shadow: 0 4px 12px var(--primary-light, rgba(74, 222, 128, 0.3));
+  border: none;
+  /* Removed overflow: hidden */
+}
+
+/* Force text and icon color to be white/on-primary in selected state */
+/* Force text and icon color to be white/on-primary in selected state */
+.menu-style-rounded .hierarchical-menu-item.selected::before,
+.menu-style-rounded .hierarchical-menu-item.selected::after {
+  content: none !important;
+  display: none !important;
+}
+
+.menu-style-rounded .hierarchical-menu-item.selected,
+.menu-style-rounded .level-1 .hierarchical-menu-item.selected,
+.menu-style-rounded .level-2 .hierarchical-menu-item.selected {
+  position: relative;
+  isolation: isolate;
+  /* Create new stacking context */
+}
+
+.menu-style-rounded .hierarchical-menu-item.selected .menu-label,
+.menu-style-rounded .hierarchical-menu-item.selected .menu-icon,
+.menu-style-rounded .hierarchical-menu-item.selected span,
+.menu-style-rounded .hierarchical-menu-item.selected div,
+.menu-style-rounded .hierarchical-menu-item.selected svg,
+.menu-style-rounded .hierarchical-menu-item.selected path {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  z-index: 1001;
+  position: relative;
   text-shadow: none;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block;
+  /* Ensure flexible/block display */
 }
 
-.hierarchical-menu-item.selected .menu-icon {
-  color: var(--text-on-primary, white) !important;
+/* Ensure label doesn't collapse */
+.menu-style-rounded .hierarchical-menu-item.selected .menu-label {
+  width: auto;
+  overflow: visible;
+  flex: 1;
+  /* Restoration of flex behavior */
 }
+
+/* 5. Glass */
+.menu-style-glass .hierarchical-menu-item {
+  margin-bottom: 6px;
+}
+
+/* ✅ Glass Style - Fixed for Light/Dark */
+.menu-style-glass .hierarchical-menu-item.selected {
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff !important;
+  font-weight: 600;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Glass Light Mode Override */
+:root:not(.dark) .menu-style-glass .hierarchical-menu-item.selected {
+  background: var(--primary-light, rgba(59, 130, 246, 0.1)) !important;
+  border: 1px solid var(--primary-light, rgba(59, 130, 246, 0.2));
+  color: var(--primary-color, #3b82f6) !important;
+  text-shadow: none;
+  box-shadow: none;
+}
+
+.menu-style-glass .hierarchical-menu-item.selected .menu-icon {
+  color: #ffffff !important;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Glass Light Mode Icon Override */
+:root:not(.dark) .menu-style-glass .hierarchical-menu-item.selected .menu-icon {
+  color: var(--primary-color, #3b82f6) !important;
+  filter: none;
+}
+
+
+
+/* 6. Neon */
+.menu-style-neon .hierarchical-menu-item.selected {
+  background: rgba(0, 0, 0, 0.2) !important;
+  color: var(--primary-color, #4ade80) !important;
+  font-weight: 700;
+  border: 1px solid var(--primary-color, #4ade80);
+  box-shadow: inset 0 0 15px var(--primary-light, rgba(74, 222, 128, 0.2)), 0 0 5px var(--primary-color, #4ade80);
+  text-shadow: 0 0 8px var(--primary-color, #4ade80);
+}
+
+.menu-style-neon .hierarchical-menu-item.selected .menu-icon {
+  color: var(--primary-color, #4ade80) !important;
+  filter: drop-shadow(0 0 5px var(--primary-color, #4ade80));
+}
+
+.menu-style-classic .hierarchical-menu-item {
+  border-radius: 8px;
+  margin-bottom: 2px;
+}
+
 
 .menu-icon {
-  color: var(--text-muted, #64748b);
-  transition: color 0.25s ease;
-  width: calc(var(--font-size-base, 14px) * 1.3);
-  height: calc(var(--font-size-base, 14px) * 1.3);
+  color: #64748b;
+  transition: color 0.2s ease;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.dark .menu-icon {
+  color: #64748b;
 }
 
 .hierarchical-menu-item:hover .menu-icon {
   color: var(--primary-color, #3b82f6);
 }
 
-.menu-label {
-  font-size: var(--font-size-base, 14px);
-  font-weight: 500;
-  flex: 1;
+.dark .hierarchical-menu-item:hover .menu-icon {
+  color: white;
 }
 
+.hierarchical-menu-item.selected .menu-icon {
+  color: #4ade80;
+}
+
+.menu-label {
+  font-size: 14px;
+  font-weight: inherit;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.expand-icon {
+  color: rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.dark .expand-icon {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.hierarchical-menu-item.has-children .expand-icon {
+  opacity: 1;
+}
+
+/* ✅ Simplified submenu with clean border */
 .submenu {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: grid-template-rows 0.25s ease;
   overflow: hidden;
+  margin-left: 20px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  padding-left: 12px;
+}
+
+.dark .submenu {
+  border-left-color: rgba(255, 255, 255, 0.1);
 }
 
 .submenu.expanded {
   grid-template-rows: 1fr;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .submenu-inner {
   min-height: 0;
-  padding-bottom: 4px;
-}
-
-/* Vertical dotted line for submenu - starts from parent */
-.submenu::before {
-  content: '';
-  position: absolute;
-  left: -36px;
-  top: 0;
-  bottom: 8px;
-  width: 0;
-  border-left: 1px dotted #000 !important;
-  background: transparent;
-  opacity: 1;
-  z-index: 10;
-}
-
-.dark .submenu::before {
-  border-left-color: rgba(255, 255, 255, 0.8) !important;
-}
-
-.submenu-item {
-  font-size: var(--font-size-sm, 12px);
-  padding: calc(var(--font-size-base, 14px) * 0.5) 12px;
-  padding-left: 4px;
-  position: relative;
-  text-align: left;
-  justify-content: flex-start;
-}
-
-/* Horizontal dotted connector line from vertical to item */
-.submenu-item::before {
-  content: '';
-  position: absolute;
-  left: -36px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 0;
-  border-top: 1px dotted #000 !important;
-  background: transparent;
-  opacity: 1;
-  z-index: 10;
-}
-
-.dark .submenu-item::before {
-  border-top-color: rgba(255, 255, 255, 0.8) !important;
+  padding: 4px 0;
 }
 
 .hierarchical-menu-item.selected .expand-icon {
-  background: white;
-  color: var(--primary-color, #3b82f6);
-  border-color: white;
+  color: white;
 }
 
 .hierarchical-sidebar.collapsed .category-header {
@@ -445,40 +597,72 @@ div {
   display: none;
 }
 
-/* Specific styling for deeper levels */
-.level-1,
-.level-2,
-.level-3 {
-  position: relative;
+.hierarchical-sidebar.collapsed .menu-label {
+  display: none;
 }
 
+/* Level styling - cleaner hierarchy */
 .level-1 .hierarchical-menu-item,
-.level-2 .hierarchical-menu-item {
+.level-2 .hierarchical-menu-item,
+.level-3 .hierarchical-menu-item {
   font-size: 13px;
-  margin-bottom: 2px;
-  padding-top: 6px;
-  padding-bottom: 6px;
-  opacity: 0.9;
+  padding: 8px 12px;
+  margin-bottom: 1px;
 }
 
-.level-1 .hierarchical-menu-item:not(.selected),
-.level-2 .hierarchical-menu-item:not(.selected) {
-  background: transparent;
+.level-1 .submenu,
+.level-2 .submenu {
+  margin-left: 20px;
+  padding-left: 6px;
+}
+
+/* Sidebar Footer */
+.sidebar-footer {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.dark .sidebar-footer {
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+  margin-bottom: 4px;
+}
+
+.dark .footer-content {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.footer-copyright {
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.4);
+  margin: 0;
+}
+
+.dark .footer-copyright {
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* Header Styles */
+/* Header Styles */
 .clean-dark-header {
   height: 64px;
-  margin: 12px 12px 0;
-  background: var(--bg-header, rgba(255, 255, 255, 0.7));
-  backdrop-filter: var(--glass-blur, blur(12px));
-  border: var(--glass-border);
-  border-radius: var(--radius-xl);
+  margin: 0 12px;
+  background: transparent;
+  border: none;
   padding: 0 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: var(--shadow-premium);
+  box-shadow: none;
   position: sticky;
   top: 12px;
   z-index: 999;
@@ -489,6 +673,58 @@ div {
   border: var(--glass-border-dark);
 }
 
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.trigger-button {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(0, 0, 0, 0.04);
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.dark .trigger-button {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.trigger-button:hover {
+  background: var(--primary-color, #3b82f6);
+  color: white;
+  transform: scale(1.05);
+}
+
+.header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.dark .header-icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
 .header-icon.glass-pill {
   padding: 8px 16px;
   height: 40px;
@@ -497,9 +733,6 @@ div {
   gap: 10px;
   background: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .dark .header-icon.glass-pill {
@@ -538,6 +771,13 @@ div {
   border-radius: var(--radius-pill);
   border: 1px solid rgba(59, 130, 246, 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-profile:hover {
+  background: rgba(59, 130, 246, 0.1);
+  transform: translateY(-2px);
 }
 
 .profile-name {
@@ -557,17 +797,23 @@ div {
   min-height: calc(100vh - 100px);
 }
 
-/* Submenu styles */
-.submenu {
-  margin-left: 12px;
-  padding-left: 12px;
-  border-left: 2px solid rgba(59, 130, 246, 0.1);
-  margin-bottom: 8px;
+.content-wrapper {
+  max-width: 100%;
 }
 
-.submenu-item {
-  font-size: var(--font-size-sm, 12px);
-  padding: calc(var(--font-size-base, 14px) * 0.5) 12px;
+/* Footer */
+.clean-dark-footer {
+  text-align: center;
+  padding: 16px 24px;
+  background: transparent;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  margin: 12px;
+  border-radius: var(--radius-xl);
+}
+
+.dark .clean-dark-footer {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* ============================================
@@ -643,7 +889,6 @@ div {
 @media (max-width: 1024px) {
   .hierarchical-sidebar {
     display: none !important;
-    /* Desktop sidebar hidden on tablet/mobile */
   }
 
   .clean-dark-header {
@@ -726,4 +971,87 @@ div {
     height: 32px;
     font-size: 16px;
   }
+}
+
+/* =========================================================================
+   CRITICAL FIX: FORCE VISIBLE TEXT ON ROUNDED MENU ITEMS (ALL THEMES)
+   ========================================================================= */
+html.menu-style-rounded .hierarchical-menu-item.selected,
+:root.menu-style-rounded .hierarchical-menu-item.selected {
+  background: var(--primary-color) !important;
+  color: #ffffff !important;
+  isolation: isolate;
+}
+
+html.menu-style-rounded .hierarchical-menu-item.selected *,
+:root.menu-style-rounded .hierarchical-menu-item.selected * {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  z-index: 9999;
+  text-shadow: none !important;
+}
+
+/* Specific overrides for labels and icons to be absolutely sure */
+html.menu-style-rounded .hierarchical-menu-item.selected .menu-label,
+html.menu-style-rounded .hierarchical-menu-item.selected .menu-icon,
+html.menu-style-rounded .hierarchical-menu-item.selected svg,
+:root.menu-style-rounded .hierarchical-menu-item.selected .menu-label,
+:root.menu-style-rounded .hierarchical-menu-item.selected .menu-icon,
+:root.menu-style-rounded .hierarchical-menu-item.selected svg {
+  color: #ffffff !important;
+  fill: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+/* =========================================================================
+   TEMPLATE SPECIFIC FIXES (e.g. Acleda Gold)
+   ========================================================================= */
+
+/* Force Form Labels and Placeholders to be visible in Acleda Gold (and other glass themes) */
+/* now via html.template-acledagold */
+
+html.template-acledagold .ant-form-item-label>label,
+.template-acledagold .ant-form-item-label>label {
+  color: #ffffff !important;
+}
+
+html.template-acledagold .ant-input::placeholder,
+html.template-acledagold .ant-select-selection-placeholder,
+.template-acledagold .ant-input::placeholder,
+.template-acledagold .ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+html.template-acledagold .ant-table-thead .ant-table-cell,
+.template-acledagold .ant-table-thead .ant-table-cell {
+  background: rgba(255, 215, 0, 0.15) !important;
+  /* Gold tint header */
+  color: #ffffff !important;
+}
+
+html.template-acledagold .ant-table-cell,
+.template-acledagold .ant-table-cell {
+  color: #ffffff !important;
+}
+
+html.template-acledagold .ant-modal-content,
+html.template-acledagold .ant-modal-header,
+.template-acledagold .ant-modal-content,
+.template-acledagold .ant-modal-header {
+  background-color: rgba(15, 32, 75, 0.95) !important;
+  /* Fallback opaque dark blue if glass fails */
+  color: #ffffff !important;
+}
+
+html.template-acledagold .ant-modal-title,
+.template-acledagold .ant-modal-title {
+  color: #ffffff !important;
+}
+
+html.template-acledagold .ant-modal-close,
+.template-acledagold .ant-modal-close {
+  color: #ffffff !important;
 }

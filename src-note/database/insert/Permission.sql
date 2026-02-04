@@ -83,9 +83,13 @@ INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
 
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
-(29,362),
-(29,363),
-(29,364),
+(29,197),
+(29,198),
+(29,199),
+(29,200),
+(29,201),
+(29,202),
+(29,203),
 (29,365),
 (29,377),
 (29,378),

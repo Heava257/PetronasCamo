@@ -1,5 +1,3 @@
-// ✅ pre_order.route.js - Routes for Pre-Order System
-
 const { validate_token } = require("../controller/auth.controller");
 const preOrderController = require("../controller/Pre_order.controller");
 
@@ -21,8 +19,8 @@ module.exports = (app) => {
     // Get pre-order by ID (ព័ត៌មានលម្អិត)
     app.get("/api/pre-order/:id", validate_token(), preOrderController.getPreOrderById);
 
-    // Convert to POS order (បំលែងទៅជា Order)
-    app.post("/api/pre-order/:id/convert", validate_token(), preOrderController.convertToOrder);
+    // Convert to POS order (TODO: Restore if needed, currently removed from controller)
+    // app.post("/api/pre-order/:id/convert", validate_token(), preOrderController.convertToOrder);
 
     // Update status (ធ្វើបច្ចុប្បន្នភាព Status)
     app.put("/api/pre-order/:id/status", validate_token(), preOrderController.updateStatus);
@@ -35,11 +33,8 @@ module.exports = (app) => {
 
     // Add payment (បន្ថែមការទូទាត់)
     app.post("/api/pre-order/:id/payment", validate_token(), preOrderController.addPayment);
-    // ADD THIS:
-    app.post(
-        "/api/pre-order/deduct-qty",
-        validate_token(),
-        preOrderController.deductPreOrderQty
-    );
+
+    // Record Delivery (កត់ត្រាការដឹកជញ្ជូន)
+    app.post("/api/pre-order/record-delivery", validate_token(), preOrderController.recordDelivery);
 
 };

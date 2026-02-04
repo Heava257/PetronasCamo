@@ -548,73 +548,74 @@ function FakeInvoicePage() {
 
   return (
     <MainPage loading={loading}>
-      {/* Hidden print component */}
-      <div style={{ display: "none" }}>
-        {printData && (
-          <FakeInvoicePrint
-            ref={printRef}
-            objSummary={printData.objSummary}
-            cart_list={printData.cart_list}
-            selectedLocations={printData.selectedLocations}
-          />
-        )}
-      </div>
-
-      {/* Header */}
-      <div className="pageHeader bg-white dark:bg-gray-800 p-4 mb-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 transition-colors">
-        <Space>
-          <div className="invoice-khmer-title text-gray-900 dark:text-white text-xl font-semibold">
-            {t('invoice_list')}
-          </div>
-          <Input.Search
-            onChange={(e) => setState(prev => ({ ...prev, txtSearch: e.target.value }))}
-            allowClear
-            onSearch={getList}
-            placeholder={t('search_by_invoice_or_customer')}
-            className="invoice-input "
-            style={{
-              width: 300, background: isDarkMode ? '#374151' : '#ffffff',
-              borderColor: isDarkMode ? '#4b5563' : '#d9d9d9'
-            }}
-          />
-        </Space>
-        <Button type="primary" onClick={onClickAddBtn} icon={<MdOutlineCreateNewFolder />}>
-          {t('new_invoice')}
-        </Button>
-      </div>
-
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={6}>
-          <Card className="transition-colors hover:shadow-md border-0 bg-blue-50 dark:bg-blue-900/20">
-            <Statistic
-              title={<div className="invoice-khmer-title text-blue-800 dark:text-blue-300">
-                {t('total_invoices_stat')}
-              </div>}
-              value={statistics.totalInvoices}
-              prefix={<MdReceipt className={isDarkMode ? 'text-blue-400' : 'text-blue-600'} />}
-              valueStyle={{ color: isDarkMode ? '#60a5fa' : '#1d4ed8' }}
+      <div className="fake-invoice-page-container">
+        {/* Hidden print component */}
+        <div style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+          {printData && (
+            <FakeInvoicePrint
+              ref={printRef}
+              objSummary={printData.objSummary}
+              cart_list={printData.cart_list}
+              selectedLocations={printData.selectedLocations}
             />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card className="transition-colors hover:shadow-md border-0 bg-green-50 dark:bg-green-900/20">
-            <Statistic
-              title={<div className="invoice-khmer-title text-green-800 dark:text-green-300">
-                {t('total_amount')}
-              </div>}
-              value={statistics.totalAmount}
-              precision={2}
-              prefix="$"
-              valueStyle={{ color: isDarkMode ? '#4ade80' : '#15803d' }}
+          )}
+        </div>
+
+        <Row gutter={16} style={{ marginBottom: 16, marginTop: -20 }}>
+          <Col span={6}>
+            <Card className="transition-colors hover:shadow-md border-0 bg-blue-50 dark:bg-blue-900/20 fake-invoice-stat-card">
+              <Statistic
+                title={<div className="invoice-khmer-title text-blue-800 dark:text-blue-300">
+                  {t('total_invoices_stat')}
+                </div>}
+                value={statistics.totalInvoices}
+                prefix={<MdReceipt className={isDarkMode ? 'text-blue-400' : 'text-blue-600'} />}
+                valueStyle={{ color: isDarkMode ? '#60a5fa' : '#1d4ed8', display: 'flex', justifyContent: 'center' }}
+                style={{ textAlign: 'left' }}
+              />
+            </Card>
+          </Col>
+          <Col span={6}>
+            <Card className="transition-colors hover:shadow-md border-0 bg-green-50 dark:bg-green-900/20 fake-invoice-stat-card">
+              <Statistic
+                title={<div className="invoice-khmer-title text-green-800 dark:text-green-300">
+                  {t('total_amount')}
+                </div>}
+                value={statistics.totalAmount}
+                precision={2}
+                prefix="$"
+                valueStyle={{ color: isDarkMode ? '#4ade80' : '#15803d', display: 'flex', justifyContent: 'center' }}
+                style={{ textAlign: 'left' }}
+              />
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Header */}
+        <div className="flex justify-between items-center p-4 mb-4 rounded-lg">
+          <Space>
+            <div className="invoice-khmer-title text-gray-900 dark:text-white text-xl font-semibold">
+              បញ្ជីវិក្កយបត្រ
+            </div>
+            <Input.Search
+              onChange={(e) => setState(prev => ({ ...prev, txtSearch: e.target.value }))}
+              allowClear
+              onSearch={getList}
+              placeholder={t('search_by_invoice_or_customer')}
+              className="invoice-input "
+              style={{ width: 300 }}
             />
-          </Card>
-        </Col>
-      </Row>
+          </Space>
+          <Button type="primary" onClick={onClickAddBtn} icon={<MdOutlineCreateNewFolder />}>
+            {t('new_invoice')}
+          </Button>
+        </div>
+      </div>
 
       {/* Modal */}
       <Modal
         open={state.visibleModal}
-        title={<div className="invoice-modal-title text-gray-900 dark:text-white">
+        title={<div className="invoice-modal-title" style={{ color: '#e8c12f' }}>
           {state.id ? t('edit_invoice') : t('new_invoice')}
         </div>}
         footer={modalFooter}
@@ -938,7 +939,7 @@ function FakeInvoicePage() {
         </Form>
       </Modal>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
+      <div className="fake-invoice-table-card rounded-lg shadow-sm p-4 border border-gray-200 dark:border-gray-700 transition-colors">
         <div className="hidden lg:block">
           <Table
             className="invoice-table"
@@ -1065,7 +1066,7 @@ function FakeInvoicePage() {
                   </Space>
                 ),
                 width: 150,
-                fixed: 'right',
+
               },
             ]}
           />

@@ -12,6 +12,14 @@ exports.getList = async (req, res) => {
     const { role_id, branch_name } = currentUser[0];
     const isSuperAdmin = role_id === 29;
 
+    if (isSuperAdmin) {
+      return res.status(403).json({
+        error: true,
+        message: "Super Admin is not allowed to manage employees",
+        message_kh: "Super Admin មិនត្រូវបានអនុញ្ញាតឱ្យគ្រប់គ្រងបុគ្គលិកទេ"
+      });
+    }
+
     let sql = `
       SELECT 
         e.id,
@@ -151,6 +159,16 @@ exports.create = async (req, res) => {
       ]
     );
 
+    // ✅ Restrict Super Admin from creating employees
+    const [currentUser] = await db.query("SELECT role_id FROM user WHERE id = ?", [req.current_id]);
+    if (currentUser.length > 0 && currentUser[0].role_id === 29) {
+      return res.status(403).json({
+        error: true,
+        message: "Super Admin is not allowed to manage employees",
+        message_kh: "Super Admin មិនត្រូវបានអនុញ្ញាតឱ្យគ្រប់គ្រងបុគ្គលិកទេ"
+      });
+    }
+
     res.json({
       error: false,
       message: "Employee created successfully",
@@ -165,6 +183,16 @@ exports.create = async (req, res) => {
 
 exports.update = async (req, res) => {
   try {
+    // ✅ Restrict Super Admin from updating employees
+    const [currentUser] = await db.query("SELECT role_id FROM user WHERE id = ?", [req.current_id]);
+    if (currentUser.length > 0 && currentUser[0].role_id === 29) {
+      return res.status(403).json({
+        error: true,
+        message: "Super Admin is not allowed to manage employees",
+        message_kh: "Super Admin មិនត្រូវបានអនុញ្ញាតឱ្យគ្រប់គ្រងបុគ្គលិកទេ"
+      });
+    }
+
     const {
       id, code, name, gender, position, salary, tel, email, address,
       website, note, is_active,
@@ -256,6 +284,16 @@ exports.update = async (req, res) => {
 
 exports.remove = async (req, res) => {
   try {
+    // ✅ Restrict Super Admin from removing employees
+    const [currentUser] = await db.query("SELECT role_id FROM user WHERE id = ?", [req.current_id]);
+    if (currentUser.length > 0 && currentUser[0].role_id === 29) {
+      return res.status(403).json({
+        error: true,
+        message: "Super Admin is not allowed to manage employees",
+        message_kh: "Super Admin មិនត្រូវបានអនុញ្ញាតឱ្យគ្រប់គ្រងបុគ្គលិកទេ"
+      });
+    }
+
     const { id } = req.body;
 
     const [data] = await db.query("DELETE FROM employee WHERE id = :id", {

@@ -69,71 +69,7 @@
   font-family: 'Khmer OS Siemreap', Arial, sans-serif !important;
 }
 
-/* --- Dark Mode Overrides (Glass White) --- */
-/* We override dark mode to look like "Glass White" to match the Home Page template */
 
-:global(.dark) .invoice-input,
-:global(.dark) .invoice-input-number,
-:global(.dark) .invoice-select .ant-select-selector,
-:global(.dark) .ant-picker {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: rgba(0, 0, 0, 0.1) !important;
-  color: #1f2937 !important;
-  /* Dark text */
-}
-
-:global(.dark) .invoice-input::placeholder,
-:global(.dark) .invoice-input-number input::placeholder {
-  color: #9ca3af !important;
-}
-
-:global(.dark) .invoice-form-label {
-  color: #374151 !important;
-  /* Gray-700 */
-}
-
-:global(.dark) .invoice-khmer-title {
-  color: #111827 !important;
-  /* Gray-900 */
-}
-
-:global(.dark) .ant-modal-content,
-:global(.dark) .ant-modal-header {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  color: #1f2937 !important;
-}
-
-:global(.dark) .ant-modal-title {
-  color: #111827 !important;
-}
-
-:global(.dark) .ant-table {
-  background: transparent !important;
-  color: #374151 !important;
-}
-
-:global(.dark) .ant-table-thead>tr>th {
-  background: rgba(243, 244, 246, 0.9) !important;
-  /* Gray-100 */
-  color: #111827 !important;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1) !important;
-}
-
-:global(.dark) .ant-table-tbody>tr>td {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-  color: #374151 !important;
-}
-
-:global(.dark) .ant-table-tbody>tr:hover>td {
-  background: rgba(59, 130, 246, 0.1) !important;
-}
-
-/* Page Header in Dark Mode */
-:global(.dark) .pageHeader {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border-color: rgba(255, 255, 255, 0.4) !important;
-  backdrop-filter: blur(12px);
-}
 
 /* Custom Select Component for Khmer text */
 .delivery-select .ant-select-selection-item,

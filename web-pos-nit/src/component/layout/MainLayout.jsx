@@ -1,34 +1,6 @@
-// import React, { useEffect, useState, useRef } from "react";
-// import { Outlet, useNavigate } from "react-router-dom";
-// import "./MainLayout.css";
-// import "./responsive.css";
-// import "./modern-mobile-header.css";
-// import logo from "../../assets/petronas_header.png";
-// import ImgUser from "../../assets/profile.png";
-// import { useTranslation } from '../../../src/locales/TranslationContext.jsx';
-// import LanguageSwitcher from '../../../src/component/printer/LanguageSwitcher.jsx';
-// import NotificationPanel from "../../page/supperAdmin/NotificationPanel/NotificationPanelPage";
-// import { APP_VERSION } from "../../version.js";
-
-// import {
-//   getPermission,
-//   getProfile,
-//   setAcccessToken,
-//   setProfile,
-// } from "../../store/profile.store";
-// import { request } from "../../util/helper";
-// import { configStore } from "../../store/configStore";
-// import { Config } from "../../util/config";
-// import { GoChecklist } from "react-icons/go";
-// import KhmerTimeGreeting from "./KhmerTimeGreeting";
-// import LiveClock from "./LiveClock";
-// import { useDarkMode } from "../../../src/component/printer/DarkModeContext.jsx";
-
-
-
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Layout, Avatar, Dropdown, Space, Input, Drawer } from "antd";
+import { Layout, Avatar, Dropdown, Space, Input, Drawer, Modal } from "antd";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -78,14 +50,16 @@ const { Search } = Input;
 const menuItems = [
   // MAIN DASHBOARDS
   {
-    key: "dashboard-group",
+    key: "",
     icon: LayoutDashboard,
-    label: "menu.categories.main",
+    label: "menu.dashboard",
     category: "MAIN",
-    children: [
-      { key: "", icon: LayoutDashboard, label: "menu.dashboard" },
-      { key: "security/dashboard", icon: Shield, label: "menu.security_dashboard" },
-    ]
+  },
+  {
+    key: "security/dashboard",
+    icon: Shield,
+    label: "menu.security_dashboard",
+    category: "MANAGEMENT",
   },
 
   // OPERATIONS
@@ -123,7 +97,7 @@ const menuItems = [
     category: "OPERATIONS",
     children: [
       { key: "category", label: "menu.category" },
-      { key: "product", label: "menu.products" },
+      { key: "product", label: "menu.product_list" },
       { key: "company-payment-management", label: "menu.company_payment_management" },
       { key: "company-payment", label: "menu.company_payment" },
     ]
@@ -239,18 +213,6 @@ const menuItems = [
     category: "MANAGEMENT",
   },
   {
-    key: "permission-management",
-    icon: Settings,
-    label: "menu.permission_management",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "BranchPermissionOverride",
-    icon: Settings,
-    label: "menu.branch_permission_override",
-    category: "MANAGEMENT",
-  },
-  {
     key: "admin-ShiftClosing",
     icon: AlignJustify,
     label: "menu.shift_closing",
@@ -268,18 +230,6 @@ const menuItems = [
     label: "menu.closing_checklist",
     category: "MANAGEMENT",
   },
-  {
-    key: "super-TelegramConfiguration",
-    icon: Bell,
-    label: "menu.telegram_configuration",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "settings",
-    icon: Settings,
-    label: "menu.settings",
-    category: "MANAGEMENT",
-  },
 
   // STATISTICS & REPORTS
   {
@@ -289,76 +239,46 @@ const menuItems = [
     category: "REPORTS",
   },
   {
-    key: "report_BranchComparison",
+    key: "reports-group",
     icon: FileText,
-    label: "menu.report_branch_comparison",
+    label: "menu.reports",
     category: "REPORTS",
+    children: [
+      { key: "report_BranchComparison", label: "menu.report_branch_comparison" },
+      { key: "report_Sale_Summary", label: "menu.sales_summary" },
+      { key: "report_Expense_Summary", label: "menu.expense_summary" },
+      { key: "report_Customer", label: "menu.new_customer_summary" },
+      { key: "Top_Sale", label: "menu.top_sales" },
+      { key: "report_Stock_Status", label: "report.stock_status_report" },
+      { key: "report_Stock_Movement", label: "report.stock_movement_report" },
+      { key: "report_Purchase_History", label: "report.purchase_history" },
+      { key: "report_Outstanding_Debt", label: "report.outstanding_debt" },
+      { key: "report_Payment_History", label: "report.payment_history" },
+      { key: "report_Profit_Loss", label: "report.profit_loss" },
+    ]
   },
   {
-    key: "report_Sale_Summary",
-    icon: FileText,
-    label: "menu.sales_summary",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Expense_Summary",
-    icon: FileText,
-    label: "menu.expense_summary",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Customer",
-    icon: FileText,
-    label: "menu.new_customer_summary",
-    category: "REPORTS",
-  },
-  {
-    key: "Top_Sale",
-    icon: FileText,
-    label: "menu.top_sales",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Stock_Status",
-    icon: FileText,
-    label: "report.stock_status_report",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Stock_Movement",
-    icon: FileText,
-    label: "report.stock_movement_report",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Purchase_History",
-    icon: FileText,
-    label: "report.purchase_history",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Outstanding_Debt",
-    icon: FileText,
-    label: "report.outstanding_debt",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Payment_History",
-    icon: FileText,
-    label: "report.payment_history",
-    category: "REPORTS",
-  },
-  {
-    key: "report_Profit_Loss",
-    icon: FileText,
-    label: "report.profit_loss",
-    category: "REPORTS",
+    key: "settings-group",
+    icon: Settings,
+    label: "menu.settings",
+    category: "SETTINGS",
+    children: [
+      { key: "settings", label: "menu.general_settings" },
+      { key: "profile", label: "menu.my_profile" },
+      { key: "permission-management", label: "menu.permission_management" },
+      { key: "super-TelegramConfiguration", label: "menu.telegram_configuration" },
+      { key: "logout-trigger", label: "menu.logout" },
+    ]
   },
 ];
 
 const CleanDarkLayout = () => {
   /* Dark Mode & Theme - Replaced with SettingsContext */
-  const { isSettingsOpen, isDarkMode } = useSettings();
+  /* Dark Mode & Theme - Replaced with SettingsContext */
+  const { isSettingsOpen, isDarkMode, currentTemplate } = useSettings();
+  // ... (lines 356-847 remain same, I will use multiple replace chunks or just update the useSettings line and the Layout line separate if they are far apart)
+
+  // Actually, useSettings is around line 355. Layout is line 848. I should use separate chunks.
   const permisionRaw = getPermission();
   const permision = useMemo(() => permisionRaw, [JSON.stringify(permisionRaw)]);
   const { setConfig } = configStore();
@@ -372,8 +292,18 @@ const CleanDarkLayout = () => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [selectedKey, setSelectedKey] = useState("");
-  const [openKeys, setOpenKeys] = useState([]);
-  const [expandedKeys, setExpandedKeys] = useState(["dashboard-group"]);
+  const [expandedKeys, setExpandedKeys] = useState(() => {
+    // 1. Try to load from localStorage
+    const saved = localStorage.getItem("sidebar_expanded_keys");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  });
   const [sidebarWidth, setSidebarWidth] = useState(260); // Default width
   const [isResizing, setIsResizing] = useState(false);
   const { changeLanguage: changeCustomLanguage } = useCustomTranslation();
@@ -397,31 +327,64 @@ const CleanDarkLayout = () => {
 
   // ✅ Filter menu by permissions & SEARCH logic
   const filteredItems = useMemo(() => {
-    if (!permision || permision.length === 0) return [];
+    const isSuperAdmin = profile && (Number(profile.role_id) === 29 || profile.role_code === 'SUPER_ADMIN');
 
-    const checkItemPermission = (item) => {
-      // If it's a structural group (dashboard-group, etc.), it's visible if any child is visible
-      if (item.children) {
-        const visibleChildren = item.children.filter(checkItemPermission);
-        if (visibleChildren.length > 0) {
-          return { ...item, children: visibleChildren };
+    let items = [];
+    if (isSuperAdmin) {
+      // ✅ Super Admin should only see Management & System tools
+      const allowedCategories = ['MANAGEMENT', 'MAIN_SECURITY']; // Custom filter
+      const blacklistedKeys = [
+        'invoices-parent', 'EnhancedPOSOrder', 'fakeinvoices',
+        'products', 'purchase', 'admin-StockReconciliation',
+        'delivery', 'finance', 'customer-payment', 'supplier-payment',
+        'expense', 'customer', 'admin-ShiftClosing', 'admin-DailyClosing',
+        'admin-ShiftClosingChecklist', 'employee-management'
+      ];
+
+      items = menuItems.filter(item => {
+        // Hide standard operations and reports
+        if (item.category === 'OPERATIONS' ||
+          item.category === 'FINANCE' ||
+          item.category === 'REPORTS') {
+          return false;
         }
-        return null;
-      }
 
-      // Check permission for actual leaf items
-      const hasPermission = permision.some(
-        (data) => data.web_route_key === "/" + item.key ||
-          (item.key === "" && data.web_route_key === "/")
-      );
+        // Specifically blacklist certain keys if they are in other categories
+        if (blacklistedKeys.includes(item.key)) {
+          return false;
+        }
 
-      return hasPermission ? item : null;
-    };
+        return true;
+      }).map(item => {
+        return item;
+      }).filter(Boolean);
+    } else {
+      if (!permision || permision.length === 0) return [];
 
-    // First filter by permission
-    let items = menuItems
-      .map(checkItemPermission)
-      .filter(Boolean);
+      const checkItemPermission = (item) => {
+        // If it's a structural group (dashboard-group, etc.), it's visible if any child is visible
+        if (item.children) {
+          const visibleChildren = item.children.filter(checkItemPermission);
+          if (visibleChildren.length > 0) {
+            return { ...item, children: visibleChildren };
+          }
+          return null;
+        }
+
+        // Check permission for actual leaf items
+        const hasPermission = permision.some(
+          (data) => data.web_route_key === "/" + item.key ||
+            (item.key === "" && data.web_route_key === "/")
+        );
+
+        return hasPermission ? item : null;
+      };
+
+      // First filter by permission
+      items = menuItems
+        .map(checkItemPermission)
+        .filter(Boolean);
+    }
 
     // Then filter by search value
     if (searchValue.trim()) {
@@ -446,18 +409,26 @@ const CleanDarkLayout = () => {
     }
 
     return items;
-  }, [permision, searchValue, t]);
+  }, [permision, searchValue, t, profile]);
 
-  const onOpenChange = (keys) => {
-    const latestOpenKey = keys.find((key) => openKeys.indexOf(key) === -1);
-    const rootSubmenuKeys = menuItems.map(item => item.key);
+  // ✅ AUTO-EXPAND parent menu on path change
+  useEffect(() => {
+    if (!selectedKey) return;
 
-    if (rootSubmenuKeys.indexOf(latestOpenKey) === -1) {
-      setOpenKeys(keys);
-    } else {
-      setOpenKeys(latestOpenKey ? [latestOpenKey] : []);
+    // Find if the selected key is a child of any menu item
+    const parentItem = menuItems.find(item =>
+      item.children?.some(child => child.key === selectedKey)
+    );
+
+    if (parentItem && !expandedKeys.includes(parentItem.key)) {
+      setExpandedKeys(prev => [...prev, parentItem.key]);
     }
-  };
+  }, [selectedKey]);
+
+  // ✅ PERSIST expanded keys to localStorage
+  useEffect(() => {
+    localStorage.setItem("sidebar_expanded_keys", JSON.stringify(expandedKeys));
+  }, [expandedKeys]);
 
   // Load config
   useEffect(() => {
@@ -500,7 +471,8 @@ const CleanDarkLayout = () => {
 
   // Check page permission and redirect if needed (LOGIC FROM MainLayout)
   useEffect(() => {
-    if (!permision || permision.length === 0) return;
+    const isSuperAdmin = profile && (Number(profile.role_id) === 29 || profile.role_code === 'SUPER_ADMIN');
+    if (isSuperAdmin) return; // ✅ Super Admin can access any page
 
     const findIndex = (permision || []).findIndex(
       (item) => {
@@ -512,7 +484,7 @@ const CleanDarkLayout = () => {
     );
 
     if (findIndex === -1 && location.pathname !== "/login") {
-      if (permision.length > 0) {
+      if (permision && permision.length > 0) {
         navigate(permision[0].web_route_key);
       }
     }
@@ -537,7 +509,7 @@ const CleanDarkLayout = () => {
   }, []);
 
   // Handlers
-  const handleLogout = async () => {
+  const performLogout = async () => {
     try {
       await request("auth/logout", "post", {
         refresh_token: localStorage.getItem("refresh_token"),
@@ -550,6 +522,22 @@ const CleanDarkLayout = () => {
       localStorage.clear();
       window.location.href = "/login";
     }
+  };
+
+  const handleLogout = () => {
+    Modal.confirm({
+      title: t("menu.logout_confirm_title"),
+      content: t("menu.logout_confirm_msg"),
+      okText: t("menu.yes"),
+      cancelText: t("menu.no"),
+      centered: true,
+      onOk: () => {
+        performLogout();
+      },
+      okButtonProps: {
+        danger: true,
+      },
+    });
   };
 
   const toggleFullScreen = async () => {
@@ -626,6 +614,10 @@ const CleanDarkLayout = () => {
   }, [isResizing]);
 
   const handleMenuClick = (key) => {
+    if (key === "logout-trigger") {
+      handleLogout();
+      return;
+    }
     setSelectedKey(key);
     if (isMobile) setDrawerVisible(false);
     if (key) {
@@ -761,18 +753,7 @@ const CleanDarkLayout = () => {
         </div>
       </div>
 
-      {/* Search */}
-      {(!collapsed || isMobile) && (
-        <div className="sidebar-search">
-          <Search
-            placeholder={t("menu.search")}
-            allowClear
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            prefix={<SearchOutlined />}
-          />
-        </div>
-      )}
+      {/* Search - Removed from Sidebar to match design */}
 
       {/* Menu */}
       <div className="menu-container">
@@ -784,7 +765,7 @@ const CleanDarkLayout = () => {
 
           return (
             <div key={category} className="menu-category">
-              {(!collapsed || isMobile) && (
+              {(!collapsed || isMobile) && category !== 'SETTINGS' && category !== 'MAIN' && (
                 <div className="category-header">
                   {t(`menu.categories.${category.toLowerCase()}`)}
                 </div>
@@ -795,21 +776,48 @@ const CleanDarkLayout = () => {
         })}
       </div>
 
-      {/* Footer */}
-      {(!collapsed || isMobile) && (
-        <div className="sidebar-footer">
-          <div className="footer-content">
-            <SettingOutlined />
-            <span>Version {APP_VERSION}</span>
-          </div>
-          <p className="footer-copyright">© {new Date().getFullYear()} PETRONAS</p>
+      {/* Footer / Profile Section */}
+      <div className="sidebar-footer" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.05)', padding: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '8px 12px', borderRadius: '8px' }}
+          className="sidebar-profile-info"
+        >
+          <Avatar src={getProfileImageUrl()} size={32} />
+          {(!collapsed || isMobile) && (
+            <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <span className="profile-name-text" style={{
+                color: 'var(--text-primary, white)',
+                fontWeight: '700',
+                fontSize: '14px',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                overflow: 'hidden',
+                maxWidth: '160px',
+                lineHeight: '1.2'
+              }}>
+                {profile?.name || profile?.firstname || profile?.username || 'User'}
+              </span>
+              <span className="profile-logout-text"
+                onClick={handleLogout}
+                style={{
+                  color: 'var(--text-muted, #94a3b8)',
+                  fontSize: '11px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  cursor: 'pointer',
+                  marginTop: '2px'
+                }}>
+                <LogoutOutlined style={{ fontSize: '10px' }} /> {t("menu.logout")}
+              </span>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   );
 
   return (
-    <Layout style={{ minHeight: "100vh", background: 'transparent' }}>
+    <Layout className={`layout-root ${currentTemplate ? `template-${currentTemplate.id}` : ''}`} style={{ minHeight: "100vh", background: 'transparent' }}>
       {/* Sidebar for Desktop */}
       {!isMobile && (
         <div
@@ -850,22 +858,33 @@ const CleanDarkLayout = () => {
         {/* Header */}
         <Header className="clean-dark-header" style={{ background: 'transparent' }}>
           <div className="header-left">
-            <div className="trigger-button" onClick={() => isMobile ? setDrawerVisible(true) : setCollapsed(!collapsed)}>
+            <div className="trigger-button" onClick={() => isMobile ? setDrawerVisible(true) : setCollapsed(!collapsed)} style={currentTemplate?.id === 'castle' && !isMobile ? { display: 'none' } : {}}>
               {isMobile ? <AlignJustify /> : (collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />)}
             </div>
+
+            {currentTemplate?.id === 'castle' && !isMobile && (
+              <div className="castle-header-title">
+                <h1 style={{ margin: 0, fontSize: '24px', fontWeight: '700', fontFamily: 'Playfair Display, serif' }}>
+                  Good Evening <span style={{ fontWeight: '400' }}>{profile?.name?.split(' ')[0]}</span>
+                </h1>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
+                  Dashboard &gt; {t(`menu.${selectedKey}`) || selectedKey}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="header-right">
-            <Dropdown menu={languageMenu} placement="bottomRight">
+            {/* <Dropdown menu={languageMenu} placement="bottomRight">
               <div className="header-icon glass-pill">
                 <GlobalOutlined />
                 {!isMobile && <span className="pill-label">{i18n.language === 'km' ? 'ភាសាខ្មែរ' : 'English'}</span>}
               </div>
-            </Dropdown>
+            </Dropdown> */}
 
 
 
-            <TemplateSelector isMobile={isMobile} />
+            {/* <TemplateSelector isMobile={isMobile} /> */}
             <div
               className={`header-icon glass-pill ${isFullScreen ? "active" : ""}`}
               onClick={toggleFullScreen}
@@ -878,7 +897,7 @@ const CleanDarkLayout = () => {
             {/* <NotificationBell /> */}
 
 
-            <Link to="/attendance">
+            {/* <Link to="/attendance">
               <div
                 className={`header-icon glass-pill ${location.pathname === "/attendance" ? "active" : ""}`}
                 title="Attendance"
@@ -886,14 +905,9 @@ const CleanDarkLayout = () => {
                 <HomeOutlined />
                 {!isMobile && <span className="pill-label">Attendance</span>}
               </div>
-            </Link>
+            </Link> */}
 
-            <Dropdown menu={profileMenu} placement="bottomRight">
-              <Space className="header-profile">
-                <Avatar src={getProfileImageUrl()} size={isMobile ? 28 : 32} />
-                {!isMobile && <span className="profile-name">{profile?.name}</span>}
-              </Space>
-            </Dropdown>
+            {/* Profile moved to sidebar footer */}
           </div>
         </Header>
 

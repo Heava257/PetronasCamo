@@ -320,7 +320,7 @@ function InventoryTransactionPage() {
 
     return (
         <MainPage loading={state.loading}>
-            <div className="px-2 sm:px-4 lg:px-6">
+            <div className="inventory-transaction-container px-2 sm:px-4 lg:px-6">
                 {/* Header with Statistics */}
                 <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
@@ -504,7 +504,7 @@ function InventoryTransactionPage() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
+                <div className="inventory-transaction-table-card rounded-lg shadow-sm overflow-hidden">
                     <Table
                         dataSource={state.list}
                         columns={columns}
@@ -553,7 +553,7 @@ function InventoryTransactionPage() {
 
                             return (
                                 <Table.Summary fixed>
-                                    <Table.Summary.Row className="bg-gray-100 dark:bg-gray-700 font-bold">
+                                    <Table.Summary.Row className="inventory-summary-row font-bold">
                                         <Table.Summary.Cell index={0} colSpan={6}>
                                             <Text strong className="text-base">
                                                 {t("page_total")}

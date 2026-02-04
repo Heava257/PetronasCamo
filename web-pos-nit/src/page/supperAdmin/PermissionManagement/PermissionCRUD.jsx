@@ -92,11 +92,11 @@ function PermissionCRUD() {
     try {
       setLoading(true);
       const res = await request(`permissions/${permissionId}`, "delete");
-      
+
       if (res && res.success) {
         message.success(res.message);
         loadPermissions();
-        
+
         if (res.affected_roles > 0) {
           message.warning(
             `${res.affected_roles} roles were affected by this deletion`,
@@ -117,7 +117,7 @@ function PermissionCRUD() {
   const handleSubmit = async (values) => {
     try {
       setLoading(true);
-      
+
       const payload = {
         name: values.name,
         group: values.group,
@@ -259,9 +259,9 @@ function PermissionCRUD() {
 
   // Mobile Card Component
   const PermissionMobileCard = ({ permission }) => (
-    <Card 
-      className="mb-3 shadow-sm hover:shadow-md transition-shadow" 
-      bodyStyle={{ padding: '12px' }}
+    <Card
+      className="mb-3 shadow-sm hover:shadow-md transition-shadow"
+      styles={{ body: { padding: '12px' } }}
     >
       <div className="space-y-3">
         {/* Header */}
@@ -471,7 +471,7 @@ function PermissionCRUD() {
         }}
         footer={null}
         width={window.innerWidth < 768 ? '95%' : 600}
-        bodyStyle={{ padding: window.innerWidth < 640 ? '12px' : '24px' }}
+        styles={{ body: { padding: window.innerWidth < 640 ? '12px' : '24px' } }}
       >
         <Form
           form={form}
@@ -486,15 +486,15 @@ function PermissionCRUD() {
             label={<span className="text-xs sm:text-sm">Permission Name</span>}
             rules={[
               { required: true, message: "សូមបញ្ចូល permission name" },
-              { 
+              {
                 pattern: /^[a-z0-9._-]+$/,
-                message: "អនុញ្ញាតតែ lowercase, numbers, dots, underscores, dashes" 
+                message: "អនុញ្ញាតតែ lowercase, numbers, dots, underscores, dashes"
               },
             ]}
             extra={<span className="text-xs">Example: customer.create, product.getlist</span>}
           >
-            <Input 
-              placeholder="e.g., customer.create" 
+            <Input
+              placeholder="e.g., customer.create"
               className="font-mono text-sm"
               size={window.innerWidth < 640 ? 'middle' : 'large'}
             />
@@ -533,7 +533,7 @@ function PermissionCRUD() {
 
           <Form.Item
             noStyle
-            shouldUpdate={(prevValues, currentValues) => 
+            shouldUpdate={(prevValues, currentValues) =>
               prevValues.is_menu_web !== currentValues.is_menu_web
             }
           >
@@ -543,15 +543,15 @@ function PermissionCRUD() {
                   name="web_route_key"
                   label={<span className="text-xs sm:text-sm">Web Route</span>}
                   rules={[
-                    { 
-                      required: true, 
-                      message: "សូមបញ្ចូល route" 
+                    {
+                      required: true,
+                      message: "សូមបញ្ចូល route"
                     },
                   ]}
                   extra={<span className="text-xs">Example: /customer, /product, /dashboard</span>}
                 >
-                  <Input 
-                    placeholder="/customer" 
+                  <Input
+                    placeholder="/customer"
                     prefix={<LinkOutlined />}
                     className="text-sm"
                     size={window.innerWidth < 640 ? 'middle' : 'large'}
@@ -565,7 +565,7 @@ function PermissionCRUD() {
             name="description"
             label={<span className="text-xs sm:text-sm">Description (Optional)</span>}
           >
-            <TextArea 
+            <TextArea
               rows={3}
               placeholder="ពិពណ៌នាអំពីសិទ្ធិនេះ..."
               className="text-sm"

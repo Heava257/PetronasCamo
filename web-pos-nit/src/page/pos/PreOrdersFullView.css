@@ -1,0 +1,619 @@
+/* PreOrdersFullView.css - FINAL CLEAN THEMING FIX (V2) */
+
+/* ==========================================
+   DEFAULT STYLES (Modern Theme / Light)
+   ========================================== */
+.pre-orders-full-view {
+    padding: 16px;
+    min-height: 100vh;
+    background: #f8fafc;
+    color: #1a202c;
+}
+
+.page-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 32px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.2);
+}
+
+.header-title {
+    margin: 0;
+    font-size: 32px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.header-subtitle {
+    margin: 8px 0 0 0;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.table-container {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.refresh-btn {
+    background: white;
+    border-color: white;
+    color: #667eea;
+    font-weight: 600;
+    height: 40px;
+    border-radius: 8px;
+}
+
+.stock-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 2px solid transparent;
+    border-radius: 16px;
+    transition: all 0.3s ease;
+}
+
+.stock-card-title {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: #64748b;
+}
+
+.stock-card-value {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+.stock-card-lpg {
+    background: #fffbeb;
+    color: #b45309;
+    border-color: #fef3c7;
+}
+
+.stock-card-gasoline {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border-color: #dbeafe;
+}
+
+.stock-card-diesel {
+    background: #f0fdf4;
+    color: #15803d;
+    border-color: #dcfce7;
+}
+
+.action-btn-add {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border: none;
+    color: white;
+    font-weight: bold;
+    border-radius: 8px;
+}
+
+.action-btn-view {
+    border-radius: 8px;
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+
+.modal-custom-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 24px 32px;
+    border-radius: 20px 20px 0 0;
+}
+
+.modal-header-title {
+    color: white;
+    margin: 0;
+    font-weight: bold;
+    font-size: 24px;
+}
+
+.modal-header-subtitle {
+    color: rgba(255, 255, 255, 0.8);
+    margin-top: 4px;
+}
+
+.modal-cart-icon {
+    font-size: 32px;
+    color: white;
+}
+
+/* ==========================================
+   ACLEDA GOLD THEME - PREMIUM BANKING STYLE
+   ========================================== */
+
+/* Universal Cleanliness Overrides */
+html.template-acledagold,
+html.template-acledagold body,
+html.template-acledagold #root,
+html.template-acledagold .ant-app,
+html.template-acledagold .pre-orders-full-view {
+    background: transparent !important;
+}
+
+/* Page Header - Dark Glass */
+html.template-acledagold .page-header {
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 215, 0, 0.3) !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+}
+
+html.template-acledagold .header-title {
+    color: #FFD700 !important;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+}
+
+html.template-acledagold .header-subtitle {
+    color: #cbd5e1 !important;
+}
+
+/* Table Section - Clean & Deep */
+html.template-acledagold .table-container {
+    background: rgba(15, 23, 42, 0.4) !important;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    box-shadow: none !important;
+}
+
+html.template-acledagold .ant-table-thead>tr>th {
+    background: rgba(15, 23, 42, 0.9) !important;
+    color: #FFD700 !important;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.4) !important;
+    font-weight: 800 !important;
+}
+
+html.template-acledagold .ant-table-tbody>tr>td {
+    background: transparent !important;
+    color: #f8fafc !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+html.template-acledagold .ant-table-tbody>tr:hover>td {
+    background: rgba(255, 215, 0, 0.08) !important;
+}
+
+/* Stock Cards - Support Specific Colors */
+html.template-acledagold .stock-card {
+    background: rgba(15, 23, 42, 0.7) !important;
+    border-width: 1px !important;
+    backdrop-filter: blur(8px);
+}
+
+html.template-acledagold .stock-card-title {
+    color: #94a3b8 !important;
+}
+
+html.template-acledagold .stock-card-lpg {
+    border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+html.template-acledagold .stock-card-lpg .stock-card-value {
+    color: #fbbf24 !important;
+}
+
+html.template-acledagold .stock-card-gasoline {
+    border-color: rgba(59, 130, 246, 0.5) !important;
+}
+
+html.template-acledagold .stock-card-gasoline .stock-card-value {
+    color: #60a5fa !important;
+}
+
+html.template-acledagold .stock-card-diesel {
+    border-color: rgba(16, 185, 129, 0.5) !important;
+}
+
+html.template-acledagold .stock-card-diesel .stock-card-value {
+    color: #34d399 !important;
+}
+
+/* Controls */
+html.template-acledagold .refresh-btn {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 215, 0, 0.3) !important;
+    color: #FFD700 !important;
+}
+
+html.template-acledagold .ant-input-search .ant-input,
+html.template-acledagold .ant-input-search .ant-btn {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border-color: rgba(255, 215, 0, 0.2) !important;
+    color: white !important;
+}
+
+/* Buttons */
+html.template-acledagold .action-btn-add {
+    background: linear-gradient(135deg, #B8860B 0%, #FFD700 100%) !important;
+    color: #0c111d !important;
+    box-shadow: 0 4px 15px rgba(184, 134, 11, 0.4) !important;
+}
+
+html.template-acledagold .action-btn-view {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 215, 0, 0.4) !important;
+    color: #FFD700 !important;
+}
+
+/* Modal Styling */
+html.template-acledagold .modal-custom-header {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+    border-bottom: 2px solid #FFD700 !important;
+}
+
+html.template-acledagold .modal-header-title {
+    color: #FFD700 !important;
+}
+
+html.template-acledagold .ant-modal-content {
+    background: #0c111d !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+}
+
+/* Support Tools */
+html.template-acledagold .status-tag-ready {
+    background: rgba(34, 197, 94, 0.2) !important;
+    color: #4ade80 !important;
+    border: 1px solid #22c55e !important;
+}
+
+html.template-acledagold .status-tag-confirmed {
+    background: rgba(59, 130, 246, 0.2) !important;
+    color: #60a5fa !important;
+    border: 1px solid #3b82f6 !important;
+}
+
+html.template-acledagold .total-price-cell {
+    background: rgba(52, 211, 153, 0.1) !important;
+    color: #34d399 !important;
+    border: 1px solid rgba(52, 211, 153, 0.2) !important;
+}
+
+html.template-acledagold .customer-avatar {
+    background: #FFD700 !important;
+    color: #0c111d !important;
+}
+
+/* ==========================================
+   SIDEBAR & SEARCH THEME OVERRIDES
+   ========================================== */
+
+html.template-acledagold .invoice-sidebar-container {
+    background: #0f172a !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+html.template-acledagold .sidebar-header-section {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    border-bottom: 2px solid #FFD700 !important;
+    padding: 20px !important;
+}
+
+html.template-acledagold .sidebar-body-section {
+    background: #0c111d !important;
+    padding: 20px !important;
+}
+
+/* Section Cards - FIXING THE WHITE BLOCKS */
+html.template-acledagold .sidebar-section-card {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 215, 0, 0.1) !important;
+    border-radius: 16px !important;
+    padding: 20px !important;
+    margin-bottom: 20px !important;
+    box-shadow: none !important;
+}
+
+html.template-acledagold .sidebar-quick-orders-card {
+    border-color: rgba(255, 215, 0, 0.3) !important;
+    background: rgba(255, 215, 0, 0.05) !important;
+}
+
+/* Section Headers Structure */
+html.template-acledagold .sidebar-section-header-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 16px !important;
+}
+
+html.template-acledagold .sidebar-section-icon-wrapper {
+    background: rgba(255, 215, 0, 0.1) !important;
+    padding: 8px !important;
+    border-radius: 10px !important;
+}
+
+html.template-acledagold .sidebar-section-icon {
+    color: #FFD700 !important;
+    width: 16px !important;
+    height: 16px !important;
+}
+
+html.template-acledagold .sidebar-section-title {
+    font-size: 14px !important;
+    color: #e2e8f0 !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+}
+
+html.template-acledagold .sidebar-section-badge {
+    background: rgba(255, 215, 0, 0.15) !important;
+    color: #FFD700 !important;
+    font-size: 12px !important;
+    padding: 2px 10px !important;
+    border-radius: 9999px !important;
+}
+
+/* Cart Items */
+html.template-acledagold .sidebar-cart-item-card {
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: 1px solid rgba(255, 215, 0, 0.15) !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
+}
+
+html.template-acledagold .sidebar-cat-badge {
+    background: rgba(255, 215, 0, 0.1) !important;
+    color: #FFD700 !important;
+    border-left: 3px solid #FFD700 !important;
+    padding: 4px 12px !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+}
+
+/* Inputs, Selects, and Textareas */
+html.template-acledagold .sidebar-input-qty,
+html.template-acledagold .sidebar-input-price-readonly,
+html.template-acledagold .sidebar-select-customer,
+html.template-acledagold .sidebar-select-date,
+html.template-acledagold .sidebar-textarea {
+    background: #050a14 !important;
+    border: 2px solid rgba(255, 215, 0, 0.2) !important;
+    color: #f8fafc !important;
+    border-radius: 10px !important;
+    width: 100% !important;
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+}
+
+html.template-acledagold .sidebar-input-qty:focus,
+html.template-acledagold .sidebar-select-date:focus,
+html.template-acledagold .sidebar-textarea:focus {
+    border-color: #FFD700 !important;
+    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.1) !important;
+    outline: none !important;
+}
+
+/* Badges */
+html.template-acledagold .stock-level-badge {
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 10px !important;
+}
+
+/* Badges */
+html.template-acledagold .stock-level-badge {
+    background: rgba(59, 130, 246, 0.1) !important;
+    color: #60a5fa !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-size: 10px !important;
+}
+
+/* Enhanced PO Balance */
+html.template-acledagold .po-balance-badge {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+    border-left: 3px solid #FFD700 !important;
+    color: #cbd5e1 !important;
+    padding: 8px 12px !important;
+    border-radius: 6px !important;
+    margin-top: 12px !important;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2) !important;
+    font-size: 11px !important;
+}
+
+html.template-acledagold .po-balance-badge span:first-child {
+    color: #FFD700 !important;
+    font-weight: 700 !important;
+}
+
+/* Sub Labels & Helper Text */
+html.template-acledagold .sidebar-sub-label {
+    display: block !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #e2e8f0 !important;
+    margin-bottom: 8px !important;
+    text-transform: none !important;
+}
+
+/* Specific Label Icons */
+html.template-acledagold .sidebar-label-icon-blue {
+    color: #60a5fa !important;
+    width: 14px;
+    height: 14px;
+}
+
+html.template-acledagold .sidebar-label-icon-gold {
+    color: #FFD700 !important;
+    font-size: 14px;
+}
+
+html.template-acledagold .sidebar-label-icon-green {
+    color: #34d399 !important;
+    width: 14px;
+    height: 14px;
+}
+
+html.template-acledagold .sidebar-label-icon-purple {
+    color: #c084fc !important;
+    width: 14px;
+    height: 14px;
+}
+
+/* Admin Lock Badge */
+html.template-acledagold .admin-lock-badge {
+    margin-left: 8px !important;
+    background: rgba(255, 215, 0, 0.15) !important;
+    color: #FFD700 !important;
+    border: 1px solid rgba(255, 215, 0, 0.3) !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    font-size: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+html.template-acledagold .sidebar-helper-text {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    margin-top: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+html.template-acledagold .sidebar-helper-text span:first-child {
+    color: #22c55e !important;
+    font-weight: bold !important;
+}
+
+/* Action Buttons */
+html.template-acledagold .sidebar-btn-checkout {
+    background: linear-gradient(135deg, #B8860B 0%, #FFD700 100%) !important;
+    color: #0c111d !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(184, 134, 11, 0.4) !important;
+}
+
+html.template-acledagold .sidebar-btn-preview {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 215, 0, 0.4) !important;
+    color: #FFD700 !important;
+}
+
+/* Footer */
+html.template-acledagold .sidebar-footer-section {
+    background: #0f172a !important;
+    border-top: 1px solid rgba(255, 215, 0, 0.2) !important;
+    padding: 24px !important;
+}
+
+html.template-acledagold .sidebar-total-value {
+    color: #FFD700 !important;
+    font-size: 32px !important;
+    font-weight: 800 !important;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.3) !important;
+}
+
+/* ==========================================
+   LOCATION SELECTOR THEME OVERRIDES
+   ========================================== */
+
+html.template-acledagold .location-selector-container {
+    margin-bottom: 24px !important;
+}
+
+html.template-acledagold .location-title-text,
+html.template-acledagold .truck-title-text {
+    color: #f8fafc !important;
+    font-size: 14px !important;
+}
+
+html.template-acledagold .location-icon-blue {
+    color: #60a5fa !important;
+    font-size: 20px;
+}
+
+html.template-acledagold .truck-icon-green {
+    color: #34d399 !important;
+    font-size: 20px;
+}
+
+html.template-acledagold .selected-location-details {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border: 1px solid rgba(59, 130, 246, 0.2) !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    margin-top: 10px !important;
+}
+
+html.template-acledagold .selected-truck-details {
+    background: rgba(52, 211, 153, 0.1) !important;
+    border: 1px solid rgba(52, 211, 153, 0.2) !important;
+    padding: 12px !important;
+    border-radius: 8px !important;
+    margin-top: 10px !important;
+}
+
+html.template-acledagold .selected-location-name {
+    color: #60a5fa !important;
+    font-weight: 600;
+}
+
+html.template-acledagold .selected-location-address {
+    color: #94a3b8 !important;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+html.template-acledagold .selected-truck-plate {
+    color: #34d399 !important;
+    font-weight: 600;
+}
+
+html.template-acledagold .selected-truck-driver {
+    color: #94a3b8 !important;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Ant Design Select Overrides (Sidebar Context) */
+html.template-acledagold .invoice-sidebar-container .ant-select-selector {
+    background: #050a14 !important;
+    border: 2px solid rgba(255, 215, 0, 0.2) !important;
+    color: white !important;
+    border-radius: 10px !important;
+    height: 44px !important;
+}
+
+html.template-acledagold .invoice-sidebar-container .ant-select-selection-item,
+html.template-acledagold .invoice-sidebar-container .ant-select-selection-placeholder {
+    color: #f8fafc !important;
+    line-height: 40px !important;
+}
+
+html.template-acledagold .invoice-sidebar-container .ant-select-arrow {
+    color: #FFD700 !important;
+}
+
+/* Alert Modal */
+html.template-acledagold .fixed.inset-0.bg-black {
+    background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Category Borders */
+html.template-acledagold .cat-card-lpg {
+    border-left: 4px solid #f59e0b !important;
+}
+
+html.template-acledagold .cat-card-gasoline {
+    border-left: 4px solid #3b82f6 !important;
+}
+
+html.template-acledagold .cat-card-diesel {
+    border-left: 4px solid #10b981 !important;
+}

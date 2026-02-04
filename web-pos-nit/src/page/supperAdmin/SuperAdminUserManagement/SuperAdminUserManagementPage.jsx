@@ -21,28 +21,31 @@ import {
   Divider,
   Form,
   Drawer,
+  Result // ✅ Import Result
 } from "antd";
 import {
   UserOutlined,
   PlusOutlined,
-  DeleteOutlined,
-  EditOutlined,
-  TeamOutlined,
-  CrownOutlined,
-  UploadOutlined,
-  ReloadOutlined,
-  FilterOutlined,
-  BarChartOutlined,
-  DashboardOutlined,
-  BranchesOutlined,
-  SafetyCertificateOutlined,
-  CheckCircleOutlined,
+  // ... (keep imports)
   StopOutlined,
+  SafetyCertificateOutlined,
+  ReloadOutlined,
+  CrownOutlined,
+  CheckCircleOutlined,
+  BranchesOutlined,
+  TeamOutlined,
+  FilterOutlined,
+  DashboardOutlined,
+  BarChartOutlined,
+  UploadOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { Config } from "../../../util/config";
 import { formatDateServer, request } from "../../../util/helper";
 import { configStore } from "../../../store/configStore";
+import { getProfile } from "../../../store/profile.store"; // ✅ Import getProfile
 import OnlineStatusAvatar from '../OnlineStatus/OnlineStatusAvatar';
 
 const { TabPane } = Tabs;
@@ -50,14 +53,54 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 function SuperAdminUserManagement() {
+  const { config } = configStore();
+  let user = config.user || {};
+
+  // �️ Fallback: If config.user is empty (e.g. on hard refresh), try localStorage
+  if (!user.id || !user.role_id) {
+    const savedProfile = getProfile();
+    if (savedProfile) {
+      user = savedProfile;
+    }
+  }
+
+  // �🔒 Security Check: Only Super Admin (ID 29)
+  // Fix: Check for 'Supper' (typo support) and string/number role_id
+  const roleName = String(
+    user.role_name ||
+    (user.role && user.role.name) ||
+    config.role ||
+    config.role_name ||
+    ''
+  ).toLowerCase();
+
+  const isSuperAdmin =
+    Number(user.role_id) === 29 ||
+    Number(config.role_id) === 29 ||
+    roleName.includes('super admin') ||
+    roleName.includes('supper admin');
+
+  if (!isSuperAdmin) {
+    return (
+      <div className="p-8 flex justify-center items-center min-h-screen bg-gray-50">
+        <Result
+          status="403"
+          title="403"
+          subTitle="Sorry, you are not authorized to access the Super Admin Dashboard."
+          extra={<Button type="primary" onClick={() => window.location.href = '/'}>Back Home</Button>}
+        />
+      </div>
+    );
+  }
+
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [superAdminModalVisible, setSuperAdminModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("users");
-  const { config } = configStore();
+
   const [form] = Form.useForm();
   const [superAdminForm] = Form.useForm();
-  
+
   const [state, setState] = useState({
     users: [],
     stats: {},
@@ -81,39 +124,39 @@ function SuperAdminUserManagement() {
   }, [activeTab]);
 
   // នៅក្នុង SuperAdminUserManagement.jsx
-const loadUserData = async (filters = state.filters) => {
-  try {
-    setLoading(true);
-    
-    const queryParams = new URLSearchParams();
-    if (filters.branch_name !== 'all') queryParams.append('branch_name', filters.branch_name);
-    if (filters.role_code !== 'all') queryParams.append('role_code', filters.role_code);
-    if (filters.is_active !== 'all') queryParams.append('is_active', filters.is_active);
-    if (filters.search) queryParams.append('search', filters.search);
-    
-    const res = await request(`superadmin/users?${queryParams.toString()}`, "get");
-    
-    if (res && res.success) {
+  const loadUserData = async (filters = state.filters) => {
+    try {
+      setLoading(true);
 
-      
-      setState((prev) => ({
-        ...prev,
-        users: res.users || [],
-        stats: res.stats || {},
-        branches: res.branches || [],
-        roles: res.roles || [],
-        filters: res.filters_applied
-      }));
-    } else {
-      message.error(res.message || "Failed to load users");
+      const queryParams = new URLSearchParams();
+      if (filters.branch_name !== 'all') queryParams.append('branch_name', filters.branch_name);
+      if (filters.role_code !== 'all') queryParams.append('role_code', filters.role_code);
+      if (filters.is_active !== 'all') queryParams.append('is_active', filters.is_active);
+      if (filters.search) queryParams.append('search', filters.search);
+
+      const res = await request(`superadmin/users?${queryParams.toString()}`, "get");
+
+      if (res && res.success) {
+
+
+        setState((prev) => ({
+          ...prev,
+          users: res.users || [],
+          stats: res.stats || {},
+          branches: res.branches || [],
+          roles: res.roles || [],
+          filters: res.filters_applied
+        }));
+      } else {
+        message.error(res.message || "Failed to load users");
+      }
+    } catch (error) {
+      console.error("Error loading users:", error);
+      message.error("Failed to load user list");
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error loading users:", error);
-    message.error("Failed to load user list");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const loadSystemStatistics = async () => {
     try {
@@ -153,7 +196,7 @@ const loadUserData = async (filters = state.filters) => {
       password: '' // Don't populate password
     });
     setModalVisible(true);
-    
+
     if (user.profile_image) {
       setFileList([{
         uid: '-1',
@@ -167,7 +210,7 @@ const loadUserData = async (filters = state.filters) => {
   const handleDelete = async (userId) => {
     try {
       const res = await request("superadmin/users", "delete", { user_id: userId });
-      
+
       if (res && res.success) {
         message.success(res.message);
         loadUserData();
@@ -184,7 +227,7 @@ const loadUserData = async (filters = state.filters) => {
     try {
       setLoading(true);
       const formData = new FormData();
-      
+
       Object.keys(values).forEach(key => {
         if (values[key] !== undefined && values[key] !== null) {
           formData.append(key, values[key]);
@@ -217,7 +260,7 @@ const loadUserData = async (filters = state.filters) => {
       setLoading(true);
       const formData = new FormData();
       const userId = form.getFieldValue("id");
-      
+
       Object.keys(values).forEach(key => {
         if (values[key] !== undefined && values[key] !== null) {
           formData.append(key, values[key]);
@@ -230,7 +273,7 @@ const loadUserData = async (filters = state.filters) => {
 
       const method = userId ? "put" : "post";
       const url = userId ? `superadmin/users/${userId}` : "auth/register";
-      
+
       const res = await request(url, method, formData);
 
       if (res && res.success) {
@@ -300,7 +343,7 @@ const loadUserData = async (filters = state.filters) => {
       width: 200,
       render: (_, record) => (
         <div className="text-sm">
-          <div>📱 {"tel:"+record.tel || "N/A"}</div>
+          <div>📱 {"tel:" + record.tel || "N/A"}</div>
           <div className="text-gray-500">📧 {record.email || record.username}</div>
         </div>
       ),
@@ -499,7 +542,7 @@ const loadUserData = async (filters = state.filters) => {
               <FilterOutlined className="text-blue-600 text-lg" />
               <span className="font-semibold">ច្រោះតាមប្រភេទ:</span>
             </div>
-            
+
             <Select
               value={state.filters.branch_name}
               onChange={(value) => handleFilterChange('branch_name', value)}
@@ -590,10 +633,10 @@ const loadUserData = async (filters = state.filters) => {
                         <span className="font-bold">{role.user_count}</span>
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-blue-600 h-2 rounded-full"
-                          style={{ 
-                            width: `${(role.user_count / state.stats.total_users * 100) || 0}%` 
+                          style={{
+                            width: `${(role.user_count / state.stats.total_users * 100) || 0}%`
                           }}
                         ></div>
                       </div>
@@ -648,8 +691,8 @@ const loadUserData = async (filters = state.filters) => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="password" label="ពាក្យសម្ងាត់" rules={[{ required: true, message: "ត្រូវការពាក្យសម្ងាត់" }]}>
-                <Input.Password placeholder="ពាក្យសម្ងាត់" minLength={6} />
+              <Form.Item name="password" label="ពាក្យសម្ងាត់" rules={[{ required: true, message: "ត្រូវការពាក្យសម្ងាត់ (យ៉ាងតិច 8 តួអក្សរ)", min: 8 }]}>
+                <Input.Password placeholder="ពាក្យសម្ងាត់" />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -740,8 +783,8 @@ const loadUserData = async (filters = state.filters) => {
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="password" label="ពាក្យសម្ងាត់" rules={[{ required: !form.getFieldValue("id") }]}>
-                <Input.Password placeholder="ពាក្យសម្ងាត់" minLength={6} />
+              <Form.Item name="password" label="ពាក្យសម្ងាត់" rules={[{ required: !form.getFieldValue("id"), message: "យ៉ាងតិច 8 តួអក្សរ", min: 8 }]}>
+                <Input.Password placeholder="ពាក្យសម្ងាត់" />
               </Form.Item>
             </Col>
             <Col span={12}>

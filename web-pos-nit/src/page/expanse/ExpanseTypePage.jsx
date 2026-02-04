@@ -24,8 +24,8 @@ const { Text, Title } = Typography;
 
 function ExpanseTypePage() {
   const [formRef] = Form.useForm();
-  const { t } = useTranslation(); 
-  
+  const { t } = useTranslation();
+
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [state, setState] = useState({
@@ -146,7 +146,7 @@ function ExpanseTypePage() {
   // Mobile Expense Type Card Component
   const ExpenseTypeMobileCard = ({ type, index }) => {
     return (
-      <Card 
+      <Card
         className="mb-3 shadow-sm hover:shadow-md transition-shadow duration-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
         bodyStyle={{ padding: '16px' }}
       >
@@ -165,36 +165,36 @@ function ExpanseTypePage() {
               {type.name}
             </h3>
           </div>
-          <Button 
-            type="link" 
-            icon={<EyeOutlined />} 
+          <Button
+            type="link"
+            icon={<EyeOutlined />}
             onClick={() => showDetailModal(type)}
             className="text-blue-500 dark:text-blue-400"
           />
         </div>
 
         <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-          {isPermission("customer.getone") && (
-            <>
-              <Button
-                type="primary"
-                size="small"
-                icon={<MdEdit />}
-                onClick={() => onClickEdit(type)}
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-              >
-                {t("EDIT")}
-              </Button>
-              <Button
-                danger
-                size="small"
-                icon={<MdDelete />}
-                onClick={() => onClickDelete(type)}
-                className="flex-1"
-              >
-                {t("DELETE")}
-              </Button>
-            </>
+          {isPermission("expanse_type.update") && (
+            <Button
+              type="primary"
+              size="small"
+              icon={<MdEdit />}
+              onClick={() => onClickEdit(type)}
+              className="flex-1 bg-blue-500 hover:bg-blue-600"
+            >
+              {t("EDIT")}
+            </Button>
+          )}
+          {isPermission("expanse_type.remove") && (
+            <Button
+              danger
+              size="small"
+              icon={<MdDelete />}
+              onClick={() => onClickDelete(type)}
+              className="flex-1"
+            >
+              {t("DELETE")}
+            </Button>
           )}
         </div>
       </Card>
@@ -230,7 +230,7 @@ function ExpanseTypePage() {
       width: 150,
       render: (_, record) => (
         <Space>
-          {isPermission("customer.getone") && (
+          {isPermission("expanse_type.update") && (
             <Button
               type="primary"
               size="small"
@@ -238,7 +238,7 @@ function ExpanseTypePage() {
               onClick={() => onClickEdit(record)}
             />
           )}
-          {isPermission("customer.getone") && (
+          {isPermission("expanse_type.remove") && (
             <Button
               type="primary"
               danger
@@ -275,9 +275,9 @@ function ExpanseTypePage() {
                     size="large"
                     className="w-full sm:w-64"
                   />
-                  <Button 
-                    type="primary" 
-                    onClick={getList} 
+                  <Button
+                    type="primary"
+                    onClick={getList}
                     icon={<FiSearch />}
                     size="large"
                     className="bg-blue-500 hover:bg-blue-600"
@@ -289,15 +289,17 @@ function ExpanseTypePage() {
             </div>
 
             {/* New Button */}
-            <Button 
-              type="primary" 
-              onClick={onClickAddBtn}
-              icon={<MdOutlineCreateNewFolder />}
-              size="large"
-              className="w-full lg:w-auto bg-green-500 hover:bg-green-600"
-            >
-              {t("NEW")}
-            </Button>
+            {isPermission("expanse_type.create") && (
+              <Button
+                type="primary"
+                onClick={onClickAddBtn}
+                icon={<MdOutlineCreateNewFolder />}
+                size="large"
+                className="w-full lg:w-auto bg-green-500 hover:bg-green-600"
+              >
+                {t("NEW")}
+              </Button>
+            )}
           </div>
 
           {/* Statistics */}
@@ -307,7 +309,7 @@ function ExpanseTypePage() {
                 <Statistic
                   title={<span className="text-gray-700 dark:text-gray-300 text-sm">{t("Total Types")}</span>}
                   value={list.length}
-                  valueStyle={{ 
+                  valueStyle={{
                     color: '#1e40af',
                     fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                     fontWeight: 'bold'
@@ -319,7 +321,7 @@ function ExpanseTypePage() {
                 <Statistic
                   title={<span className="text-gray-700 dark:text-gray-300 text-sm">{t("Filtered Results")}</span>}
                   value={filteredList.length}
-                  valueStyle={{ 
+                  valueStyle={{
                     color: '#15803d',
                     fontSize: 'clamp(1.5rem, 4vw, 2rem)',
                     fontWeight: 'bold'
@@ -347,7 +349,7 @@ function ExpanseTypePage() {
             <Form.Item name="id" hidden>
               <Input />
             </Form.Item>
-            
+
             <Form.Item
               name="name"
               label={<span className="font-medium">{t("Name")}</span>}
@@ -355,7 +357,7 @@ function ExpanseTypePage() {
             >
               <Input placeholder={t("Enter Name")} size="large" />
             </Form.Item>
-            
+
             <Form.Item
               name="code"
               label={<span className="font-medium">{t("Code")}</span>}
@@ -363,7 +365,7 @@ function ExpanseTypePage() {
             >
               <Input placeholder={t("Enter Code")} size="large" />
             </Form.Item>
-            
+
             <Form.Item className="mb-0">
               <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
                 <Button onClick={onCloseModal} size="large" block className="sm:w-auto">
@@ -413,8 +415,8 @@ function ExpanseTypePage() {
                 </div>
               </div>
 
-              {isPermission("customer.getone") && (
-                <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                {isPermission("expanse_type.update") && (
                   <Button
                     type="primary"
                     icon={<MdEdit />}
@@ -427,6 +429,8 @@ function ExpanseTypePage() {
                   >
                     {t("EDIT")}
                   </Button>
+                )}
+                {isPermission("expanse_type.remove") && (
                   <Button
                     danger
                     icon={<MdDelete />}
@@ -439,8 +443,8 @@ function ExpanseTypePage() {
                   >
                     {t("DELETE")}
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </Modal>
@@ -448,7 +452,7 @@ function ExpanseTypePage() {
         {/* Desktop Table View */}
         <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
           <Table
-            rowClassName={(record, index) => 
+            rowClassName={(record, index) =>
               `pos-row ${index % 2 === 0 ? 'bg-gray-50 dark:bg-gray-700' : 'bg-white dark:bg-gray-800'}`
             }
             dataSource={filteredList}
@@ -472,9 +476,9 @@ function ExpanseTypePage() {
           ) : filteredList.length > 0 ? (
             <div className="space-y-3">
               {filteredList.map((type, index) => (
-                <ExpenseTypeMobileCard 
-                  key={type.id} 
-                  type={type} 
+                <ExpenseTypeMobileCard
+                  key={type.id}
+                  type={type}
                   index={index}
                 />
               ))}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Switch, Button, Radio, Divider, message, Tag, Space } from 'antd';
+import { Card, Row, Col, Switch, Button, Radio, Divider, message, Tag, Space, Tabs } from 'antd';
 import {
     CheckCircleFilled,
     ReloadOutlined,
@@ -7,13 +7,27 @@ import {
     LayoutOutlined,
     FontSizeOutlined,
     SettingOutlined,
-    LockOutlined
+    LockOutlined,
+    EyeOutlined,
+    ThunderboltOutlined,
+    GlobalOutlined,
+    MenuOutlined
 } from '@ant-design/icons';
 import MainPage from '../../component/layout/MainPage';
+import { useTranslation } from 'react-i18next';
+import { useTranslation as useCustomTranslation } from "../../locales/TranslationContext.jsx";
 import { useSettings } from '../../settings';
 import './SettingsPage.css';
 
 function SettingsPage() {
+    const { t, i18n } = useTranslation();
+    const { changeLanguage: changeCustomLanguage } = useCustomTranslation();
+
+    const changeLanguage = (lng) => {
+        i18n.changeLanguage(lng);
+        changeCustomLanguage(lng);
+        localStorage.setItem('language', lng);
+    };
     const {
         settings,
         currentTemplate,
@@ -27,7 +41,7 @@ function SettingsPage() {
 
     const handleTemplateChange = (templateId) => {
         applyTemplate(templateId);
-        message.success(`Applied ${templateId} template`);
+        message.success(`Applied ${templateId} template successfully!`);
     };
 
     const handleReset = () => {
@@ -35,37 +49,21 @@ function SettingsPage() {
         message.info('Settings reset to default');
     };
 
-    return (
-        <MainPage>
-            <div className="settings-page">
-                {/* Header */}
-                <Card className="settings-header-card">
-                    <div className="settings-header">
-                        <div className="settings-header-icon">
-                            <SettingOutlined />
-                        </div>
-                        <div className="settings-header-text">
-                            <h1>Settings</h1>
-                            <p>Customize your application experience</p>
-                        </div>
-                        <Button
-                            icon={<ReloadOutlined />}
-                            onClick={handleReset}
-                            className="reset-button"
-                        >
-                            Reset to Default
-                        </Button>
-                    </div>
-                </Card>
-
-                {/* Template Selection */}
-                <Card className="settings-section">
-                    <div className="section-header">
-                        <BgColorsOutlined className="section-icon" />
-                        <div>
-                            <h2>UI Template</h2>
-                            <p>Choose a pre-built template for your interface</p>
-                        </div>
+    // Tab items for better organization
+    const tabItems = [
+        {
+            key: 'templates',
+            label: (
+                <span>
+                    <BgColorsOutlined />
+                    Templates
+                </span>
+            ),
+            children: (
+                <div className="settings-tab-content">
+                    <div className="tab-header">
+                        <h2>UI Templates</h2>
+                        <p>Choose a pre-built template for your interface. Each template includes colors, fonts, and layout styles.</p>
                     </div>
 
                     <Row gutter={[24, 24]} className="template-grid">
@@ -82,7 +80,7 @@ function SettingsPage() {
                                         <div className="preview-sidebar" style={{
                                             background: template.sidebar.background
                                         }}>
-                                            <div className="preview-menu-item" style={{
+                                            <div className="preview-menu-item active" style={{
                                                 background: template.colors.primary
                                             }} />
                                             <div className="preview-menu-item" />
@@ -97,6 +95,8 @@ function SettingsPage() {
                                                 background: template.preview.cardColor,
                                                 borderRadius: template.layout.borderRadius
                                             }}>
+                                                <div className="preview-text-line" />
+                                                <div className="preview-text-line short" />
                                                 <div className="preview-button" style={{
                                                     background: template.colors.primary,
                                                     borderRadius: template.components.button.borderRadius
@@ -108,30 +108,33 @@ function SettingsPage() {
                                     {/* Template Info */}
                                     <div className="template-info">
                                         <div className="template-name">
-                                            <span>{template.name}</span>
+                                            <h3>{template.name}</h3>
                                             {settings.templateId === template.id && (
-                                                <Tag color="blue" icon={<CheckCircleFilled />}>Active</Tag>
+                                                <Tag color="success" icon={<CheckCircleFilled />}>Active</Tag>
                                             )}
                                         </div>
                                         <p className="template-description">{template.description}</p>
 
                                         {/* Color Preview */}
-                                        <div className="color-dots">
-                                            <span
-                                                className="color-dot"
-                                                style={{ background: template.colors.primary }}
-                                                title="Primary"
-                                            />
-                                            <span
-                                                className="color-dot"
-                                                style={{ background: template.colors.secondary }}
-                                                title="Secondary"
-                                            />
-                                            <span
-                                                className="color-dot"
-                                                style={{ background: template.sidebar.background }}
-                                                title="Sidebar"
-                                            />
+                                        <div className="color-preview">
+                                            <span className="color-label">Colors:</span>
+                                            <div className="color-dots">
+                                                <span
+                                                    className="color-dot"
+                                                    style={{ background: template.colors.primary }}
+                                                    title="Primary"
+                                                />
+                                                <span
+                                                    className="color-dot"
+                                                    style={{ background: template.colors.secondary }}
+                                                    title="Secondary"
+                                                />
+                                                <span
+                                                    className="color-dot"
+                                                    style={{ background: template.sidebar.background }}
+                                                    title="Sidebar"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -145,142 +148,296 @@ function SettingsPage() {
                             </Col>
                         ))}
                     </Row>
-                </Card>
-
-                {/* Appearance Settings */}
-                <Card className="settings-section">
-                    <div className="section-header">
-                        <LayoutOutlined className="section-icon" />
-                        <div>
-                            <h2>Appearance</h2>
-                            <p>Adjust visual preferences</p>
-                        </div>
+                </div>
+            )
+        },
+        {
+            key: 'appearance',
+            label: (
+                <span>
+                    <EyeOutlined />
+                    Appearance
+                </span>
+            ),
+            children: (
+                <div className="settings-tab-content">
+                    <div className="tab-header">
+                        <h2>Appearance Settings</h2>
+                        <p>Customize the visual experience of your application</p>
                     </div>
 
-                    <div className="settings-list">
-                        <div className="setting-item">
-                            <div className="setting-info">
-                                <span className="setting-label">Dark Mode</span>
-                                <span className="setting-description">Switch between light and dark theme</span>
-                            </div>
-                            <Switch
-                                checked={isDarkMode}
-                                onChange={toggleDarkMode}
-                                checkedChildren="Dark"
-                                unCheckedChildren="Light"
-                            />
+                    <Row gutter={[24, 24]}>
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <LayoutOutlined className="setting-icon" />
+                                    <h3>Theme Mode</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">Dark Mode</span>
+                                        <span className="setting-description">Switch between light and dark theme</span>
+                                    </div>
+                                    <Switch
+                                        checked={isDarkMode}
+                                        onChange={toggleDarkMode}
+                                        checkedChildren="🌙"
+                                        unCheckedChildren="☀️"
+                                        size="large"
+                                    />
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <FontSizeOutlined className="setting-icon" />
+                                    <h3>Font Size</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">Text Size</span>
+                                        <span className="setting-description">Adjust text size for better readability</span>
+                                    </div>
+                                    <Radio.Group
+                                        value={settings.fontSize}
+                                        onChange={(e) => updateSetting('fontSize', e.target.value)}
+                                        buttonStyle="solid"
+                                    >
+                                        <Radio.Button value="small">Small</Radio.Button>
+                                        <Radio.Button value="medium">Medium</Radio.Button>
+                                        <Radio.Button value="large">Large</Radio.Button>
+                                    </Radio.Group>
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <ThunderboltOutlined className="setting-icon" />
+                                    <h3>Animations</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">Enable Animations</span>
+                                        <span className="setting-description">Smooth transitions and effects</span>
+                                    </div>
+                                    <Switch
+                                        checked={settings.animations}
+                                        onChange={(checked) => updateSetting('animations', checked)}
+                                        size="large"
+                                    />
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <LayoutOutlined className="setting-icon" />
+                                    <h3>Table Layout</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">Compact Tables</span>
+                                        <span className="setting-description">Use denser table layouts</span>
+                                    </div>
+                                    <Switch
+                                        checked={settings.compactTables}
+                                        onChange={(checked) => updateSetting('compactTables', checked)}
+                                        size="large"
+                                    />
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <GlobalOutlined className="setting-icon" />
+                                    <h3>Language</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">System Language</span>
+                                        <span className="setting-description">Change the application's language layer</span>
+                                    </div>
+                                    <Radio.Group
+                                        value={i18n.language}
+                                        onChange={(e) => changeLanguage(e.target.value)}
+                                        buttonStyle="solid"
+                                    >
+                                        <Radio.Button value="en">
+                                            <span>🇬🇧 English</span>
+                                        </Radio.Button>
+                                        <Radio.Button value="km">
+                                            <span>🇰🇭 ភាសាខ្មែរ</span>
+                                        </Radio.Button>
+                                    </Radio.Group>
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <MenuOutlined className="setting-icon" />
+                                    <h3>Menu Item Style</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">Item Appearance</span>
+                                        <span className="setting-description">Select the style for sidebar menu items</span>
+                                    </div>
+                                    <Radio.Group
+                                        value={settings.menuItemTemplate}
+                                        onChange={(e) => updateSetting('menuItemTemplate', e.target.value)}
+                                        buttonStyle="solid"
+                                    >
+                                        <Radio.Button value="modern">Modern (Clean)</Radio.Button>
+                                        <Radio.Button value="classic">Boxed (Green)</Radio.Button>
+                                        <Radio.Button value="minimal">Minimal</Radio.Button>
+                                        <Radio.Button value="rounded">Rounded (Pill)</Radio.Button>
+                                        <Radio.Button value="glass">Glass</Radio.Button>
+                                        <Radio.Button value="neon">Neon</Radio.Button>
+                                    </Radio.Group>
+                                </div>
+                            </Card>
+                        </Col>
+                    </Row>
+                </div >
+            )
+        },
+        {
+            key: 'security',
+            label: (
+                <span>
+                    <LockOutlined />
+                    Security
+                </span>
+            ),
+            children: (
+                <div className="settings-tab-content">
+                    <div className="tab-header">
+                        <h2>Security Settings</h2>
+                        <p>Manage login methods and password policies</p>
+                    </div>
+
+                    <Row gutter={[24, 24]}>
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <LockOutlined className="setting-icon" />
+                                    <h3>Authentication</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">Face Login</span>
+                                        <span className="setting-description">Enable facial recognition for login</span>
+                                    </div>
+                                    <Switch
+                                        checked={settings.faceLogin}
+                                        onChange={(checked) => {
+                                            updateSetting('faceLogin', checked);
+                                            message.success(checked ? 'Face Login Enabled' : 'Face Login Disabled');
+                                        }}
+                                        size="large"
+                                    />
+                                </div>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} lg={12}>
+                            <Card className="setting-card">
+                                <div className="setting-card-header">
+                                    <LockOutlined className="setting-icon" />
+                                    <h3>Password Policy</h3>
+                                </div>
+                                <div className="setting-item">
+                                    <div className="setting-info">
+                                        <span className="setting-label">Password Complexity</span>
+                                        <span className="setting-description">Set requirements for user passwords</span>
+                                    </div>
+                                    <Radio.Group
+                                        value={settings.passwordComplexity}
+                                        onChange={(e) => {
+                                            updateSetting('passwordComplexity', e.target.value);
+                                            message.success(`Password Policy set to ${e.target.value === 'high' ? 'Strong' : 'Standard'}`);
+                                        }}
+                                        buttonStyle="solid"
+                                    >
+                                        <Radio.Button value="standard">Standard</Radio.Button>
+                                        <Radio.Button value="high">Strong</Radio.Button>
+                                    </Radio.Group>
+                                </div>
+                            </Card>
+                        </Col>
+                    </Row>
+                </div>
+            )
+        }
+    ];
+
+    return (
+        <MainPage>
+            <div className="settings-page">
+                {/* Modern Header */}
+                <div className="settings-page-header">
+                    <div className="header-content">
+                        <div className="header-icon">
+                            <SettingOutlined />
                         </div>
-
-                        <Divider />
-
-                        <div className="setting-item">
-                            <div className="setting-info">
-                                <span className="setting-label">Animations</span>
-                                <span className="setting-description">Enable smooth transitions and effects</span>
-                            </div>
-                            <Switch
-                                checked={settings.animations}
-                                onChange={(checked) => updateSetting('animations', checked)}
-                            />
-                        </div>
-
-                        <Divider />
-
-                        <div className="setting-item">
-                            <div className="setting-info">
-                                <span className="setting-label">Compact Tables</span>
-                                <span className="setting-description">Use denser table layouts</span>
-                            </div>
-                            <Switch
-                                checked={settings.compactTables}
-                                onChange={(checked) => updateSetting('compactTables', checked)}
-                            />
+                        <div className="header-text">
+                            <h1>Settings</h1>
+                            <p>Customize your application experience and preferences</p>
                         </div>
                     </div>
-                </Card>
-
-                {/* Security Settings */}
-                {/* Security Settings */}
-                <Card className="settings-section">
-                    <div className="section-header">
-                        <LockOutlined className="section-icon" />
-                        <div>
-                            <h2>Security</h2>
-                            <p>Manage login and password security</p>
-                        </div>
-                    </div>
-
-                    <div className="settings-list">
-                        <div className="setting-item">
-                            <div className="setting-info">
-                                <span className="setting-label">Face Login</span>
-                                <span className="setting-description">Enable facial recognition for login</span>
-                            </div>
-                            <Switch
-                                checked={settings.faceLogin}
-                                onChange={(checked) => {
-                                    updateSetting('faceLogin', checked);
-                                    message.success(checked ? 'Face Login Enabled' : 'Face Login Disabled');
-                                }}
-                            />
-                        </div>
-
-                        <Divider />
-
-                        <div className="setting-item">
-                            <div className="setting-info">
-                                <span className="setting-label">Password Complexity</span>
-                                <span className="setting-description">Set requirements for user passwords</span>
-                            </div>
-                            <Radio.Group
-                                value={settings.passwordComplexity}
-                                onChange={(e) => {
-                                    updateSetting('passwordComplexity', e.target.value);
-                                    message.success(`Password Policy set to ${e.target.value === 'high' ? 'Strong' : 'Standard'}`);
-                                }}
-                            >
-                                <Radio.Button value="standard">Standard</Radio.Button>
-                                <Radio.Button value="high">High (Strong)</Radio.Button>
-                            </Radio.Group>
-                        </div>
-                    </div>
-                </Card>
-
-                {/* Font Size */}
-                <Card className="settings-section">
-                    <div className="section-header">
-                        <FontSizeOutlined className="section-icon" />
-                        <div>
-                            <h2>Font Size</h2>
-                            <p>Adjust text size for better readability</p>
-                        </div>
-                    </div>
-
-                    <Radio.Group
-                        value={settings.fontSize}
-                        onChange={(e) => updateSetting('fontSize', e.target.value)}
-                        className="font-size-options"
+                    <Button
+                        icon={<ReloadOutlined />}
+                        onClick={handleReset}
+                        size="large"
+                        className="reset-button"
                     >
-                        <Radio.Button value="small">Small</Radio.Button>
-                        <Radio.Button value="medium">Medium</Radio.Button>
-                        <Radio.Button value="large">Large</Radio.Button>
-                    </Radio.Group>
-                </Card>
+                        Reset to Default
+                    </Button>
+                </div>
 
-                {/* Current Template Info */}
-                <Card className="settings-section template-info-card">
-                    <div className="current-template-info">
-                        <h3>Current Template: <span style={{ color: currentTemplate.colors.primary }}>{currentTemplate.name}</span></h3>
-                        <p>{currentTemplate.description}</p>
-                        <div className="template-specs">
-                            <Tag>Sidebar: {currentTemplate.layout.sidebarWidth}</Tag>
-                            <Tag>Border Radius: {currentTemplate.layout.borderRadius}</Tag>
-                            <Tag>Header: {currentTemplate.layout.headerHeight}</Tag>
+                {/* Current Template Info Banner */}
+                <Card className="current-template-banner">
+                    <div className="banner-content">
+                        <div className="banner-icon" style={{ background: currentTemplate.colors.primary }}>
+                            <BgColorsOutlined />
+                        </div>
+                        <div className="banner-info">
+                            <div className="banner-title">
+                                <span>Active Template:</span>
+                                <strong style={{ color: currentTemplate.colors.primary }}>
+                                    {currentTemplate.name}
+                                </strong>
+                            </div>
+                            <p className="banner-description">{currentTemplate.description}</p>
+                        </div>
+                        <div className="banner-specs">
+                            <Tag color="blue">Sidebar: {currentTemplate.layout.sidebarWidth}</Tag>
+                            <Tag color="green">Radius: {currentTemplate.layout.borderRadius}</Tag>
+                            <Tag color="purple">Header: {currentTemplate.layout.headerHeight}</Tag>
                         </div>
                     </div>
                 </Card>
-            </div >
-        </MainPage >
+
+                {/* Organized Tabs */}
+                <Card className="settings-tabs-card">
+                    <Tabs
+                        defaultActiveKey="templates"
+                        items={tabItems}
+                        size="large"
+                        type="card"
+                    />
+                </Card>
+            </div>
+        </MainPage>
     );
 }
 

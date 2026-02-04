@@ -101,34 +101,12 @@ function LocationSelector({
   };
 
   return (
-    <div style={{ marginBottom: '16px' }}>
-      <style>{`
-        /* Dark mode overrides for LocationSelector components (Select, Input, etc) */
-        :global(.dark) .ant-select-selector {
-            background-color: rgba(255, 255, 255, 0.5) !important;
-            border-color: #d1d5db !important;
-            color: #1f2937 !important;
-        }
-        :global(.dark) .ant-select-arrow {
-            color: #4b5563 !important;
-        }
-        :global(.dark) .ant-select-selection-item {
-            color: #1f2937 !important;
-        }
-        :global(.dark) .ant-select-selection-placeholder {
-            color: #6b7280 !important;
-        }
-      `}</style>
+    <div className="grid grid-cols-2 gap-4">
       {/* Location Selector */}
-      <div style={{ marginBottom: '12px' }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: '8px'
-        }}>
-          <MdLocationOn style={{ fontSize: '20px', color: '#1890ff' }} />
-          <span style={{ fontWeight: '600', fontSize: '14px' }} className="text-gray-800 dark:text-gray-800">
+      <div className="location-section-header">
+        <div className="location-title-flex">
+          <MdLocationOn className="location-icon-blue" />
+          <span className="location-title-text khmer-text-semibold">
             {t("delivery_location")} *
           </span>
         </div>
@@ -142,6 +120,7 @@ function LocationSelector({
             loading={loading}
             showSearch
             optionFilterProp="children"
+            optionLabelProp="label"
             notFoundContent={
               <div style={{ textAlign: 'center', padding: '20px' }}>
                 <MdLocationOn style={{ fontSize: '48px', color: '#d9d9d9' }} />
@@ -158,7 +137,7 @@ function LocationSelector({
             }
           >
             {locations.map(location => (
-              <Select.Option key={location.id} value={location.id}>
+              <Select.Option key={location.id} value={location.id} label={location.location_name}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <MdLocationOn style={{
                     color: location.is_default ? '#faad14' : '#1890ff'
@@ -194,24 +173,17 @@ function LocationSelector({
           </Tooltip>
         </Space.Compact>
 
-        {/* Show selected location details */}
         {selectedLocation && (
-          <div style={{
-            marginTop: '8px',
-            padding: '8px 12px',
-            backgroundColor: '#f0f5ff',
-            borderRadius: '6px',
-            border: '1px solid #adc6ff'
-          }}>
+          <div className="selected-location-details">
             {(() => {
               const location = locations.find(l => l.id === selectedLocation);
               return location ? (
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: '500', color: '#1d39c4' }}>
+                  <div className="selected-location-name">
                     📍 {location.location_name}
                   </div>
                   {location.address && (
-                    <div style={{ fontSize: '12px', color: '#597ef7', marginTop: '4px' }}>
+                    <div className="selected-location-address">
                       {location.address}
                     </div>
                   )}
@@ -232,19 +204,13 @@ function LocationSelector({
         )}
       </div>
 
-      {/* Truck Selector */}
-      <div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          marginBottom: '8px'
-        }}>
-          <MdLocalShipping style={{ fontSize: '20px', color: '#52c41a' }} />
-          <span style={{ fontWeight: '600', fontSize: '14px' }} className="text-gray-800 dark:text-gray-800">
+      <div className="truck-section-header">
+        <div className="truck-title-flex">
+          <MdLocalShipping className="truck-icon-green" />
+          <span className="truck-title-text khmer-text-semibold">
             {t("delivery_truck")}
           </span>
-          <Tag color="orange" style={{ marginLeft: 'auto' }}>
+          <Tag color="orange" className="optional-tag">
             {t("optional")}
           </Tag>
         </div>
@@ -257,9 +223,10 @@ function LocationSelector({
           allowClear
           showSearch
           optionFilterProp="children"
+          optionLabelProp="label"
         >
           {trucks.map(truck => (
-            <Select.Option key={truck.id} value={truck.id}>
+            <Select.Option key={truck.id} value={truck.id} label={truck.plate_number}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <MdLocalShipping style={{ color: '#52c41a' }} />
                 <span style={{ fontWeight: '500' }}>{truck.plate_number}</span>
@@ -279,22 +246,16 @@ function LocationSelector({
         </Select>
 
         {selectedTruck && (
-          <div style={{
-            marginTop: '8px',
-            padding: '8px 12px',
-            backgroundColor: '#f6ffed',
-            borderRadius: '6px',
-            border: '1px solid #b7eb8f'
-          }}>
+          <div className="selected-truck-details">
             {(() => {
               const truck = trucks.find(t => t.id === selectedTruck);
               return truck ? (
-                <div style={{ fontSize: '13px' }}>
-                  <div style={{ fontWeight: '500', color: '#389e0d' }}>
+                <div className="selected-truck-info">
+                  <div className="selected-truck-plate">
                     🚚 {truck.plate_number}
                   </div>
                   {truck.driver_name && (
-                    <div style={{ fontSize: '12px', color: '#52c41a', marginTop: '4px' }}>
+                    <div className="selected-truck-driver">
                       {t("driver")}: {truck.driver_name}
                       {truck.driver_phone && ` (${truck.driver_phone})`}
                     </div>

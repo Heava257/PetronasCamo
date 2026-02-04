@@ -1,10 +1,29 @@
 import { useEffect, useState } from "react";
-import { request } from "../../util/helper";
-import { Button, Form, Input, message, Modal, Space, Table, Tag } from "antd";
+import { isPermission, request } from "../../util/helper";
+import { Button, Form, Input, message, Modal, Space, Table, Tag, Result } from "antd";
 import { useTranslation } from "../../locales/TranslationContext";
+import { configStore } from "../../store/configStore";
+import { getProfile } from "../../store/profile.store";
 
 function RolePage() {
   const { t } = useTranslation();
+  const { config } = configStore();
+  const user = getProfile() || {};
+
+  // 🔒 Security Check
+  if (!isPermission("role.view")) {
+    return (
+      <div className="p-8 flex justify-center items-center min-vh-100 bg-gray-50">
+        <Result
+          status="403"
+          title="403"
+          subTitle="Sorry, you are not authorized to access Role Management."
+          extra={<Button type="primary" onClick={() => window.location.href = '/'}>Back Home</Button>}
+        />
+      </div>
+    );
+  }
+
   const [state, setState] = useState({
     list: [],
     loading: false,
@@ -116,9 +135,11 @@ function RolePage() {
               allowClear
             />
           </div>
-          <Button type="primary" onClick={handleOpenModal} className="w-full sm:w-auto">
-            {t("new")}
-          </Button>
+          {isPermission("role.create") && (
+            <Button type="primary" onClick={handleOpenModal} className="w-full sm:w-auto">
+              {t("new")}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -236,12 +257,16 @@ function RolePage() {
               align: "center",
               render: (value, data) => (
                 <Space>
-                  <Button onClick={() => clickBtnEdit(data)} type="primary">
-                    <span className="khmer-text">{t("edit")}</span>
-                  </Button>
-                  <Button onClick={() => clickBtnDelete(data)} danger type="primary">
-                    <span className="khmer-text">{t("delete")}</span>
-                  </Button>
+                  {isPermission("role.update") && (
+                    <Button onClick={() => clickBtnEdit(data)} type="primary">
+                      <span className="khmer-text">{t("edit")}</span>
+                    </Button>
+                  )}
+                  {isPermission("role.remove") && (data.code !== 'SUPER_ADMIN' && data.code !== 'Supper Admin' && data.code !== 'SUPER_ADMIN') && (
+                    <Button onClick={() => clickBtnDelete(data)} danger type="primary">
+                      <span className="khmer-text">{t("delete")}</span>
+                    </Button>
+                  )}
                 </Space>
               ),
             },
@@ -287,7 +312,7 @@ function RolePage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   {/* Status Badge */}
                   {item.is_active ? (
                     <div className="px-3 py-1.5 rounded-full bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 text-green-800 dark:text-green-400 text-xs font-semibold">
@@ -322,18 +347,22 @@ function RolePage() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-                  <button
-                    onClick={() => clickBtnEdit(item)}
-                    className="flex-1 bg-blue-500 hover:bg-blue-600 active:scale-95 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
-                  >
-                    <span className="text-sm khmer-text">{t("edit")}</span>
-                  </button>
-                  <button
-                    onClick={() => clickBtnDelete(item)}
-                    className="flex-1 bg-red-500 hover:bg-red-600 active:scale-95 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
-                  >
-                    <span className="text-sm khmer-text">{t("delete")}</span>
-                  </button>
+                  {isPermission("role.update") && (
+                    <button
+                      onClick={() => clickBtnEdit(item)}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 active:scale-95 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+                    >
+                      <span className="text-sm khmer-text">{t("edit")}</span>
+                    </button>
+                  )}
+                  {isPermission("role.remove") && (item.code !== 'SUPER_ADMIN' && item.code !== 'Supper Admin' && item.code !== 'SUPER_ADMIN') && (
+                    <button
+                      onClick={() => clickBtnDelete(item)}
+                      className="flex-1 bg-red-500 hover:bg-red-600 active:scale-95 text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all duration-200 shadow-sm"
+                    >
+                      <span className="text-sm khmer-text">{t("delete")}</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

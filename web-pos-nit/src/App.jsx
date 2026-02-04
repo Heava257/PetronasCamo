@@ -59,7 +59,7 @@ import activityTracker from "./util/activityTracker.js";
 import { useAuth } from "./hooks/useAuth.js";
 import { useEffect } from "react";
 import TelegramConfiguration from "./page/supperAdmin/Telegramconfiguration/Telegramconfiguration.jsx";
-import BranchPermissionOverridePage from "./page/supperAdmin/BranchPermissionOverride/BranchPermissionOverridePageWrapper.jsx";
+import BranchPermissionOverridePage from "./page/branchPermission/BranchPermissionOverridePage.jsx";
 import SecurityDashboard from "./page/supperAdmin/SecurityDashboard/SecurityDashboard.jsx";
 import NotificationCenter from "./page/supperAdmin/NotificationCenter/NotificationCenter.jsx";
 import NotificationStatistics from "./page/supperAdmin/NotificationStatistics/NotificationStatistics.jsx";
@@ -81,7 +81,9 @@ import SettingsPage from "./page/settings/SettingsPage.jsx";
 import { SettingsProvider } from "./settings";
 // import BranchPermissionOverridePageWrapper from "./page/supperAdmin/BranchPermissionOverride/BranchPermissionOverridePageWrapper.jsx";
 
-
+import DocuVerse from "./page/template/DocuVerse";
+import CareConcierge from "./page/template/CareConcierge";
+import CastleDashboard from "./page/template/CastleDashboard";
 
 function App() {
 
@@ -188,6 +190,12 @@ function App() {
 
               <Route path="/register" element={<RegisterPage />} />
             </Route>
+
+            {/* Template Routes (Standalone) */}
+            <Route path="/template/docuverse" element={<DocuVerse />} />
+            <Route path="/template/care-concierge" element={<CareConcierge />} />
+            <Route path="/template/castle" element={<CastleDashboard />} />
+
           </Routes>
         </SettingsProvider>
         {/* </AutoLogoutProvider> */}

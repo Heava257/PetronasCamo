@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Form, Button, message, Input, Alert } from "antd";
+import React, { useState, useEffect, useLayoutEffect } from "react";
+import { Form, Button, message, Input, Alert, ConfigProvider, theme } from "antd";
 import { request } from "../../util/helper";
 import { setAcccessToken, setPermission, setProfile } from "../../store/profile.store";
 import { useNavigate } from "react-router-dom";
@@ -7,6 +7,7 @@ import logo from "../../assets/petronas_header.png";
 import WelcomeAnimation3D from "../../component/layout/WelcomeAnimation ";
 import { UserOutlined, LockOutlined, ArrowRightOutlined, CustomerServiceOutlined, ClockCircleOutlined, InfoCircleOutlined, CloseOutlined, ScanOutlined, CameraOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { FaTelegramPlane, FaGoogle, FaApple } from "react-icons/fa";
+import { ScanFace, ShieldCheck } from "lucide-react";
 import "./LoginPage.css";
 import { useSettings } from "../../settings";
 import { Modal } from "antd";
@@ -247,9 +248,44 @@ function LoginPage() {
   }, []);
 
   // Handle Face Login Start/Stop and Stream
+  // ✅ AGGRESSIVE: Remove global template class using MutationObserver
+  useLayoutEffect(() => {
+    const removeTemplateClass = () => {
+      const list = document.documentElement.classList;
+      const templateClasses = Array.from(list).filter(c => c.startsWith('template-'));
+      if (templateClasses.length > 0) {
+        list.remove(...templateClasses);
+      }
+    };
+
+    // Initial removal
+    removeTemplateClass();
+
+    // Observe changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          removeTemplateClass();
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, { attributes: true });
+
+    return () => {
+      observer.disconnect();
+      // Restore on unmount
+      if (settings?.templateId) {
+        document.documentElement.classList.add(`template-${settings.templateId}`);
+      }
+    };
+  }, [settings.templateId]);
+
   useEffect(() => {
     let isMounted = true;
     let stream = null;
+
+
 
     const startScanning = async () => {
       const api = getFaceApi();
@@ -351,14 +387,13 @@ function LoginPage() {
       }
       setIsScanning(false);
     }
-
     return () => {
       isMounted = false;
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, [faceLoginVisible]);
+  }, [faceLoginVisible, modelsLoaded]);
 
   const startFaceLogin = () => {
     setFaceLoginVisible(true);
@@ -388,88 +423,112 @@ function LoginPage() {
   }
 
   return (
-    <div className="login-container">
-      {/* Abstract Header Art */}
-      <div className="login-header-art">
-        <div className="abstract-blob"></div>
-        <div className="abstract-blob-small"></div>
-      </div>
+    <ConfigProvider
+      theme={{
+        algorithm: theme.defaultAlgorithm,
+        token: {
+          colorPrimary: '#776BCC',
+          fontFamily: "'Inter', sans-serif"
+        },
+        components: {
+          Input: {
+            colorBgContainer: '#ffffff',
+            colorText: '#333333',
+            colorBorder: '#d9d9d9',
+            colorTextPlaceholder: '#bfbfbf'
+          },
+          Button: {
+            colorPrimary: '#5D54A4',
+            colorPrimaryHover: '#4e4589'
+          },
+          Form: {
+            labelColor: '#5D54A4'
+          }
+        }
+      }}
+    >
+      <div className="login-container">
+        {/* Abstract Header Art */}
+        <div className="login-header-art">
+          <div className="abstract-blob"></div>
+          <div className="abstract-blob-small"></div>
+        </div>
 
-      {/* Beautiful Notification Toast */}
-      {notification && (
-        <div style={{
-          position: 'fixed',
-          top: '20px',
-          right: '20px',
-          zIndex: 9999,
-          animation: 'slideInRight 0.3s ease-out'
-        }}>
+        {/* Beautiful Notification Toast */}
+        {notification && (
           <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-            border: '1px solid #e8e8e8',
-            padding: '16px',
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '12px',
-            minWidth: '340px',
-            maxWidth: '450px'
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 9999,
+            animation: 'slideInRight 0.3s ease-out'
           }}>
             <div style={{
-              flexShrink: 0,
-              width: '40px',
-              height: '40px',
-              borderRadius: '50%',
-              backgroundColor: '#e6f7ff',
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+              border: '1px solid #e8e8e8',
+              padding: '16px',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
+              alignItems: 'flex-start',
+              gap: '12px',
+              minWidth: '340px',
+              maxWidth: '450px'
             }}>
-              <InfoCircleOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{
-                fontSize: '15px',
-                fontWeight: '600',
-                color: '#1f1f1f',
-                margin: '0 0 4px 0'
-              }}>
-                Coming Soon!
-              </h3>
-              <p style={{
-                fontSize: '13px',
-                color: '#666',
-                margin: 0,
-                lineHeight: '1.5'
-              }}>
-                {notification === 'google' ? 'Google' : notification === 'facebook' ? 'Facebook' : 'Twitter'} sign-in will be available shortly.
-              </p>
-            </div>
-            <button
-              onClick={() => setNotification(null)}
-              style={{
+              <div style={{
                 flexShrink: 0,
-                background: 'none',
-                border: 'none',
-                color: '#999',
-                cursor: 'pointer',
-                padding: '4px',
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: '#e6f7ff',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'color 0.2s'
-              }}
-              onMouseEnter={(e) => e.target.style.color = '#666'}
-              onMouseLeave={(e) => e.target.style.color = '#999'}
-            >
-              <CloseOutlined style={{ fontSize: '14px' }} />
-            </button>
+                justifyContent: 'center'
+              }}>
+                <InfoCircleOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{
+                  fontSize: '15px',
+                  fontWeight: '600',
+                  color: '#1f1f1f',
+                  margin: '0 0 4px 0'
+                }}>
+                  Coming Soon!
+                </h3>
+                <p style={{
+                  fontSize: '13px',
+                  color: '#666',
+                  margin: 0,
+                  lineHeight: '1.5'
+                }}>
+                  {notification === 'google' ? 'Google' : notification === 'facebook' ? 'Facebook' : 'Twitter'} sign-in will be available shortly.
+                </p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                style={{
+                  flexShrink: 0,
+                  background: 'none',
+                  border: 'none',
+                  color: '#999',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#666'}
+                onMouseLeave={(e) => e.target.style.color = '#999'}
+              >
+                <CloseOutlined style={{ fontSize: '14px' }} />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <style>{`
+        <style>{`
         @keyframes slideInRight {
           from {
             transform: translateX(100%);
@@ -482,238 +541,273 @@ function LoginPage() {
         }
       `}</style>
 
-      <div className="login-card">
-        <div className="login-content">
-          {/* Welcome Title */}
-          <h1 className="welcome-title">Welcome Back</h1>
+        <div className="login-card">
+          <div className="login-content">
+            {/* Welcome Title */}
+            <h1 className="welcome-title">Welcome Back</h1>
 
-          {/* Blocked Alert */}
-          {isBlocked && (
-            <Alert
-              message="ការចូលត្រូវបានទប់ស្កាត់"
-              description={
-                <div>
-                  <div className="countdown-timer">
-                    <ClockCircleOutlined className="timer-icon" />
-                    <span>សូមរង់ចាំ: {formatTime(remainingTime)}</span>
+            {/* Blocked Alert */}
+            {isBlocked && (
+              <Alert
+                message="ការចូលត្រូវបានទប់ស្កាត់"
+                description={
+                  <div>
+                    <div className="countdown-timer">
+                      <ClockCircleOutlined className="timer-icon" />
+                      <span>សូមរង់ចាំ: {formatTime(remainingTime)}</span>
+                    </div>
                   </div>
-                </div>
-              }
-              type="error"
-              showIcon
-              className="blocked-alert"
-            />
-          )}
+                }
+                type="error"
+                showIcon
+                className="blocked-alert"
+              />
+            )}
 
-          {/* Attempt Counter */}
-          {!isBlocked && attemptCount > 0 && attemptCount < 5 && (
-            <div className="attempt-counter">
-              ⚠️ អ្នកនៅសល់ {5 - attemptCount} ដងទៀត
-            </div>
-          )}
-
-          {/* Form Section */}
-          <div className="form-section">
-            <Form
-              layout="vertical"
-              form={form}
-              onFinish={onLogin}
-            >
-              {/* Email/Username Field */}
-              <Form.Item
-                label="Email"
-                name="username"
-                rules={[{ required: true, message: "Please enter your email!" }]}
-              >
-                <Input
-                  placeholder="Enter Email"
-                  className="login-input"
-                  disabled={isBlocked}
-                />
-              </Form.Item>
-
-              {/* Password Field */}
-              <Form.Item
-                label="Password"
-                name="password"
-                rules={[{ required: true, message: "Please enter your password!" }]}
-              >
-                <Input.Password
-                  placeholder="Enter Password"
-                  className="login-input"
-                  disabled={isBlocked}
-                />
-              </Form.Item>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="remember-forgot-row">
-                <label className="remember-me">
-                  <input type="checkbox" style={{
-                    width: '20px',
-                    height: '20px',
-                    accentColor: '#4f46e5',
-                    borderRadius: '4px'
-                  }} />
-                  Remember me
-                </label>
-                <a href="#" className="forgot-password">Forgot Password?</a>
+            {/* Attempt Counter */}
+            {!isBlocked && attemptCount > 0 && attemptCount < 5 && (
+              <div className="attempt-counter">
+                ⚠️ អ្នកនៅសល់ {5 - attemptCount} ដងទៀត
               </div>
+            )}
 
-              {/* Submit Button */}
-              <Form.Item style={{ marginBottom: 0 }}>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  block
-                  loading={loading}
-                  disabled={isBlocked}
-                  className="login-button"
+            {/* Form Section */}
+            <div className="form-section">
+              <Form
+                layout="vertical"
+                form={form}
+                onFinish={onLogin}
+              >
+                {/* Email/Username Field */}
+                <Form.Item
+                  label="Email"
+                  name="username"
+                  rules={[{ required: true, message: "Please enter your email!" }]}
                 >
-                  Sign in
-                  <ArrowRightOutlined />
-                </Button>
+                  <Input
+                    placeholder="Enter Email"
+                    className="login-input"
+                    disabled={isBlocked}
+                  />
+                </Form.Item>
 
-                {settings.faceLogin && (
+                {/* Password Field */}
+                <Form.Item
+                  label="Password"
+                  name="password"
+                  rules={[{ required: true, message: "Please enter your password!" }]}
+                >
+                  <Input.Password
+                    placeholder="Enter Password"
+                    className="login-input"
+                    disabled={isBlocked}
+                  />
+                </Form.Item>
+
+                {/* Remember Me & Forgot Password */}
+                <div className="remember-forgot-row">
+                  <label className="remember-me">
+                    <input type="checkbox" style={{
+                      width: '20px',
+                      height: '20px',
+                      accentColor: '#4f46e5',
+                      borderRadius: '4px'
+                    }} />
+                    Remember me
+                  </label>
+                  <a href="#" className="forgot-password">Forgot Password?</a>
+                </div>
+
+                {/* Submit Button */}
+                <Form.Item style={{ marginBottom: 0 }}>
                   <Button
-                    type="default"
+                    type="primary"
+                    htmlType="submit"
                     block
-                    onClick={startFaceLogin}
-                    style={{ marginTop: '10px' }}
-                    icon={<ScanOutlined />}
+                    loading={loading}
+                    disabled={isBlocked}
+                    className="login-button"
                   >
-                    Login with Face ID
+                    Sign in
+                    <ArrowRightOutlined />
                   </Button>
-                )}
-              </Form.Item>
-            </Form>
 
-            {/* Social Login Divider */}
-            <div className="social-login-divider">
-              <span>sign in with</span>
-            </div>
+                  {settings.faceLogin && (
+                    <Button
+                      type="default"
+                      block
+                      onClick={startFaceLogin}
+                      className="face-login-button"
+                      style={{ marginTop: '10px' }}
+                      icon={<ScanFace size={20} />}
+                    >
+                      Face Login
+                    </Button>
+                  )}
+                </Form.Item>
+              </Form>
 
-            {/* Social Buttons */}
-            <div className="social-buttons">
-              <div
-                className="social-button"
-                onClick={handleGoogleSignIn}
-                title="Sign in with Google"
-              >
-                <FaGoogle style={{ fontSize: '18px', color: '#DB4437' }} />
+              {/* Social Login Divider */}
+              <div className="social-login-divider">
+                <span>sign in with</span>
               </div>
-              <div
-                className="social-button"
-                onClick={() => showNotification('facebook')}
-                title="Sign in with Facebook"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                </svg>
-              </div>
-              <div
-                className="social-button"
-                onClick={() => showNotification('twitter')}
-                title="Sign in with Twitter"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#1DA1F2">
-                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
-                </svg>
-              </div>
-            </div>
 
-            {/* Sign Up Link */}
-            <div className="signup-link">
-              Don't have an account? <a href="#">Sign in</a>
+              {/* Social Buttons */}
+              <div className="social-buttons">
+                <div
+                  className="social-button"
+                  onClick={handleGoogleSignIn}
+                  title="Sign in with Google"
+                >
+                  <FaGoogle style={{ fontSize: '18px', color: '#DB4437' }} />
+                </div>
+                <div
+                  className="social-button"
+                  onClick={() => showNotification('facebook')}
+                  title="Sign in with Facebook"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877F2">
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                </div>
+                <div
+                  className="social-button"
+                  onClick={() => showNotification('twitter')}
+                  title="Sign in with Twitter"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="#1DA1F2">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Sign Up Link */}
+              <div className="signup-link">
+                Don't have an account? <a href="#">Sign in</a>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <Modal
-        title="Face Login Security"
-        open={faceLoginVisible}
-        onCancel={cancelFaceLogin}
-        footer={null}
-        width={400}
-        centered
-      >
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
-          <div style={{
-            width: '100%',
-            height: '300px',
-            backgroundColor: '#000',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            position: 'relative',
-            marginBottom: '20px'
-          }}>
-            {/* Hidden Video for API */}
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              style={{
-                position: 'absolute',
-                width: '1px',
-                height: '1px',
-                opacity: 0,
-                pointerEvents: 'none'
-              }}
-            />
-
-            {/* Scanning Animation UI */}
-            <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: '#fff',
-              zIndex: 10
-            }}>
-              {isScanning ? (
-                <>
-                  <div className="face-scan-pulse">
-                    <ScanOutlined style={{ fontSize: '60px', color: '#1890ff' }} />
-                  </div>
-                  <p style={{ marginTop: 20, fontSize: '16px', color: '#666' }}>Scanning...</p>
-                </>
-              ) : scanStatus === 'success' ? (
-                <>
-                  <SafetyCertificateOutlined style={{ fontSize: '60px', color: '#52c41a' }} />
-                  <p style={{ marginTop: 20, fontSize: '18px', color: '#52c41a', fontWeight: 'bold' }}>Verified</p>
-                </>
-              ) : (
-                <p>Initializing Camera...</p>
-              )}
+        <Modal
+          title={
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <ShieldCheck size={24} color="#1e3a8a" />
+              <span style={{ fontSize: '18px', fontWeight: '600', color: '#1e3a8a' }}>Secure Identity Verification</span>
             </div>
-          </div>
+          }
+          open={faceLoginVisible}
+          onCancel={cancelFaceLogin}
+          footer={null}
+          width={400}
+          centered
+        >
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{
+              width: '100%',
+              height: '300px',
+              backgroundColor: '#000',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              position: 'relative',
+              marginBottom: '20px'
+            }}>
+              {/* Hidden Video for API */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  transform: 'scaleX(-1)', // Mirror effect
+                  borderRadius: '12px'
+                }}
+              />
 
-          <style>{`
+              {/* Scanning Animation UI - Transparent Overlay */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(0,0,0,0.1)', // Slight dark tint for contrast
+                zIndex: 10
+              }}>
+                {/* Viewfinder Corners */}
+                <div style={{ position: 'absolute', top: 20, left: 20, width: 40, height: 40, borderTop: '4px solid #1e3a8a', borderLeft: '4px solid #1e3a8a', borderTopLeftRadius: 12 }}></div>
+                <div style={{ position: 'absolute', top: 20, right: 20, width: 40, height: 40, borderTop: '4px solid #1e3a8a', borderRight: '4px solid #1e3a8a', borderTopRightRadius: 12 }}></div>
+                <div style={{ position: 'absolute', bottom: 20, left: 20, width: 40, height: 40, borderBottom: '4px solid #1e3a8a', borderLeft: '4px solid #1e3a8a', borderBottomLeftRadius: 12 }}></div>
+                <div style={{ position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, borderBottom: '4px solid #1e3a8a', borderRight: '4px solid #1e3a8a', borderBottomRightRadius: 12 }}></div>
+
+                {/* Scanning Line Animation */}
+                {isScanning && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '10%',
+                    left: '10%',
+                    right: '10%',
+                    height: '2px',
+                    background: '#00ff00',
+                    boxShadow: '0 0 10px #00ff00',
+                    animation: 'scanLine 2s infinite linear'
+                  }}></div>
+                )}
+
+                {isScanning ? (
+                  <>
+                    <div className="face-scan-pulse">
+                      <ScanOutlined style={{ fontSize: '60px', color: '#1890ff' }} />
+                    </div>
+                    <p style={{ marginTop: 20, fontSize: '16px', color: '#666' }}>Scanning...</p>
+                  </>
+                ) : scanStatus === 'success' ? (
+                  <>
+                    <SafetyCertificateOutlined style={{ fontSize: '60px', color: '#52c41a' }} />
+                    <p style={{ marginTop: 20, fontSize: '18px', color: '#52c41a', fontWeight: 'bold' }}>Verified</p>
+                  </>
+                ) : (
+                  <p>Initializing Camera...</p>
+                )}
+              </div>
+            </div>
+
+            <style>{`
             .face-scan-pulse {
                width: 100px;
                height: 100px;
                border-radius: 50%;
-               background: rgba(24, 144, 255, 0.1);
+               background: rgba(30, 58, 138, 0.2);
                display: flex;
                alignItems: center;
                justifyContent: center;
-               animation: pulse 1.5s infinite;
+               border: 1px solid rgba(30, 58, 138, 0.5);
+               backdrop-filter: blur(4px);
+            }
+            @keyframes scanLine {
+              0% { top: 10%; opacity: 0; }
+              5% { opacity: 1; }
+              95% { opacity: 1; }
+              100% { top: 90%; opacity: 0; }
             }
             @keyframes pulse {
-              0% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0.4); }
+              0% { box-shadow: 0 0 0 0 rgba(30, 58, 138, 0.4); }
               70% { box-shadow: 0 0 0 20px rgba(24, 144, 255, 0); }
               100% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0); }
             }
           `}</style>
-        </div>
-      </Modal>
-    </div >
+          </div>
+        </Modal>
+      </div >
+    </ConfigProvider>
   );
 }
 

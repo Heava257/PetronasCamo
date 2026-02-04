@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { formatDateServer, request } from "../../util/helper";
+import { formatDateServer, isPermission, request } from "../../util/helper";
 import {
   Avatar,
   Button,
@@ -26,9 +26,9 @@ import {
   Badge
 } from "antd";
 import { configStore } from "../../store/configStore";
-import { 
-  MdDelete, 
-  MdEdit, 
+import {
+  MdDelete,
+  MdEdit,
   MdOutlineCreateNewFolder,
   MdOutlineAccountCircle,
   MdOutlineEmail,
@@ -38,8 +38,8 @@ import {
   MdOutlineSecurity,
   MdOutlineCalendarToday
 } from "react-icons/md";
-import { 
-  UploadOutlined, 
+import {
+  UploadOutlined,
   UserOutlined,
   EyeOutlined,
   TeamOutlined,
@@ -70,7 +70,7 @@ function AdminPage() {
   const [imageDefault, setImageDefault] = useState([]);
   const [form] = Form.useForm();
   const { config } = configStore();
-  
+
   const [activeTab, setActiveTab] = useState("1");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedRole, setSelectedRole] = useState("all");
@@ -92,7 +92,7 @@ function AdminPage() {
       byRole: {}
     }
   });
-  
+
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -491,8 +491,8 @@ function AdminPage() {
   const renderStatsCards = () => (
     <Row gutter={[8, 8]} className="mb-4">
       <Col xs={8} sm={8} md={8}>
-        <Card 
-          size="small" 
+        <Card
+          size="small"
           className="stats-card text-center"
           styles={{ body: { padding: isMobile ? '8px' : '16px' } }}
         >
@@ -500,16 +500,16 @@ function AdminPage() {
             title={<span style={{ fontSize: isMobile ? '11px' : '14px' }}>Total</span>}
             value={state.stats.total}
             prefix={<TeamOutlined />}
-            valueStyle={{ 
-              color: '#1890ff', 
-              fontSize: isMobile ? '18px' : '24px' 
+            valueStyle={{
+              color: '#1890ff',
+              fontSize: isMobile ? '18px' : '24px'
             }}
           />
         </Card>
       </Col>
       <Col xs={8} sm={8} md={8}>
-        <Card 
-          size="small" 
+        <Card
+          size="small"
           className="stats-card text-center"
           styles={{ body: { padding: isMobile ? '8px' : '16px' } }}
         >
@@ -517,16 +517,16 @@ function AdminPage() {
             title={<span style={{ fontSize: isMobile ? '11px' : '14px' }}>Active</span>}
             value={state.stats.active}
             prefix={<CheckCircleOutlined />}
-            valueStyle={{ 
-              color: '#52c41a', 
-              fontSize: isMobile ? '18px' : '24px' 
+            valueStyle={{
+              color: '#52c41a',
+              fontSize: isMobile ? '18px' : '24px'
             }}
           />
         </Card>
       </Col>
       <Col xs={8} sm={8} md={8}>
-        <Card 
-          size="small" 
+        <Card
+          size="small"
           className="stats-card text-center"
           styles={{ body: { padding: isMobile ? '8px' : '16px' } }}
         >
@@ -534,9 +534,9 @@ function AdminPage() {
             title={<span style={{ fontSize: isMobile ? '11px' : '14px' }}>Inactive</span>}
             value={state.stats.inactive}
             prefix={<CloseCircleOutlined />}
-            valueStyle={{ 
-              color: '#ff4d4f', 
-              fontSize: isMobile ? '18px' : '24px' 
+            valueStyle={{
+              color: '#ff4d4f',
+              fontSize: isMobile ? '18px' : '24px'
             }}
           />
         </Card>
@@ -591,9 +591,9 @@ function AdminPage() {
         <Divider />
 
         <Space direction="vertical" style={{ width: '100%' }}>
-          <Button 
+          <Button
             block
-            icon={<ReloadOutlined />} 
+            icon={<ReloadOutlined />}
             onClick={() => {
               setFilterStatus("all");
               setSelectedRole("all");
@@ -602,9 +602,9 @@ function AdminPage() {
           >
             Reset Filters
           </Button>
-          <Button 
+          <Button
             block
-            type="primary" 
+            type="primary"
             icon={<ExportOutlined />}
             onClick={() => {
               exportToExcel();
@@ -646,8 +646,8 @@ function AdminPage() {
             ))}
           </Select>
 
-          <Button 
-            icon={<ReloadOutlined />} 
+          <Button
+            icon={<ReloadOutlined />}
             onClick={() => {
               setFilterStatus("all");
               setSelectedRole("all");
@@ -657,8 +657,8 @@ function AdminPage() {
           </Button>
         </Space>
 
-        <Button 
-          type="primary" 
+        <Button
+          type="primary"
           icon={<ExportOutlined />}
           onClick={exportToExcel}
         >
@@ -670,8 +670,8 @@ function AdminPage() {
 
   // ✅ Mobile User Card
   const renderMobileUserCard = (user) => (
-    <Card 
-      key={user.id} 
+    <Card
+      key={user.id}
       className="mb-3"
       size="small"
     >
@@ -688,8 +688,8 @@ function AdminPage() {
               preview={false}
             />
           ) : (
-            <Avatar 
-              size={60} 
+            <Avatar
+              size={60}
               icon={<UserOutlined />}
               className="bg-blue-100 text-blue-600"
             />
@@ -732,24 +732,28 @@ function AdminPage() {
 
           {/* Actions */}
           <div className="flex gap-2">
-            <Button
-              size="small"
-              type="primary"
-              icon={<EditOutlined />}
-              onClick={() => onClickEdit(user)}
-              block
-            >
-              Edit
-            </Button>
-            <Button
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => clickBtnDelete(user)}
-              block
-            >
-              Delete
-            </Button>
+            {isPermission("user.update") && (
+              <Button
+                size="small"
+                type="primary"
+                icon={<EditOutlined />}
+                onClick={() => onClickEdit(user)}
+                block
+              >
+                Edit
+              </Button>
+            )}
+            {isPermission("user.remove") && (
+              <Button
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => clickBtnDelete(user)}
+                block
+              >
+                {t("delete")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -759,7 +763,7 @@ function AdminPage() {
   // Desktop table columns
   const columns = [
     {
-      title: "User",
+      title: t("user"),
       key: "user",
       width: 250,
       render: (_, record) => (
@@ -788,14 +792,16 @@ function AdminPage() {
       ),
     },
     {
-      title: "Role",
+      title: t("role"),
+      align: "center",
       dataIndex: "role_name",
       key: "role",
       width: 150,
       render: (role) => <Tag color="blue">{role}</Tag>,
     },
     {
-      title: "Contact",
+      title: t("contact"),
+      align: "center",
       key: "contact",
       width: 150,
       render: (_, record) => (
@@ -805,42 +811,47 @@ function AdminPage() {
       ),
     },
     {
-      title: "Branch",
+      title: t("branch"),
+      align: "center",
       dataIndex: "branch_name",
       key: "branch",
       width: 120,
     },
     {
-      title: "Status",
+      title: t("status"),
       dataIndex: "is_active",
       key: "status",
       width: 100,
       align: "center",
       render: (status) => (
         <Tag color={status ? "green" : "red"}>
-          {status ? "Active" : "Inactive"}
+          {status ? t("active") : t("inactive")}
         </Tag>
       ),
     },
     {
-      title: "Actions",
+      title: t("actions"),
       key: "actions",
       width: 120,
-      fixed: "right",
+      align: "center",
       render: (_, record) => (
         <Space size="small">
-          <Button
-            size="small"
-            type="primary"
-            icon={<EditOutlined />}
-            onClick={() => onClickEdit(record)}
-          />
-          <Button
-            size="small"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => clickBtnDelete(record)}
-          />
+          {isPermission("user.update") && (
+            <Button
+              size="small"
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => onClickEdit(record)}
+            />
+          )}
+          {isPermission("user.remove") && (
+            <Button
+              size="small"
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => clickBtnDelete(record)}
+            />
+          )}
         </Space>
       ),
     },
@@ -854,7 +865,7 @@ function AdminPage() {
         <Col span={24}>
           <Form.Item
             name="profile_image"
-            label="Profile Image"
+            label={t("profile_image")}
           >
             <Upload
               name="profile_image"
@@ -869,7 +880,7 @@ function AdminPage() {
               {imageDefault.length >= 1 ? null : (
                 <div>
                   <UserOutlined />
-                  <div className="mt-2">Upload</div>
+                  <div className="mt-2">{t("upload")}</div>
                 </div>
               )}
             </Upload>
@@ -882,22 +893,22 @@ function AdminPage() {
         <Col xs={24} sm={12}>
           <Form.Item
             name="name"
-            label="Name"
-            rules={[{ required: true, message: 'Please input name!' }]}
+            label={t("fullname")}
+            rules={[{ required: true, message: t('please_input_name') }]}
           >
-            <Input placeholder="Full Name" size={isMobile ? "large" : "middle"} />
+            <Input placeholder={t("fullname")} size={isMobile ? "large" : "middle"} />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12}>
           <Form.Item
             name="username"
-            label="Email"
+            label={t("email")}
             rules={[
-              { required: true, message: 'Please input email!' },
-              { type: 'email', message: 'Please input valid email!' }
+              { required: true, message: t('please_input_email') },
+              { type: 'email', message: t('please_input_valid_email') }
             ]}
           >
-            <Input placeholder="Email Address" size={isMobile ? "large" : "middle"} />
+            <Input placeholder={t("email")} size={isMobile ? "large" : "middle"} />
           </Form.Item>
         </Col>
       </Row>
@@ -907,20 +918,20 @@ function AdminPage() {
         <Col xs={24} sm={12}>
           <Form.Item
             name="tel"
-            label="Phone"
-            rules={[{ required: true, message: 'Please input phone!' }]}
+            label={t("phone")}
+            rules={[{ required: true, message: t('please_input_phone') }]}
           >
-            <Input placeholder="Phone Number" size={isMobile ? "large" : "middle"} />
+            <Input placeholder={t("phone")} size={isMobile ? "large" : "middle"} />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12}>
           <Form.Item
             name="role_id"
-            label="Role"
-            rules={[{ required: true, message: 'Please select role!' }]}
+            label={t("role")}
+            rules={[{ required: true, message: t('Please select role!') }]}
           >
             <Select
-              placeholder="Select Role"
+              placeholder={t("select_role")}
               options={getAvailableRoles()}
               size={isMobile ? "large" : "middle"}
             />
@@ -933,16 +944,16 @@ function AdminPage() {
         <Col xs={24} sm={12}>
           <Form.Item
             name="password"
-            label="Password"
-            rules={[{ required: !form.getFieldValue("id"), message: 'Please input password!' }]}
+            label={t("password")}
+            rules={[{ required: !form.getFieldValue("id"), message: t('please_input_password') }]}
           >
-            <Input.Password placeholder="Password" size={isMobile ? "large" : "middle"} />
+            <Input.Password placeholder={t("password")} size={isMobile ? "large" : "middle"} />
           </Form.Item>
         </Col>
         <Col xs={24} sm={12}>
           <Form.Item
             name="confirm_password"
-            label="Confirm Password"
+            label={t("confirm_password")}
             dependencies={['password']}
             rules={[
               ({ getFieldValue }) => ({
@@ -950,12 +961,12 @@ function AdminPage() {
                   if (!value || getFieldValue('password') === value) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error('Passwords do not match'));
+                  return Promise.reject(new Error(t('passwords_not_match')));
                 },
               }),
             ]}
           >
-            <Input.Password placeholder="Confirm Password" size={isMobile ? "large" : "middle"} />
+            <Input.Password placeholder={t("confirm_password")} size={isMobile ? "large" : "middle"} />
           </Form.Item>
         </Col>
       </Row>
@@ -965,19 +976,19 @@ function AdminPage() {
         <Col xs={24} sm={12}>
           <Form.Item
             name="branch_name"
-            label="Branch"
-            rules={[{ required: true, message: 'Please select branch!' }]}
+            label={t("branch")}
+            rules={[{ required: true, message: t('Please select branch!') }]}
           >
             {state.isSuperAdmin ? (
               <Select
-                placeholder="Select Branch"
+                placeholder={t("Select Branch")}
                 options={config?.branch_name}
                 size={isMobile ? "large" : "middle"}
               />
             ) : (
-              <Input 
-                value={profile?.branch_name} 
-                disabled 
+              <Input
+                value={profile?.branch_name}
+                disabled
                 size={isMobile ? "large" : "middle"}
               />
             )}
@@ -990,8 +1001,8 @@ function AdminPage() {
             initialValue={1}
           >
             <Select size={isMobile ? "large" : "middle"}>
-              <Select.Option value={1}>Active</Select.Option>
-              <Select.Option value={0}>Inactive</Select.Option>
+              <Select.Option value={1}>{t("active")}</Select.Option>
+              <Select.Option value={0}>{t("inactive")}</Select.Option>
             </Select>
           </Form.Item>
         </Col>
@@ -1002,9 +1013,9 @@ function AdminPage() {
         name="address"
         label="Address"
       >
-        <Input.TextArea 
-          rows={3} 
-          placeholder="Full Address"
+        <Input.TextArea
+          rows={3}
+          placeholder={t("full_address")}
           size={isMobile ? "large" : "middle"}
         />
       </Form.Item>
@@ -1012,16 +1023,16 @@ function AdminPage() {
       {/* Action Buttons */}
       <div className="flex gap-2 justify-end">
         <Button onClick={handleCloseModal} size={isMobile ? "large" : "middle"}>
-          Cancel
+          {t("cancel")}
         </Button>
-        <Button 
-          type="primary" 
-          htmlType="submit" 
+        <Button
+          type="primary"
+          htmlType="submit"
           loading={state.loading}
           size={isMobile ? "large" : "middle"}
           block={isMobile}
         >
-          {form.getFieldValue("id") ? "Update" : "Create"}
+          {form.getFieldValue("id") ? t("update") : t("create")}
         </Button>
       </div>
     </Form>
@@ -1035,21 +1046,23 @@ function AdminPage() {
         <div className="flex justify-between items-center gap-3 mb-4">
           <div className="flex-1 min-w-0">
             <h1 className="text-xl sm:text-2xl font-bold dark:text-white truncate">
-              User Management
+              {t("user_management")}
             </h1>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-              Manage all users and their permissions
+              {t("user_management_subtitle")}
             </p>
           </div>
-          
-          <Button
-            type="primary"
-            onClick={handleOpenModal}
-            icon={<MdOutlineCreateNewFolder />}
-            size={isMobile ? "middle" : "large"}
-          >
-            {isMobile ? "New" : "New User"}
-          </Button>
+
+          {isPermission("user.create") && (
+            <Button
+              type="primary"
+              onClick={handleOpenModal}
+              icon={<MdOutlineCreateNewFolder />}
+              size={isMobile ? "middle" : "large"}
+            >
+              {isMobile ? "New" : "New User"}
+            </Button>
+          )}
         </div>
 
         {/* Statistics */}
@@ -1058,7 +1071,7 @@ function AdminPage() {
         {/* Search Bar */}
         <div className="mb-3">
           <Input.Search
-            placeholder="Search users..."
+            placeholder={t("search_users")}
             onSearch={handleSearch}
             allowClear
             size={isMobile ? "large" : "middle"}
@@ -1078,9 +1091,9 @@ function AdminPage() {
             >
               Filters & Export
               {(filterStatus !== "all" || selectedRole !== "all") && (
-                <Badge 
+                <Badge
                   count={
-                    (filterStatus !== "all" ? 1 : 0) + 
+                    (filterStatus !== "all" ? 1 : 0) +
                     (selectedRole !== "all" ? 1 : 0)
                   }
                   className="ml-2"
@@ -1100,7 +1113,7 @@ function AdminPage() {
         <div>
           <div className="mb-3 flex justify-between items-center">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              {state.filteredList.length} users found
+              {state.filteredList.length} {t("users_found")}
             </span>
           </div>
           {state.loading ? (
@@ -1126,7 +1139,7 @@ function AdminPage() {
               pageSize: 10,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total) => `Total ${total} users`,
+              showTotal: (total) => `${t("total_users_count")}: ${total}`,
               responsive: true
             }}
           />
@@ -1137,15 +1150,19 @@ function AdminPage() {
       <Modal
         open={state.visible}
         onCancel={handleCloseModal}
-        title={form.getFieldValue("id") ? "Edit User" : "Create New User"}
+        title={
+          <div className="khmer-title1" style={{ color: '#e8c12f' }}>
+            {form.getFieldValue("id") ? t("edit_user") : t("new_user")}
+          </div>
+        }
         footer={null}
         width={isMobile ? "100%" : 700}
         style={isMobile ? { top: 0, paddingBottom: 0, maxWidth: "100vw" } : {}}
-        styles={isMobile ? { 
-          body: { 
-            maxHeight: 'calc(100vh - 100px)', 
-            overflowY: 'auto' 
-          } 
+        styles={isMobile ? {
+          body: {
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto'
+          }
         } : {}}
         centered={!isMobile}
       >
