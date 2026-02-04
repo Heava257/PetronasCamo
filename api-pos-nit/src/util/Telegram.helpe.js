@@ -48,35 +48,45 @@ exports.sendSmartNotification = async ({
       }
 
       // Check Event Match:
-      // - If no event_types specified (null), it's a "Catch All" listener
-      // - If event_types specified, it must contain the current event_type
-      const eventMatches = !enabledEvents || (Array.isArray(enabledEvents) && enabledEvents.includes(event_type));
+      // - For 'user_login', we require an EXPLICIT match (no catch-all) to avoid spamming other groups
+      // - For other events, we permit catch-all (null enabledEvents) for legacy support
+      let eventMatches = false;
+      if (enabledEvents && Array.isArray(enabledEvents)) {
+        eventMatches = enabledEvents.includes(event_type);
+      } else if (!enabledEvents) {
+        eventMatches = (event_type !== 'user_login'); // Security: Logins never catch-all
+      }
 
       if (!eventMatches) return false;
 
       // Check Branch Match:
-      // - Super Admin and System configs always match (Global listeners)
-      // - If config has no branch_name, it's a Global listener
-      // - If it has a branch_name, it must match the event's branch
-      const isGlobalConfig = conf.config_type === 'super_admin' || conf.config_type === 'system' || !conf.branch_name;
+      // - config_type 'super_admin' or 'system' matches everything
+      // - Config with NO branch_name matches everything
+      // - Branch-specific config matches ONLY that branch
+      const isSystemConfig = conf.config_type === 'super_admin' || conf.config_type === 'system' || !conf.branch_name;
 
-      let branchMatches = isGlobalConfig || conf.branch_name === branch_name;
+      let branchMatches = isSystemConfig || conf.branch_name === branch_name;
 
-      // SPECIAL CASE: For 'user_login', typically a monitor group wants to see ALL logins
-      // if it's named 'Login' or 'Central' or similar.
+      // SPECIAL OVERRIDE: If this is a Login monitoring group (e.g., Central Office), let it receive 
+      // ALL logins regardless of branch match.
       if (event_type === 'user_login' && !branchMatches) {
-        if (conf.config_name.toLowerCase().includes('login') || conf.config_name.toLowerCase().includes('central')) {
+        const name = conf.config_name.toLowerCase();
+        if (name.includes('login') || name.includes('central') || name.includes('office')) {
           branchMatches = true;
         }
+      }
+
+      if (eventMatches && branchMatches) {
+        console.log(`✅ [Telegram Dispatch] Routing ${event_type} to ${conf.config_name}`);
       }
 
       return branchMatches;
     });
 
-    // 4. IMPORTANT: Remove the fallback to configs[0] because it causes "wrong group" alerts
+    // 4. IMPORTANT: Final recipients list (No fallback!)
     const finalRecipients = recipients;
     if (finalRecipients.length === 0) {
-      console.warn(`⚠️ No Telegram groups matched event: ${event_type}, branch: ${branch_name}`);
+      console.warn(`⚠️ No matching Telegram configuration for event: ${event_type}, branch: ${branch_name}`);
       return { success: false, reason: 'no_matching_recipient' };
     }
 
