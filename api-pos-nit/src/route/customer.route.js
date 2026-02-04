@@ -12,25 +12,24 @@ const {
   getCustomerOrderStats,
 } = require("../controller/customer.controller");
 module.exports = (app) => {
-  app.get("/api/customer/my-group", validate_token("customer.getlist"), getListByCurrentUserGroup);
+  app.get("/api/customer/my-group", validate_token(), getListByCurrentUserGroup);
   app.get(
     "/api/customer/:id/detail",
-    validate_token("customer.getone"),
+    validate_token(),
     getDetailById
   );
   app.get(
     "/api/customer/statistics",
-    validate_token("customer.getlist"),
+    validate_token(),
     getCustomerStatistics
   );
   app.post("/api/customer", validate_token("customer.create"), create);
   app.post("/api/customer/user", validate_token("customer.create"), assignCustomerToUser);
   app.put("/api/customer/:id", validate_token("customer.update"), update);
   app.delete("/api/customer/:id", validate_token("customer.remove"), remove);
-app.get(
-  "/api/order/customer-stats",
-  validate_token("customer.getlist"),
-  getCustomerOrderStats
-);
+  app.get(
+    "/api/order/customer-stats",
+    validate_token(),
+    getCustomerOrderStats
+  );
 };
-

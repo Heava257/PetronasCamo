@@ -26,13 +26,13 @@ module.exports = (app) => {
   app.get("/api/order/completion-stats", validate_token("order.view"), getOrderCompletionStats);
   app.post("/api/order/process-payment", validate_token(), processPayment);
   app.get("/api/order/history", validate_token("order.create"), getOrderHistory);
-  app.get("/api/order", validate_token("order.view"), getList);
+  app.get("/api/order", validate_token(), getList);
   app.post("/api/order", validate_token("order.create"), create);
   app.put("/api/order/:id", validate_token("order.update"), updateInvoice);
   app.delete("/api/order/:id", validate_token("order.remove"), deleteInvoice);
   app.get("/api/order_detail/:id", getone);
   app.get("/api/order_detail/:orderId", getOrderDetail);
-  app.get("/api/payment/history/my-group", validate_token("order.view"), getPaymentHistory);
+  app.get("/api/payment/history/my-group", validate_token(), getPaymentHistory);
   app.put("/api/payment/:id", validate_token("order.update"), updatePayment);
   app.put("/api/payment/:id/void", validate_token("order.remove"), voidPayment);
   app.delete("/api/payment/:id", validate_token("order.remove"), deletePayment);
