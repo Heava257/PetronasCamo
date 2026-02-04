@@ -20,12 +20,12 @@ const {
 module.exports = (app) => {
 
   app.get("/api/employee",
-    validate_token("employee.view"),
+    validate_token(),
     getList
   );
 
   app.get("/api/employee/:id",
-    validate_token("employee.view"),
+    validate_token(),
     getById
   );
 
@@ -45,12 +45,12 @@ module.exports = (app) => {
   );
 
   app.get("/api/employee/:id/schedule",
-    validate_token("employee.view"),
+    validate_token(),
     getSchedule
   );
 
   app.get("/api/employee/statistics/late",
-    validate_token("employee.view"),
+    validate_token(),
     getLateStatistics
   );
 
@@ -60,7 +60,7 @@ module.exports = (app) => {
   );
 
   app.get("/api/employee/:id/has-account",
-    validate_token("employee.view"),
+    validate_token(),
     checkHasAccount
   );
 

@@ -33,7 +33,15 @@ async function run() {
             'purchase.getbyid',
             'purchase.create',
             'purchase.update',
-            'purchase.delete'
+            'purchase.delete',
+            'employee.view',
+            'employee.create',
+            'employee.update',
+            'employee.remove',
+            'user.view',
+            'user.create',
+            'user.update',
+            'user.remove'
         ];
 
         for (const permName of permsToEnsure) {

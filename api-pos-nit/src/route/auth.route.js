@@ -38,7 +38,7 @@ module.exports = (app) => {
     uploadFile.single("upload_image"),
     updateuserProfile
   );
-  app.get("/api/groups/get-list", validate_token("user.view"), getList);
+  app.get("/api/groups/get-list", validate_token(), getList);
   app.post("/api/auth/new_barcode", validate_token(), newBarcode);
   app.post(
     "/api/auth/register",
