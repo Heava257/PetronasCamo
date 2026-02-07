@@ -23,6 +23,10 @@ class ActivityTracker {
 
   async fetchConfig() {
     try {
+      // Don't fetch if no token is present (prevents 401 on login page)
+      const token = localStorage.getItem("access_token");
+      if (!token || token === "null") return;
+
       const response = await request('config/auto-logout', "get");
 
 

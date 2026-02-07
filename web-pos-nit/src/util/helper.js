@@ -64,8 +64,12 @@ export const request = (url = "", method = "get", data = {}, new_access_token = 
       const response = err.response;
       const originalRequest = err.config;
 
-      // Skip refresh logic for Login, Register, or Auth checks to avoid loops
-      if (originalRequest.url.includes("auth/login") || originalRequest.url.includes("driver/check-auth")) {
+      // Skip refresh logic for Login, Register, or sensitive config checks to avoid loops
+      if (
+        originalRequest.url.includes("auth/") ||
+        originalRequest.url.includes("driver/check-auth") ||
+        originalRequest.url.includes("config/auto-logout")
+      ) {
         return Promise.reject(err);
       }
 
