@@ -1339,7 +1339,7 @@ exports.report_Stock_Status = async (req, res) => {
            FROM inventory_transaction it
            ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
            WHERE it.product_id = p.id
-           AND it.transaction_type = 'SALE_OUT'
+           AND it.transaction_type IN ('SALE_OUT', 'TRANSFER_OUT')
            ${branchFilter}
            ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN :from_date AND :to_date` : ''}
           ), 0
@@ -1356,7 +1356,7 @@ exports.report_Stock_Status = async (req, res) => {
            FROM inventory_transaction it
            ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
            WHERE it.product_id = p.id
-           AND it.transaction_type = 'SALE_OUT'
+           AND it.transaction_type IN ('SALE_OUT', 'TRANSFER_OUT')
            ${branchFilter}
            ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN :from_date AND :to_date` : ''}
           ), 0
@@ -1375,7 +1375,7 @@ exports.report_Stock_Status = async (req, res) => {
          FROM inventory_transaction it
          ${isSuperAdmin ? '' : 'LEFT JOIN user u_it ON it.user_id = u_it.id'}
          WHERE it.product_id = p.id
-         AND it.transaction_type = 'SALE_OUT'
+         AND it.transaction_type IN ('SALE_OUT', 'TRANSFER_OUT')
          ${branchFilter}
         ) AS last_sale_date,
         
@@ -1592,6 +1592,8 @@ SELECT
           WHEN it.transaction_type = 'PURCHASE_IN' THEN 'Inventory In'
           WHEN it.transaction_type = 'SALE_OUT' THEN 'Inventory Out'
           WHEN it.transaction_type = 'ADJUSTMENT' THEN 'Adjustment'
+          WHEN it.transaction_type = 'TRANSFER_IN' THEN 'Stock Transfer In'
+          WHEN it.transaction_type = 'TRANSFER_OUT' THEN 'Stock Transfer Out'
           ELSE it.transaction_type
         END AS movement_type,
         it.reference_no,

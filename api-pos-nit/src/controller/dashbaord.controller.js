@@ -194,10 +194,10 @@ exports.getList = async (req, res) => {
       SELECT 
         SUM(
           CASE 
-            WHEN it.transaction_type IN ('PURCHASE_IN', 'RETURN') OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity > 0)
+            WHEN it.transaction_type IN ('PURCHASE_IN', 'RETURN', 'TRANSFER_IN') OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity > 0)
             THEN (it.quantity * it.unit_price) / NULLIF(COALESCE(NULLIF(it.actual_price, 1), p.actual_price, c.actual_price, 1190), 0)
-            WHEN it.transaction_type = 'SALE_OUT' OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity < 0)
-            -- Subtract OUT value (abs for sales)
+            WHEN it.transaction_type IN ('SALE_OUT', 'TRANSFER_OUT') OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity < 0)
+            -- Subtract OUT value (abs for sales/transfers)
             THEN -ABS((it.quantity * it.unit_price) / NULLIF(COALESCE(NULLIF(it.actual_price, 1), p.actual_price, c.actual_price, 1190), 0))
             ELSE 0 
           END

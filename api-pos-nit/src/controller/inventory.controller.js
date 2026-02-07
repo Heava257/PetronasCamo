@@ -227,16 +227,16 @@ exports.getTransactionList = async (req, res) => {
 
         const statsSql = `
             SELECT 
-                SUM(CASE WHEN it.transaction_type = 'PURCHASE_IN' 
+                SUM(CASE WHEN it.transaction_type IN ('PURCHASE_IN', 'TRANSFER_IN') 
                     THEN (it.quantity * it.unit_price) / NULLIF(COALESCE(NULLIF(it.actual_price, 1), p.actual_price, c.actual_price, 1190), 0) 
                     ELSE 0 END) as total_in,
-                SUM(CASE WHEN it.transaction_type = 'SALE_OUT' 
+                SUM(CASE WHEN it.transaction_type IN ('SALE_OUT', 'TRANSFER_OUT') 
                     THEN ABS((it.quantity * it.unit_price) / NULLIF(COALESCE(NULLIF(it.actual_price, 1), p.actual_price, c.actual_price, 1190), 0)) 
                     ELSE 0 END) as total_out,
                 -- ✅ New Quantity Statistics
-                SUM(CASE WHEN it.transaction_type IN ('PURCHASE_IN', 'RETURN') OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity > 0)
+                SUM(CASE WHEN it.transaction_type IN ('PURCHASE_IN', 'RETURN', 'TRANSFER_IN') OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity > 0)
                     THEN it.quantity ELSE 0 END) as total_qty_in,
-                SUM(CASE WHEN it.transaction_type = 'SALE_OUT' OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity < 0)
+                SUM(CASE WHEN it.transaction_type IN ('SALE_OUT', 'TRANSFER_OUT') OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity < 0)
                     THEN ABS(it.quantity) ELSE 0 END) as total_qty_out
             FROM inventory_transaction it
             LEFT JOIN product p ON it.product_id = p.id
@@ -745,13 +745,13 @@ exports.getCategoryStatistics = async (req, res) => {
                     SELECT SUM(quantity) 
                     FROM inventory_transaction 
                     WHERE product_id = p.id 
-                      AND (transaction_type IN ('PURCHASE_IN', 'RETURN') OR (transaction_type = 'ADJUSTMENT' AND quantity > 0))
+                      AND (transaction_type IN ('PURCHASE_IN', 'RETURN', 'TRANSFER_IN') OR (transaction_type = 'ADJUSTMENT' AND quantity > 0))
                 ), 0) as total_qty_in,
                 COALESCE((
                     SELECT ABS(SUM(quantity))
                     FROM inventory_transaction 
                     WHERE product_id = p.id 
-                      AND (transaction_type = 'SALE_OUT' OR (transaction_type = 'ADJUSTMENT' AND quantity < 0))
+                      AND (transaction_type IN ('SALE_OUT', 'TRANSFER_OUT') OR (transaction_type = 'ADJUSTMENT' AND quantity < 0))
                 ), 0) as total_qty_out,
                 COALESCE((
                     SELECT ABS(SUM(
@@ -759,7 +759,7 @@ exports.getCategoryStatistics = async (req, res) => {
                     ))
                     FROM inventory_transaction it2
                     WHERE it2.product_id = p.id 
-                      AND (it2.transaction_type = 'SALE_OUT' OR (it2.transaction_type = 'ADJUSTMENT' AND it2.quantity < 0))
+                      AND (it2.transaction_type IN ('SALE_OUT', 'TRANSFER_OUT') OR (it2.transaction_type = 'ADJUSTMENT' AND it2.quantity < 0))
                 ), 0) as total_out_value,
                 COALESCE(
                     (
