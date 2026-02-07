@@ -594,6 +594,137 @@ exports.updateTransaction = async (req, res) => {
 };
 
 // ✅ REFINED: Get stock breakdown by PRODUCT (Gasoline, Diesel separately)
+// ✅ Transfer Stock Logic
+exports.transferStock = async (req, res) => {
+    try {
+        const { target_branch_name, item } = req.body; // item: { product_id, quantity, unit_price, note }
+        const sourceUserId = req.auth.id; // Admin/Sender
+        const sourceBranch = req.auth.branch_name; // Usually null or 'Head Office'
+
+        if (!target_branch_name || !item || !item.product_id || !item.quantity) {
+            return res.status(400).json({ error: true, message: "Missing required fields" });
+        }
+
+        // 1. Get Source Product
+        const [sourceProducts] = await db.query("SELECT * FROM product WHERE id = ?", [item.product_id]);
+        if (sourceProducts.length === 0) {
+            return res.status(404).json({ error: true, message: "Source product not found" });
+        }
+        const sourceProduct = sourceProducts[0];
+
+        // 2. Validate Stock
+        if (sourceProduct.qty < item.quantity) {
+            return res.status(400).json({ error: true, message: `Insufficient stock! Available: ${sourceProduct.qty}` });
+        }
+
+        // 3. Get Target User
+        // Find a user belonging to the target branch (any user? or specific Manager?)
+        // Usually we Assign to the Branch Manager.
+        const [targetUsers] = await db.query("SELECT id FROM user WHERE branch_name = ? LIMIT 1", [target_branch_name]);
+        if (targetUsers.length === 0) {
+            return res.status(404).json({ error: true, message: "Target branch user not found" });
+        }
+        const targetUserId = targetUsers[0].id;
+
+        // 4. Update Source (Deduct)
+        await db.query("UPDATE product SET qty = qty - ? WHERE id = ?", [item.quantity, sourceProduct.id]);
+
+        // 5. Record Source Transaction (TRANSFER_OUT)
+        await db.query(`
+            INSERT INTO inventory_transaction (
+                product_id, transaction_type, quantity, unit_price, actual_price, reference_no,
+                supplier_name, notes, user_id, created_at
+            ) VALUES (
+                ?, 'TRANSFER_OUT', ?, ?, ?, ?, 
+                ?, ?, ?, NOW()
+            )
+        `, [
+            sourceProduct.id,
+            -Math.abs(item.quantity),
+            sourceProduct.unit_price,
+            sourceProduct.actual_price,
+            `TO-${target_branch_name}`,
+            target_branch_name,
+            item.note || 'Stock Transfer',
+            sourceUserId
+        ]);
+
+        // 6. Handle Target Product (Find or Create)
+        // Find by Barcode + Branch Scope (via User ID) -> Actually products table has `user_id`.
+        // We need to find if Target User already has this product (by barcode).
+        let targetProductId;
+        const [existingTargetProds] = await db.query(
+            "SELECT id, qty FROM product WHERE barcode = ? AND user_id = ?",
+            [sourceProduct.barcode, targetUserId]
+        );
+
+        if (existingTargetProds.length > 0) {
+            // Update Existing Product (qty + details)
+            targetProductId = existingTargetProds[0].id;
+            await db.query(`
+                UPDATE product SET 
+                    qty = qty + ?,
+                    name = ?, 
+                    unit_price = ?, 
+                    actual_price = ?,
+                    company_name = ?,
+                    description = ?
+                WHERE id = ?
+            `, [
+                item.quantity,
+                sourceProduct.name,
+                sourceProduct.unit_price,
+                sourceProduct.actual_price,
+                sourceProduct.company_name,
+                sourceProduct.description,
+                targetProductId
+            ]);
+        } else {
+            // Create New Product Copy for Branch
+            const insertRes = await db.query(`
+                INSERT INTO product (
+                    category_id, name, barcode, company_name, description, qty, unit_price, discount, 
+                    status, create_by, unit, actual_price, customer_id, user_id, create_at
+                ) VALUES (
+                    ?, ?, ?, ?, ?, ?, ?, ?, 
+                    ?, ?, ?, ?, ?, ?, NOW()
+                )
+            `, [
+                sourceProduct.category_id, sourceProduct.name, sourceProduct.barcode, sourceProduct.company_name, sourceProduct.description,
+                item.quantity, sourceProduct.unit_price, sourceProduct.discount,
+                sourceProduct.status, req.auth.username, sourceProduct.unit, sourceProduct.actual_price,
+                sourceProduct.customer_id, targetUserId
+            ]);
+            targetProductId = insertRes.insertId;
+        }
+
+        // 7. Record Target Transaction (TRANSFER_IN)
+        await db.query(`
+            INSERT INTO inventory_transaction (
+                product_id, transaction_type, quantity, unit_price, actual_price, reference_no,
+                supplier_name, notes, user_id, created_at
+            ) VALUES (
+                ?, 'TRANSFER_IN', ?, ?, ?, ?, 
+                ?, ?, ?, NOW()
+            )
+        `, [
+            targetProductId,
+            Math.abs(item.quantity),
+            sourceProduct.unit_price,
+            sourceProduct.actual_price,
+            `FROM-${sourceBranch || 'HO'}`,
+            'Head Office',
+            item.note || 'Stock Receive',
+            targetUserId
+        ]);
+
+        res.json({ success: true, message: "Transfer completed successfully" });
+
+    } catch (error) {
+        logError("inventory.transferStock", error, res);
+    }
+};
+
 exports.getCategoryStatistics = async (req, res) => {
     try {
         let sql = `
@@ -622,8 +753,14 @@ exports.getCategoryStatistics = async (req, res) => {
                     WHERE product_id = p.id 
                       AND (transaction_type = 'SALE_OUT' OR (transaction_type = 'ADJUSTMENT' AND quantity < 0))
                 ), 0) as total_qty_out,
-                
-                -- ✅ Ultra Robust Value: Use Calculated Qty * (Price / Divisor)
+                COALESCE((
+                    SELECT ABS(SUM(
+                        (it2.quantity * it2.unit_price) / NULLIF(COALESCE(it2.actual_price, 1190), 0)
+                    ))
+                    FROM inventory_transaction it2
+                    WHERE it2.product_id = p.id 
+                      AND (it2.transaction_type = 'SALE_OUT' OR (it2.transaction_type = 'ADJUSTMENT' AND it2.quantity < 0))
+                ), 0) as total_out_value,
                 COALESCE(
                     (
                       (SELECT SUM(quantity) FROM inventory_transaction WHERE product_id = p.id) 

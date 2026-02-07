@@ -1,16 +1,24 @@
 export const setAcccessToken = (value) => {
-  localStorage.setItem("access_token", value);
+  if (value) {
+    localStorage.setItem("access_token", value);
+  } else {
+    localStorage.removeItem("access_token");
+  }
 };
 export const getAcccessToken = () => {
   return localStorage.getItem("access_token");
 };
 export const setProfile = (value) => {
-  localStorage.setItem("profile", value);
+  if (value) {
+    localStorage.setItem("profile", value);
+  } else {
+    localStorage.removeItem("profile");
+  }
 };
 export const getProfile = () => {
   try {
     var profile = localStorage.getItem("profile");
-    if (profile !== "" && profile !== null && profile !== undefined) {
+    if (profile !== "" && profile !== null && profile !== undefined && profile !== "null") {
       return JSON.parse(profile);
     }
     return null;
@@ -19,12 +27,16 @@ export const getProfile = () => {
   }
 };
 export const setPermission = (array) => {
-  localStorage.setItem("permission", array);
+  if (array) {
+    localStorage.setItem("permission", array);
+  } else {
+    localStorage.removeItem("permission");
+  }
 };
 export const getPermission = () => {
   try {
     var permission = localStorage.getItem("permission");
-    if (permission !== "" && permission !== null && permission !== undefined) {
+    if (permission !== "" && permission !== null && permission !== undefined && permission !== "null") {
       return JSON.parse(permission);
     }
     return null;
@@ -33,7 +45,11 @@ export const getPermission = () => {
   }
 };
 export const setUserId = (id) => {
-  localStorage.setItem("user_id", id);
+  if (id) {
+    localStorage.setItem("user_id", id);
+  } else {
+    localStorage.removeItem("user_id");
+  }
 };
 export const getUserId = () => {
   const userId = localStorage.getItem("user_id");
@@ -41,7 +57,11 @@ export const getUserId = () => {
 };
 
 export const setRefreshToken = (value) => {
-  localStorage.setItem("refresh_token", value);
+  if (value) {
+    localStorage.setItem("refresh_token", value);
+  } else {
+    localStorage.removeItem("refresh_token");
+  }
 };
 
 export const getRefreshToken = () => {
@@ -49,7 +69,9 @@ export const getRefreshToken = () => {
 };
 
 export const clearTokens = () => {
-  // Clear tokens from your store
-  setAcccessToken(null);
-  setRefreshToken(null);
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+  localStorage.removeItem("profile");
+  localStorage.removeItem("permission");
+  localStorage.removeItem("user_id");
 };

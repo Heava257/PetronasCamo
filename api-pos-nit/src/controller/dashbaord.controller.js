@@ -165,17 +165,10 @@ exports.getList = async (req, res) => {
     }];
 
     // ✅✅✅ PRODUCT QUERY - Value & Qty from inventory_transaction ✅✅✅
+    // We calculate value based on historical transaction converted amounts (IN - OUT) 
+    // to match the "Net Value" in the Inventory Transaction page header.
     const productQuery = `
       SELECT 
-        -- ✅ Stock Value = (IT.total_qty × p.unit_price) ÷ p.actual_price
-        COALESCE(
-          SUM(
-            ROUND(
-              COALESCE(stock.total_qty, 0) * p.unit_price / NULLIF(p.actual_price, 0), 2
-            )
-          ), 0
-        ) AS total_stock_value,
-        
         -- Total Active Products (with stock > 0)
         COUNT(CASE WHEN COALESCE(stock.total_qty, 0) > 0 THEN 1 END) AS total_products,
         
@@ -195,6 +188,30 @@ exports.getList = async (req, res) => {
       WHERE p.status = 1
     `;
     const [product] = await db.query(productQuery);
+
+    // ✅ Calculation of Net Inventory Value (Matches Net Value in Inventory Transactions)
+    const stockValueQuery = `
+      SELECT 
+        SUM(
+          CASE 
+            WHEN it.transaction_type IN ('PURCHASE_IN', 'RETURN') OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity > 0)
+            THEN (it.quantity * it.unit_price) / NULLIF(COALESCE(NULLIF(it.actual_price, 1), p.actual_price, c.actual_price, 1190), 0)
+            WHEN it.transaction_type = 'SALE_OUT' OR (it.transaction_type = 'ADJUSTMENT' AND it.quantity < 0)
+            -- Subtract OUT value (abs for sales)
+            THEN -ABS((it.quantity * it.unit_price) / NULLIF(COALESCE(NULLIF(it.actual_price, 1), p.actual_price, c.actual_price, 1190), 0))
+            ELSE 0 
+          END
+        ) AS net_stock_value
+      FROM inventory_transaction it
+      LEFT JOIN product p ON it.product_id = p.id
+      LEFT JOIN category c ON p.category_id = c.id
+      LEFT JOIN user u ON it.user_id = u.id
+      WHERE 1=1 ${branchFilter}
+      -- Respect date filters to match transaction page header
+      ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+    `;
+    const [stockValueResult] = await db.query(stockValueQuery);
+    const total_stock_value = stockValueResult[0]?.net_stock_value || 0;
 
     // ✅✅✅ Get Total Quantity from inventory_transaction (Simplified) ✅✅✅
     const inventoryQtyQuery = `
@@ -428,7 +445,7 @@ exports.getList = async (req, res) => {
         title: "ផលិតផលក្នុងស្តុក",
         Summary: {
           "ស្តុក": "Current Stock",
-          "តម្លៃ": formatCurrency(product[0]?.total_stock_value),
+          "តម្លៃ": formatCurrency(total_stock_value),
           "ចំនួនផលិតផល": formatNumber(product[0]?.total_products) + " items",
           "ចំនួនស្តុកសរុប": formatNumber(inventoryQty[0]?.total_quantity) + " L"
         }

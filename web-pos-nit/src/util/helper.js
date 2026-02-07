@@ -62,66 +62,66 @@ export const request = (url = "", method = "get", data = {}, new_access_token = 
     })
     .catch(async (err) => {
       const response = err.response;
+      const originalRequest = err.config;
+
+      // Skip refresh logic for Login, Register, or Auth checks to avoid loops
+      if (originalRequest.url.includes("auth/login") || originalRequest.url.includes("driver/check-auth")) {
+        return Promise.reject(err);
+      }
 
       if (response && response.status === 401) {
-        const errorData = response.data;
+        // If already refreshing, queue this request
+        if (isRefreshing) {
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          }).then(token => {
+            return request(url, method, data, token);
+          }).catch(err => {
+            return Promise.reject(err);
+          });
+        }
 
-        // Check if token is expired
-        if (errorData?.error?.name === "TokenExpiredError" || errorData?.error === "TOKEN_EXPIRED") {
+        isRefreshing = true;
 
-          // If already refreshing, queue this request
-          if (isRefreshing) {
-            return new Promise((resolve, reject) => {
-              failedQueue.push({ resolve, reject });
-            }).then(token => {
-              return request(url, method, data, token);
-            }).catch(err => {
-              return Promise.reject(err);
-            });
+        try {
+          const refresh_token = getRefreshToken();
+
+          if (!refresh_token) {
+            throw new Error("No refresh token available");
           }
 
-          isRefreshing = true;
-
-          try {
-            const refresh_token = getRefreshToken();
-
-            if (!refresh_token) {
-              throw new Error("No refresh token available");
+          const refreshResponse = await axios({
+            url: Config.base_url + "refresh-token",
+            method: "post",
+            data: {
+              refresh_token: refresh_token
             }
+          });
 
-            const refreshResponse = await axios({
-              url: Config.base_url + "refresh-token",
-              method: "post",
-              data: {
-                refresh_token: refresh_token
-              }
-            });
+          const newAccessToken = refreshResponse.data.access_token;
+          const newRefreshToken = refreshResponse.data.refresh_token;
 
-            const newAccessToken = refreshResponse.data.access_token;
-            const newRefreshToken = refreshResponse.data.refresh_token;
+          // Update tokens in store
+          setAcccessToken(newAccessToken);
+          setRefreshToken(newRefreshToken);
 
-            // Update tokens in store
-            setAcccessToken(newAccessToken);
-            setRefreshToken(newRefreshToken);
+          // Process queued requests
+          processQueue(null, newAccessToken);
 
-            // Process queued requests
-            processQueue(null, newAccessToken);
+          // Retry original request with new token
+          return request(url, method, data, newAccessToken);
 
-            // Retry original request with new token
-            return request(url, method, data, newAccessToken);
+        } catch (refreshError) {
+          // Refresh failed - clear tokens and redirect to login
+          processQueue(refreshError, null);
+          clearTokens();
 
-          } catch (refreshError) {
-            // Refresh failed - clear tokens and redirect to login
-            processQueue(refreshError, null);
-            clearTokens();
+          // Redirect to login page or dispatch logout action
+          window.location.href = "/login"; // Adjust path as needed
 
-            // Redirect to login page or dispatch logout action
-            window.location.href = "/login"; // Adjust path as needed
-
-            return Promise.reject(refreshError);
-          } finally {
-            isRefreshing = false;
-          }
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
       }
 

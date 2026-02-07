@@ -83,12 +83,12 @@ INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
 
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
-(29,197),
-(29,198),
-(29,199),
-(29,200),
-(29,201),
-(29,202),
+(1,555),
+(1,556),
+(1,557),
+(1,558),
+(1,559),
+(1,560),
 (29,203),
 (29,365),
 (29,377),
@@ -211,8 +211,16 @@ INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
 ("super-BranchPermissionOverride.remove", "super-BranchPermissionOverride", NULL, NULL);
 
 
+purchase-distribution
 
 
+
+INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES
+("purchase-distribution.getlist", "purchase-distribution", 1, "/purchase-distribution"),
+("purchase-distribution.getone", "purchase-distribution", NULL, NULL),
+("purchase-distribution.create", "purchase-distribution", NULL, NULL),
+("purchase-distribution.update", "purchase-distribution", NULL, NULL),
+("purchase-distribution.remove", "purchase-distribution", NULL, NULL);
 
 
 INSERT INTO permissions (name, `group`, is_menu_web, web_route_key) VALUES

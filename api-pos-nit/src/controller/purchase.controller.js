@@ -117,22 +117,8 @@ exports.getById = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    // 🔒 RESTRICT CREATION: Only Admin or Head Office can create
+    // 🔒 RESTRICT CREATION REMOVED - Rely on route permission check
     const userBranch = (req.auth?.branch_name || '').toLowerCase();
-    const userRole = (req.auth?.role || '').toLowerCase();
-
-    // Check permissions
-    const isHeadOffice = userBranch.includes('head office') ||
-      userBranch.includes('ការិយាល័យកណ្តាល') ||
-      userBranch.includes('hq');
-    const isAdmin = userRole === 'admin' || userRole === 'super_admin';
-
-    if (!isAdmin && !isHeadOffice) {
-      return res.status(403).json({
-        success: false,
-        message: "🚫 Access Denied: Only Head Office can create Purchase Orders."
-      });
-    }
 
     let { items, branch_id } = req.body;
     if (typeof items === 'string') {
@@ -922,5 +908,206 @@ exports.getRecentTransactions = async (req, res) => {
 
   } catch (error) {
     logError("purchase.getRecentTransactions", error, res);
+  }
+};
+
+exports.distribute = async (req, res) => {
+  try {
+    const { purchase_id, branch_id, distributions, notes } = req.body; // distributions: [{ product_id, quantity }]
+
+    if (!purchase_id || !branch_id || !distributions || !isArray(distributions)) {
+      return res.status(400).json({ success: false, message: "Missing required fields" });
+    }
+
+    // 1. Get Purchase Order
+    const [orders] = await db.query("SELECT * FROM purchase WHERE id = :id", { id: purchase_id });
+    if (orders.length === 0) return res.status(404).json({ success: false, message: "Purchase Order not found" });
+
+    const purchase = orders[0];
+    let items = [];
+    try { items = JSON.parse(purchase.items || '[]'); } catch (e) { }
+
+    // 2. Get Branch Name (Assuming branch_id IS the name since 'branch' table is missing)
+    let targetBranchName = branch_id;
+    // Optional: Validate if this branch exists in user table if needed
+    // const [bCheck] = await db.query("SELECT DISTINCT branch_name FROM user WHERE branch_name = :b", { b: branch_id });
+    // if (bCheck.length > 0) targetBranchName = bCheck[0].branch_name;
+
+    // 3. Find User in Target Branch
+    let targetUserId = req.auth.id;
+    try {
+      let [uRes] = await db.query("SELECT id FROM user WHERE branch_name = :b AND is_active = 1 LIMIT 1", { b: targetBranchName });
+      if (uRes.length === 0) {
+        [uRes] = await db.query("SELECT id FROM user WHERE branch_name LIKE :b AND is_active = 1 LIMIT 1", { b: `%${targetBranchName}%` });
+      }
+      if (uRes.length > 0) targetUserId = uRes[0].id;
+    } catch (e) { }
+
+    // 4. Process Distributions
+    const processedItems = [];
+    let updated = false;
+
+    for (const dist of distributions) {
+      // Match item
+      const itemIndex = items.findIndex(i => (String(i.product_id) === String(dist.product_id) || i.product_name === dist.product_name));
+
+      if (itemIndex !== -1) {
+        const item = items[itemIndex];
+        const distQty = parseFloat(dist.quantity || 0);
+
+        if (distQty > 0) {
+          item.received_qty = (parseFloat(item.received_qty || 0) + distQty);
+          updated = true;
+
+          // Sync Inventory
+          let productId = item.product_id || item.id;
+          let actualPrice = parseFloat(item.actual_price || 1190);
+
+          let existingProduct = [];
+          // Find Existing Product in Branch Scope
+          const [byName] = await db.query(`
+                   SELECT p.id, p.actual_price FROM product p 
+                   JOIN user u ON p.user_id = u.id 
+                   WHERE p.name = :name AND u.branch_name = :b LIMIT 1`,
+            { name: item.product_name, b: targetBranchName }
+          );
+          if (byName.length) existingProduct = byName;
+
+          if (existingProduct.length) {
+            productId = existingProduct[0].id;
+            await db.query(`UPDATE product SET qty = qty + :qty, updated_at = NOW() WHERE id = :id`, { qty: distQty, id: productId });
+          } else {
+            const [insert] = await db.query(`
+                        INSERT INTO product (name, category_id, qty, unit_price, unit, supplier_id, user_id, actual_price, status, create_at)
+                        VALUES (:name, :cat, :qty, :price, 'L', :sup, :uid, :act, 1, NOW())
+                     `, {
+              name: item.product_name,
+              cat: item.category_id || null,
+              qty: distQty,
+              price: item.unit_price || 0,
+              sup: purchase.supplier_id,
+              uid: targetUserId,
+              act: actualPrice
+            });
+            productId = insert.insertId;
+          }
+
+          // Create Transaction
+          await db.query(`
+                  INSERT INTO inventory_transaction (
+                    product_id, purchase_id, transaction_type, quantity, unit_price, actual_price, reference_no,
+                    supplier_id, supplier_name, notes, user_id, created_at
+                  ) VALUES (
+                    :pid, :poid, 'PURCHASE_IN', :qty, :price, :act, :ref,
+                    :sup, :sup_name, :note, :uid, NOW()
+                  )
+                `, {
+            pid: productId,
+            poid: purchase_id,
+            qty: distQty,
+            price: item.unit_price,
+            act: actualPrice,
+            ref: 'HO-' + purchase.order_no,
+            sup: purchase.supplier_id,
+            sup_name: items[0].supplier_name || 'Supplier',
+            note: `Received from Head Office. PO: ${purchase.order_no}. ${notes || ''}`,
+            uid: targetUserId
+          });
+
+          processedItems.push({
+            name: item.product_name,
+            qty: distQty,
+            unit_price: item.unit_price
+          });
+
+          // 4. ✅ DEDUCT from Head Office (Sender)
+          if (item.product_id) {
+            // Deduct Qty
+            await db.query(`UPDATE product SET qty = qty - :qty WHERE id = :id`, { qty: distQty, id: item.product_id });
+
+            // Add Transaction (Transfer Out)
+            await db.query(`
+               INSERT INTO inventory_transaction (
+                 product_id, purchase_id, transaction_type, quantity, unit_price, actual_price, reference_no,
+                 supplier_id, supplier_name, notes, user_id, created_at
+               ) VALUES (
+                 :pid, :poid, 'TRANSFER_OUT', :qty, :price, :act, :ref,
+                 :sup, :sup_name, :notes, :uid, NOW()
+               )
+             `, {
+              pid: item.product_id,
+              poid: purchase_id,
+              qty: -distQty, // Negative for Out
+              price: item.unit_price,
+              act: actualPrice,
+              ref: 'TO-' + targetBranchName.toUpperCase(),
+              sup: purchase.supplier_id,
+              sup_name: targetBranchName, // Destination
+              notes: `Distributed to ${targetBranchName}. PO: ${purchase.order_no}`,
+              uid: req.auth.id // Admin/Sender
+            });
+          }
+        }
+      }
+    }
+
+    if (updated) {
+      const allReceived = items.every(i => (parseFloat(i.received_qty || 0) >= parseFloat(i.quantity || 0)));
+
+      await db.query("UPDATE purchase SET items = :items, status = :status WHERE id = :id", {
+        items: JSON.stringify(items),
+        status: allReceived ? 'completed' : (purchase.status === 'pending' ? 'confirmed' : purchase.status),
+        id: purchase_id
+      });
+
+      // Async Notif
+      setImmediate(async () => {
+        const details = processedItems.map((p, i) => `${i + 1}. ${p.name}: +${p.qty}L`).join('\n');
+        await sendSmartNotification({
+          event_type: 'inventory_movement',
+          branch_name: targetBranchName,
+          title: `🚚 Stock Received at ${targetBranchName}`,
+          message: `Partial Stock Received from PO: ${purchase.order_no}\n\n${details}\n\nBy: ${req.auth.name}`,
+          severity: 'normal'
+        });
+      });
+
+      res.json({ success: true, message: "Stock distributed successfully" });
+    } else {
+      res.json({ success: false, message: "No items updated" });
+    }
+
+  } catch (error) {
+    logError("purchase.distribute", error, res);
+  }
+};
+
+exports.getDistributions = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Query transactions linked to this PO
+    const sql = `
+      SELECT 
+        it.*,
+        u.branch_name,
+        u.name as receiver_name,
+        p.name as product_name
+      FROM inventory_transaction it
+      LEFT JOIN user u ON it.user_id = u.id
+      LEFT JOIN product p ON it.product_id = p.id
+      WHERE it.purchase_id = :id
+      ORDER BY it.created_at DESC
+    `;
+
+    const [rows] = await db.query(sql, { id });
+
+    res.json({
+      success: true,
+      list: rows
+    });
+
+  } catch (error) {
+    logError("purchase.getDistributions", error, res);
   }
 };

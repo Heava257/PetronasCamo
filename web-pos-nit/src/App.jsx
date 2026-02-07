@@ -15,6 +15,7 @@ import UserPage from "./page/user/UserPage";
 import RolePage from "./page/role/RolePage";
 import SupplierPage from "./page/purchase/SupplierPage";
 import PurchasePage from "./page/purchase/PurchasePage";
+import PurchaseDistributionPage from "./page/purchase/PurchaseDistributionPage";
 import SupplierPaymentPage from "./page/supplier_payment/SupplierPaymentPage"; // ✅ Supplier Payment Ledger
 import CustomerPaymentPage from "./page/customer_payment/CustomerPaymentPage"; // ✅ Customer Payment Ledger
 import ProductPage from "./page/product/ProductPage";
@@ -174,8 +175,8 @@ function App() {
               <Route path="/admin-ShiftClosingChecklist" element={<ShiftClosingChecklist />} />
               <Route path="/admin-StockReconciliation" element={<StockReconciliationPage />} />
               <Route path="/pre-order-management" element={<EnhancedPOSOrder />} />
-
               <Route path="/pre-order-detail/:id" element={<PreOrderDetailPage />} />
+              <Route path="/purchase-distribution/:id" element={<PurchaseDistributionPage />} />
               <Route path="/settings" element={<SettingsPage />} />
 
 

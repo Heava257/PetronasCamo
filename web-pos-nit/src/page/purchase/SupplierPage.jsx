@@ -17,21 +17,22 @@ const { Option } = Select;
 const supplierStyles = `
   .supplier-main-content .ant-card,
   .supplier-table-card {
-    background: rgba(15, 23, 42, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2) !important;
   }
   .supplier-main-content .ant-table {
     background: transparent !important;
   }
   .supplier-main-content .ant-table-thead > tr > th {
-    background: rgba(15, 23, 42, 0.8) !important;
+    background: rgba(255, 215, 0, 0.1) !important;
     color: #e8c12f !important;
-    border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.3) !important;
     text-transform: uppercase;
     font-size: 11px;
     letter-spacing: 0.05em;
+    backdrop-filter: blur(10px);
   }
   .supplier-main-content .ant-table-tbody > tr > td {
     background: transparent !important;
@@ -43,8 +44,8 @@ const supplierStyles = `
   }
   .supplier-main-content .ant-input, 
   .supplier-main-content .ant-input-affix-wrapper {
-    background: rgba(15, 23, 42, 0.6) !important;
-    border: 1px solid rgba(255, 215, 0, 0.1) !important;
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
     color: #f8fafc !important;
   }
   .supplier-main-content .ant-input-search-button {

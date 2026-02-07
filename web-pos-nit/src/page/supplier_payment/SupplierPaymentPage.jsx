@@ -58,11 +58,12 @@ const tableStyles = `
         border: 1px solid #d4d4d4;
     }
 
-    /* Dark Mode Specific Overrides */
+    /* Dark Mode Specific Overrides - Upgraded to True Glass */
     .dark .ant-card {
-        background: rgba(15, 23, 42, 0.8) !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
-        backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.03) !important;
+        border-color: rgba(255, 215, 0, 0.2) !important;
+        backdrop-filter: blur(15px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
     }
     
     .dark .ant-table {
@@ -87,9 +88,10 @@ const tableStyles = `
 
     .dark .ant-modal-content,
     .dark .ant-modal-header {
-        background: rgba(15, 23, 42, 0.95) !important;
+        background: rgba(8, 18, 45, 0.7) !important;
+        backdrop-filter: blur(25px) !important;
         color: #f8fafc !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 215, 0, 0.3) !important;
     }
 
     .dark .ant-modal-title {
@@ -106,8 +108,8 @@ const tableStyles = `
     .dark .ant-input-number,
     .dark .ant-input-number-input,
     .dark .ant-input-textarea {
-        background: rgba(30, 41, 59, 0.6) !important;
-        border-color: rgba(255, 255, 255, 0.1) !important;
+        background: rgba(0, 0, 0, 0.3) !important;
+        border-color: rgba(255, 215, 0, 0.3) !important;
         color: #f8fafc !important;
     }
 

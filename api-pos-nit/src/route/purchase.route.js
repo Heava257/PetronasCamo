@@ -7,7 +7,9 @@ const {
   delete: remove,
   getStatistics,
   getInventoryStatistics,
-  getRecentTransactions
+  getRecentTransactions,
+  distribute,
+  getDistributions
 } = require("../controller/purchase.controller");
 
 const multer = require("multer");
@@ -30,8 +32,14 @@ module.exports = (app) => {
   // PUT /api/purchase/:id - Update purchase order (With Image)
   app.put("/api/purchase/:id", validate_token("purchase.update"), upload.single('image'), update);
 
+  // POST /api/purchase/distribute - Distribute Stock (Partial Receive)
+  app.post("/api/purchase/distribute", validate_token("purchase.update"), distribute);
+
+  // GET /api/purchase/:id/distributions - Get distribution history
+  app.get("/api/purchase/:id/distributions", validate_token(), getDistributions);
+
   // DELETE /api/purchase/:id - Delete purchase order
-  app.delete("/api/purchase/:id", validate_token("purchase.delete"), remove);
+  app.delete("/api/purchase/:id", validate_token("purchase.remove"), remove);
 
   // INTEGRATION: Inventory endpoints
   // GET /api/purchase/inventory/statistics - Get warehouse inventory statistics

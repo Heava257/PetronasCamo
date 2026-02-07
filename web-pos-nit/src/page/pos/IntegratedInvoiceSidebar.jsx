@@ -47,6 +47,29 @@ const IntegratedInvoiceSidebar = ({
     const [locations, setLocations] = useState([]);
     const [loadingLocations, setLoadingLocations] = useState(false);
 
+    // Sync selectedLocation ID to selectedLocations object for PrintInvoice
+    useEffect(() => {
+        if (selectedLocation && locations.length > 0 && setSelectedLocations) {
+            // Avoid infinite loop if already set
+            if (selectedLocations.length === 1 && selectedLocations[0].id === selectedLocation) return;
+
+            const locObj = locations.find(l => l.id === selectedLocation);
+            if (locObj) {
+                setSelectedLocations([{
+                    label: locObj.location_name,
+                    value: locObj.id,
+                    ...locObj
+                }]);
+            } else if (selectedLocation) {
+                // Handle manual text entry (e.g. from PreOrderForm)
+                setSelectedLocations([{
+                    label: selectedLocation,
+                    value: selectedLocation
+                }]);
+            }
+        }
+    }, [selectedLocation, locations]);
+
     // Calculate totals
     const calculateTotals = () => {
         let subtotal = 0;
@@ -119,16 +142,7 @@ const IntegratedInvoiceSidebar = ({
     return (
         <div className="invoice-sidebar-no-scroll">
             {/* Header - Fixed at top */}
-            <div className="sidebar-header-fixed">
-                <div className="header-info-row">
-                    <div className="header-badge">
-                        <ShoppingCartOutlined /> {cartItems.length} ផលិតផល
-                    </div>
-                    <div className="header-total">
-                        {totals.total}
-                    </div>
-                </div>
-            </div>
+
 
             {/* Main Content Grid - 3 Columns */}
             <div className="sidebar-content-grid">
@@ -144,68 +158,74 @@ const IntegratedInvoiceSidebar = ({
                                 មិនមានផលិតផល
                             </div>
                         ) : (
-                            cartItems.map((item, idx) => (
-                                <div key={item.id} className="cart-item-compact">
-                                    <div className="item-header-row">
-                                        <span className="item-number">#{idx + 1}</span>
-                                        <span className="item-name">{item.name}</span>
-                                        <button
-                                            className="item-remove-btn"
-                                            onClick={() => handleRemoveCartItem(item.id)}
-                                        >
-                                            <DeleteOutlined />
-                                        </button>
-                                    </div>
-
-                                    <div className="item-category-tag">
-                                        {item.category_name}
-                                    </div>
-
-                                    <div className="item-controls-row">
-                                        <div className="item-qty-control">
-                                            <label>បរិមាណ:</label>
-                                            <input
-                                                type="number"
-                                                value={item.cart_qty}
-                                                onChange={(e) => handleQuantityChange(e.target.value, item.id)}
-                                                min="0"
-                                                max={item.available_qty}
-                                                className="qty-input-compact"
-                                            />
-                                            <span className="qty-unit">L</span>
+                            cartItems.map((item, idx) => {
+                                const isExceeded = Number(item.cart_qty) > Number(item.available_qty);
+                                return (
+                                    <div key={item.id} className={`cart-item-compact ${isExceeded ? 'item-error-border' : ''}`}>
+                                        <div className="item-header-row">
+                                            <span className="item-number">#{idx + 1}</span>
+                                            <span className="item-name">{item.name}</span>
+                                            <button
+                                                className="item-remove-btn"
+                                                onClick={() => handleRemoveCartItem(item.id)}
+                                            >
+                                                <DeleteOutlined />
+                                            </button>
                                         </div>
 
-                                        <div className="item-price-display">
-                                            <div className="price-info-group">
-                                                <div className="price-label">តម្លៃ/{parseFloat(item.actual_price || 1) <= 1 ? 'L' : 'T'}:</div>
-                                                <div className="price-value">{formatPrice(item.selling_price)}</div>
-                                                {item.discount > 0 && (
-                                                    <div className="item-discount-badge">
-                                                        -{item.discount}%
+                                        <div className="item-category-tag">
+                                            {item.category_name}
+                                        </div>
+
+                                        <div className="item-controls-row">
+                                            <div className="item-qty-control">
+                                                <label>បរិមាណ:</label>
+                                                <input
+                                                    type="number"
+                                                    value={item.cart_qty}
+                                                    onChange={(e) => handleQuantityChange(e.target.value, item.id)}
+                                                    min="0"
+                                                    max={item.available_qty}
+                                                    className={`qty-input-compact ${isExceeded ? 'input-error' : ''}`}
+                                                />
+                                                <span className="qty-unit">L</span>
+                                            </div>
+
+                                            <div className="item-price-display">
+                                                <div className="price-info-group">
+                                                    <div className="price-label">តម្លៃ/{parseFloat(item.actual_price || 1) <= 1 ? 'L' : 'T'}:</div>
+                                                    <div className="price-value">{formatPrice(item.selling_price)}</div>
+                                                    {item.discount > 0 && (
+                                                        <div className="item-discount-badge">
+                                                            -{item.discount}%
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="item-row-total">
+                                                    {formatPrice((Number(item.cart_qty || 0) * Number(item.selling_price || 0) * (1 - (Number(item.discount || 0) / 100))) / Number(item.actual_price || 1))}
+                                                </div>
+                                                <div className="item-calc-formula">
+                                                    ({formatQty(item.cart_qty)}L / {item.actual_price}) x {formatPrice(item.selling_price)}
+                                                </div>
+                                                {isExceeded && (
+                                                    <div className="stock-error-message">
+                                                        ⚠️ ស្តុកមិនគ្រប់គ្រាន់ (Max: {formatQty(item.available_qty)})
                                                     </div>
                                                 )}
                                             </div>
-                                            <div className="item-row-total">
-                                                {formatPrice((Number(item.cart_qty || 0) * Number(item.selling_price || 0) * (1 - (Number(item.discount || 0) / 100))) / Number(item.actual_price || 1))}
-                                            </div>
-                                            <div className="item-calc-formula">
-                                                ({formatQty(item.cart_qty)}L / {item.actual_price}) x {formatPrice(item.selling_price)}
-                                            </div>
                                         </div>
-                                    </div>
 
-                                    <div className="item-stock-row">
-                                        <span className="stock-label">ស្តុកមាន:</span>
-                                        <span className="stock-value">{formatQty(item.available_qty)}L</span>
-                                    </div>
-
-                                    {item.pre_order_remaining && (
-                                        <div className="item-po-balance">
-                                            នៅសល់ PO: {formatQty(item.pre_order_remaining)}L
+                                        <div className="item-stock-row">
+                                            <span className="stock-label">ស្តុកមាន:</span>
+                                            <span className="stock-value">{formatQty(item.available_qty)}L</span>
                                         </div>
-                                    )}
-                                </div>
-                            ))
+
+
+
+
+                                    </div>
+                                )
+                            })
                         )}
                     </div>
                 </div>
@@ -213,7 +233,7 @@ const IntegratedInvoiceSidebar = ({
                 {/* MIDDLE COLUMN - Customer & Delivery Info */}
                 <div className="grid-column info-column">
                     <div className="column-title">
-                        <UserOutlined /> ពត៌មានអតិថិជន
+                        <UserOutlined /> ព័ត៌មានអតិថិជន
                     </div>
 
                     <div className="info-form-compact">
@@ -252,7 +272,17 @@ const IntegratedInvoiceSidebar = ({
                             </label>
                             <Select
                                 value={selectedLocation}
-                                onChange={setSelectedLocation}
+                                onChange={(val) => {
+                                    setSelectedLocation(val);
+                                    const locObj = locations.find(l => l.id === val);
+                                    if (locObj && setSelectedLocations) {
+                                        setSelectedLocations([{
+                                            label: locObj.location_name,
+                                            value: locObj.id,
+                                            ...locObj
+                                        }]);
+                                    }
+                                }}
                                 className="select-compact"
                                 placeholder="ជ្រើសរើសទីតាំង"
                                 loading={loadingLocations}
@@ -374,10 +404,7 @@ const IntegratedInvoiceSidebar = ({
                         </div>
 
                         <div className="summary-breakdown">
-                            <div className="breakdown-row">
-                                <span className="breakdown-label">សរុបបណ្តោះអាសន្ន:</span>
-                                <span className="breakdown-value">{totals.subtotal}</span>
-                            </div>
+
                             <div className="breakdown-row total-row">
                                 <span className="breakdown-label">សរុបត្រូវបង់:</span>
                                 <span className="breakdown-value total-value">{totals.total}</span>
@@ -391,22 +418,22 @@ const IntegratedInvoiceSidebar = ({
                                 icon={<CheckCircleOutlined />}
                                 onClick={handleClickOut}
                                 loading={isCheckingOut}
-                                disabled={isDisabled || cartItems.length === 0}
+                                disabled={isDisabled || cartItems.length === 0 || cartItems.some(i => Number(i.cart_qty) > Number(i.available_qty))}
                                 className="btn-checkout-compact"
                                 block
                             >
-                                បង្កើតការបញ្ជាទិញ
+                                គិតលុយ
                             </Button>
 
                             <Button
                                 size="large"
                                 icon={<EyeOutlined />}
                                 onClick={() => setShowPreviewModal(true)}
-                                disabled={cartItems.length === 0}
+                                disabled={cartItems.length === 0 || cartItems.some(i => Number(i.cart_qty) > Number(i.available_qty))}
                                 className="btn-preview-compact"
                                 block
                             >
-                                មើលមុនវិក្កយបត្រ
+                                ត្រួតពិនិត្យ
                             </Button>
 
                             <Button
@@ -418,7 +445,7 @@ const IntegratedInvoiceSidebar = ({
                                 className="btn-clear-compact"
                                 block
                             >
-                                សម្អាតកន្ត្រក
+                                សម្អាត
                             </Button>
                         </div>
 

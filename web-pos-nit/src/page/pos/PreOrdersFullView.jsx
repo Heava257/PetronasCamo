@@ -22,6 +22,7 @@ import PrintInvoice from "../../component/pos/PrintInvoice";
 
 const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => {
     const { t } = useTranslation();
+    const [messageApi, contextHolder] = message.useMessage();
     const [preOrders, setPreOrders] = useState([]);
     const [loading, setLoading] = useState(false);
     const [filter, setFilter] = useState({ txt_search: "" });
@@ -113,16 +114,22 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
 
                 const newCartItems = orderDetails.details.map(item => {
                     const reqQty = parseFloat(item.remaining_qty || item.qty);
-                    const availQty = parseFloat(item.available_qty || 0);
+
+                    // Override available_qty with data from stock stats if possible to ensure accuracy
+                    let availQty = parseFloat(item.available_qty || 0);
+                    // Robust matching (trim + lowercase) to ensure we find the correct stock
+                    const matchingStock = stockStats.find(s =>
+                        (s.product_name || "").trim().toLowerCase() === (item.product_name || "").trim().toLowerCase()
+                    );
+
+                    if (matchingStock) {
+                        availQty = parseFloat(matchingStock.total_qty || 0);
+                    }
 
                     let finalQty = reqQty;
                     let stockWarning = null;
 
-                    if (reqQty > availQty) {
-                        finalQty = availQty;
-                        stockWarning = `${item.product_name}: Qty adjusted from ${reqQty}L to ${availQty}L (Stock Limit)`;
-                        issues.push(stockWarning);
-                    }
+                    // Removed clamping logic to allow user to see and adjust invalid quantities
 
                     // ✅ Robust conversion factor lookup logic
                     let actual_price = 1000; // Default fallback
@@ -195,14 +202,14 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                 }));
 
                 setSelectedPreOrder(orderDetails);
-                setSelectedLocation(orderDetails.location_id || null);
+                setSelectedLocation(orderDetails.location_name || orderDetails.location_id || null);
                 setSelectedTruck(orderDetails.truck_id || null);
                 setIsModalVisible(true);
-                message.success(`✅ បានផ្ទុក Pre-Order សម្រាប់ ${orderDetails.customer_name}`);
+                messageApi.success(`✅ បានផ្ទុក Pre-Order សម្រាប់ ${orderDetails.customer_name}`);
             }
         } catch (error) {
             console.error("Error loading pre-order:", error);
-            message.error("មិនអាចផ្ទុក Pre-Order បានទេ");
+            messageApi.error("មិនអាចផ្ទុក Pre-Order បានទេ");
         } finally {
             setLoading(false);
         }
@@ -245,10 +252,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                 const availQty = parseFloat(item.available_qty || 0);
                 const requestedQty = Number(newQty);
 
-                if (requestedQty > availQty) {
-                    // stock warning removed
-                    return { ...item, cart_qty: availQty };
-                }
+                // Allow user to type any quantity, validation will be handled in the UI
                 return { ...item, cart_qty: requestedQty };
             }
             return item;
@@ -486,6 +490,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
 
     return (
         <App>
+            {contextHolder}
             <div className="pre-orders-full-view">
                 {/* Header Section */}
                 <div className="page-header">
@@ -604,7 +609,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                     footer={null}
                     width="90%"
                     style={{ top: 20, maxWidth: 1700 }}
-                    bodyStyle={{ padding: 0 }}
+                    styles={{ body: { padding: 0 } }}
                     closeIcon={<FaTimes style={{ fontSize: '20px', color: '#ff4d4f' }} />}
                 >
                     <div className="modal-custom-header">
@@ -613,11 +618,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                                 <h2 className="modal-header-title">
                                     🛒 {t('pos.order_details')}
                                 </h2>
-                                {selectedPreOrder && (
-                                    <p className="modal-header-subtitle">
-                                        {selectedPreOrder.pre_order_no} - {selectedPreOrder.customer_name}
-                                    </p>
-                                )}
+
                             </div>
                             <Badge count={cartState.cart_list.length} showZero>
                                 <ShoppingCartOutlined className="modal-cart-icon" />
@@ -676,7 +677,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                         </Button>
                     ]}
                     width={1000}
-                    bodyStyle={{ padding: '20px', backgroundColor: '#f5f5f5' }}
+                    styles={{ body: { padding: '20px', backgroundColor: '#f5f5f5' } }}
                 >
                     <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
                         <PrintInvoice
@@ -691,7 +692,10 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                                     return sum + (qty * selling * (1 - discount)) / actual;
                                 }, 0))
                             }}
-                            cart_list={cartState.cart_list}
+                            cart_list={cartState.cart_list.map(item => ({
+                                ...item,
+                                destination: (item.destination === "Petronas Cambodia" || item.destination === "Petronas") ? null : item.destination
+                            }))}
                             selectedLocations={selectedLocations}
                         />
                     </div>

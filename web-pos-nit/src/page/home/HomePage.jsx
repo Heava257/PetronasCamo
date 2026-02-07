@@ -20,7 +20,8 @@ import {
   UsergroupAddOutlined,
   ArrowRightOutlined,
   PrinterOutlined,
-  SafetyCertificateOutlined
+  SafetyCertificateOutlined,
+  DatabaseOutlined
 } from "@ant-design/icons";
 import {
   AreaChart,
@@ -200,7 +201,8 @@ function HomePage() {
       'អតិថិជន': <UserOutlined />,
       'ប្រព័ន្ធចំណាយទូទៅ': <WalletOutlined />,
       'ផលិតផល': <ShopOutlined />,
-      'ផលិតផល / ស្តុក': <ShopOutlined />,  // ✅ បន្ថែមនេះ!
+      'ផលិតផល / ស្តុក': <ShopOutlined />,
+      'ផលិតផលក្នុងស្តុក': <DatabaseOutlined />, // ✅ ADD THIS
       'ការលក់': <TrophyOutlined />
     };
     return iconMap[title] || <DollarOutlined />;
@@ -214,8 +216,9 @@ function HomePage() {
       'សាខាស្ថាប័ន': '/',
       'អតិថិជន': '/customer',
       'ប្រព័ន្ធចំណាយទូទៅ': '/expense',
-      'ផលិតផល': '/product',
-      'ផលិតផល / ស្តុក': '/product',  // ✅ បន្ថែមនេះ!
+      'ផលិតផល': '/inventory-transactions',
+      'ផលិតផល / ស្តុក': '/inventory-transactions',
+      'ផលិតផលក្នុងស្តុក': '/inventory-transactions', // ✅ ADD THIS
       'ការលក់': '/order'
     };
     return routeMap[title] || '/';
@@ -324,45 +327,91 @@ function HomePage() {
   };
 
   const formatDisplayValue = (val) => {
-    if (typeof val !== 'string') return val?.toLocaleString() || '0';
+    if (val === null || val === undefined) return '0';
+    if (typeof val !== 'string') return val.toLocaleString();
 
-    // Check if it's a price string (ends with $)
-    if (val.endsWith('$')) {
-      const numPart = val.replace('$', '').replace(/,/g, '');
-      const num = parseFloat(numPart);
-      if (!isNaN(num)) {
-        return num.toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2
-        }) + '$';
+    // Normalize: remove existing commas to avoid double formatting
+    const cleanStr = val.replace(/,/g, '');
+
+    // Pattern to match numbers followed by units (e.g., "96629 L", "71164.69$", "3 items")
+    const match = cleanStr.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
+
+    if (match) {
+      const numValue = parseFloat(match[1]);
+      const unit = match[2];
+
+      if (!isNaN(numValue)) {
+        let formattedNum;
+
+        // Use 2 decimal places for price, standard grouping for counts/qty
+        if (unit.includes('$')) {
+          formattedNum = numValue.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+        } else {
+          // Auto formatting for quantities/counts
+          formattedNum = numValue.toLocaleString();
+        }
+
+        // Handle spacing between number and unit (keep $ attached)
+        if (unit === '$') return formattedNum + '$';
+        if (unit) return formattedNum + ' ' + unit;
+        return formattedNum;
       }
-    }
-
-    // Check if it's a number string
-    const num = parseFloat(val.replace(/,/g, ''));
-    if (!isNaN(num) && /^\d+(\.\d+)?$/.test(val.replace(/,/g, ''))) {
-      return num.toLocaleString();
     }
 
     return val;
   };
 
-  const getMainValue = (summary) => {
+  const getMainValue = (summary, title = "") => {
     if (!summary) return '0';
     const keys = Object.keys(summary);
     if (keys.length === 0) return '0';
 
-    // Priority keys for main display - check for substrings to be safer with Khmer
-    const priorityKeys = ['សរុប', 'Total', 'តម្លៃ', 'Amount', 'ចំនួន', 'Count'];
-    const bestKey = keys.find(k => priorityKeys.some(pk => k.includes(pk))) || keys[0];
+    // Default priority
+    let priorityKeys = ['សរុប', 'Total', 'តម្លៃ', 'Amount', 'ចំនួន', 'Count'];
+
+    // For Stock/Inventory cards:
+    // We want the PHYSICAL quantity (Liters) in the center, not just the count of items.
+    const translatedTitle = t(title);
+    const isStockCard = translatedTitle.includes('ស្តុក') || title.includes('Stock') || title.includes('Inventory') || title.includes('Product');
+
+    if (isStockCard) {
+      priorityKeys = ['ស្តុកសរុប', 'Total Stock', 'Physical', 'Liters', 'Balance', 'បរិមាណ', 'ចំនួនស្តុក', 'Stock', 'Inventory', 'ចំនួន', 'Count', 'Qty', 'សរុប', 'Total'];
+    }
+
+    // Find the best match by iterating through priority list in ORDER
+    let bestKey = keys[0];
+    let found = false;
+    for (const pk of priorityKeys) {
+      // Find a key that contains the priority keyword
+      // We check for exact or near-exact matches first for quality
+      const match = keys.find(k => k.toLowerCase() === pk.toLowerCase() || k.includes(pk));
+      if (match) {
+        // Double check: if it's a Stock card and we matched "ចំនួន", 
+        // make sure it's not "ចំនួនផលិតផល" if we have a better one like "ចំនួនស្តុកសរុប"
+        if (isStockCard && pk === 'ចំនួន' && match.includes('ផលិតផល')) {
+          const betterMatch = keys.find(k => k.includes('ស្តុកសរុប') || k.includes('បរិមាណ'));
+          if (betterMatch) {
+            bestKey = betterMatch;
+            found = true;
+            break;
+          }
+        }
+        bestKey = match;
+        found = true;
+        break;
+      }
+    }
 
     let val = summary[bestKey] || '0';
 
-    // If selected value is a date range or current stock text, try to find a better one (a price or number)
-    if (typeof val === 'string' && (val.includes(' - ') || val.toLowerCase().includes('stock')) && keys.length > 1) {
+    // If selected value is a date range, try to find a better one
+    if (typeof val === 'string' && val.includes(' - ') && keys.length > 1) {
       const betterKey = keys.find(k => {
         const v = summary[k]?.toString() || '';
-        return !v.includes(' - ') && !v.toLowerCase().includes('stock');
+        return !v.includes(' - ');
       });
       if (betterKey) val = summary[betterKey];
     }
@@ -639,7 +688,7 @@ function HomePage() {
           <Row gutter={[24, 24]} className="metrics-row">
             {dashboard.map((item, index) => {
               const cardColor = getCardColor(index);
-              const mainValue = getMainValue(item.Summary);
+              const mainValue = getMainValue(item.Summary, item.title);
               const isUserCard = item.title === 'អ្នកប្រើប្រាស់';
 
               return (
@@ -683,17 +732,23 @@ function HomePage() {
                     </div>
 
                     <div className="metric-card-footer">
-                      {Object.entries(item.Summary).slice(1, 3).map(([key, value], idx) => (
-                        <div key={idx} className="metric-detail-row">
-                          <Text className="metric-detail-label">{t(key)}:</Text>
-                          <Text className="metric-detail-value">
-                            {typeof value === 'string' ?
-                              formatDisplayValue(value).replace(/នាក់/g, '').replace(/People/g, '').trim()
-                                .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
-                              : formatDisplayValue(value)}
-                          </Text>
-                        </div>
-                      ))}
+                      {Object.entries(item.Summary)
+                        .filter(([key]) => {
+                          const val = item.Summary[key];
+                          // Hide the center value and the static "Current Stock" label
+                          return formatDisplayValue(val) !== mainValue && val !== "Current Stock";
+                        })
+                        .map(([key, value], idx) => (
+                          <div key={idx} className="metric-detail-row">
+                            <Text className="metric-detail-label">{t(key)}:</Text>
+                            <Text className="metric-detail-value">
+                              {typeof value === 'string' ?
+                                formatDisplayValue(value).replace(/នាក់/g, '').replace(/People/g, '').trim()
+                                  .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
+                                : formatDisplayValue(value)}
+                            </Text>
+                          </div>
+                        ))}
 
                       {/* Show "View All" for user card if more than 2 roles */}
                       {isUserCard && Object.keys(item.Summary).length > 3 && (

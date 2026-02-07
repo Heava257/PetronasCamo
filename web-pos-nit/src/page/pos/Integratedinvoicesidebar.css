@@ -442,23 +442,42 @@
 
 .stat-card {
     background: white;
-    border: 2px solid #10b981;
-    border-radius: 10px;
-    padding: 12px;
-    text-align: center;
+    border: 1px solid #10b981;
+    border-radius: 12px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 90px;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06);
+    position: relative;
+    justify-content: center;
 }
 
 .stat-label {
-    font-size: 11px;
-    color: #059669;
+    font-size: 12px;
+    color: #64748b;
     font-weight: 600;
-    margin-bottom: 4px;
+    margin-bottom: 0;
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    text-align: left;
 }
 
 .stat-value {
     font-size: 20px;
     font-weight: 800;
     color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-top: 8px;
+
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .summary-breakdown {
@@ -577,9 +596,9 @@ html.template-acledagold .header-total {
 }
 
 html.template-acledagold .grid-column {
-    background: rgba(15, 23, 42, 0.5);
-    border-color: rgba(255, 215, 0, 0.2);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 215, 0, 0.2) !important;
+    backdrop-filter: blur(15px) !important;
 }
 
 html.template-acledagold .column-title {
@@ -588,7 +607,8 @@ html.template-acledagold .column-title {
 }
 
 html.template-acledagold .cart-column {
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(255, 255, 255, 0.02) !important;
+    backdrop-filter: blur(10px) !important;
 }
 
 html.template-acledagold .cart-items-compact::-webkit-scrollbar-track {
@@ -600,8 +620,9 @@ html.template-acledagold .cart-items-compact::-webkit-scrollbar-thumb {
 }
 
 html.template-acledagold .cart-item-compact {
-    background: rgba(30, 41, 59, 0.8);
-    border-color: rgba(255, 215, 0, 0.15);
+    background: rgba(255, 255, 255, 0.05) !important;
+    border-color: rgba(255, 215, 0, 0.15) !important;
+    backdrop-filter: blur(5px) !important;
 }
 
 html.template-acledagold .cart-item-compact:hover {
@@ -661,7 +682,8 @@ html.template-acledagold .stock-value {
 }
 
 html.template-acledagold .info-column {
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(12px) !important;
 }
 
 html.template-acledagold .form-label-compact {
@@ -690,7 +712,8 @@ html.template-acledagold .info-address {
 }
 
 html.template-acledagold .summary-column {
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(255, 255, 255, 0.03) !important;
+    backdrop-filter: blur(14px) !important;
 }
 
 html.template-acledagold .po-badge {
@@ -774,4 +797,24 @@ html.template-acledagold .validation-note {
     .grid-column {
         min-height: 200px;
     }
+}
+
+/* Stock Error Styles */
+.item-error-border {
+    border: 1px solid #ff4d4f !important;
+    background-color: rgba(255, 77, 79, 0.1) !important;
+    backdrop-filter: blur(5px);
+}
+
+.input-error {
+    border-color: #ff4d4f !important;
+    color: #ff4d4f;
+    background-color: rgba(255, 77, 79, 0.05) !important;
+}
+
+.stock-error-message {
+    color: #ff4d4f;
+    font-size: 11px;
+    margin-top: 4px;
+    font-weight: 600;
 }

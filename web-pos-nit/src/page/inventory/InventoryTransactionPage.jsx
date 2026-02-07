@@ -120,6 +120,8 @@ function InventoryTransactionPage() {
     const getTransactionColor = (type) => {
         switch (type) {
             case 'PURCHASE_IN': return 'green';
+            case 'TRANSFER_IN': return 'cyan';
+            case 'TRANSFER_OUT': return 'magenta';
             case 'SALE_OUT': return 'blue';
             case 'ADJUSTMENT': return 'orange';
             case 'RETURN': return 'red';
@@ -170,7 +172,7 @@ function InventoryTransactionPage() {
 
     const columns = [
         {
-            title: t("No"),
+            title: t("table_no"),
             key: "no",
             width: 60,
             render: (_, __, index) => (state.page - 1) * state.pageSize + index + 1
@@ -229,7 +231,7 @@ function InventoryTransactionPage() {
         {
             title: (
                 <Tooltip title="តម្លៃលក់ចេញក្នុង 1 Liter (អាចកែប្រែបាន)">
-                    <span className="text-blue-600 font-semibold">
+                    <span className="font-semibold">
                         {t("selling_price")} ($) <InfoCircleOutlined />
                     </span>
                 </Tooltip>
@@ -280,7 +282,7 @@ function InventoryTransactionPage() {
         {
             title: (
                 <Tooltip title="តម្លៃសរុបបន្ទាប់ពីបម្លែង: (qty × unit_price) / actual_price">
-                    <span className="font-semibold text-purple-600">
+                    <span className="font-semibold">
                         {t("amount")} <InfoCircleOutlined />
                     </span>
                 </Tooltip>
@@ -308,7 +310,24 @@ function InventoryTransactionPage() {
             title: t("reference"),
             dataIndex: "reference_no",
             key: "reference_no",
-            width: 120
+            width: 150,
+            render: (text) => {
+                if (!text) return '-';
+                if (text.startsWith('TO-')) {
+                    return <Tag color="magenta">To: {text.substring(3)}</Tag>;
+                }
+                if (text.startsWith('FROM-')) {
+                    return <Tag color="cyan">From: {text.substring(5)}</Tag>;
+                }
+                return text;
+            }
+        },
+        {
+            title: t("notes"),
+            dataIndex: "notes",
+            key: "notes",
+            width: 200,
+            render: (notes) => <span className="text-gray-600 italic">{notes || '-'}</span>
         },
         {
             title: t("operator"),
@@ -339,20 +358,19 @@ function InventoryTransactionPage() {
                                         title={
                                             <span className="flex items-center gap-2">
                                                 <RiseOutlined className="text-green-600" />
-                                                {t("total_purchases")}
+                                                {t("total_liters")} IN
                                             </span>
                                         }
-                                        value={state.statistics.totalIn}
-                                        precision={2}
-                                        prefix="$"
+                                        value={state.statistics.totalQtyIn}
+                                        precision={0}
+                                        suffix="L"
                                         valueStyle={{ color: '#16a34a', fontWeight: 'bold' }}
                                     />
                                     <div className="text-right">
-                                        <div className="text-xs text-gray-500 mb-1">{t("total_liters")} IN</div>
-                                        <div className="text-lg font-bold text-green-700">{Number(state.statistics.totalQtyIn).toLocaleString()} L</div>
+                                        <div className="text-xs text-gray-500 mb-1">{t("total_purchases")}</div>
+                                        <div className="text-lg font-bold text-green-700">${Number(state.statistics.totalIn).toLocaleString()}</div>
                                     </div>
                                 </div>
-                                <Text className="text-xs text-gray-500 mt-2 block">សរុបការទិញចូល (បម្លែងជា $) {t("and")} (L)</Text>
                             </Card>
                         </Col>
                         <Col xs={24} sm={8}>
@@ -362,20 +380,19 @@ function InventoryTransactionPage() {
                                         title={
                                             <span className="flex items-center gap-2">
                                                 <FallOutlined className="text-blue-600" />
-                                                {t("total_sales")}
+                                                {t("total_liters")} OUT
                                             </span>
                                         }
-                                        value={state.statistics.totalOut}
-                                        precision={2}
-                                        prefix="$"
+                                        value={state.statistics.totalQtyOut}
+                                        precision={0}
+                                        suffix="L"
                                         valueStyle={{ color: '#2563eb', fontWeight: 'bold' }}
                                     />
                                     <div className="text-right">
-                                        <div className="text-xs text-gray-500 mb-1">{t("total_liters")} OUT</div>
-                                        <div className="text-lg font-bold text-blue-700">{Number(state.statistics.totalQtyOut).toLocaleString()} L</div>
+                                        <div className="text-xs text-gray-500 mb-1">{t("total_sales")}</div>
+                                        <div className="text-lg font-bold text-blue-700">${Number(state.statistics.totalOut).toLocaleString()}</div>
                                     </div>
                                 </div>
-                                <Text className="text-xs text-gray-500 mt-2 block">សរុបការលក់ចេញ (បម្លែងជា $) {t("and")} (L)</Text>
                             </Card>
                         </Col>
                         <Col xs={24} sm={8}>
@@ -385,23 +402,22 @@ function InventoryTransactionPage() {
                                         title={
                                             <span className="flex items-center gap-2">
                                                 <DollarOutlined className="text-purple-600" />
-                                                {t("net_value")}
+                                                {t("remaining_stock")}
                                             </span>
                                         }
-                                        value={state.statistics.totalValue}
-                                        precision={2}
-                                        prefix="$"
+                                        value={state.statistics.currentStock}
+                                        precision={0}
+                                        suffix="L"
                                         valueStyle={{
-                                            color: state.statistics.totalValue >= 0 ? '#16a34a' : '#dc2626',
-                                            fontWeight: 'bold'
+                                            color: '#8b5cf6',
+                                            fontWeight: 'extrabold'
                                         }}
                                     />
                                     <div className="text-right">
-                                        <div className="text-xs text-purple-600 mb-1 font-semibold">{t("remaining_stock")}</div>
-                                        <div className="text-xl font-extrabold text-purple-700 bg-white/50 px-2 rounded">{Number(state.statistics.currentStock).toLocaleString()} L</div>
+                                        <div className="text-xs text-purple-600 mb-1 font-semibold">{t("net_value")}</div>
+                                        <div className="text-xl font-bold text-purple-700">${Number(state.statistics.totalValue).toLocaleString()}</div>
                                     </div>
                                 </div>
-                                <Text className="text-xs text-gray-500 mt-2 block">តម្លៃសុទ្ធសរុប {t("and")} ស្តុកដែលនៅសល់បច្ចុប្បន្ន</Text>
                             </Card>
                         </Col>
                     </Row>
@@ -409,13 +425,13 @@ function InventoryTransactionPage() {
                     {/* ✅ NEW: Category Stock Breakdown (Gasoline, Diesel, etc.) */}
                     <div className="mb-6">
                         <Title level={5} className="mb-3 flex items-center gap-2">
-                            <span className="text-gray-600">📊 ព័ត៌មានស្តុកតាមប្រភេទផលិតផល (Stock Breakdown)</span>
+                            <span className="text-gray-600">📊 {t("stock_breakdown")}</span>
                         </Title>
                         <Row gutter={[16, 16]}>
                             {state.categoryStats.length === 0 ? (
                                 <Col span={24}>
                                     <Card className="text-center text-gray-400 py-4">
-                                        មិនទាន់មានទិន្នន័យតាមប្រភេទផលិតផលនៅឡើយទេ
+                                        {t("no_data_stock")}
                                     </Card>
                                 </Col>
                             ) : (
@@ -434,25 +450,31 @@ function InventoryTransactionPage() {
                                                         {cat.product_name}
                                                     </Text>
                                                     <div className="flex justify-between items-baseline">
-                                                        <Text className="text-[10px] text-gray-500">សរុបចូល (IN):</Text>
+                                                        <Text className="text-[10px] text-gray-500">{t("total_in_label")}:</Text>
                                                         <Text className="text-xs text-blue-600">
                                                             {Number(cat.total_qty_in || 0).toLocaleString()} L
                                                         </Text>
                                                     </div>
                                                     <div className="flex justify-between items-baseline">
-                                                        <Text className="text-[10px] text-gray-500">សរុបចេញ (OUT):</Text>
+                                                        <Text className="text-[10px] text-gray-500">{t("total_out_label")}:</Text>
                                                         <Text className="text-xs text-orange-600">
                                                             {Number(cat.total_qty_out || 0).toLocaleString()} L
                                                         </Text>
                                                     </div>
+                                                    <div className="flex justify-between items-baseline">
+                                                        <Text className="text-[10px] text-gray-500">{t("total_out_value")}:</Text>
+                                                        <Text className="text-xs text-orange-600 font-semibold">
+                                                            {formatPrice(cat.total_out_value)}
+                                                        </Text>
+                                                    </div>
                                                     <div className="flex justify-between items-baseline border-t border-gray-100 pt-1 mt-1">
-                                                        <Text className="text-xs text-gray-500">ស្តុកនៅសល់:</Text>
+                                                        <Text className="text-xs text-gray-500">{t("remaining_stock")}:</Text>
                                                         <Text strong className={`text-sm ${Number(cat.total_qty || 0) <= 0 ? 'text-red-500' : 'text-blue-700'}`}>
                                                             {Number(cat.total_qty || 0).toLocaleString()} L
                                                         </Text>
                                                     </div>
                                                     <div className="flex justify-between items-baseline">
-                                                        <Text className="text-xs text-gray-500">តម្លៃសរុប:</Text>
+                                                        <Text className="text-xs text-gray-500">{t("total_stock_value")}:</Text>
                                                         <Text strong className="text-sm text-green-600">
                                                             {formatPrice(cat.total_value)}
                                                         </Text>
@@ -488,6 +510,8 @@ function InventoryTransactionPage() {
                             >
                                 <Option value="PURCHASE_IN">{t("purchase_in")}</Option>
                                 <Option value="SALE_OUT">{t("sale_out")}</Option>
+                                <Option value="TRANSFER_OUT">{t("transfer_out")}</Option>
+                                <Option value="TRANSFER_IN">{t("transfer_in")}</Option>
                                 <Option value="ADJUSTMENT">{t("adjustment")}</Option>
                                 <Option value="RETURN">{t("return")}</Option>
                             </Select>
@@ -498,6 +522,7 @@ function InventoryTransactionPage() {
                                 style={{ width: '100%' }}
                                 onChange={(dates) => setState(p => ({ ...p, dateRange: dates, page: 1 }))}
                                 format="DD/MM/YYYY"
+                                placeholder={[t("from_date"), t("to_date")]}
                             />
                         </Col>
                     </Row>

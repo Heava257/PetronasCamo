@@ -18,69 +18,195 @@
 
 /* Khmer Text Styling - Higher Specificity */
 .khmer-text-product,
-html.template-modern .khmer-text-product {
-  font-family: 'Kantumruy Pro', sans-serif !important;
+html.template-modern .khmer-text-product,
+html.template-acledagold .khmer-text-product,
+html.template-acledagold .ant-table,
+html.template-acledagold .ant-card-title,
+html.template-acledagold .ant-statistic-title {
+  font-family: 'Kantumruy Pro', 'Noto Sans Khmer', sans-serif !important;
 }
 
-/* Statistics Cards */
-.ant-statistic-title {
-  font-size: 14px;
-  margin-bottom: 8px;
+/* statistics Cards - PREMIUM ACLEDA GOLD STYLE */
+html.template-acledagold .pre-order-management-container .ant-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(15px) !important;
+  border: 1px solid rgba(255, 215, 0, 0.2) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
 }
 
-.ant-statistic-content {
-  font-size: 24px;
-  font-weight: 700;
+html.template-acledagold .ant-statistic-title {
+  color: rgba(255, 215, 0, 0.8) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-/* Default Theme Styles - Backgrounds removed to support dynamic theming */
-.pre-order-footer {
-  background-color: transparent;
+html.template-acledagold .ant-statistic-content-value {
+  font-size: 28px !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
 }
 
-.pre-order-note {
-  background-color: transparent;
+/* Header Text */
+html.template-acledagold h2.khmer-text-product {
+  color: #FFD700 !important;
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
 }
 
-/* FIX: Modern Template Overrides to ensure clean look & Khmer Font support */
-html.template-modern .pre-order-modal .ant-modal-content {
-  background-color: #ffffff !important;
-  color: #1e293b !important;
+/* TABLE STYLING - PREMIUM GOLD GLASS */
+html.template-acledagold .ant-table {
+  background: transparent !important;
+  color: white !important;
 }
 
-html.template-modern .pre-order-modal .ant-modal-header {
-  background-color: #ffffff !important;
-  border-bottom: 1px solid #f0f0f0 !important;
+html.template-acledagold .ant-table-thead>tr>th {
+  background: rgba(15, 30, 60, 0.9) !important;
+  color: #FFD700 !important;
+  border-bottom: 2px solid rgba(255, 215, 0, 0.3) !important;
+  border-right: 1px solid rgba(255, 215, 0, 0.1) !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+  backdrop-filter: blur(10px);
 }
 
-html.template-modern .pre-order-modal .ant-modal-title {
-  color: #1e293b !important;
-  font-family: 'Kantumruy Pro', sans-serif !important;
+html.template-acledagold .ant-table-wrapper .ant-table-header {
+  background: transparent !important;
 }
 
-html.template-modern .pre-order-modal .ant-input,
-html.template-modern .pre-order-modal .ant-input-number,
-html.template-modern .pre-order-modal .ant-picker,
-html.template-modern .pre-order-modal .ant-select-selector {
-  background-color: #ffffff !important;
-  border-color: #d9d9d9 !important;
-  color: #1e293b !important;
-  font-family: 'Kantumruy Pro', sans-serif !important;
+html.template-acledagold .ant-table-tbody>tr>td {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05) !important;
+  color: #f1f5f9 !important;
 }
 
-html.template-modern .pre-order-modal .ant-input::placeholder,
-html.template-modern .pre-order-modal .ant-select-selection-placeholder {
-  color: #94a3b8 !important;
-  font-family: 'Kantumruy Pro', sans-serif !important;
+html.template-acledagold .ant-table-tbody>tr:hover>td {
+  background: rgba(255, 215, 0, 0.08) !important;
 }
 
-html.template-modern .pre-order-modal .ant-form-item-label>label {
-  color: #475569 !important;
-  font-family: 'Kantumruy Pro', sans-serif !important;
+/* FORM ELEMENTS */
+html.template-acledagold .ant-select-selector,
+html.template-acledagold .ant-input,
+html.template-acledagold .ant-picker {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  color: white !important;
 }
 
-/* UNIVERSAL FONT ENFORCEMENT FOR MODERN THEME MODAL AND DROPDOWNS */
-html.template-modern .pre-order-modal *,
-html.template-modern .ant-select-dropdown * {
-  font-family: 'Kantumruy Pro', sans-serif !important;
+html.template-acledagold .ant-select-arrow,
+html.template-acledagold .ant-picker-suffix {
+  color: #FFD700 !important;
+}
+
+html.template-acledagold .ant-btn-default {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 215, 0, 0.5) !important;
+  color: #FFD700 !important;
+}
+
+html.template-acledagold .ant-btn-default:hover {
+  background: rgba(255, 215, 0, 0.1) !important;
+  border-color: #FFD700 !important;
+}
+
+/* Action Buttons in Table */
+html.template-acledagold .ant-table-tbody .ant-btn-text {
+  color: #FFD700 !important;
+}
+
+html.template-acledagold .ant-table-tbody .text-blue-500 {
+  color: #60a5fa !important;
+}
+
+html.template-acledagold .ant-table-tbody .text-orange-500 {
+  color: #fbbf24 !important;
+}
+
+html.template-acledagold .ant-table-tbody .text-green-600 {
+  color: #4ade80 !important;
+}
+
+html.template-acledagold .ant-table-tbody .text-orange-600 {
+  color: #fb923c !important;
+}
+
+/* Pagination */
+html.template-acledagold .ant-pagination-item a,
+html.template-acledagold .ant-pagination-total-text {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+html.template-acledagold .ant-pagination-item-active {
+  border-color: #FFD700 !important;
+  background: rgba(255, 215, 0, 0.1) !important;
+}
+
+html.template-acledagold .ant-pagination-item-active a {
+  color: #FFD700 !important;
+}
+
+/* Fix the solid dark header bar in the image */
+/* Fix the solid dark header bar in the image */
+html.template-acledagold .ant-card-head {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+}
+
+/* MODAL STYLING - ACLEDA GOLD */
+html.template-acledagold .pre-order-modal .ant-modal-content {
+  background: rgba(5, 12, 30, 0.7) !important;
+  backdrop-filter: blur(25px) !important;
+  border: 1px solid rgba(255, 215, 0, 0.4) !important;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8) !important;
+  color: white !important;
+  border-radius: 20px !important;
+}
+
+html.template-acledagold .pre-order-modal .ant-modal-header {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+  padding-bottom: 12px !important;
+}
+
+html.template-acledagold .pre-order-modal .ant-form-item-label>label {
+  color: rgba(255, 215, 0, 0.9) !important;
+  font-weight: 600 !important;
+}
+
+html.template-acledagold .pre-order-modal .ant-divider {
+  border-top: 1px solid rgba(255, 215, 0, 0.15) !important;
+}
+
+html.template-acledagold .pre-order-modal .ant-input,
+html.template-acledagold .pre-order-modal .ant-input-number,
+html.template-acledagold .pre-order-modal .ant-picker,
+html.template-acledagold .pre-order-modal .ant-select-selector {
+  background: rgba(0, 0, 0, 0.4) !important;
+  border-color: rgba(255, 215, 0, 0.25) !important;
+  color: white !important;
+}
+
+html.template-acledagold .pre-order-modal .ant-btn-primary {
+  background: linear-gradient(135deg, #B8860B 0%, #FFD700 100%) !important;
+  color: #050a14 !important;
+  border: none !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 15px rgba(218, 165, 32, 0.3) !important;
+}
+
+html.template-acledagold .pre-order-modal .ant-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(218, 165, 32, 0.5) !important;
+}
+
+html.template-acledagold .pre-order-total-amount {
+  color: #FFD700 !important;
+  font-size: 22px !important;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+html.template-acledagold .pre-order-footer {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px dashed rgba(255, 215, 0, 0.2) !important;
 }

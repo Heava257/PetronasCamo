@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Modal, Form, Select, Input, InputNumber, Button, DatePicker, message, Row, Col, Space, Typography, Divider } from "antd";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { request, formatPrice } from "../../util/helper";
 import dayjs from "dayjs";
 import "./PreOrderManagement.css";
+import { debounce } from "lodash";
+import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from "@ant-design/icons";
 
 const { Text } = Typography;
 
@@ -14,6 +16,12 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
   const [products, setProducts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [totalAmount, setTotalAmount] = useState(0);
+  const [duplicateStatus, setDuplicateStatus] = useState(null); // null, 'checking', 'exists', 'available'
+  const editRecordRef = useRef(editRecord);
+
+  useEffect(() => {
+    editRecordRef.current = editRecord;
+  }, [editRecord]);
 
   useEffect(() => {
     if (visible) {
@@ -48,6 +56,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           delivery_date: data.delivery_date ? dayjs(data.delivery_date) : null,
           supplier_name: instructions.supplier,
           delivery_address: data.delivery_address,
+          location_name: data.location_name,
           products: data.details.map(d => ({
             product_id: d.product_id,
             qty: d.qty,
@@ -55,6 +64,8 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
             destination: d.destination
           }))
         });
+
+
 
         calculateTotal();
       }
@@ -113,6 +124,8 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
     }
   };
 
+
+
   const handleCustomerSelect = (customerId) => {
     const customer = customers.find(c => c.value === customerId);
     if (customer && customer.address) {
@@ -147,6 +160,51 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
     setTotalAmount(total);
   };
 
+  // Recalculate total when products are loaded to ensure conversion factor is applied
+  useEffect(() => {
+    if (products.length > 0) {
+      calculateTotal();
+    }
+  }, [products]);
+
+  const checkPreOrderNo = async (value) => {
+    if (!value) {
+      setDuplicateStatus(null);
+      return;
+    }
+    setDuplicateStatus('checking');
+    try {
+      let url = `pre-order/check-duplicate?no=${value}`;
+      if (editRecordRef.current?.id) {
+        url += `&exclude_id=${editRecordRef.current.id}`;
+      }
+      const res = await request(url, "get");
+      if (res && res.exists) {
+        setDuplicateStatus('exists');
+        form.setFields([
+          {
+            name: 'pre_order_no',
+            errors: ['លេខវិក្កយបត្រនេះមានរួចហើយ (Duplicate)'],
+          },
+        ]);
+      } else {
+        setDuplicateStatus('available');
+        form.setFields([
+          {
+            name: 'pre_order_no',
+            errors: [],
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Check duplicate error", error);
+      setDuplicateStatus(null);
+    }
+  };
+
+  // Create a memoized debounced function
+  const debouncedCheck = React.useCallback(debounce((val) => checkPreOrderNo(val), 500), []);
+
   const onFinish = async (values) => {
     setLoading(true);
 
@@ -164,8 +222,9 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
       order_date: values.order_date ? values.order_date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
       delivery_date: values.delivery_date ? values.delivery_date.format('YYYY-MM-DD') : null,
       delivery_address: values.delivery_address,
+      location_name: values.location_name,
       special_instructions: `Supplier: ${values.supplier_name || 'N/A'} | Received: Pending`,
-      status: 'confirmed',
+      status: 'pending',
       products: validProducts.map(p => ({
         product_id: p.product_id,
         qty: parseFloat(p.qty),
@@ -222,16 +281,29 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           <Col span={8}>
             <Form.Item
               name="pre_order_no"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold', color: 'red' }}>* លេខប័ណ្ណ</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>លេខប័ណ្ណ</span>}
               rules={[{ required: true, message: 'Please enter PO No' }]}
+              hasFeedback
+              validateStatus={
+                duplicateStatus === 'checking' ? 'validating' :
+                  duplicateStatus === 'exists' ? 'error' :
+                    duplicateStatus === 'available' ? 'success' : ''
+              }
             >
-              <Input placeholder="Ex: PO-2025-001" size="large" />
+              <Input
+                placeholder="Ex: PO-2025-001"
+                size="large"
+                onChange={(e) => {
+                  form.setFieldsValue({ pre_order_no: e.target.value });
+                  debouncedCheck(e.target.value);
+                }}
+              />
             </Form.Item>
           </Col>
           <Col span={8}>
             <Form.Item
               name="customer_id"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold', color: 'red' }}>* អតិថិជន</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>អតិថិជន</span>}
               rules={[{ required: true, message: 'Please select customer' }]}
             >
               <Select
@@ -256,7 +328,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
 
         {/* Header Row 2 */}
         <Row gutter={16}>
-          <Col span={8}>
+          <Col span={6}>
             <Form.Item
               name="delivery_date"
               label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>ថ្ងៃទីទទួលទំនិញ</span>}
@@ -264,7 +336,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
               <DatePicker style={{ width: '100%' }} size="large" format="DD/MM/YYYY" placeholder="ជ្រើសរើសថ្ងៃទទួលទំនិញ" />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col span={6}>
             <Form.Item
               name="supplier_name"
               label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>ក្រុមហ៊ុនផ្គត់ផ្គង់</span>}
@@ -278,7 +350,15 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
               />
             </Form.Item>
           </Col>
-          <Col span={8}>
+          <Col span={6}>
+            <Form.Item
+              name="location_name"
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>ទីតាំងដឹក</span>}
+            >
+              <Input placeholder="បញ្ចូលទីតាំង..." size="large" />
+            </Form.Item>
+          </Col>
+          <Col span={6}>
             <Form.Item
               name="delivery_address"
               label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>អាស័យដ្ឋាន</span>}

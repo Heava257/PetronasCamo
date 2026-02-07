@@ -7,7 +7,8 @@ const {
     getLatestSellingPrice,
     getCustomerProductPrice,
     getCategoryStatistics,  // ✅ ADD THIS
-    updateTransaction       // ✅ ADD THIS
+    updateTransaction,      // ✅ ADD THIS
+    transferStock           // ✅ ADD THIS
 } = require("../controller/inventory.controller");
 
 module.exports = (app) => {
@@ -25,6 +26,9 @@ module.exports = (app) => {
 
     // ✅ GET /api/inventory/pos-products - Get products for POS from Inventory
     app.get("/api/inventory/pos-products", validate_token(), getPosProducts);
+
+    // ✅ POST /api/inventory/transfer - Transfer Stock
+    app.post("/api/inventory/transfer", validate_token(), transferStock);
 
     // ✅ PUT /api/inventory/transaction - Update transaction (e.g. unit_price)
     app.put("/api/inventory/transaction", validate_token(), updateTransaction);

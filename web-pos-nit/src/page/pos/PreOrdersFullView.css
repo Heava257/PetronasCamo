@@ -68,21 +68,21 @@
 }
 
 .stock-card-lpg {
-    background: #fffbeb;
-    color: #b45309;
-    border-color: #fef3c7;
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.2);
 }
 
 .stock-card-gasoline {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border-color: #dbeafe;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.2);
 }
 
 .stock-card-diesel {
-    background: #f0fdf4;
-    color: #15803d;
-    border-color: #dcfce7;
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.2);
 }
 
 .action-btn-add {
@@ -135,12 +135,12 @@ html.template-acledagold .pre-orders-full-view {
     background: transparent !important;
 }
 
-/* Page Header - Dark Glass */
+/* Page Header - True Glass */
 html.template-acledagold .page-header {
-    background: rgba(15, 23, 42, 0.8) !important;
+    background: rgba(255, 255, 255, 0.03) !important;
     backdrop-filter: blur(20px) !important;
-    border: 1px solid rgba(255, 215, 0, 0.3) !important;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6) !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3) !important;
 }
 
 html.template-acledagold .header-title {
@@ -152,64 +152,85 @@ html.template-acledagold .header-subtitle {
     color: #cbd5e1 !important;
 }
 
-/* Table Section - Clean & Deep */
+/* Table Section - True Glass */
 html.template-acledagold .table-container {
-    background: rgba(15, 23, 42, 0.4) !important;
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 215, 0, 0.15);
-    box-shadow: none !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(255, 215, 0, 0.15) !important;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+    border-radius: 20px !important;
+    padding: 24px !important;
+}
+
+html.template-acledagold .ant-table {
+    background: transparent !important;
 }
 
 html.template-acledagold .ant-table-thead>tr>th {
-    background: rgba(15, 23, 42, 0.9) !important;
+    background: rgba(255, 215, 0, 0.1) !important;
     color: #FFD700 !important;
-    border-bottom: 2px solid rgba(255, 215, 0, 0.4) !important;
-    font-weight: 800 !important;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.3) !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    backdrop-filter: blur(8px);
 }
 
 html.template-acledagold .ant-table-tbody>tr>td {
     background: transparent !important;
-    color: #f8fafc !important;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #f8fafc !important;
 }
 
 html.template-acledagold .ant-table-tbody>tr:hover>td {
     background: rgba(255, 215, 0, 0.08) !important;
 }
 
-/* Stock Cards - Support Specific Colors */
+
+
+/* Stock Cards - True Glass */
 html.template-acledagold .stock-card {
-    background: rgba(15, 23, 42, 0.7) !important;
-    border-width: 1px !important;
-    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid rgba(255, 215, 0, 0.2) !important;
+    backdrop-filter: blur(16px) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+html.template-acledagold .stock-card:hover {
+    border-color: #FFD700 !important;
+    transform: translateY(-5px) !important;
+    box-shadow: 0 20px 40px rgba(255, 215, 0, 0.15) !important;
 }
 
 html.template-acledagold .stock-card-title {
-    color: #94a3b8 !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    font-weight: 600 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 12px !important;
 }
 
-html.template-acledagold .stock-card-lpg {
-    border-color: rgba(245, 158, 11, 0.5) !important;
+html.template-acledagold .stock-card-value {
+    color: #ffffff !important;
+    font-size: 32px !important;
+    font-weight: 800 !important;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
 }
 
 html.template-acledagold .stock-card-lpg .stock-card-value {
     color: #fbbf24 !important;
-}
-
-html.template-acledagold .stock-card-gasoline {
-    border-color: rgba(59, 130, 246, 0.5) !important;
+    /* Amber-400 */
 }
 
 html.template-acledagold .stock-card-gasoline .stock-card-value {
     color: #60a5fa !important;
-}
-
-html.template-acledagold .stock-card-diesel {
-    border-color: rgba(16, 185, 129, 0.5) !important;
+    /* Blue-400 */
 }
 
 html.template-acledagold .stock-card-diesel .stock-card-value {
-    color: #34d399 !important;
+    color: #4ade80 !important;
+    /* Green-400 */
 }
 
 /* Controls */
@@ -268,14 +289,62 @@ html.template-acledagold .status-tag-confirmed {
 }
 
 html.template-acledagold .total-price-cell {
-    background: rgba(52, 211, 153, 0.1) !important;
-    color: #34d399 !important;
+    background: rgba(52, 211, 153, 0.08) !important;
+    color: #4ade80 !important;
     border: 1px solid rgba(52, 211, 153, 0.2) !important;
+    font-weight: 700 !important;
+    border-radius: 8px;
+    padding: 6px 14px;
 }
 
 html.template-acledagold .customer-avatar {
-    background: #FFD700 !important;
+    background: linear-gradient(135deg, #B8860B 0%, #FFD700 100%) !important;
     color: #0c111d !important;
+    border: none !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    font-weight: 800;
+}
+
+/* NUCLEAR FIX FOR YELLOW HIGHLIGHTS - V3 */
+html.template-acledagold .customer-cell,
+html.template-acledagold .customer-info,
+html.template-acledagold .customer-name,
+html.template-acledagold .customer-tel,
+html.template-acledagold .ant-table-cell .customer-cell,
+html.template-acledagold .ant-table-cell .customer-info,
+html.template-acledagold .ant-table-cell div {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Specific text color for Customer and Tel */
+html.template-acledagold .customer-name {
+    color: #FFD700 !important;
+    font-weight: 700 !important;
+    font-size: 16px !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+html.template-acledagold .customer-tel {
+    color: rgba(255, 255, 255, 0.6) !important;
+    font-size: 13px !important;
+}
+
+/* Invoice Tag Premium Styling */
+html.template-acledagold .ant-tag-blue {
+    background: rgba(8, 16, 32, 0.9) !important;
+    border: 1px solid rgba(255, 215, 0, 0.5) !important;
+    color: #FFD700 !important;
+    font-weight: 700 !important;
+}
+
+/* Ready Status Tag Refinement */
+html.template-acledagold .status-tag-ready {
+    background: rgba(34, 197, 94, 0.1) !important;
+    color: #4ade80 !important;
+    border: 1px solid rgba(34, 197, 94, 0.3) !important;
 }
 
 /* ==========================================

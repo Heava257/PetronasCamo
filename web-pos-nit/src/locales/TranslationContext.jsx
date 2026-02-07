@@ -716,7 +716,7 @@ const translations = {
     "delete_purchase_order": "លុបការបញ្ជាទិញ",
     "confirm_delete_purchase_order": "តើអ្នកប្រាកដថាចង់លុបការបញ្ជាទិញនេះទេ?",
     "total_orders": "ការបញ្ជាទិញសរុប",
-    "filtered_results": "លទ្ធផលដែលបានត្រង",
+    // "filtered_results": "លទ្ធផលដែលបានត្រង",
     "total_value": "តម្លៃសរុប",
     "search_by_order_number_or_supplier": "ស្វែងរកតាមលេខបញ្ជាទិញ ឬអ្នកផ្គត់ផ្គង់",
     "order_number": "លេខបញ្ជាទិញ",
@@ -742,7 +742,7 @@ const translations = {
     "order_date_is_required": "កាលបរិច្ឆេទបញ្ជាទិញត្រូវបានទាមទារ",
     "inventory_transactions": "ប្រតិបត្តិការស្តុក",
     "search_product_or_ref": "ស្វែងរកផលិតផល ឬ លេខយោង",
-    "filter_by_type": "ត្រងតាមប្រភេទ",
+    "filter_by_type": "ជ្រើសរើសតាមប្រភេទ",
     "transaction_type": "ប្រភេទប្រតិបត្តិការ",
     "purchase_in": "ការទិញចូល",
     "sale_out": "ការលក់ចេញ",
@@ -750,6 +750,12 @@ const translations = {
     "return": "ការត្រឡប់មកវិញ",
     "operator": "អ្នកប្រតិបត្តិ",
     "reference": "លេខយោង",
+    "select_branch": "ជ្រើសរើសសាខា",
+    "branch_cleared": "បានសម្អាតសាខា",
+    "clear_selection": "សម្អាតការជ្រើសរើស",
+    "stock_to": "បញ្ចូលស្តុកទៅ",
+    "unknown_branch": "សាខាមិនស្គាល់",
+    "add_stock_to_specific_branch": "បញ្ចូលស្តុកទៅសាខាជាក់លាក់",
   },
   en: {
     ...enTranslations,
@@ -1361,6 +1367,12 @@ const translations = {
     "return": "Return",
     "operator": "Operator",
     "reference": "Reference",
+    "select_branch": "Select Branch",
+    "branch_cleared": "Branch cleared",
+    "clear_selection": "Clear Selection",
+    "stock_to": "Stock To",
+    "unknown_branch": "Unknown Branch",
+    "add_stock_to_specific_branch": "Add stock to specific branch",
   }
 };
 

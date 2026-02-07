@@ -39,11 +39,14 @@ import {
   PlusOutlined,
   MinusCircleOutlined,
   InfoCircleOutlined,
-  CheckCircleOutlined
+  CheckCircleOutlined,
+  HistoryOutlined
 } from '@ant-design/icons';
+import { FaTruck } from "react-icons/fa";
 
 import { useTranslation } from "../../locales/TranslationContext";
 import { configStore } from "../../store/configStore";
+import { useNavigate } from "react-router-dom";
 
 const { Text, Title } = Typography;
 const { Option } = Select;
@@ -54,6 +57,7 @@ const purchaseStyles = ``;
 
 function PurchasePage() {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
   const { t } = useTranslation();
   const { config } = configStore();
 
@@ -73,6 +77,7 @@ function PurchasePage() {
     txtSearch: "",
     suppliers: [],
     branches: [], // ✅ Added branches
+    showBranchModal: false,
   });
 
   const [selectedPurchase, setSelectedPurchase] = useState(null);
@@ -80,10 +85,26 @@ function PurchasePage() {
   const [orderItems, setOrderItems] = useState([]);
   const [fileList, setFileList] = useState([]);
 
+  // Distribute Modal State
+  const [distributeModal, setDistributeModal] = useState({
+    visible: false,
+    purchase: null,
+    branch_id: null,
+    distributions: [] // { product_id, quantity, max_qty, product_name }
+  });
+
+  // 🚚 Stock Transfer Modal State (Global)
+  const [transferModal, setTransferModal] = useState({
+    visible: false,
+    selectedProduct: null,
+  });
+  const [products, setProducts] = useState([]); // List of products with stock info (from inventory)
+
   // ✅ New State for Receive Modal
   const [isReceiveModalVisible, setIsReceiveModalVisible] = useState(false);
   const [receivingOrder, setReceivingOrder] = useState(null);
   const [receiverName, setReceiverName] = useState("");
+  const [distributionHistory, setDistributionHistory] = useState([]); // ✅ History State
 
   const handleOpenReceive = (order) => {
     setReceivingOrder(order);
@@ -128,13 +149,57 @@ function PurchasePage() {
 
   // ... (existing code)
 
+  // ✅ Fetch products with stock for Transfer
+  const fetchProductsWithStock = async () => {
+    const res = await request("inventory/pos-products", "get", { page: 1, limit: 1000 });
+    if (res && !res.error) {
+      setProducts(res.list || []);
+    }
+  };
+
   useEffect(() => {
     getList();
     getSuppliers();
-    getBranches(); // ✅ Fetch branches
+    getBranches();
+    fetchProductsWithStock();
   }, []);
 
-  // ...
+  const handleTransferSubmit = async (values) => {
+    setState(p => ({ ...p, loading: true }));
+    try {
+      const { branch_id, product_id, quantity, note } = values;
+      // Find product details
+      const product = products.find(p => p.id === product_id);
+
+      const payload = {
+        target_branch_name: branch_id, // branch_id in Select is branch_name
+        item: {
+          product_id: product.id,
+          quantity: quantity,
+          unit_price: product.unit_price,
+          // Add explicit flag for stock transfer
+          is_transfer: true,
+          note: note
+        }
+      };
+
+      const res = await request("inventory/transfer", "post", payload);
+      if (res && !res.error) {
+        message.success(t("Transfer Successful"));
+        setTransferModal({ visible: false, selectedProduct: null });
+        // Refresh stock/list
+        fetchProductsWithStock();
+        getList();
+      } else {
+        message.error(res.error?.message || "Transfer Failed");
+      }
+    } catch (err) {
+      console.error(err);
+      message.error("Transfer Error");
+    } finally {
+      setState(p => ({ ...p, loading: false }));
+    }
+  };
 
   const getBranches = async () => {
     const res = await request("branch", "get");
@@ -261,7 +326,7 @@ function PurchasePage() {
     form.setFieldsValue({
       id: purchase.id,
       supplier_id: purchase.supplier_id,
-      branch_id: purchase.branch_name, // ✅ Populate Branch
+      branch_id: purchase.branch_id, // ✅ Populate Branch
       order_no: purchase.order_no,
       order_date: purchase.order_date ? dayjs(purchase.order_date) : null,
       expected_delivery_date: purchase.expected_delivery_date ? dayjs(purchase.expected_delivery_date) : null,
@@ -476,6 +541,67 @@ function PurchasePage() {
     return <Tag color={config.color}>{config.text}</Tag>;
   };
 
+  const openDistributeModal = (purchase) => {
+    const items = purchase.items || [];
+    const distributions = items.map(item => ({
+      product_id: item.product_id || item.id,
+      product_name: item.product_name,
+      quantity: 0, // Input by user
+      ordered_qty: Number(item.quantity) || 0,
+      received_qty: Number(item.received_qty) || 0,
+      remaining_qty: (Number(item.quantity) || 0) - (Number(item.received_qty) || 0)
+    }));
+
+    setDistributeModal({
+      visible: true,
+      purchase: purchase,
+      branch_id: null,
+      distributions: distributions
+    });
+  };
+
+  const handleDistributeSubmit = async () => {
+    if (!distributeModal.branch_id) {
+      message.error(t("please_select_branch") || "Please select a branch");
+      return;
+    }
+
+    // Filter only items with > 0 quantity
+    const validDistributions = distributeModal.distributions.filter(d => d.quantity > 0);
+
+    if (validDistributions.length === 0) {
+      message.warning(t("please_enter_quantity") || "Please enter quantity to distribute");
+      return;
+    }
+
+    // Validate quantity <= remaining
+    for (const d of validDistributions) {
+      if (d.quantity > d.remaining_qty) {
+        message.error(`${d.product_name}: Quantity exceeds remaining (${d.remaining_qty})`);
+        return;
+      }
+    }
+
+    const payload = {
+      purchase_id: distributeModal.purchase?.id,
+      branch_id: distributeModal.branch_id,
+      distributions: validDistributions,
+      notes: "Distributed via Web App"
+    };
+
+    setState(p => ({ ...p, loading: true }));
+    const res = await request("purchase/distribute", "post", payload);
+    setState(p => ({ ...p, loading: false }));
+
+    if (res && res.success) {
+      message.success(t("distribute_success") || "Stock distributed successfully");
+      setDistributeModal({ visible: false, purchase: null, branch_id: null, distributions: [] });
+      getList(); // Refresh
+    } else {
+      message.error(res?.message || t("error_occurred"));
+    }
+  };
+
   const PurchaseMobileCard = ({ purchase, index }) => {
     return (
       <Card
@@ -670,9 +796,11 @@ function PurchasePage() {
               className="bg-green-600 hover:bg-green-700 border-green-600"
               onClick={() => handleOpenReceive(data)}
             >
-              Receive
+              {t("receive_all") || "Receive All"}
             </Button>
           )}
+
+
 
           <Button
             type="primary"
@@ -715,7 +843,7 @@ function PurchasePage() {
       <style>{purchaseStyles}</style>
       <div className="purchase-page-container px-2 sm:px-4 lg:px-6">
         {/* Header Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
+        <div className="purchase-header-card bg-white dark:bg-[#1E1E2E] dark:text-white rounded-lg shadow-sm p-4 mb-4 border border-gray-100 dark:border-gray-700">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1 w-full sm:w-auto">
               <Title level={4} className="mb-0 text-gray-900 dark:text-white flex items-center gap-2">
@@ -725,17 +853,145 @@ function PurchasePage() {
             </div>
 
             {canCreate && (
-              <Button
-                type="primary"
-                onClick={openModal}
-                icon={<MdOutlineCreateNewFolder />}
-                size="large"
-                className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600"
-              >
-                {t("new_purchase_order")}
-              </Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                {/* 🆕 Global Transfer Button */}
+                <Button
+                  type="default"
+                  size="large"
+                  icon={<HistoryOutlined />}
+                  onClick={() => navigate('/inventory-transactions')}
+                  className="w-full sm:w-auto"
+                >
+                  {t("transfer_history") || "Transfer History"}
+                </Button>
+                <Button
+                  type="primary"
+                  size="large"
+                  className="bg-orange-500 hover:bg-orange-600 border-orange-500 w-full sm:w-auto"
+                  icon={<FaTruck />}
+                  onClick={() => setTransferModal({ visible: true, selectedProduct: null })}
+                >
+                  {t("transfer_stock") || "Transfer Stock"}
+                </Button>
+
+                <Button
+                  type="primary"
+                  onClick={openModal}
+                  icon={<MdOutlineCreateNewFolder />}
+                  size="large"
+                  className="w-full sm:w-auto bg-blue-500 hover:bg-blue-600"
+                >
+                  {t("new_purchase_order")}
+                </Button>
+              </div>
             )}
           </div>
+
+          {/* 🚚 Stock Transfer Modal */}
+          <Modal
+            title={
+              <div className="flex items-center gap-2 text-orange-600">
+                <FaTruck /> {t("transfer_stock") || "Transfer Stock"}
+              </div>
+            }
+            open={transferModal.visible}
+            onCancel={() => setTransferModal({ visible: false, selectedProduct: null })}
+            footer={null}
+            width={600}
+          >
+            <Form layout="vertical" onFinish={handleTransferSubmit}>
+              <Form.Item
+                label={t("destination_branch")}
+                name="branch_id"
+                rules={[{ required: true, message: t('please_select_destination_branch') }]}
+              >
+                <Select placeholder={t("select_branch")}>
+                  {state.branches.map(b => (
+                    <Option key={b.id} value={b.branch_name}>{b.branch_name}</Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              <Form.Item
+                label={t("select_product")}
+                name="product_id"
+                rules={[{ required: true, message: t('please_select_product') }]}
+              >
+                <Select
+                  showSearch
+                  placeholder={t("search_product")}
+                  optionFilterProp="children"
+                  onChange={(val, opt) => {
+                    const prod = products.find(p => p.id === val);
+                    setTransferModal(prev => ({
+                      ...prev,
+                      selectedProduct: prod
+                    }));
+                  }}
+                  filterOption={(input, option) =>
+                    (option?.children?.toString() ?? '').toLowerCase().includes(input.toLowerCase())
+                  }
+                >
+                  {products.map(p => (
+                    <Option key={p.id} value={p.id}>
+                      {p.name} ({t('stock_label')} {p.qty} {p.unit})
+                    </Option>
+                  ))}
+                </Select>
+              </Form.Item>
+
+              {transferModal.selectedProduct && (
+                <div className="mb-4 p-3 bg-gray-50 rounded border border-gray-200 flex justify-between">
+                  <span>{t('available_stock')}</span>
+                  <span className={`font-bold ${transferModal.selectedProduct.qty <= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                    {transferModal.selectedProduct.qty} {transferModal.selectedProduct.unit}
+                  </span>
+                </div>
+              )}
+
+              <Form.Item
+                label={t("transfer_quantity")}
+                name="quantity"
+                rules={[
+                  { required: true, message: t('please_enter_quantity') },
+                  ({ getFieldValue }) => ({
+                    validator(_, value) {
+                      if (!value || !transferModal.selectedProduct) return Promise.resolve();
+                      if (value > transferModal.selectedProduct.qty) {
+                        return Promise.reject(new Error(t('transfer_qty_error')));
+                      }
+                      return Promise.resolve();
+                    },
+                  }),
+                ]}
+              >
+                <InputNumber
+                  style={{ width: '100%' }}
+                  min={1}
+                  placeholder={t('enter_quantity')}
+                  status={transferModal.selectedProduct && transferModal.selectedProduct.qty <= 0 ? "error" : ""}
+                />
+              </Form.Item>
+
+              <Form.Item label={t("note")} name="note">
+                <Input.TextArea rows={2} placeholder={t('optional_note')} />
+              </Form.Item>
+
+              <div className="flex justify-end gap-2 mt-4">
+                <Button onClick={() => setTransferModal({ visible: false, selectedProduct: null })}>
+                  {t("cancel")}
+                </Button>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="bg-orange-500 hover:bg-orange-600 border-orange-500"
+                  loading={state.loading}
+                >
+                  {t("transfer_now")}
+                </Button>
+              </div>
+            </Form>
+          </Modal>
 
           {/* Statistics */}
           <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -818,6 +1074,53 @@ function PurchasePage() {
           </div>
         </Modal>
 
+        {/* Branch Selection Modal */}
+        <Modal
+          title={t("select_branch")}
+          open={state.showBranchModal}
+          onCancel={() => setState(p => ({ ...p, showBranchModal: false }))}
+          footer={null}
+          width={400}
+        >
+          <div className="space-y-2">
+            {state.branches.map(branch => (
+              <Button
+                key={branch.id}
+                block
+                size="large"
+                className="text-left justify-start h-auto py-3"
+                onClick={() => {
+                  setState(p => ({ ...p, showBranchModal: false }));
+                  openModal();
+                  // Short timeout to ensure Modal is mounted and Form is ready
+                  setTimeout(() => {
+                    form.setFieldsValue({ branch_id: branch.id });
+                  }, 100);
+                  message.success(`${t("selected")} ${branch.name}`);
+                }}
+              >
+                <div className="flex flex-col items-start">
+                  <span className="font-medium">{branch.name}</span>
+                  {branch.description && <span className="text-xs text-gray-500">{branch.description}</span>}
+                </div>
+              </Button>
+            ))}
+            <Button
+              block
+              danger
+              type="dashed"
+              className="mt-2"
+              onClick={() => {
+                form.setFieldsValue({ branch_id: null });
+                setState(p => ({ ...p, showBranchModal: false }));
+                message.info(t("branch_cleared"));
+              }}
+            >
+              {t("clear_selection")}
+            </Button>
+          </div>
+        </Modal>
+
         <Modal
           open={state.visible}
           title={
@@ -837,24 +1140,10 @@ function PurchasePage() {
               <Input />
             </Form.Item>
 
-            {/* Branch Selection */}
-            <Row gutter={16}>
-              <Col xs={24} sm={12}>
-                <Form.Item
-                  name="branch_id"
-                  label={<span className="font-medium">{t("branch")}</span>}
-                  tooltip="Select the branch for this stock"
-                >
-                  <Select placeholder={t("branch_placeholder")} allowClear size="large">
-                    {state.branches.map((b) => (
-                      <Option key={b.id} value={b.value || b.id}>
-                        {b.name}
-                      </Option>
-                    ))}
-                  </Select>
-                </Form.Item>
-              </Col>
-            </Row>
+            {/* Hidden Branch ID field */}
+            <Form.Item name="branch_id" hidden>
+              <Input />
+            </Form.Item>
 
             <Row gutter={16}>
               <Col xs={24} sm={12}>
@@ -1080,6 +1369,8 @@ function PurchasePage() {
               </div>
             </Form.Item>
 
+
+
             {/* Buttons */}
             <Form.Item className="mb-0">
               <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
@@ -1270,7 +1561,104 @@ function PurchasePage() {
       </div >
 
 
-    </MainPage >
+      {/* 🚚 Distribute Stock Modal */}
+      <Modal
+        open={distributeModal.visible}
+        title={
+          <div className="flex items-center gap-2">
+            <FaTruck className="text-orange-500" size={24} />
+            <div>
+              <div className="text-lg font-bold">{t("distribute_stock") || "Distribute Stock"}</div>
+              <div className="text-xs text-gray-500">{t("PO")} #{distributeModal.purchase?.order_no}</div>
+            </div>
+          </div>
+        }
+        onCancel={() => setDistributeModal(p => ({ ...p, visible: false }))}
+        width={800}
+        footer={
+          [
+            <Button key="cancel" onClick={() => setDistributeModal(p => ({ ...p, visible: false }))}>
+              {t("cancel")}
+            </Button>,
+            <Button key="submit" type="primary" onClick={handleDistributeSubmit} className="bg-orange-500 hover:bg-orange-600">
+              {t("distribute_now") || "Distribute Now"}
+            </Button>
+          ]}
+      >
+        <div className="space-y-4 pt-4">
+          {/* Branch Selection */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              {t("select_destination_branch") || "Select Destination Branch"} <span className="text-red-500">*</span>
+            </label>
+            <Select
+              showSearch
+              placeholder={t("select_branch")}
+              optionFilterProp="children"
+              className="w-full"
+              size="large"
+              onChange={(val) => setDistributeModal(p => ({ ...p, branch_id: val }))}
+              value={distributeModal.branch_id}
+            >
+              {state.branches.map(b => (
+                <Select.Option key={b.id} value={b.id}>{b.name}</Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Items Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                <tr>
+                  <th className="p-3 border-b">{t("product")}</th>
+                  <th className="p-3 border-b text-center">{t("ordered")}</th>
+                  <th className="p-3 border-b text-center">{t("received")}</th>
+                  <th className="p-3 border-b text-center text-blue-600">{t("remaining")}</th>
+                  <th className="p-3 border-b text-right header-input">{t("qty_to_send")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {distributeModal.distributions.map((item, idx) => (
+                  <tr key={idx} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                    <td className="p-3 font-medium">{item.product_name}</td>
+                    <td className="p-3 text-center">{item.ordered_qty}</td>
+                    <td className="p-3 text-center text-green-600">{item.received_qty}</td>
+                    <td className="p-3 text-center font-bold text-blue-600">{item.remaining_qty}</td>
+                    <td className="p-3 text-right">
+                      <InputNumber
+                        min={0}
+                        max={item.remaining_qty}
+                        value={item.quantity}
+                        onChange={(val) => {
+                          const newDist = [...distributeModal.distributions];
+                          newDist[idx].quantity = val;
+                          setDistributeModal(p => ({ ...p, distributions: newDist }));
+                        }}
+                        className="w-32"
+                        status={item.quantity > item.remaining_qty ? 'error' : ''}
+                      />
+                    </td>
+                  </tr>
+                ))}
+                {distributeModal.distributions.length === 0 && (
+                  <tr>
+                    <td colSpan="5" className="p-4 text-center text-gray-500">
+                      {t("no_items_available")}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="text-xs text-gray-500 italic mt-2">
+            * {t("distribute_note") || "Only items with 'Qty to Send' > 0 will be distributed."}
+          </div>
+        </div>
+      </Modal>
+
+    </MainPage>
   );
 }
 

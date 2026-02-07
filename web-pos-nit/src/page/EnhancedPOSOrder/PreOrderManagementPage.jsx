@@ -219,10 +219,7 @@ function PreOrderManagementPage() {
   };
 
   const handleEdit = (record) => {
-    if (record.status !== 'pending') {
-      message.warning('អាចកែបានតែកម្មង់ដែលកំពុងរង់ចាំប៉ុណ្ណោះ');
-      return;
-    }
+
     setState(prev => ({
       ...prev,
       editRecord: record,
@@ -507,7 +504,7 @@ function PreOrderManagementPage() {
       width: 80,
       align: 'center',
 
-      render: (_, record) => record.status === 'pending' && (
+      render: (_, record) => (
         <Button
           type="text"
           icon={<EditOutlined />}
@@ -547,7 +544,7 @@ function PreOrderManagementPage() {
       width: 70,
       align: 'center',
 
-      render: (_, record) => (record.status === 'pending' || record.status === 'cancelled') && (
+      render: (_, record) => (
         <Button
           type="text"
           danger

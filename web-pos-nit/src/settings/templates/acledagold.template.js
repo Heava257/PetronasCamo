@@ -77,7 +77,7 @@ export const acledaGoldTemplate = {
             animation: twinkle 10s infinite ease-in-out alternate;
         }
 
-        /* Gradient Overlay for Depth */
+        /* Gradient Overlay for Depth - Softened to let background patterns shine */
         .layout-root.template-acledagold::after {
             content: '';
             position: fixed;
@@ -85,7 +85,7 @@ export const acledaGoldTemplate = {
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(5,10,20,0.95) 0%, rgba(8,21,51,0.85) 100%);
+            background: linear-gradient(135deg, rgba(5,10,20,0.8) 0%, rgba(8,21,51,0.7) 100%);
             z-index: -1;
             pointer-events: none;
         }
@@ -146,17 +146,6 @@ export const acledaGoldTemplate = {
              color: rgba(255, 255, 255, 0.6) !important;
         }
         
-        /* Modal Styling */
-        .ant-modal-content, .ant-modal-header {
-            background-color: rgba(10, 20, 40, 0.95) !important;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-        }
-        .ant-modal-title {
-            color: #FFD700 !important;
-        }
-        .ant-modal-close {
-            color: #ffffff !important;
-        }
         
         /* Arrows/Icons in Inputs */
         .ant-select-arrow, 
@@ -232,6 +221,13 @@ export const acledaGoldTemplate = {
             color: #ffffff !important;
         }
         
+        /* Force Table Cell Transparency */
+        html.template-acledagold .ant-table-cell,
+        .layout-root.template-acledagold .ant-table-cell {
+            background: transparent !important;
+            background-color: transparent !important;
+        }
+
         /* Hover Effect for Table Rows - Premium Gold Glow */
         .ant-table-tbody > tr:hover > td {
             background-color: rgba(255, 215, 0, 0.1) !important;
@@ -557,16 +553,14 @@ export const acledaGoldTemplate = {
              font-family: 'Kantumruy Pro', sans-serif !important;
         }
         
-        /* Table Headers in Pre-Order Page */
         .layout-root.template-acledagold .ant-table-thead > tr > th,
-        .layout-root.template-acledagold .ant-table-cell {
-             color: white !important;
-        }
-        
-        /* Table Header Specifics */
-        .layout-root.template-acledagold .ant-table-thead > tr > th .khmer-text-product {
-             color: #FFD700 !important; /* Gold Headers */
-             font-weight: bold;
+        .layout-root.template-acledagold .ant-table-cell-thead,
+        .layout-root.template-acledagold .ant-table-thead > tr > th .ant-table-column-title,
+        .layout-root.template-acledagold .ant-table-thead > tr > th .ant-table-column-sorters,
+        .layout-root.template-acledagold .ant-table-thead > tr > th span,
+        .layout-root.template-acledagold .ant-table-thead > tr > th i,
+        .layout-root.template-acledagold .ant-table-thead > tr > th svg {
+             color: #FFD700 !important;
         }
 
         /* Modal Footer in Pre-Order Form - NEW CLASS OVERRIDE */
@@ -637,6 +631,7 @@ export const acledaGoldTemplate = {
         }
 
         /* Stat Cards & Table Cards & Form Cards */
+        .layout-root.template-acledagold .purchase-header-card,
         .layout-root.template-acledagold .supplier-table-card,
         .layout-root.template-acledagold .purchase-table-card,
         .layout-root.template-acledagold .inventory-transaction-table-card,
@@ -674,12 +669,16 @@ export const acledaGoldTemplate = {
         }
 
         .layout-root.template-acledagold .supplier-page-container .ant-table-thead > tr > th,
+        html.template-acledagold .supplier-page-container .ant-table-thead > tr > th,
         .layout-root.template-acledagold .purchase-page-container .ant-table-thead > tr > th,
-        .layout-root.template-acledagold .inventory-transaction-container .ant-table-thead > tr > th {
-             background: rgba(255, 215, 0, 0.1) !important; /* Clean Gold Tint */
-             backdrop-filter: blur(8px) !important;
+        html.template-acledagold .purchase-page-container .ant-table-thead > tr > th,
+        .layout-root.template-acledagold .inventory-transaction-container .ant-table-thead > tr > th,
+        html.template-acledagold .inventory-transaction-container .ant-table-thead > tr > th {
+             background: rgba(255, 215, 0, 0.15) !important; /* Slightly more opaque gold tint */
+             backdrop-filter: blur(10px) !important;
              color: #FFD700 !important;
-             border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+             border-bottom: 1px solid rgba(255, 215, 0, 0.3) !important;
+             font-weight: bold !important;
         }
 
         .layout-root.template-acledagold .supplier-page-container .ant-table-tbody > tr > td,
@@ -696,17 +695,452 @@ export const acledaGoldTemplate = {
              font-weight: bold;
         }
 
+        /* 🏠 HOMEPAGE / DASHBOARD PREMIUM THEMING 🏠 */
+        /* Remove the main black/dark background from the dashboard container */
+        .layout-root.template-acledagold .dashboard-container {
+             background: transparent !important;
+             padding: 24px !important;
+        }
+
+        /* Header Card - Transparent Glass */
+        .layout-root.template-acledagold .dashboard-header-card {
+             background: rgba(255, 255, 255, 0.05) !important;
+             backdrop-filter: blur(12px) !important;
+             border: 1px solid rgba(255, 215, 0, 0.2) !important;
+             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        /* Metric/Stat Cards - Aggressively Compact & Clean */
+        .layout-root.template-acledagold .metric-card {
+             background: rgba(15, 23, 42, 0.8) !important;
+             backdrop-filter: blur(12px) !important;
+             border: 1px solid rgba(255, 215, 0, 0.2) !important;
+             border-radius: 12px !important;
+             transition: all 0.2s ease !important;
+             padding: 12px 14px !important; /* Very tight padding */
+             min-height: 140px !important; /* Low profile */
+             display: flex !important;
+             flex-direction: column !important;
+             justify-content: flex-start !important;
+        }
+
+        .layout-root.template-acledagold .metric-card-header {
+             display: flex !important;
+             justify-content: space-between !important;
+             align-items: center !important;
+             margin-bottom: 8px !important;
+        }
+
+        .layout-root.template-acledagold .metric-value-section {
+             margin: 4px 0 !important;
+             padding: 0 !important;
+             border: none !important;
+             text-align: center !important;
+        }
+
+        .layout-root.template-acledagold .metric-value {
+             font-size: 1.6rem !important; /* Compact but clear */
+             font-weight: 700 !important;
+             margin: 0 !important;
+             padding: 0 !important;
+             line-height: 1.2 !important;
+             color: #ffffff !important;
+        }
+
+        .layout-root.template-acledagold .metric-card:hover {
+             border-color: rgba(255, 215, 0, 0.6) !important;
+             transform: translateY(-5px);
+             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+        }
+
+        /* Chart Cards - Large Glass Panel */
+        .layout-root.template-acledagold .chart-card {
+             background: rgba(15, 23, 42, 0.7) !important;
+             backdrop-filter: blur(15px) !important;
+             border: 1px solid rgba(255, 215, 0, 0.2) !important;
+             border-radius: 24px !important;
+        }
+
+        /* Text Fixes for Dashboard */
+        .layout-root.template-acledagold .dashboard-container .header-title,
+        .layout-root.template-acledagold .dashboard-container .metric-label,
+        .layout-root.template-acledagold .dashboard-container .chart-title {
+             color: #FFD700 !important; /* Gold Title */
+             text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .layout-root.template-acledagold .dashboard-container .metric-value,
+        .layout-root.template-acledagold .dashboard-container .metric-detail-value,
+        .layout-root.template-acledagold .dashboard-container .chart-subtitle {
+             color: #ffffff !important; /* Bright White */
+        }
+
+        .layout-root.template-acledagold .dashboard-container .header-subtitle,
+        .layout-root.template-acledagold .dashboard-container .metric-detail-label {
+             color: rgba(255, 255, 255, 0.5) !important;
+             font-size: 11px !important; /* Minimalist label */
+        }
+
+        .layout-root.template-acledagold .dashboard-container .metric-detail-value {
+             color: #FFD700 !important;
+             font-weight: 600;
+             font-size: 13px;
+        }
+
+        /* Detail Rows Tighter Spacing */
+        .layout-root.template-acledagold .metric-card-footer {
+             margin-top: auto !important;
+             padding-top: 6px !important;
+             border-top: 1px solid rgba(255, 215, 0, 0.1) !important;
+        }
+
+        .layout-root.template-acledagold .metric-detail-row {
+             display: flex;
+             justify-content: space-between;
+             align-items: center;
+             padding: 2px 0 !important; /* Ultra-tight */
+             border: none !important;
+        }
+
+        .layout-root.template-acledagold .metric-detail-row:last-child {
+             border-bottom: none;
+        }
+
+        /* Fix the icons in the stat cards */
+        .layout-root.template-acledagold .metric-icon-wrapper {
+             border: 1px solid rgba(255, 215, 0, 0.2);
+             border-radius: 12px !important;
+             width: 40px; /* Smaller icon wrapper */
+             height: 40px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+        }
+
+        /* Chart Elements Readability */
+        .layout-root.template-acledagold .recharts-cartesian-grid-horizontal line,
+        .layout-root.template-acledagold .recharts-cartesian-grid-vertical line {
+             stroke: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .layout-root.template-acledagold .recharts-text-tick {
+             fill: rgba(255, 255, 255, 0.6) !important;
+        }
+
+        .layout-root.template-acledagold .recharts-legend-item-text {
+             color: white !important;
+        }
+
+        /* Quick Filter Buttons */
+        .layout-root.template-acledagold .dashboard-header-card .ant-btn {
+             background: rgba(255, 255, 255, 0.1) !important;
+             border-color: rgba(255, 215, 0, 0.2) !important;
+             color: white !important;
+        }
+
+        .layout-root.template-acledagold .dashboard-header-card .ant-btn:hover {
+             border-color: #FFD700 !important;
+             color: #FFD700 !important;
+        }
+
+        /* 💎 PREMIUM MODAL FIXES 💎 */
+        /* Force Modal Background to be Dark Gradient */
+        .layout-root.template-acledagold .ant-modal-content,
+        html.template-acledagold .ant-modal-content {
+            background-image: linear-gradient(135deg, #050a14 0%, #0c1b3d 100%) !important;
+            border: 1px solid rgba(255, 215, 0, 0.3) !important;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8) !important;
+            padding: 0 !important; /* Ant design uses padding, we set it specifically in body */
+            overflow: hidden;
+        }
+
+        .layout-root.template-acledagold .ant-modal-header,
+        html.template-acledagold .ant-modal-header {
+            background: rgba(255, 215, 0, 0.05) !important;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+            padding: 16px 24px !important;
+            margin-bottom: 0 !important;
+        }
+
+        .layout-root.template-acledagold .ant-modal-title,
+        html.template-acledagold .ant-modal-title {
+            color: #FFD700 !important;
+            font-size: 1.2rem !important;
+            font-weight: 700 !important;
+        }
+
+        .layout-root.template-acledagold .ant-modal-body,
+        html.template-acledagold .ant-modal-body {
+            padding: 24px !important;
+            color: white !important;
+        }
+        
+        .layout-root.template-acledagold .ant-modal-close {
+            color: #FFD700 !important;
+        }
+
+        /* Fix internal Cards and colored blocks inside modals (e.g. Purchase Order Form) */
+        .layout-root.template-acledagold .ant-modal-content .ant-card,
+        .layout-root.template-acledagold .ant-modal-content .bg-gray-50,
+        .layout-root.template-acledagold .ant-modal-content .bg-white,
+        .layout-root.template-acledagold .ant-modal-content .bg-blue-50 {
+            background: rgba(255, 255, 255, 0.03) !important;
+            border: 1px solid rgba(255, 215, 0, 0.15) !important;
+            backdrop-filter: blur(5px) !important;
+            color: white !important;
+        }
+
+        /* Input Labels inside Modal Cards */
+        .layout-root.template-acledagold .ant-modal-content .ant-card .text-gray-500,
+        .layout-root.template-acledagold .ant-modal-content .ant-card .text-xs {
+            color: #FFD700 !important; 
+            opacity: 0.8;
+            font-weight: 500;
+        }
+
+        /* Divider text inside Modals */
+        .layout-root.template-acledagold .ant-modal-content .ant-divider-inner-text {
+            color: #FFD700 !important;
+            background: transparent !important;
+            font-weight: bold;
+        }
+
+        /* --- AGGRESSIVE GLOBAL VISIBILITY FIXES --- */
+        /* Kill ALL legacy light backgrounds regardless of where they are */
+        html.template-acledagold .bg-white,
+        html.template-acledagold .bg-gray-50,
+        html.template-acledagold .bg-blue-50,
+        html.template-acledagold .bg-slate-50,
+        html.template-acledagold .bg-gray-100,
+        html.template-acledagold .bg-gray-200,
+        .layout-root.template-acledagold .bg-white,
+        .layout-root.template-acledagold .bg-gray-50,
+        .layout-root.template-acledagold .bg-gray-100 {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+            background: rgba(255, 255, 255, 0.03) !important;
+            color: #ffffff !important;
+        }
+
+        html.template-acledagold .ant-card,
+        html.template-acledagold .ant-card-body,
+        html.template-acledagold .ant-modal-content .ant-card,
+        html.template-acledagold .ant-modal-content .ant-card-body,
+        .layout-root.template-acledagold .ant-card,
+        .layout-root.template-acledagold .ant-card-body {
+            background-color: rgba(255, 255, 255, 0.02) !important;
+            background: rgba(255, 255, 255, 0.02) !important;
+            border-color: rgba(255, 215, 0, 0.2) !important;
+        }
+
+        .layout-root.template-acledagold .ant-modal-content .ant-divider-horizontal {
+             border-top-color: rgba(255, 215, 0, 0.2) !important;
+        }
+
+        /* Footer Buttons Fix */
+        .layout-root.template-acledagold .ant-modal-footer,
+        html.template-acledagold .ant-modal-footer {
+            border-top: 1px solid rgba(255, 215, 0, 0.1) !important;
+            padding: 12px 24px !important;
+            background: rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* --- INVENTORY TRANSACTION CARD FORMATTING --- */
+        .layout-root.template-acledagold .inventory-transaction-container .ant-card {
+            background: rgba(15, 23, 42, 0.85) !important;
+            border: 1px solid rgba(255, 215, 0, 0.3) !important;
+            backdrop-filter: blur(12px) !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+            border-radius: 20px !important;
+        }
+
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-title {
+             color: #FFD700 !important;
+             font-size: 14px !important;
+             margin-bottom: 12px !important;
+             font-weight: 600 !important;
+        }
+
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-content-value {
+             font-size: 2rem !important;
+             font-weight: 800 !important;
+             letter-spacing: -1px;
+             color: #ffffff !important;
+        }
+
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-content-suffix {
+             color: rgba(255, 255, 255, 0.6) !important;
+             font-size: 1.2rem !important;
+             margin-left: 8px;
+        }
+
+        /* Right side values in inventory cards */
+        .layout-root.template-acledagold .inventory-transaction-container .text-lg.font-bold,
+        .layout-root.template-acledagold .inventory-transaction-container .text-xl.font-bold {
+             color: #FFD700 !important;
+        }
+
+        .layout-root.template-acledagold .inventory-transaction-container .text-xs {
+             color: rgba(255, 255, 255, 0.5) !important;
+             text-transform: uppercase;
+             letter-spacing: 1px;
+             font-weight: 700;
+        }
+        /* Default targeting for Inputs/Selects in Modals Cards */
+        .layout-root.template-acledagold .ant-modal-content .ant-input,
+        .layout-root.template-acledagold .ant-modal-content .ant-input-number,
+        .layout-root.template-acledagold .ant-modal-content .ant-select-selector,
+        .layout-root.template-acledagold .ant-modal-content .ant-picker,
+        .layout-root.template-acledagold .ant-modal-content .ant-input-number-input,
+        .layout-root.template-acledagold .ant-modal-content .ant-select-selection-item {
+            background-color: rgba(0, 0, 0, 0.4) !important;
+            border-color: rgba(255, 215, 0, 0.5) !important;
+            color: white !important;
+        }
+
+        /* Specific fix for inputs and selects inside modal card blocks */
+        .layout-root.template-acledagold .ant-modal-content .ant-card .ant-input,
+        .layout-root.template-acledagold .ant-modal-content .ant-card .ant-input-number,
+        .layout-root.template-acledagold .ant-modal-content .ant-card .ant-select-selector,
+        .layout-root.template-acledagold .ant-modal-content .ant-card .ant-picker {
+            background-color: rgba(0, 0, 0, 0.3) !important;
+            border-color: rgba(255, 215, 0, 0.4) !important;
+        }
+
         .layout-root.template-acledagold .supplier-page-container .ant-table-tbody > tr:hover > td,
         .layout-root.template-acledagold .purchase-page-container .ant-table-tbody > tr:hover > td,
         .layout-root.template-acledagold .inventory-transaction-container .ant-table-tbody > tr:hover > td {
              background: rgba(255, 215, 0, 0.05) !important;
         }
 
-        /* Inventory Category Stats specific */
-        /* Inventory Category Stats specific */
-        .layout-root.template-acledagold .inventory-transaction-container .bg-blue-50\/30 {
-             background: rgba(15, 23, 42, 0.6) !important;
-             border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        /* --- INVENTORY FIXES (Step 3) --- */
+
+        /* 1. Remove the white background from the MAIN container box */
+        .layout-root.template-acledagold .inventory-transaction-container .bg-white {
+             background: transparent !important;
+             background-color: transparent !important;
+             box-shadow: none !important;
+             border: none !important;
+        }
+
+        /* 2. Target ALL Statistic Cards (Top & Bottom) -> Dark Glass & Clean */
+        .layout-root.template-acledagold .inventory-transaction-container .ant-card {
+             background: rgba(15, 23, 42, 0.85) !important; /* Unified Dark Background */
+             background-color: rgba(15, 23, 42, 0.85) !important;
+             background-image: none !important; /* ID 60: Kill all gradients */
+             border: 1px solid rgba(255, 215, 0, 0.3) !important; /* Gold Border */
+             backdrop-filter: blur(12px) !important;
+             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+        }
+
+        /* Specific Kill for the Tailwind Gradients on Top Cards */
+        .layout-root.template-acledagold .inventory-transaction-container div[class*="from-green"],
+        .layout-root.template-acledagold .inventory-transaction-container div[class*="to-green"],
+        .layout-root.template-acledagold .inventory-transaction-container div[class*="from-blue"],
+        .layout-root.template-acledagold .inventory-transaction-container div[class*="to-blue"],
+        .layout-root.template-acledagold .inventory-transaction-container div[class*="from-purple"],
+        .layout-root.template-acledagold .inventory-transaction-container div[class*="to-purple"] {
+             background: rgba(15, 23, 42, 0.85) !important;
+             background-image: none !important;
+        }
+
+        /* 3. Text Clean Up - Value & Titles */
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-title {
+             color: rgba(255, 255, 255, 0.7) !important; /* Clean White-ish title */
+             font-size: 14px;
+        }
+        
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-content-value {
+             color: #FFD700 !important; /* Gold Value */
+             font-weight: bold;
+        }
+
+        /* Override the colored text inside charts */
+        .layout-root.template-acledagold .inventory-transaction-container .text-green-700,
+        .layout-root.template-acledagold .inventory-transaction-container .text-blue-700,
+        .layout-root.template-acledagold .inventory-transaction-container .text-purple-700 {
+             color: #ffffff !important; /* Secondary info to White */
+        }
+
+        /* Small labels inside cards */
+        .layout-root.template-acledagold .inventory-transaction-container .text-xs.text-gray-500 {
+             color: rgba(255, 255, 255, 0.5) !important;
+        }
+
+        /* 3. Ensure inner structure is transparent */
+        .layout-root.template-acledagold .inventory-transaction-container .ant-card .ant-card-body {
+             background: transparent !important;
+        }
+
+        /* 4. Fix Title Readability caused by removing the white box */
+        .layout-root.template-acledagold .inventory-transaction-container h4 {
+             text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+             margin-bottom: 16px !important;
+        }
+
+        /* 5. Inputs and Dropdowns - Make them visible */
+        .layout-root.template-acledagold .inventory-transaction-container .ant-picker,
+        .layout-root.template-acledagold .inventory-transaction-container .ant-select-selector,
+        .layout-root.template-acledagold .inventory-transaction-container input {
+             background-color: rgba(15, 23, 42, 0.8) !important;
+             border-color: rgba(255, 215, 0, 0.3) !important;
+             color: white !important;
+             backdrop-filter: blur(5px);
+        }
+
+        /* Kill the white badge on net value */
+        .layout-root.template-acledagold .inventory-transaction-container .bg-white\/50 {
+             background-color: rgba(255, 255, 255, 0.1) !important;
+             color: #FFD700 !important;
+             border: 1px solid rgba(255, 215, 0, 0.5) !important;
+        }
+
+        /* Fix Titles & Text inside Inventory to be Gold/White */
+        .layout-root.template-acledagold .inventory-transaction-container h4,
+        .layout-root.template-acledagold .inventory-transaction-container h5,
+        .layout-root.template-acledagold .inventory-transaction-container .ant-typography {
+             color: #FFD700 !important;
+        }
+        
+        /* Force Text-Gray-600 (used in headers) to be Gold in this container */
+        .layout-root.template-acledagold .inventory-transaction-container .text-gray-600 {
+             color: #FFD700 !important;
+        }
+
+        /* Statistic Values - Make them white for contrast against Gold titles */
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-content-value {
+             color: #ffffff !important;
+        }
+        
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-title,
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-content-suffix,
+        .layout-root.template-acledagold .inventory-transaction-container .ant-statistic-content-prefix {
+             color: #FFD700 !important;
+        }
+
+        /* Override dark text utility classes to be visible on dark background */
+        .layout-root.template-acledagold .inventory-transaction-container .text-blue-700,
+        .layout-root.template-acledagold .inventory-transaction-container .text-blue-600 {
+             color: #60a5fa !important; /* blue-400 */
+        }
+        
+        .layout-root.template-acledagold .inventory-transaction-container .text-green-700,
+        .layout-root.template-acledagold .inventory-transaction-container .text-green-600 {
+             color: #4ade80 !important; /* green-400 */
+        }
+        
+        .layout-root.template-acledagold .inventory-transaction-container .text-orange-600 {
+             color: #fbbf24 !important; /* amber-400 */
+        }
+        
+        .layout-root.template-acledagold .inventory-transaction-container .text-purple-700,
+        .layout-root.template-acledagold .inventory-transaction-container .text-purple-600 {
+             color: #c084fc !important; /* purple-400 */
+        }
+        
+        /* Note: text-red-500 is usually visible enough, but let's brighten it slightly */
+        .layout-root.template-acledagold .inventory-transaction-container .text-red-500,
+        .layout-root.template-acledagold .inventory-transaction-container .text-red-600 {
+             color: #f87171 !important; /* red-400 */
         }
 
         /* Re-applying Fake Invoice Table Specifics (that got broken) */
@@ -904,6 +1338,62 @@ export const acledaGoldTemplate = {
              color: orange !important;
              font-size: 9px !important;
              padding: 0 4px !important;
+        }
+        
+        /* --- GLOBAL TRUE GLASS OVERRIDES --- */
+        /* Applied to all pages using the Acleda Gold template */
+        
+        /* Force Cards to be Glass */
+        html.template-acledagold .ant-card,
+        .template-acledagold .ant-card {
+            background: rgba(255, 255, 255, 0.03) !important;
+            backdrop-filter: blur(15px) !important;
+            border: 1px solid rgba(255, 215, 0, 0.2) !important;
+            border-radius: 16px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2) !important;
+        }
+        
+        /* Modal & Drawer Glass */
+        html.template-acledagold .ant-modal-content,
+        html.template-acledagold .ant-drawer-content {
+            background: rgba(8, 18, 45, 0.7) !important;
+            backdrop-filter: blur(25px) !important;
+            border: 1px solid rgba(255, 215, 0, 0.3) !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8) !important;
+            color: white !important;
+        }
+        
+        html.template-acledagold .ant-modal-header,
+        html.template-acledagold .ant-drawer-header {
+            background: transparent !important;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+        }
+        
+        /* Table Global Transparency */
+        html.template-acledagold .ant-table,
+        html.template-acledagold .ant-table-thead > tr > th {
+            background: transparent !important;
+        }
+        
+        html.template-acledagold .ant-table-thead > tr > th {
+            background: rgba(255, 215, 0, 0.1) !important;
+            backdrop-filter: blur(8px) !important;
+            color: #FFD700 !important;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.3) !important;
+        }
+        
+        /* Tabs Glass */
+        html.template-acledagold .ant-tabs-nav::before {
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2) !important;
+        }
+        
+        /* Typography - Enforce Khmer & Gold */
+        html.template-acledagold h1, 
+        html.template-acledagold h2, 
+        html.template-acledagold h3,
+        html.template-acledagold .ant-typography {
+            color: #FFD700 !important;
+            font-family: 'Kantumruy Pro', sans-serif !important;
         }
         
         /* Ensure Inputs/Selects (if any) are hidden or styled for print */

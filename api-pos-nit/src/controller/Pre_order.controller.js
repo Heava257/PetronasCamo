@@ -28,7 +28,8 @@ exports.createPreOrder = async (req, res) => {
       special_instructions,
       products,
       deposit_amount,
-      payment_method
+      payment_method,
+      location_name
     } = req.body;
 
     if (!pre_order_no) {
@@ -119,13 +120,13 @@ exports.createPreOrder = async (req, res) => {
         order_date, delivery_date, delivery_time,
         delivery_address, special_instructions,
         total_amount, deposit_amount, remaining_amount,
-        payment_status, status, created_by, created_at
+        payment_status, status, created_by, location_name, created_at
       ) VALUES (
         :pre_order_no, :customer_id, :customer_name, :customer_tel,
         :order_date, :delivery_date, :delivery_time,
         :delivery_address, :special_instructions,
         :total_amount, :deposit_amount, :remaining_amount,
-        :payment_status, :status, :created_by, NOW()
+        :payment_status, :status, :created_by, :location_name, NOW()
       )
     `;
 
@@ -150,7 +151,8 @@ exports.createPreOrder = async (req, res) => {
       remaining_amount: remaining,
       payment_status,
       status: status_value,
-      created_by: req.auth?.id
+      created_by: req.auth?.id,
+      location_name: location_name || null
     });
 
     const pre_order_id = resultPreOrder.insertId;
@@ -642,7 +644,8 @@ exports.updatePreOrder = async (req, res) => {
       delivery_address,
       special_instructions,
       products,
-      deposit_amount
+      deposit_amount,
+      location_name
     } = req.body;
 
     const [existing] = await db.query(
@@ -658,11 +661,11 @@ exports.updatePreOrder = async (req, res) => {
       });
     }
 
-    if (existing[0].status !== 'pending') {
+    if (!['pending', 'confirmed'].includes(existing[0].status)) {
       return res.status(400).json({
         success: false,
-        message: "Only pending orders can be edited",
-        message_kh: "អាចកែបានតែកម្មង់ដែលកំពុងរង់ចាំប៉ុណ្ណោះ"
+        message: "Only pending or confirmed orders can be edited",
+        message_kh: "អាចកែបានតែកម្មង់ដែលកំពុងរង់ចាំឬបញ្ជាក់រួចប៉ុណ្ណោះ"
       });
     }
 
@@ -741,6 +744,7 @@ exports.updatePreOrder = async (req, res) => {
         deposit_amount = :deposit_amount,
         remaining_amount = :remaining_amount,
         payment_status = :payment_status,
+        location_name = :location_name,
         updated_at = NOW()
       WHERE id = :id
     `, {
@@ -752,7 +756,8 @@ exports.updatePreOrder = async (req, res) => {
       total_amount: total_amount,
       deposit_amount: deposit,
       remaining_amount: remaining > 0 ? remaining : 0,
-      payment_status: payment_status
+      payment_status: payment_status,
+      location_name: location_name || null
     });
 
     res.json({
@@ -784,10 +789,10 @@ exports.deletePreOrder = async (req, res) => {
     if (existing.length === 0) {
       return res.status(404).json({ success: false, message: "Not found" });
     }
-    
+
     if (!['pending', 'cancelled'].includes(existing[0].status)) {
-      return res.status(400).json({ 
-        success: false, 
+      return res.status(400).json({
+        success: false,
         message: "Cannot delete active pre-orders",
         message_kh: "មិនអាចលុបកម្មង់ដែលកំពុងដំណើរការ"
       });
@@ -798,8 +803,8 @@ exports.deletePreOrder = async (req, res) => {
     await db.query("DELETE FROM pre_order_payment WHERE pre_order_id = :id", { id });
     await db.query("DELETE FROM pre_order WHERE id = :id", { id });
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Pre-order deleted successfully",
       message_kh: "បានលុបកម្មង់ជោគជ័យ"
     });
@@ -813,15 +818,20 @@ exports.deletePreOrder = async (req, res) => {
 // ========================================
 exports.checkDuplicate = async (req, res) => {
   try {
-    const { no } = req.query;
+    const { no, exclude_id } = req.query;
     if (!no) {
       return res.json({ exists: false });
     }
 
-    const [existing] = await db.query(
-      "SELECT id FROM pre_order WHERE pre_order_no = :no",
-      { no }
-    );
+    let sql = "SELECT id FROM pre_order WHERE pre_order_no = :no";
+    const params = { no };
+
+    if (exclude_id) {
+      sql += " AND id != :exclude_id";
+      params.exclude_id = exclude_id;
+    }
+
+    const [existing] = await db.query(sql, params);
 
     res.json({
       exists: existing.length > 0
