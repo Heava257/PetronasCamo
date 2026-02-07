@@ -632,16 +632,17 @@ exports.transferStock = async (req, res) => {
         // 5. Record Source Transaction (TRANSFER_OUT)
         await db.query(`
             INSERT INTO inventory_transaction (
-                product_id, transaction_type, quantity, unit_price, actual_price, reference_no,
+                product_id, transaction_type, quantity, unit_price, selling_price, actual_price, reference_no,
                 supplier_name, notes, user_id, created_at
             ) VALUES (
-                ?, 'TRANSFER_OUT', ?, ?, ?, ?, 
+                ?, 'TRANSFER_OUT', ?, ?, ?, ?, ?, 
                 ?, ?, ?, NOW()
             )
         `, [
             sourceProduct.id,
             -Math.abs(item.quantity),
             sourceProduct.unit_price,
+            sourceProduct.selling_price || 0,
             sourceProduct.actual_price,
             `TO-${target_branch_name}`,
             target_branch_name,
@@ -666,6 +667,7 @@ exports.transferStock = async (req, res) => {
                     qty = qty + ?,
                     name = ?, 
                     unit_price = ?, 
+                    selling_price = ?,
                     actual_price = ?,
                     company_name = ?,
                     description = ?
@@ -674,6 +676,7 @@ exports.transferStock = async (req, res) => {
                 item.quantity,
                 sourceProduct.name,
                 sourceProduct.unit_price,
+                sourceProduct.selling_price || 0,
                 sourceProduct.actual_price,
                 sourceProduct.company_name,
                 sourceProduct.description,
@@ -681,17 +684,17 @@ exports.transferStock = async (req, res) => {
             ]);
         } else {
             // Create New Product Copy for Branch
-            const insertRes = await db.query(`
+            const [insertRes] = await db.query(`
                 INSERT INTO product (
-                    category_id, name, barcode, company_name, description, qty, unit_price, discount, 
+                    category_id, name, barcode, company_name, description, qty, unit_price, selling_price, discount, 
                     status, create_by, unit, actual_price, customer_id, user_id, create_at
                 ) VALUES (
-                    ?, ?, ?, ?, ?, ?, ?, ?, 
+                    ?, ?, ?, ?, ?, ?, ?, ?, ?, 
                     ?, ?, ?, ?, ?, ?, NOW()
                 )
             `, [
                 sourceProduct.category_id, sourceProduct.name, sourceProduct.barcode, sourceProduct.company_name, sourceProduct.description,
-                item.quantity, sourceProduct.unit_price, sourceProduct.discount,
+                item.quantity, sourceProduct.unit_price, sourceProduct.selling_price || 0, sourceProduct.discount,
                 sourceProduct.status, req.auth.username, sourceProduct.unit, sourceProduct.actual_price,
                 sourceProduct.customer_id, targetUserId
             ]);
@@ -701,16 +704,17 @@ exports.transferStock = async (req, res) => {
         // 7. Record Target Transaction (TRANSFER_IN)
         await db.query(`
             INSERT INTO inventory_transaction (
-                product_id, transaction_type, quantity, unit_price, actual_price, reference_no,
+                product_id, transaction_type, quantity, unit_price, selling_price, actual_price, reference_no,
                 supplier_name, notes, user_id, created_at
             ) VALUES (
-                ?, 'TRANSFER_IN', ?, ?, ?, ?, 
+                ?, 'TRANSFER_IN', ?, ?, ?, ?, ?, 
                 ?, ?, ?, NOW()
             )
         `, [
             targetProductId,
             Math.abs(item.quantity),
             sourceProduct.unit_price,
+            sourceProduct.selling_price || 0,
             sourceProduct.actual_price,
             `FROM-${sourceBranch || 'HO'}`,
             'Head Office',
