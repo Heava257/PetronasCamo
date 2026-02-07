@@ -72,6 +72,7 @@ function HomePage() {
     moment()
   ]);
   const [showDateWarning, setShowDateWarning] = useState(false);
+  const [expandedCards, setExpandedCards] = useState({}); // ✅ State for toggling card details
 
   const COLORS = [
     '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b',
@@ -431,6 +432,15 @@ function HomePage() {
     navigate(route);
   };
 
+  // ✅ Toggle Details
+  const toggleDetails = (e, title) => {
+    e.stopPropagation(); // Don't trigger card click
+    setExpandedCards(prev => ({
+      ...prev,
+      [title]: !prev[title]
+    }));
+  };
+
   // Render User Details Modal
   const renderUserModal = () => {
     if (!userDetails) return null;
@@ -732,26 +742,43 @@ function HomePage() {
                     </div>
 
                     <div className="metric-card-footer">
-                      {Object.entries(item.Summary)
-                        .filter(([key]) => {
-                          const val = item.Summary[key];
-                          // Hide the center value and the static "Current Stock" label
-                          return formatDisplayValue(val) !== mainValue && val !== "Current Stock";
-                        })
-                        .map(([key, value], idx) => (
-                          <div key={idx} className="metric-detail-row">
-                            <Text className="metric-detail-label">{t(key)}:</Text>
-                            <Text className="metric-detail-value">
-                              {typeof value === 'string' ?
-                                formatDisplayValue(value).replace(/នាក់/g, '').replace(/People/g, '').trim()
-                                  .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
-                                : formatDisplayValue(value)}
-                            </Text>
-                          </div>
-                        ))}
+                      {/* ✅ Toggle Details Button */}
+                      <div className="detail-toggle-section">
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={(e) => toggleDetails(e, item.title)}
+                          icon={expandedCards[item.title] ? <EyeOutlined /> : <InfoCircleOutlined />}
+                          className="detail-toggle-btn"
+                        >
+                          {expandedCards[item.title] ? t('Hide details') : t('Show details')}
+                        </Button>
+                      </div>
+
+                      {expandedCards[item.title] && (
+                        <div className="metric-details-wrapper">
+                          {Object.entries(item.Summary)
+                            .filter(([key]) => {
+                              const val = item.Summary[key];
+                              // Hide the center value and the static "Current Stock" label
+                              return formatDisplayValue(val) !== mainValue && val !== "Current Stock";
+                            })
+                            .map(([key, value], idx) => (
+                              <div key={idx} className="metric-detail-row">
+                                <Text className="metric-detail-label">{t(key)}:</Text>
+                                <Text className="metric-detail-value">
+                                  {typeof value === 'string' ?
+                                    formatDisplayValue(value).replace(/នាក់/g, '').replace(/People/g, '').trim()
+                                      .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
+                                    : formatDisplayValue(value)}
+                                </Text>
+                              </div>
+                            ))}
+                        </div>
+                      )}
 
                       {/* Show "View All" for user card if more than 2 roles */}
-                      {isUserCard && Object.keys(item.Summary).length > 3 && (
+                      {isUserCard && expandedCards[item.title] && Object.keys(item.Summary).length > 3 && (
                         <div style={{ marginTop: 8, textAlign: 'center' }}>
                           <Button
                             type="link"

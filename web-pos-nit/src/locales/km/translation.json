@@ -62,6 +62,8 @@
   "Close": "បិទ",
   "View All": "មើលទាំងអស់",
   "Roles": "តួនាទី",
+  "Show details": "បង្ហាញលម្អិត",
+  "Hide details": "លាក់ព័ត៌មាន",
   "No data found for selected date range": "រកមិនឃើញទិន្នន័យសម្រាប់កាលបរិច្ឆេទដែលបានជ្រើសរើស",
   "Your expense data may be from a different year. Try selecting": "ទិន្នន័យចំណាយរបស់អ្នកអាចមកពីឆ្នាំផ្សេង។ សូមព្យាយាមជ្រើសរើស",
   "name": "ឈ្មោះ",
