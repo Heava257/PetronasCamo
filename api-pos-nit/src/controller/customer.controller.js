@@ -18,15 +18,16 @@ exports.getListByCurrentUserGroup = async (req, res) => {
 
     const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
     const isSuperAdmin = role_id === 29;
+    const selectedBranchId = req.query.branch_id || req.query.branchId;
 
     // ✅ Build branch filter consistent with dashboard
     let branchFilter = "";
-    if (!isSuperAdmin) {
-      if (userBranchId) {
-        branchFilter = `AND u.branch_id = ${userBranchId}`;
-      } else if (userBranchName) {
-        branchFilter = `AND u.branch_name = '${userBranchName}'`;
+    if (isSuperAdmin) {
+      if (selectedBranchId) {
+        branchFilter = `AND c.branch_id = ${selectedBranchId}`;
       }
+    } else {
+      branchFilter = `AND c.branch_id = ${userBranchId}`;
     }
 
     let sql = `
@@ -40,6 +41,7 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.address, 
         c.type, 
         c.branch_name,
+        c.branch_id,
         c.create_by, 
         c.create_at, 
         c.user_id,
@@ -47,10 +49,9 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.id_card_expiry, 
         c.spouse_name, 
         c.guarantor_name,
-        u.branch_id,
         u.name as created_by_name,
         u.username as created_by_username,
-        u.branch_name as creator_branch
+        c.branch_name as creator_branch
       FROM customer c
       INNER JOIN user u ON c.user_id = u.id
       WHERE 1=1
@@ -561,17 +562,17 @@ exports.create = async (req, res) => {
       INSERT INTO customer 
       (name, code, tel, email, address, type, gender, create_by, user_id,
        id_card_number, id_card_expiry, spouse_name, spouse_tel, 
-       guarantor_name, guarantor_tel, status, branch_name)
+       guarantor_name, guarantor_tel, status, branch_name, branch_id)
       VALUES 
       (?, ?, ?, ?, ?, ?, ?, ?, ?,
        ?, ?, ?, ?, 
-       ?, ?, ?, ?)
+       ?, ?, ?, ?, ?)
     `;
 
     const params = [
       name, customerCode || null, tel, email, address || null, type, gender || null, createdBy, userId,
       id_card_number || null, id_card_expiry || null, spouse_name || null, spouse_tel || null,
-      guarantor_name || null, guarantor_tel || null, status, branch_name
+      guarantor_name || null, guarantor_tel || null, status, branch_name, branch_id
     ];
 
     const [data] = await db.query(sql, params);

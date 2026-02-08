@@ -807,15 +807,19 @@ exports.getListByCurrentUserGroup = async (req, res) => {
 
     const { role_id, branch_id: userBranchId } = currentUser[0];
     const isSuperAdmin = role_id === 29;
+    const selectedBranchId = req.query.branch_id || req.query.branchId;
 
     let branchFilter = "";
     let sqlParams = [];
 
-    if (!isSuperAdmin) {
-      branchFilter = " AND u.branch_id = ? ";
-      sqlParams.push(userBranchId);
+    if (isSuperAdmin) {
+      if (selectedBranchId) {
+        branchFilter = " AND p.branch_id = ? ";
+        sqlParams.push(selectedBranchId);
+      }
     } else {
-      sqlParams.push(null); // Keep array length for query if needed, but we'll use conditional params
+      branchFilter = " AND p.branch_id = ? ";
+      sqlParams.push(userBranchId);
     }
 
     var sql = `
@@ -846,13 +850,10 @@ exports.getListByCurrentUserGroup = async (req, res) => {
           WHEN p.discount > 0 THEN ((p.qty * p.unit_price) * (1 - p.discount / 100)) / c.actual_price
           ELSE (p.qty * p.unit_price) / c.actual_price
         END AS total_price,
-        u.branch_id,
-        u.name AS created_by_name,
-        u.username AS created_by_username
+        p.branch_id
       FROM product p
       LEFT JOIN category c ON p.category_id = c.id
       LEFT JOIN customer cu ON p.customer_id = cu.id
-      INNER JOIN user u ON p.user_id = u.id
       WHERE 1=1
         ${branchFilter}
         AND p.status != 'deleted'
@@ -1300,8 +1301,9 @@ exports.createSingleProduct = async (productData, req) => {
   const finalReceiveDate = receive_date || getCurrentTimestamp();
   const finalCreatedDate = created_date || getCurrentTimestamp();
 
-  // ✅ Get branch name from request
+  // ✅ Get branch info from request
   const branch_name = req.auth?.branch_name || null;
+  const branch_id = req.auth?.branch_id || null;
 
   const checkSql = `
     SELECT * FROM product 
@@ -1333,7 +1335,9 @@ exports.createSingleProduct = async (productData, req) => {
           unit_price = :unit_price, 
           discount = :discount, 
           actual_price = :actual_price, 
-          description = :description
+          description = :description,
+          branch_id = :branch_id,
+          branch_name = :branch_name
       WHERE id = :id
     `, {
       new_qty: newQty,
@@ -1341,6 +1345,8 @@ exports.createSingleProduct = async (productData, req) => {
       discount: discount || 0,
       actual_price: resolvedActualPrice,
       description: description || '',
+      branch_id,
+      branch_name,
       id: existingProduct.id
     });
 
@@ -1355,10 +1361,10 @@ exports.createSingleProduct = async (productData, req) => {
     const [result] = await db.query(`
       INSERT INTO product 
       (user_id, name, category_id, barcode, company_name, description, qty, actual_price, 
-       unit, unit_price, discount, status, create_by, create_at, receive_date, customer_id)
+       unit, unit_price, discount, status, create_by, create_at, receive_date, customer_id, branch_id, branch_name)
       VALUES
       (:user_id, :name, :category_id, :barcode, :company_name, :description, :qty, :actual_price, 
-       :unit, :unit_price, :discount, :status, :create_by, :create_at, :receive_date, :customer_id)
+       :unit, :unit_price, :discount, :status, :create_by, :create_at, :receive_date, :customer_id, :branch_id, :branch_name)
     `, {
       user_id,
       name,
@@ -1375,7 +1381,9 @@ exports.createSingleProduct = async (productData, req) => {
       create_by: req.auth?.name || 'system',
       create_at: finalCreateAt,
       receive_date: finalReceiveDate,
-      customer_id
+      customer_id,
+      branch_id,
+      branch_name
     });
 
     productId = result.insertId;

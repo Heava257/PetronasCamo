@@ -53,15 +53,22 @@ exports.getList = async (req, res) => {
 
     const userRoleId = currentUser[0].role_id;
     const userBranch = currentUser[0].branch_name;
-    const userBranchId = currentUser[0].branch_id; // ✅ New Branch ID
+    const userBranchId = currentUser[0].branch_id;
 
     // ✅ Branch filter
     let branchFilter = '';
-    if (userRoleId !== 29) {
+    const selectedBranchId = req.query.branch_id || req.query.branchId;
+
+    if (userRoleId === 29) {
+      // Super Admin: Support filtering by branch_id if provided
+      if (selectedBranchId) {
+        branchFilter = `AND u.branch_id = ${selectedBranchId}`;
+      }
+    } else {
+      // Branch Admin or other roles: Restricted to their own branch
       if (userBranchId) {
         branchFilter = `AND u.branch_id = ${userBranchId}`;
       } else if (userBranch) {
-        // Fallback if branch_id is null (shouldn't happen after migration)
         branchFilter = `AND u.branch_name = '${userBranch}'`;
       } else {
         console.error('❌ Branch Admin has no branch_name/id');

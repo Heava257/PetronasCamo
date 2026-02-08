@@ -3,8 +3,11 @@ const { db, isArray, isEmpty, logError } = require("../util/helper");
 
 exports.create = async (req, res) => {
   try {
+    const branch_id = req.auth?.branch_id || null;
+    const branch_name = req.auth?.branch_name || null;
+
     var sql =
-      "INSERT INTO category (name, description, status, parentid, barcode, actual_price, user_id) VALUES (:name, :description, :status, :parentid, :barcode, :actual_price, :user_id)";
+      "INSERT INTO category (name, description, status, parentid, barcode, actual_price, user_id, branch_id, branch_name) VALUES (:name, :description, :status, :parentid, :barcode, :actual_price, :user_id, :branch_id, :branch_name)";
     var [data] = await db.query(sql, {
       name: req.body.name,
       description: req.body.description,
@@ -12,7 +15,9 @@ exports.create = async (req, res) => {
       parentid: req.body.parent_id,
       barcode: req.body.barcode,
       actual_price: req.body.actual_price,
-      user_id: req.body.user_id, // Added user_id
+      user_id: req.body.user_id,
+      branch_id: branch_id,
+      branch_name: branch_name
     });
     res.json({
       data: data,
@@ -65,6 +70,32 @@ exports.getList = async (req, res) => {
 
 exports.getListByCurrentUserGroup = async (req, res) => {
   try {
+    const [currentUser] = await db.query(
+      "SELECT role_id, branch_id FROM user WHERE id = ?",
+      [req.current_id]
+    );
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_id: userBranchId } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+    const selectedBranchId = req.query.branch_id || req.query.branchId;
+
+    let branchFilter = "";
+    let sqlParams = {};
+
+    if (isSuperAdmin) {
+      if (selectedBranchId) {
+        branchFilter = " AND c.branch_id = :selected_branch_id ";
+        sqlParams.selected_branch_id = selectedBranchId;
+      }
+    } else {
+      branchFilter = " AND c.branch_id = :user_branch_id ";
+      sqlParams.user_branch_id = userBranchId;
+    }
+
     var sql = `
       SELECT 
         c.id, 
@@ -76,17 +107,15 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.actual_price, 
         c.CreateAt, 
         c.user_id,
-        u.branch_id,
+        c.branch_id,
         u.name as created_by_name,
         u.username as created_by_username
       FROM category c
       INNER JOIN user u ON c.user_id = u.id
-      INNER JOIN user cu ON cu.branch_id = u.branch_id
-      WHERE cu.id = :current_user_id
+      WHERE 1=1 ${branchFilter}
     `;
-    var [data] = await db.query(sql, {
-      current_user_id: req.current_id
-    });
+
+    var [data] = await db.query(sql, sqlParams);
     res.json({
       list: data,
       message: "Success!",
@@ -95,6 +124,7 @@ exports.getListByCurrentUserGroup = async (req, res) => {
     logError("category.getListByCurrentUserGroup", error, res);
   }
 };
+
 exports.remove = async (req, res) => {
   try {
     var [data] = await db.query("DELETE FROM category WHERE id = :id", {
