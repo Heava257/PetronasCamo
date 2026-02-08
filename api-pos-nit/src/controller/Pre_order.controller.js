@@ -417,7 +417,7 @@ exports.getPreOrderList = async (req, res) => {
       return res.status(401).json({ success: false, message: "User not found" });
     }
 
-    const { role_id, branch_id } = currentUser[0];
+    const { role_id, branch_id, branch_name } = currentUser[0];
     const isSuperAdmin = role_id === 29;
     const selectedBranchId = req.query.branch_id || req.query.branchId;
 
