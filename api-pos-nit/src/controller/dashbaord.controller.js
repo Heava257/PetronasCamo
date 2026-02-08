@@ -54,31 +54,22 @@ exports.getList = async (req, res) => {
     const userRoleId = currentUser[0].role_id;
     const userBranch = currentUser[0].branch_name;
     const userBranchId = currentUser[0].branch_id;
-
-    // ✅ Branch filter
-    let branchFilter = '';
     const selectedBranchId = req.query.branch_id || req.query.branchId;
 
-    if (userRoleId === 29) {
-      // Super Admin: Support filtering by branch_id if provided
-      if (selectedBranchId) {
-        branchFilter = `AND u.branch_id = ${selectedBranchId}`;
+    // ✅ Branch filter settings for different tables
+    const getFilter = (alias) => {
+      if (userRoleId === 29) {
+        return selectedBranchId ? `AND ${alias}.branch_id = ${selectedBranchId}` : '';
       }
-    } else {
-      // Branch Admin or other roles: Restricted to their own branch
-      if (userBranchId) {
-        branchFilter = `AND u.branch_id = ${userBranchId}`;
-      } else if (userBranch) {
-        branchFilter = `AND u.branch_name = '${userBranch}'`;
-      } else {
-        console.error('❌ Branch Admin has no branch_name/id');
-        return res.status(403).json({
-          error: true,
-          message: "Your account is not assigned to a branch",
-          message_kh: "គណនីរបស់អ្នកមិនបានកំណត់សាខា"
-        });
-      }
-    }
+      return `AND ${alias}.branch_id = ${userBranchId}`;
+    };
+
+    const branchFilterOrder = getFilter('o');
+    const branchFilterExpense = getFilter('e');
+    const branchFilterPurchase = getFilter('p');
+    const branchFilterIT = getFilter('it');
+    const branchFilterCustomer = getFilter('c');
+    const branchFilterProduct = getFilter('p');
 
     // ✅✅✅ TOP SALES QUERY ✅✅✅
     const topSaleQuery = `
@@ -92,9 +83,8 @@ exports.getList = async (req, res) => {
       JOIN \`order\` o ON od.order_id = o.id
       JOIN product p ON od.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      JOIN user u ON o.user_id = u.id
       WHERE 1=1
-      ${branchFilter}
+      ${branchFilterOrder}
       ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY p.name
       HAVING total_sale_amount > 0
@@ -110,9 +100,8 @@ exports.getList = async (req, res) => {
         SUM(CASE WHEN c.gender = 'male' THEN 1 ELSE 0 END) AS male,
         SUM(CASE WHEN c.gender = 'female' THEN 1 ELSE 0 END) AS female
       FROM customer c
-      JOIN user u ON c.user_id = u.id
       WHERE 1=1
-      ${branchFilter}
+      ${branchFilterCustomer}
       ${from_date && to_date ? `AND DATE(c.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [customer] = await db.query(customerQuery);
@@ -128,9 +117,8 @@ exports.getList = async (req, res) => {
       JOIN order_detail od ON o.id = od.order_id
       JOIN product p ON od.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      JOIN user u ON o.user_id = u.id
       WHERE 1=1
-      ${branchFilter}
+      ${branchFilterOrder}
       ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [revenue] = await db.query(revenueQuery);
@@ -142,9 +130,8 @@ exports.getList = async (req, res) => {
         COUNT(e.id) AS total_expense 
       FROM expense e
       INNER JOIN expense_type et ON e.expense_type_id = et.id
-      LEFT JOIN user u ON e.user_id = u.id
       WHERE 1=1
-      ${branchFilter}
+      ${branchFilterExpense}
       ${from_date && to_date ? `AND DATE(e.expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [opexResult] = await db.query(opexQuery);
@@ -154,9 +141,8 @@ exports.getList = async (req, res) => {
       SELECT 
         COALESCE(SUM(p.total_amount), 0) AS total_cogs
       FROM purchase p
-      JOIN user u ON p.user_id = u.id
       WHERE p.status IN ('confirmed', 'shipped', 'delivered')
-      ${branchFilter}
+      ${branchFilterPurchase}
       ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [cogsResult] = await db.query(cogsQuery);
@@ -192,11 +178,10 @@ exports.getList = async (req, res) => {
           it.product_id, 
           SUM(it.quantity) as total_qty
         FROM inventory_transaction it
-        LEFT JOIN user u ON it.user_id = u.id
-        WHERE 1=1 ${branchFilter}
+        WHERE 1=1 ${branchFilterIT}
         GROUP BY it.product_id
       ) stock ON stock.product_id = p.id
-      WHERE p.status = 1
+      WHERE p.status = 1 ${branchFilterProduct}
     `;
     const [product] = await db.query(productQuery);
 
@@ -216,8 +201,7 @@ exports.getList = async (req, res) => {
       FROM inventory_transaction it
       LEFT JOIN product p ON it.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      LEFT JOIN user u ON it.user_id = u.id
-      WHERE 1=1 ${branchFilter}
+      WHERE 1=1 ${branchFilterIT}
       -- Respect date filters to match transaction page header
       ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
@@ -229,9 +213,8 @@ exports.getList = async (req, res) => {
       SELECT 
         COALESCE(SUM(it.quantity), 0) AS total_quantity
       FROM inventory_transaction it
-      LEFT JOIN user u ON it.user_id = u.id
       WHERE 1=1
-        ${branchFilter}
+        ${branchFilterIT}
     `;
     const [inventoryQty] = await db.query(inventoryQtyQuery);
 
@@ -250,9 +233,8 @@ exports.getList = async (req, res) => {
       JOIN order_detail od ON o.id = od.order_id
       JOIN product p ON od.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      JOIN user u ON o.user_id = u.id
       WHERE 1=1
-      ${branchFilter}
+      ${branchFilterOrder}
       ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [sale] = await db.query(saleQuery);
@@ -269,9 +251,8 @@ exports.getList = async (req, res) => {
       JOIN order_detail od ON o.id = od.order_id
       JOIN product p ON od.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      JOIN user u ON o.user_id = u.id
       WHERE 1=1
-      ${branchFilter}
+      ${branchFilterOrder}
       ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(o.order_date, '%M'), MONTH(o.order_date)
       ORDER BY MONTH(o.order_date)
@@ -285,10 +266,8 @@ exports.getList = async (req, res) => {
         SUM(e.amount) AS total,
         MONTH(e.expense_date) as month_num
       FROM expense e
-      INNER JOIN expense_type et ON e.expense_type_id = et.id
-      LEFT JOIN user u ON e.user_id = u.id
       WHERE 1=1
-      ${branchFilter}
+      ${branchFilterExpense}
       ${from_date && to_date ? `AND DATE(e.expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(e.expense_date, '%M'), MONTH(e.expense_date)
     `;
@@ -300,9 +279,8 @@ exports.getList = async (req, res) => {
         SUM(p.total_amount) AS total,
         MONTH(p.order_date) as month_num
       FROM purchase p
-      JOIN user u ON p.user_id = u.id
       WHERE p.status IN ('confirmed', 'shipped', 'delivered')
-      ${branchFilter}
+      ${branchFilterPurchase}
       ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(p.order_date, '%M'), MONTH(p.order_date)
     `;
@@ -354,9 +332,8 @@ exports.getList = async (req, res) => {
         DATE_FORMAT(p.create_at, '%M') AS title,
         SUM(p.qty * p.unit_price) AS total
       FROM product p
-      JOIN user u ON p.user_id = u.id
       WHERE p.status = 1
-      ${branchFilter}
+      ${getFilter('p')}
       ${from_date && to_date ? `AND DATE(p.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY MONTH(p.create_at), DATE_FORMAT(p.create_at, '%M')
       ORDER BY MONTH(p.create_at)
@@ -392,7 +369,7 @@ exports.getList = async (req, res) => {
         COUNT(*) AS total_all_users
       FROM user
       WHERE 1=1
-      ${userRoleId !== 29 && userBranch ? `AND branch_name = '${userBranch}'` : ''}
+      ${userRoleId !== 29 ? `AND branch_id = ${userBranchId}` : ''}
     `;
     const [userStatus] = await db.query(userStatusQuery);
 
@@ -404,9 +381,8 @@ exports.getList = async (req, res) => {
         SUM(CASE WHEN e.gender = 'female' THEN 1 ELSE 0 END) AS female,
         SUM(CASE WHEN e.is_active = 1 THEN 1 ELSE 0 END) AS active
       FROM employee e
-      ${userRoleId !== 29 && userBranch ? 'LEFT JOIN user u ON e.creator_id = u.id' : ''}
       WHERE 1=1
-      ${userRoleId !== 29 && userBranch ? `AND u.branch_name = '${userBranch}'` : ''}
+      ${userRoleId !== 29 ? `AND e.branch_id = ${userBranchId}` : ''}
     `;
     const [employee] = await db.query(employeeQuery);
 
@@ -612,7 +588,7 @@ exports.getCustomerReport = async (req, res) => {
         COALESCE(SUM(o.total_amount), 0) AS total_spent
       FROM customer c
       LEFT JOIN \`order\` o ON c.id = o.customer_id
-      ${userRoleId !== 29 ? 'LEFT JOIN user u ON o.user_id = u.id' : ''}
+      ${whereClause && whereClause.toLowerCase().includes('u.') ? 'LEFT JOIN user u ON o.user_id = u.id' : ''}
       ${whereClause}
       GROUP BY c.id
       ORDER BY c.create_at DESC

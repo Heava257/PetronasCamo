@@ -74,10 +74,11 @@ exports.createPreOrder = async (req, res) => {
     }
 
     const [userInfo] = await db.query(
-      "SELECT id, name, branch_name FROM user WHERE id = :user_id",
+      "SELECT id, name, branch_id, branch_name FROM user WHERE id = :user_id",
       { user_id: req.auth?.id || 1 }
     );
 
+    const branch_id = userInfo[0]?.branch_id || null;
     const branch_name = userInfo[0]?.branch_name || 'Unknown Branch';
     const user_name = userInfo[0]?.name || 'Unknown User';
 
@@ -120,13 +121,13 @@ exports.createPreOrder = async (req, res) => {
         order_date, delivery_date, delivery_time,
         delivery_address, special_instructions,
         total_amount, deposit_amount, remaining_amount,
-        payment_status, status, created_by, location_name, created_at
+        payment_status, status, created_by, location_name, branch_id, branch_name, created_at
       ) VALUES (
         :pre_order_no, :customer_id, :customer_name, :customer_tel,
         :order_date, :delivery_date, :delivery_time,
         :delivery_address, :special_instructions,
         :total_amount, :deposit_amount, :remaining_amount,
-        :payment_status, :status, :created_by, :location_name, NOW()
+        :payment_status, :status, :created_by, :location_name, :branch_id, :branch_name, NOW()
       )
     `;
 
@@ -152,7 +153,9 @@ exports.createPreOrder = async (req, res) => {
       payment_status,
       status: status_value,
       created_by: req.auth?.id,
-      location_name: location_name || null
+      location_name: location_name || null,
+      branch_id,
+      branch_name
     });
 
     const pre_order_id = resultPreOrder.insertId;
@@ -406,7 +409,7 @@ exports.getPreOrderList = async (req, res) => {
     const user_id = req.auth?.id;
 
     const [currentUser] = await db.query(
-      "SELECT role_id, branch_name FROM user WHERE id = :user_id",
+      "SELECT role_id, branch_id, branch_name FROM user WHERE id = :user_id",
       { user_id }
     );
 
@@ -414,14 +417,16 @@ exports.getPreOrderList = async (req, res) => {
       return res.status(401).json({ success: false, message: "User not found" });
     }
 
-    const { role_id, branch_name } = currentUser[0];
+    const { role_id, branch_id } = currentUser[0];
     const isSuperAdmin = role_id === 29;
+    const selectedBranchId = req.query.branch_id || req.query.branchId;
 
     let sql = `
       SELECT
         po.*,
         DATE_FORMAT(po.actual_delivery_date, '%Y-%m-%d %H:%i:%s') as actual_delivery_date_formatted,
         (SELECT COUNT(*) FROM pre_order_detail WHERE pre_order_id = po.id) as item_count,
+        u_creator.name as creator_name,
         u_creator.branch_name as creator_branch,
         u_confirmed.name as confirmed_by_name
       FROM pre_order po
@@ -432,9 +437,14 @@ exports.getPreOrderList = async (req, res) => {
 
     const params = {};
 
-    if (!isSuperAdmin) {
-      sql += ` AND u_creator.branch_name = :branch_name`;
-      params.branch_name = branch_name;
+    if (isSuperAdmin) {
+      if (selectedBranchId) {
+        sql += ` AND po.branch_id = :selectedBranchId`;
+        params.selectedBranchId = selectedBranchId;
+      }
+    } else {
+      sql += ` AND po.branch_id = :branch_id`;
+      params.branch_id = branch_id;
     }
 
     if (status) {
