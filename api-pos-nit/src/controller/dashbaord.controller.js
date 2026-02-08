@@ -176,12 +176,8 @@ exports.getList = async (req, res) => {
         
       FROM product p
       LEFT JOIN (
-        SELECT 
-          it.product_id, 
-          SUM(it.quantity) as total_qty
+        SELECT it.product_id, SUM(it.quantity) as total_qty
         FROM inventory_transaction it
-        INNER JOIN user u ON it.user_id = u.id
-        WHERE 1=1 ${getFilter('u')}
         GROUP BY it.product_id
       ) stock ON stock.product_id = p.id
       INNER JOIN user u2 ON p.user_id = u2.id
@@ -203,37 +199,35 @@ exports.getList = async (req, res) => {
           END
         ) AS net_stock_value
       FROM inventory_transaction it
-      LEFT JOIN product p ON it.product_id = p.id
+      INNER JOIN product p ON it.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      INNER JOIN user u ON it.user_id = u.id
+      INNER JOIN user u ON p.user_id = u.id
       WHERE 1=1 ${getFilter('u')}
-      -- Respect date filters to match transaction page header
-      ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
+      -- Note: Removed date filter to show current stock value status
     `;
     const [stockValueResult] = await db.query(stockValueQuery);
     const total_stock_value = stockValueResult[0]?.net_stock_value || 0;
 
     // ✅✅✅ Get Total Quantity from inventory_transaction (Simplified) ✅✅✅
     const inventoryQtyQuery = `
-      SELECT 
-        COALESCE(SUM(it.quantity), 0) AS total_quantity
+      SELECT COALESCE(SUM(it.quantity), 0) AS total_quantity
       FROM inventory_transaction it
-      INNER JOIN user u ON it.user_id = u.id
-      WHERE 1=1
-        ${getFilter('u')}
+      INNER JOIN product p ON it.product_id = p.id
+      INNER JOIN user u ON p.user_id = u.id
+      WHERE 1=1 ${getFilter('u')}
     `;
     const [inventoryQty] = await db.query(inventoryQtyQuery);
 
     // ✅✅✅ SALE QUERY (for backward compatibility) ✅✅✅
     const saleQuery = `
-      SELECT 
-        CONCAT(
-          COALESCE(
-            SUM(
-              (od.qty * od.price) / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0)
-            ), 0
-          ), 
-        '$') AS total, 
+    SELECT
+    CONCAT(
+      COALESCE(
+        SUM(
+          (od.qty * od.price) / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0)
+        ), 0
+      ),
+      '$') AS total,
         COUNT(DISTINCT o.id) AS total_order 
       FROM \`order\` o
       JOIN order_detail od ON o.id = od.order_id
