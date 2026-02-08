@@ -540,9 +540,11 @@ function SupplierPaymentPage() {
                         const itemTotal = parseFloat(item.total || item.amount || (qty * unitPrice));
 
                         // Determine fuel type column
-                        let fuel_extra = 0, fuel_gas = 0, fuel_diesel = 0;
-                        if (name.includes('gasoline') || name.includes('extra') || name.includes('super') || name.includes('95') || name.includes('92') || name.includes('សាំង') || name.includes('benzine')) {
+                        let fuel_extra = 0, fuel_regular = 0, fuel_gas = 0, fuel_diesel = 0;
+                        if (name.includes('extra') || name.includes('super') || name.includes('95') || name.includes('ស៊ុបពែរ')) {
                             fuel_extra = qty;
+                        } else if (name.includes('gasoline') || name.includes('regular') || name.includes('92') || name.includes('សាំង') || name.includes('benzine')) {
+                            fuel_regular = qty;
                         } else if (name.includes('diesel') || name.includes('euro') || name.includes('ម៉ាស៊ូត') || name.includes('dầu')) {
                             fuel_diesel = qty;
                         } else if (name.includes('ហ្គា') || name.includes('ហ្កា') || name.includes('lpg') || name.includes('gas')) {
@@ -557,6 +559,7 @@ function SupplierPaymentPage() {
                             id: `${entry.id}-${itemIdx}`, // Unique ID for table row
                             note: items.length > 1 ? `${entry.note || 'Purchase'} (${item.product_name || item.name})` : (entry.note || 'Purchase'),
                             fuel_extra,
+                            fuel_regular,
                             fuel_gas,
                             fuel_diesel,
                             unit_price_specific: unitPrice,
@@ -617,21 +620,27 @@ function SupplierPaymentPage() {
             title: "កំណើនក្នុងគ្រា / Increase during the period",
             children: [
                 {
-                    title: "Extra (L)",
-                    width: 100,
+                    title: "Extra",
+                    width: 90,
                     dataIndex: "fuel_extra",
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
-                    title: "Gas (L)",
-                    width: 100,
-                    dataIndex: "fuel_gas",
+                    title: "Super",
+                    width: 90,
+                    dataIndex: "fuel_regular",
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
-                    title: "Diesel (L)",
-                    width: 100,
+                    title: "Diesel",
+                    width: 90,
                     dataIndex: "fuel_diesel",
+                    render: (val) => val > 0 ? val.toLocaleString() : '-'
+                },
+                {
+                    title: "LPG",
+                    width: 90,
+                    dataIndex: "fuel_gas",
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 }
             ]

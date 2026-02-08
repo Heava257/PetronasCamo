@@ -524,9 +524,10 @@ function CustomerPaymentPage() {
                             <th width="70">Date</th>
                             <th width="80">Ref</th>
                             <th width="160">Items / Details</th>
-                            <th width="50">Extra (L)</th>
-                            <th width="50">Gas (L)</th>
-                            <th width="50">Diesel (L)</th>
+                            <th width="45">Extra</th>
+                            <th width="45">Super</th>
+                            <th width="45">Diesel</th>
+                            <th width="45">LPG</th>
                             <th width="75">Total ($)</th>
                             <th width="75">Paid ($)</th>
                             <th width="75">Inv. Bal</th>
@@ -543,6 +544,7 @@ function CustomerPaymentPage() {
                                     ${item.note && item.note !== 'undefined' && item.note !== '' ? `<div style="color: #666; font-style: italic; margin-top: 2px;">${item.note}</div>` : ''}
                                 </td>
                                 <td class="col-qty">${item.fuel_extra > 0 ? Number(item.fuel_extra).toLocaleString() : '-'}</td>
+                                <td class="col-qty">${item.fuel_regular > 0 ? Number(item.fuel_regular).toLocaleString() : '-'}</td>
                                 <td class="col-qty">${item.fuel_gas > 0 ? Number(item.fuel_gas).toLocaleString() : '-'}</td>
                                 <td class="col-qty">${item.fuel_diesel > 0 ? Number(item.fuel_diesel).toLocaleString() : '-'}</td>
                                 <td class="col-money">${item.debit > 0 ? formatPrice(item.debit) : '-'}</td>
@@ -633,26 +635,34 @@ function CustomerPaymentPage() {
             title: 'កំណើនក្នុងគ្រា (Increase during the period)',
             children: [
                 {
-                    title: 'Extra (L)',
+                    title: 'Extra',
                     dataIndex: 'fuel_extra',
                     key: 'qty_extra',
-                    width: 90,
+                    width: 80,
                     align: 'right',
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
-                    title: 'Gas (L)',
-                    dataIndex: 'fuel_gas',
-                    key: 'qty_gas',
-                    width: 90,
+                    title: 'Super',
+                    dataIndex: 'fuel_regular',
+                    key: 'qty_regular',
+                    width: 80,
                     align: 'right',
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
-                    title: 'Diesel (L)',
+                    title: 'Diesel',
                     dataIndex: 'fuel_diesel',
                     key: 'qty_diesel',
-                    width: 90,
+                    width: 80,
+                    align: 'right',
+                    render: (val) => val > 0 ? val.toLocaleString() : '-'
+                },
+                {
+                    title: 'LPG',
+                    dataIndex: 'fuel_gas',
+                    key: 'qty_gas',
+                    width: 80,
                     align: 'right',
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },

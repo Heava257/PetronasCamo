@@ -201,7 +201,7 @@ exports.getLedger = async (req, res) => {
             LEFT JOIN category c ON p.category_id = c.id
             WHERE od.order_id = o.id AND (
                  p.name LIKE '%EXTRA%' OR p.name LIKE '%95%' OR p.name LIKE '%RED%' 
-                 OR p.name LIKE '%ស៊ុបពែរ%' OR p.name LIKE '%SUPER%'
+                 OR p.name LIKE '%Super%' OR p.name LIKE '%ស៊ុបពែរ%'
                  OR c.name LIKE '%Premium%' OR c.name LIKE '%Extra%'
             )
         ) as fuel_extra,
@@ -212,7 +212,7 @@ exports.getLedger = async (req, res) => {
             LEFT JOIN category c ON p.category_id = c.id
             WHERE od.order_id = o.id AND (
                  (p.name LIKE '%92%' OR p.name LIKE '%REGULAR%' OR p.name LIKE '%GASOLINE%' OR p.name LIKE '%ធម្មតា%' OR p.name LIKE '%សាំង%' OR p.name LIKE '%BENZINE%')
-                 AND p.name NOT LIKE '%SUPER%' AND p.name NOT LIKE '%EXTRA%' AND p.name NOT LIKE '%ស៊ុបពែរ%'
+                 AND p.name NOT LIKE '%Super%' AND p.name NOT LIKE '%ស៊ុបពែរ%' AND p.name NOT LIKE '%EXTRA%'
                  OR (c.name LIKE '%Gasoline%' OR c.name LIKE '%Regular%' OR (c.name LIKE '%សាំង%' AND c.name NOT LIKE '%ស៊ុបពែរ%'))
             )
         ) as fuel_regular,
@@ -272,9 +272,9 @@ exports.getLedger = async (req, res) => {
         CONCAT('Payment - ', p.payment_method, IF(p.bank_name IS NOT NULL, CONCAT(' (', p.bank_name, ')'), '')) as transaction_type,
         0 as product_count, -- Placeholder
         NULL as description, -- Placeholder
-        0 as fuel_extra, -- Placeholder
-        0 as fuel_regular, -- Added for consistency with orderSql
-        0 as fuel_gas, -- Placeholder
+        0 as fuel_extra,
+        0 as fuel_regular,
+        0 as fuel_gas,
         0 as fuel_diesel, -- Placeholder
         p.reference_no as manual_ref,
         p.payment_method,
@@ -444,14 +444,14 @@ exports.exportExcel = async (req, res) => {
                     SELECT SUM(od2.qty) 
                     FROM order_detail od2 
                     JOIN product p2 ON od2.product_id = p2.id 
-                    WHERE od2.order_id = o.id AND (p2.name LIKE '%EXTRA%' OR p2.name LIKE '%95%' OR p2.name LIKE '%RED%' OR p2.name LIKE '%ស៊ុបពែរ%' OR p2.name LIKE '%SUPER%')
+                    WHERE od2.order_id = o.id AND (p2.name LIKE '%EXTRA%' OR p2.name LIKE '%95%' OR p2.name LIKE '%RED%' OR p2.name LIKE '%Super%' OR p2.name LIKE '%ស៊ុបពែរ%')
                 ) as fuel_extra,
                 (
                     SELECT SUM(od2.qty) 
                     FROM order_detail od2 
                     JOIN product p2 ON od2.product_id = p2.id 
-                    WHERE od2.order_id = o.id AND (p2.name LIKE '%92%' OR p2.name LIKE '%GASOLINE%' OR p2.name LIKE '%ធម្មតា%' OR p2.name LIKE '%សាំង%')
-                    AND p2.name NOT LIKE '%SUPER%' AND p2.name NOT LIKE '%EXTRA%' AND p2.name NOT LIKE '%ស៊ុបពែរ%'
+                    WHERE od2.order_id = o.id AND (p2.name LIKE '%92%' OR p2.name LIKE '%REGULAR%' OR p2.name LIKE '%GASOLINE%' OR p2.name LIKE '%ធម្មតា%' OR p2.name LIKE '%សាំង%')
+                    AND p2.name NOT LIKE '%Super%' AND p2.name NOT LIKE '%ស៊ុបពែរ%' AND p2.name NOT LIKE '%EXTRA%'
                 ) as fuel_regular,
                 (
                     SELECT SUM(od2.qty) 
@@ -513,8 +513,8 @@ exports.exportExcel = async (req, res) => {
                 Reference: row.reference,
                 Type: row.type,
                 "Extra (L)": row.fuel_extra || 0,
-                "Regular (L)": row.fuel_regular || 0,
-                "Gas (L)": row.fuel_gas || 0,
+                "Super (L)": row.fuel_regular || 0,
+                "LPG (L)": row.fuel_gas || 0,
                 "Diesel (L)": row.fuel_diesel || 0,
                 Qty: row.qty,
                 "Unit Price": row.unit_price,
