@@ -68,7 +68,7 @@ exports.getList = async (req, res) => {
     const branchFilterExpense = getFilter('e');
     const branchFilterPurchase = getFilter('p');
     const branchFilterIT = getFilter('it');
-    const branchFilterCustomer = getFilter('c');
+    const branchFilterCustomer = ''; // ✅ Customers are shared across all branches
     const branchFilterProduct = getFilter('p');
 
     // ✅✅✅ TOP SALES QUERY ✅✅✅
@@ -565,10 +565,11 @@ exports.getCustomerReport = async (req, res) => {
       params.push(gender);
     }
 
-    if (userRoleId !== 29 && userBranch) {
-      whereConditions.push(`u.branch_name = ?`);
-      params.push(userBranch);
-    }
+    // ✅ Customers are shared across all branches
+    // if (userRoleId !== 29 && userBranch) {
+    //   whereConditions.push(`u.branch_name = ?`);
+    //   params.push(userBranch);
+    // }
 
     const whereClause = whereConditions.length > 0
       ? `WHERE ${whereConditions.join(' AND ')}`

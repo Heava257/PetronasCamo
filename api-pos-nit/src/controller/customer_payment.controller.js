@@ -662,12 +662,8 @@ exports.getDebtors = async (req, res) => {
         // Fetch user role to be sure? Or rely on branch_name from token?
         // Assuming if branch_name is present in token, they are restricted.
 
-        let branchFilter = branch_name;
-
-        // If user has a specific branch assigned (and not All/Head Office), force it
-        if (currentUserBranch && currentUserBranch !== 'All') {
-            branchFilter = currentUserBranch;
-        }
+        // ✅ Customers are shared across all branches
+        let branchFilter = null;
 
         let sql = `
             SELECT 

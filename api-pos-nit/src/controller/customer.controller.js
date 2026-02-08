@@ -20,15 +20,8 @@ exports.getListByCurrentUserGroup = async (req, res) => {
     const isSuperAdmin = role_id === 29;
     const selectedBranchId = req.query.branch_id || req.query.branchId;
 
-    // ✅ Build branch filter consistent with dashboard
+    // ✅ Customers are shared across all branches as per user request
     let branchFilter = "";
-    if (isSuperAdmin) {
-      if (selectedBranchId) {
-        branchFilter = `AND c.branch_id = ${selectedBranchId}`;
-      }
-    } else {
-      branchFilter = `AND c.branch_id = ${userBranchId}`;
-    }
 
     let sql = `
       SELECT 
@@ -106,14 +99,8 @@ exports.getDetailById = async (req, res) => {
     const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
     const isSuperAdmin = role_id === 29;
 
+    // ✅ Customers are shared across all branches
     let branchFilter = "";
-    if (!isSuperAdmin) {
-      if (userBranchId) {
-        branchFilter = `AND u.branch_id = ${userBranchId}`;
-      } else if (userBranchName) {
-        branchFilter = `AND u.branch_name = '${userBranchName}'`;
-      }
-    }
 
     // Main customer information with branch filtering
     const customerSql = `
@@ -348,14 +335,8 @@ exports.getCustomerStatistics = async (req, res) => {
     const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
     const isSuperAdmin = role_id === 29;
 
+    // ✅ Customers are shared across all branches
     let branchFilter = "";
-    if (!isSuperAdmin) {
-      if (userBranchId) {
-        branchFilter = `AND u.branch_id = ${userBranchId}`;
-      } else if (userBranchName) {
-        branchFilter = `AND u.branch_name = '${userBranchName}'`;
-      }
-    }
 
     let statsSql = `
       SELECT 
@@ -734,14 +715,9 @@ exports.update = async (req, res) => {
       });
     }
 
-    const currentUserBranch = req.auth?.branch_name;
+    // ✅ Customers are shared across all branches
     let checkExistsSql = `SELECT id, branch_name FROM customer WHERE id = ?`;
     const checkParams = [id];
-
-    if (currentUserBranch) {
-      checkExistsSql += ` AND branch_name = ?`;
-      checkParams.push(currentUserBranch);
-    }
 
     const [customerExists] = await db.query(checkExistsSql, checkParams);
 
@@ -885,14 +861,9 @@ exports.remove = async (req, res) => {
       });
     }
 
-    const currentUserBranch = req.auth?.branch_name;
+    // ✅ Customers are shared across all branches
     let checkSql = `SELECT id, branch_name FROM customer WHERE id = ?`;
     const checkParams = [id];
-
-    if (currentUserBranch) {
-      checkSql += ` AND branch_name = ?`;
-      checkParams.push(currentUserBranch);
-    }
 
     const [customerExists] = await db.query(checkSql, checkParams);
 
