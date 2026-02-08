@@ -499,7 +499,7 @@ exports.getPreOrderList = async (req, res) => {
           fuel_type = 'extra';
         }
         // 2. Super Keywords (Regular/92/Green) - Usually matches 'gasoline' or 'សាំង'
-        else if (search.includes('92') || search.includes('regular') || search.includes('gasoline') || search.includes('សាំង') || search.includes('green') || search.includes('ខៀវ') || search.includes('បៃតង') || search.includes('បេងហ្សាំង')) {
+        else if (search.includes('92') || search.includes('regular') || search.includes('gasoline') || search.includes('សាំង') || search.includes('green') || search.includes('blue') || search.includes('ខៀវ') || search.includes('បៃតង') || search.includes('ធម្មតា')) {
           fuel_type = 'super';
         }
         // 3. Diesel Keywords (DDO/Euro-5)

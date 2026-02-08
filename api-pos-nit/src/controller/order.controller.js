@@ -291,11 +291,7 @@ exports.create = async (req, res) => {
       });
     }
 
-    // ========================================
-    // ✅ NEW: GET PRE_ORDER_NO (if order is from pre-order)
-    // ========================================
     let pre_order_no = null;
-
     if (order.pre_order_id) {
       const [preOrder] = await db.query(
         "SELECT pre_order_no FROM pre_order WHERE id = :id",
@@ -566,326 +562,114 @@ exports.create = async (req, res) => {
         (:order_id, :product_id, :qty, :price, :discount, :total, :destination)
     `;
 
-    // ✅ Process order details with robust PO reference lookup
-    await Promise.all(
-      order_details.map(async (item) => {
+    // ✅ 4. Process order details SEQUENTIALLY to prevent race conditions
+    for (const item of order_details) {
+      try {
         // Insert order_detail
         await db.query(sqlOrderDetails, {
           ...item,
           order_id: orderResult.insertId,
-          destination: item.destination || null // ✅ Add destination
+          destination: item.destination || null
         });
 
-        // Update stock and create inventory transaction
+        // Stock and Sync (Only for real products)
         if (item.product_id !== 0) {
           // Update product stock
-          const sqlUpdateStock = `
-            UPDATE product 
-            SET qty = qty - :qty 
-            WHERE id = :product_id
-          `;
-
-          await db.query(sqlUpdateStock, {
+          await db.query(`UPDATE product SET qty = qty - :qty WHERE id = :id`, {
             qty: item.qty,
-            product_id: item.product_id
+            id: item.product_id
           });
 
-          // ✅ Lookup Purchase Order Reference (Simplified - No product_details)
-          let purchaseOrderRef = null;
-
-          // Strategy 1: Use description from frontend if provided
-          if (item.description && item.description.trim() !== '') {
-            purchaseOrderRef = item.description.trim();
-          }
-
-          // ✅ AUTO-UPDATE PRE-ORDER: Deduct remaining QTY
+          // PRE-ORDER SYNC (IDEMPOTENT)
           if (order.pre_order_id) {
-            // ✅ CHECK IF DELIVERY ALREADY RECORDED (prevent double-counting)
-            // Use pre_order_detail_id if provided for more precision
             const preOrderDetailId = item.pre_order_detail_id || null;
 
-            let existingDeliveryCheckSql = `
-              SELECT id FROM pre_order_delivery
-              WHERE pre_order_id = :pre_order_id
-                AND invoice_id = :invoice_id
-            `;
-            if (preOrderDetailId) {
-              existingDeliveryCheckSql += ` AND pre_order_detail_id = :pre_order_detail_id `;
-            } else {
-              existingDeliveryCheckSql += ` AND pre_order_detail_id IN (
-                SELECT id FROM pre_order_detail 
-                WHERE pre_order_id = :pre_order_id 
-                  AND product_id = :product_id
-              ) `;
-            }
-            existingDeliveryCheckSql += ` LIMIT 1`;
+            // Strict check: Has this specific invoice item already updated this pre-order?
+            const [existing] = await db.query(
+              "SELECT id FROM pre_order_delivery WHERE pre_order_id = :po_id AND invoice_id = :inv_id AND pre_order_detail_id = :pod_id",
+              { po_id: order.pre_order_id, inv_id: orderResult.insertId, pod_id: preOrderDetailId }
+            );
 
-            const [existingDelivery] = await db.query(existingDeliveryCheckSql, {
-              pre_order_id: order.pre_order_id,
-              invoice_id: orderResult.insertId,
-              product_id: item.product_id,
-              pre_order_detail_id: preOrderDetailId
-            });
-
-            // Only record if not already recorded
-            if (!existingDelivery || existingDelivery.length === 0) {
-              // 1. Precise Update to pre_order_detail
-              let updateDetailSql = `
-                UPDATE pre_order_detail
-                SET remaining_qty = remaining_qty - :qty,
-                    delivered_qty = delivered_qty + :qty
-                WHERE pre_order_id = :pre_order_id
-              `;
-
-              if (preOrderDetailId) {
-                updateDetailSql += ` AND id = :pre_order_detail_id `;
-              } else {
-                updateDetailSql += ` AND product_id = :product_id `;
-                updateDetailSql += ` LIMIT 1 `; // ✅ CRITICAL: Prevent doubling if product ID matches multiple lines
-              }
-
-              await db.query(updateDetailSql, {
-                qty: item.qty,
-                pre_order_id: order.pre_order_id,
-                product_id: item.product_id,
-                pre_order_detail_id: preOrderDetailId
-              });
-
-              // 2. Precise Record in Delivery History
-              await db.query(`
-                INSERT INTO pre_order_delivery (
-                  pre_order_id, pre_order_detail_id, invoice_id,
-                  delivered_qty, delivery_date, created_by
-                ) 
-                SELECT :pre_order_id, id, :invoice_id, :qty, NOW(), :user_id
-                FROM pre_order_detail
-                WHERE pre_order_id = :pre_order_id 
-                  ${preOrderDetailId ? "AND id = :pre_order_detail_id" : "AND product_id = :product_id"}
-                LIMIT 1
-              `, {
-                pre_order_id: order.pre_order_id,
-                invoice_id: orderResult.insertId,
-                qty: item.qty,
-                product_id: item.product_id,
-                pre_order_detail_id: preOrderDetailId,
-                user_id: req.auth?.id
-              });
-
-              // ✅ UPDATE LAST ACTUAL DELIVERY DATE
-              await db.query(`
-                UPDATE pre_order 
-                SET actual_delivery_date = NOW() 
-                WHERE id = :id
-              `, { id: order.pre_order_id });
-            }
-          }
-
-          // Strategy 2: Query inventory_transaction for latest PURCHASE_IN
-          if (!purchaseOrderRef) {
-            try {
-              const [itResult] = await db.query(
-                `SELECT reference_no 
-                 FROM inventory_transaction 
-                 WHERE product_id = :product_id
-                   AND transaction_type IN ('PURCHASE_IN', 'purchase_in')
-                   AND reference_no IS NOT NULL
-                   AND reference_no != ''
-                 ORDER BY created_at DESC
-                 LIMIT 1`,
-                {
-                  product_id: item.product_id
-                }
+            if (existing.length === 0) {
+              // Perform the ONLY update to pre_order_detail
+              await db.query(
+                `UPDATE pre_order_detail 
+                 SET remaining_qty = GREATEST(remaining_qty - :qty, 0),
+                     delivered_qty = delivered_qty + :qty
+                 WHERE pre_order_id = :po_id AND id = :pod_id`,
+                { qty: item.qty, po_id: order.pre_order_id, pod_id: preOrderDetailId }
               );
 
-              if (itResult && itResult.length > 0) {
-                purchaseOrderRef = itResult[0].reference_no;
-              }
-            } catch (err) {
-              console.error(`❌ Query inventory_transaction failed:`, err);
+              // Record history (also acts as a processing flag)
+              await db.query(
+                `INSERT INTO pre_order_delivery (pre_order_id, pre_order_detail_id, invoice_id, delivered_qty, delivery_date, created_by)
+                 VALUES (:po_id, :pod_id, :inv_id, :qty, NOW(), :uid)`,
+                { po_id: order.pre_order_id, pod_id: preOrderDetailId, inv_id: orderResult.insertId, qty: item.qty, uid: req.auth?.id }
+              );
             }
           }
 
-          // Strategy 3: Use pre_order_no if available and no PO found
-          if (!purchaseOrderRef && pre_order_no) {
-            purchaseOrderRef = pre_order_no;
-          }
-
-          // Strategy 4: Fallback to order_no if all else fails
-          if (!purchaseOrderRef) {
-            purchaseOrderRef = order_no;
-          }
-
-          // Get actual_price for this product
+          // INVENTORY LOGGING
           const actualPrice = categoryActualPrices[item.product_id] || 1;
+          const purchaseOrderRef = item.description || pre_order_no || order_no;
 
-          // ✅ INSERT INVENTORY TRANSACTION with all required fields
-          const sqlInventory = `
-            INSERT INTO inventory_transaction (
-              product_id, 
-              transaction_type, 
-              quantity, 
-              unit_price, 
-              selling_price,
-              actual_price,
-              reference_no,
-              notes,
-              user_id,
-              created_at
-            ) VALUES (
-              :product_id, 
-              'SALE_OUT', 
-              :quantity, 
-              :unit_price, 
-              :selling_price,
-              :actual_price,
-              :reference_no,
-              :notes,
-              :user_id,
-              NOW()
-            )
-          `;
-
-          // ========================================
-          // ✅ UPDATED: Notes include pre_order_no reference
-          // ========================================
-          const notes = pre_order_no
-            ? `Sale Order ${order_no} (PO: ${pre_order_no})${purchaseOrderRef !== order_no && purchaseOrderRef !== pre_order_no ? ` - Ref: ${purchaseOrderRef}` : ''}`
-            : `Sale Order ${order_no}${purchaseOrderRef !== order_no ? ` (PO: ${purchaseOrderRef})` : ''}`;
-
-          await db.query(sqlInventory, {
-            product_id: item.product_id,
-            quantity: -item.qty,                        // Negative for sale
-            unit_price: item.price,                     // Selling price
-            selling_price: item.price,                  // ✅ Explicit selling_price
-            actual_price: actualPrice,                  // ✅ Conversion factor
-            reference_no: purchaseOrderRef,             // ✅ Uses PO number or pre_order_no!
-            notes: notes,
-            user_id: req.auth?.id || null
-          });
-
-          // ✅ Get accurate remaining quantity after transaction
-          const [newQtyResult] = await db.query(
-            "SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id",
-            { id: item.product_id }
+          await db.query(
+            `INSERT INTO inventory_transaction (product_id, transaction_type, quantity, unit_price, selling_price, actual_price, reference_no, notes, user_id, created_at)
+             VALUES (:pid, 'SALE_OUT', :qty, :up, :sp, :ap, :ref, :notes, :uid, NOW())`,
+            {
+              pid: item.product_id,
+              qty: -item.qty,
+              up: item.price,
+              sp: item.price,
+              ap: actualPrice,
+              ref: purchaseOrderRef,
+              notes: `Sale Order ${order_no}${pre_order_no ? ` (PO: ${pre_order_no})` : ''}`,
+              uid: req.auth?.id
+            }
           );
-          item.new_inventory_rem = newQtyResult[0]?.qty || 0;
+
+          // Capture new stock level for notifications
+          const [newQty] = await db.query("SELECT SUM(quantity) as qty FROM inventory_transaction WHERE product_id = :id", { id: item.product_id });
+          item.new_inventory_rem = newQty[0]?.qty || 0;
         }
-      })
-    );
-
-    // ✅ AUTO-UPDATE PRE-ORDER STATUS
-    // ✅ AUTO-UPDATE PRE-ORDER STATUS
-    if (pre_order_no) {
-      // Find Pre-Order ID first if we only have the NO
-      const [poResult] = await db.query("SELECT id, special_instructions FROM pre_order WHERE pre_order_no = :no", { no: pre_order_no });
-
-      if (poResult.length > 0) {
-        const preOrderId = poResult[0].id;
-        let specialInstructions = poResult[0].special_instructions || "";
-
-        const [remaining] = await db.query(`
-          SELECT COUNT(*) as count 
-          FROM pre_order_detail 
-          WHERE pre_order_id = :id AND remaining_qty > 0.01
-        `, { id: preOrderId });
-
-        const newStatus = (remaining[0].count === 0) ? 'delivered' : 'partially_delivered';
-
-        // ✅ Auto-update Received Date if delivered
-        if (newStatus === 'delivered') {
-          const todayStr = dayjs().format('DD/MM/YYYY');
-          if (specialInstructions.includes('Received:')) {
-            specialInstructions = specialInstructions.replace(/Received:.*?(?=\||$)/, `Received: ${todayStr}`);
-          } else {
-            specialInstructions += ` | Received: ${todayStr}`;
-          }
-        }
-
-        await db.query(`
-          UPDATE pre_order 
-          SET status = :status, 
-              special_instructions = :special_instructions,
-              updated_at = NOW() 
-          WHERE id = :id
-        `, {
-          status: newStatus,
-          special_instructions: specialInstructions,
-          id: preOrderId
-        });
+      } catch (err) {
+        console.error(`❌ Item Processing Error (Product:${item.product_id}):`, err);
       }
     }
 
-    // ✅✅✅ TELEGRAM NOTIFICATIONS (Stock Out, Debt, Closing Stock) ✅✅✅
+    // ✅ 5. Finalize Pre-Order Status (ONCE per order)
+    if (order.pre_order_id) {
+      const [rem] = await db.query(
+        "SELECT COUNT(*) as count FROM pre_order_detail WHERE pre_order_id = :id AND remaining_qty > 0.01",
+        { id: order.pre_order_id }
+      );
+      const finalStatus = (rem[0].count === 0) ? 'delivered' : 'partially_delivered';
+      await db.query(
+        "UPDATE pre_order SET status = :status, actual_delivery_date = NOW(), updated_at = NOW() WHERE id = :id",
+        { status: finalStatus, id: order.pre_order_id }
+      );
+    }
+
+    // ✅ 6. Async Notifications
     setImmediate(async () => {
       try {
         const branchTitle = branch_name || 'Head Office';
-        const sellerName = req.auth?.name || 'Admin';
-
-        // ----------------------------------------
-        // (3) STOCK OUT NOTIFICATION
-        // ----------------------------------------
-        const productsForMsg = order_details.map(item => ({
-          name: productCategories[item.product_id]?.replace(/\/?\s*oil\s*\/?/i, '').trim(),
-          qty: item.qty,
-          unit: 'L'
-        }));
-
-        const msgStockOut = formatStockOut(branchTitle, sellerName, customer.name, productsForMsg);
+        const productsForMsg = order_details.map(item => ({ name: productCategories[item.product_id], qty: item.qty }));
+        const msgStockOut = formatStockOut(branchTitle, createdBy, customer.name, productsForMsg);
         await sendSmartNotification({ message: msgStockOut, branch_name: branchTitle });
-
-
-        // ----------------------------------------
-        // (4) DEBT NOTIFICATION (If applicable)
-        // ----------------------------------------
-        // Calculate Old Debt (Excluding current order)
-        const [debtRes] = await db.query(
-          "SELECT SUM(total_amount - paid_amount) as debt FROM customer_debt WHERE customer_id = :cid AND order_id != :oid",
-          { cid: order.customer_id, oid: orderResult.insertId }
-        );
-        const oldDebt = parseFloat(debtRes[0]?.debt || 0);
-        const currentTotal = parseFloat(order.total_amount || 0);
-        const paidAmount = parseFloat(order.paid_amount || 0);
-        const remaining = (oldDebt + currentTotal) - paidAmount;
-
-        // Send alert if there is any debt or transaction happened
-        if (remaining > 0 || currentTotal > 0) {
-          const msgDebt = formatDebtAlert(branchTitle, customer.name, oldDebt, currentTotal, paidAmount, remaining);
-          await sendSmartNotification({ message: msgDebt, branch_name: branchTitle });
-        }
-
-
-        // ----------------------------------------
-        // (5) CLOSING STOCK NOTIFICATION
-        // ----------------------------------------
-        const closingProducts = order_details.map(item => ({
-          name: productCategories[item.product_id]?.replace(/\/?\s*oil\s*\/?/i, '').trim(),
-          unit: 'L',
-          remaining_qty: formatNumber(item.new_inventory_rem || 0)
-        }));
-
-        const msgClosing = formatClosingStock(branchTitle, closingProducts);
-        await sendSmartNotification({ message: msgClosing, branch_name: branchTitle });
-
-      } catch (err) {
-        console.error("❌ Telegram Notification Sequence Error:", err);
-      }
+      } catch (e) { }
     });
 
-    // Create customer_debt
+    // ✅ 7. Create Debt records (Sequential for safety)
     const sqlDebt = `
-      INSERT INTO customer_debt 
-        (customer_id, order_id,pre_order_no, category_id, qty, unit_price, actual_price, 
-         total_amount, paid_amount, due_date, notes, created_by, description)
-      VALUES 
-        (:customer_id, :order_id, :pre_order_no, :category_id, :qty, :unit_price, :actual_price, 
-         :total_amount, :paid_amount, :due_date, :notes, :created_by, :description)
+      INSERT INTO customer_debt (customer_id, order_id, pre_order_no, category_id, qty, unit_price, actual_price, total_amount, paid_amount, due_date, notes, created_by, description)
+      VALUES (:customer_id, :order_id, :pre_order_no, :category_id, :qty, :unit_price, :actual_price, :total_amount, :paid_amount, :due_date, :notes, :created_by, :description)
     `;
 
-    await Promise.all(order_details.map(async (item) => {
+    for (const item of order_details) {
       const actualPrice = categoryActualPrices[item.product_id] || 0;
       const discount = parseFloat(item.discount || 0) / 100;
       const calculatedTotal = actualPrice > 0 ? (item.qty * item.price * (1 - discount)) / actualPrice : 0;
-      const description = productDescriptions[item.product_id] || '';
 
       await db.query(sqlDebt, {
         customer_id: order.customer_id,
@@ -900,78 +684,22 @@ exports.create = async (req, res) => {
         due_date: order.due_date || null,
         notes: `Product ID: ${item.product_id}`,
         created_by: req.auth?.id || null,
-        description: description
+        description: productDescriptions[item.product_id] || ''
       });
-    }));
-
-    // Get final order details
-    const [currentOrder] = await db.query(
-      "SELECT * FROM `order` WHERE id = :id",
-      { id: orderResult.insertId }
-    );
-
-    // ========================================
-    // ✅ UPDATED: Return pre_order_no in response
-    // ========================================
-    res.json({
-      order: currentOrder.length > 0 ? currentOrder[0] : null,
-      order_details: order_details,
-      message: "Order created successfully",
-      pre_order_no: pre_order_no  // ✅ ADD THIS for frontend
-    });
-
-    // ========================================
-    // ✅ UPDATE PRE-ORDER (if applicable)
-    // ========================================
-    if (order.pre_order_id) {
-      try {
-
-        // Update each product
-        for (const item of order_details) {
-          await db.query(`
-            UPDATE pre_order_detail
-            SET 
-              remaining_qty = GREATEST(remaining_qty - :qty, 0),
-              delivered_qty = COALESCE(delivered_qty, 0) + :qty,
-              updated_at = NOW()
-            WHERE pre_order_id = :pre_order_id
-              AND product_id = :product_id
-          `, {
-            pre_order_id: order.pre_order_id,
-            product_id: item.product_id,
-            qty: item.qty
-          });
-        }
-
-        // Check remaining
-        const [remainingCheck] = await db.query(`
-          SELECT SUM(remaining_qty) as total_remaining
-          FROM pre_order_detail
-          WHERE pre_order_id = :pre_order_id
-        `, { pre_order_id: order.pre_order_id });
-
-        const totalRemaining = parseFloat(remainingCheck[0]?.total_remaining || 0);
-        const newStatus = totalRemaining > 0 ? 'partially_delivered' : 'delivered';
-
-        // Update pre-order status
-        await db.query(`
-          UPDATE pre_order
-          SET status = :status, updated_at = NOW()
-          WHERE id = :pre_order_id
-        `, {
-          status: newStatus,
-          pre_order_id: order.pre_order_id
-        });
-
-      } catch (error) {
-        console.error("❌ Pre-Order deduction error:", error);
-      }
     }
+
+    // Final Response
+    res.json({
+      order: { ...order, id: orderResult.insertId, order_no, pre_order_no },
+      message: "Order created successfully"
+    });
 
   } catch (error) {
     logError("Order.create", error, res);
+    res.status(500).json({ error: true, message: error.message });
   }
 };
+
 
 // Helper function
 const newOrderNo = async (req, res) => {

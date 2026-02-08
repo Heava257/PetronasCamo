@@ -149,15 +149,21 @@ function PreOrderManagementPage() {
 
             if (d.destination) destinations.add(d.destination);
 
-            // ✅ Frontend Safety Net: If backend says 'other', try to guess one last time
+            // Improved Categorization Logic
             if (type === 'other') {
               const name = (d.product_name || "").toLowerCase();
               const cat = (d.category_name || "").toLowerCase();
               const s = `${name} ${cat}`;
-              if (s.includes('extra') || s.includes('95') || s.includes('red') || s.includes('super') || s.includes('ស៊ុបពែរ') || s.includes('អិចត្រា') || s.includes('ក្រហម') || s.includes('gold')) type = 'extra';
-              else if (s.includes('92') || s.includes('regular') || s.includes('gasoline') || s.includes('សាំង') || s.includes('green') || s.includes('ខៀវ') || s.includes('បៃតង') || s.includes('បេងហ្សាំង')) type = 'super';
+              // Extra: 95, Premium, Red, Super (when used as premium), Gold
+              if (s.includes('extra') || s.includes('95') || s.includes('red') || s.includes('super') || s.includes('gold') || s.includes('អិចត្រា') || s.includes('ក្រហម') || s.includes('ស៊ុបពែរ')) {
+                type = 'extra';
+              }
+              // Super: 92, Regular, Gasoline, Green, Blue
+              else if (s.includes('92') || s.includes('regular') || s.includes('gasoline') || s.includes('សាំង') || s.includes('green') || s.includes('blue') || s.includes('ខៀវ') || s.includes('បៃតង') || s.includes('ធម្មតា')) {
+                type = 'super';
+              }
               else if (s.includes('diesel') || s.includes('ddo') || s.includes('euro') || s.includes('ម៉ាស៊ូត') || s.includes('ឌីហ្សែល')) type = 'diesel';
-              else if (s.includes('lpg') || s.includes('gas') || s.includes('ហ្គាស') || s.includes('ហ្កាស') || s.includes('ហ្គាស់') || s.includes('ហ្គាស៊') || s.includes('ហ្គាស៍') || s.includes('ហ្គាស៌')) type = 'lpg';
+              else if (s.includes('lpg') || s.includes('gas') || s.includes('ហ្គាស') || s.includes('ហ្កាស') || s.includes('ហ្គាស់')) type = 'lpg';
             }
 
             if (type === 'extra') {

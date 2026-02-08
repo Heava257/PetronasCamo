@@ -166,8 +166,9 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                         }
 
                         return {
-                            id: item.product_id,
-                            pre_order_detail_id: item.id, // ✅ Keep track of specific detail row
+                            id: item.id, // ✅ Use pre_order_detail.id as the cart unique ID
+                            product_id: item.product_id,
+                            pre_order_detail_id: item.id,
                             name: item.product_name,
                             category_name: item.category_name,
                             selling_price: parseFloat(item.price),
@@ -310,8 +311,8 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                     const total = (qty * price * (1 - discount / 100)) / actualPrice;
 
                     return {
-                        product_id: item.id,
-                        pre_order_detail_id: item.pre_order_detail_id, // ✅ Pass specific detail ID
+                        product_id: item.product_id, // ✅ Correctly use product_id for stock
+                        pre_order_detail_id: item.id, // ✅ Use item.id which is now pre_order_detail_id
                         qty: qty,
                         price: price,
                         discount: discount,
