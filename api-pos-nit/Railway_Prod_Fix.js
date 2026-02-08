@@ -40,6 +40,10 @@ async function runProductionFix() {
             console.log("➕ Adding 'actual_delivery_date' to pre_order...");
             await db.query("ALTER TABLE pre_order ADD COLUMN actual_delivery_date DATETIME NULL AFTER delivery_date");
         }
+        if (!poCols.map(c => c.Field).includes('location_name')) {
+            console.log("➕ Adding 'location_name' to pre_order...");
+            await db.query("ALTER TABLE pre_order ADD COLUMN location_name VARCHAR(255) NULL AFTER created_by");
+        }
 
         // 3. Backfill data
         console.log("🔄 Backfilling branch data...");
