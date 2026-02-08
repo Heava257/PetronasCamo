@@ -71,17 +71,18 @@ const menuItems = [
     children: [
       { key: "invoices", label: "menu.create_invoice" },
       { key: "order", label: "menu.invoice_details" },
+
     ]
   },
-  {
-    key: "EnhancedPOSOrder",
-    icon: ShoppingCart,
-    label: "menu.enhanced_pos_order",
-    category: "OPERATIONS",
-    children: [
-      { key: "pre-order-management", label: "menu.pre_order_management" },
-    ]
-  },
+  // {
+  //   key: "EnhancedPOSOrder",
+  //   icon: ShoppingCart,
+  //   label: "menu.enhanced_pos_order",
+  //   category: "OPERATIONS",
+  //   children: [
+  //     { key: "pre-order-management", label: "menu.pre_order_management" },
+  //   ]
+  // },
   {
     key: "fakeinvoices",
     icon: FileText,
@@ -98,8 +99,7 @@ const menuItems = [
     children: [
       { key: "category", label: "menu.category" },
       { key: "product", label: "menu.product_list" },
-      { key: "company-payment-management", label: "menu.company_payment_management" },
-      { key: "company-payment", label: "menu.company_payment" },
+
     ]
   },
   {
@@ -108,6 +108,7 @@ const menuItems = [
     label: "menu.purchase",
     category: "OPERATIONS",
     children: [
+      { key: "pre-order-management", label: "menu.pre_order_management" },
       { key: "supplier", label: "menu.supplier" },
       { key: "purchase-orders", label: "menu.purchase_orders" },
       { key: "inventory-transactions", label: "menu.inventory_transactions" },
@@ -124,7 +125,7 @@ const menuItems = [
   {
     key: "delivery",
     icon: ShoppingCart,
-    label: "menu.delivery_note",
+    label: "menu.delivery",
     category: "OPERATIONS",
     children: [
       { key: "delivery-map", label: "menu.delivery_map" },
@@ -168,18 +169,19 @@ const menuItems = [
   },
 
   // ADMINISTRATION
-  {
-    key: "customer",
-    icon: User,
-    label: "menu.customer",
-    category: "MANAGEMENT",
-  },
+  // {
+  //   key: "customer",
+  //   icon: User,
+  //   label: "menu.customer",
+  //   category: "MANAGEMENT",
+  // },
   {
     key: "employee-management",
     icon: Users,
-    label: "menu.employee",
+    label: "menu.setup",
     category: "MANAGEMENT",
     children: [
+      { key: "customer", label: "menu.customer" },
       { key: "employee", label: "menu.employee" },
       { key: "branch-permission", label: "menu.permission" }, // ✅ Added Permission item
       { key: "ip-Management", label: "menu.ip_management" },
@@ -214,22 +216,15 @@ const menuItems = [
     category: "MANAGEMENT",
   },
   {
-    key: "admin-ShiftClosing",
+    key: "closing-group",
     icon: AlignJustify,
-    label: "menu.shift_closing",
+    label: "menu.closing_management",
     category: "MANAGEMENT",
-  },
-  {
-    key: "admin-DailyClosing",
-    icon: AlignJustify,
-    label: "menu.daily_closing",
-    category: "MANAGEMENT",
-  },
-  {
-    key: "admin-ShiftClosingChecklist",
-    icon: AlignJustify,
-    label: "menu.closing_checklist",
-    category: "MANAGEMENT",
+    children: [
+      { key: "admin-ShiftClosing", label: "menu.shift_closing" },
+      { key: "admin-DailyClosing", label: "menu.daily_closing" },
+      { key: "admin-ShiftClosingChecklist", label: "menu.closing_checklist" },
+    ]
   },
 
   // STATISTICS & REPORTS
