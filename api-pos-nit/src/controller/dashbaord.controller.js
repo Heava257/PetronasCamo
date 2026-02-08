@@ -130,8 +130,9 @@ exports.getList = async (req, res) => {
         COUNT(e.id) AS total_expense 
       FROM expense e
       INNER JOIN expense_type et ON e.expense_type_id = et.id
+      INNER JOIN user u ON e.user_id = u.id
       WHERE 1=1
-      ${branchFilterExpense}
+      ${getFilter('u')}
       ${from_date && to_date ? `AND DATE(e.expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [opexResult] = await db.query(opexQuery);
@@ -141,8 +142,9 @@ exports.getList = async (req, res) => {
       SELECT 
         COALESCE(SUM(p.total_amount), 0) AS total_cogs
       FROM purchase p
+      INNER JOIN user u ON p.user_id = u.id
       WHERE p.status IN ('confirmed', 'shipped', 'delivered')
-      ${branchFilterPurchase}
+      ${getFilter('u')}
       ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
     const [cogsResult] = await db.query(cogsQuery);
@@ -178,10 +180,12 @@ exports.getList = async (req, res) => {
           it.product_id, 
           SUM(it.quantity) as total_qty
         FROM inventory_transaction it
-        WHERE 1=1 ${branchFilterIT}
+        INNER JOIN user u ON it.user_id = u.id
+        WHERE 1=1 ${getFilter('u')}
         GROUP BY it.product_id
       ) stock ON stock.product_id = p.id
-      WHERE p.status = 1 ${branchFilterProduct}
+      INNER JOIN user u2 ON p.user_id = u2.id
+      WHERE p.status = 1 ${getFilter('u2')}
     `;
     const [product] = await db.query(productQuery);
 
@@ -201,7 +205,8 @@ exports.getList = async (req, res) => {
       FROM inventory_transaction it
       LEFT JOIN product p ON it.product_id = p.id
       LEFT JOIN category c ON p.category_id = c.id
-      WHERE 1=1 ${branchFilterIT}
+      INNER JOIN user u ON it.user_id = u.id
+      WHERE 1=1 ${getFilter('u')}
       -- Respect date filters to match transaction page header
       ${from_date && to_date ? `AND DATE(it.created_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
     `;
@@ -213,8 +218,9 @@ exports.getList = async (req, res) => {
       SELECT 
         COALESCE(SUM(it.quantity), 0) AS total_quantity
       FROM inventory_transaction it
+      INNER JOIN user u ON it.user_id = u.id
       WHERE 1=1
-        ${branchFilterIT}
+        ${getFilter('u')}
     `;
     const [inventoryQty] = await db.query(inventoryQtyQuery);
 
@@ -266,8 +272,9 @@ exports.getList = async (req, res) => {
         SUM(e.amount) AS total,
         MONTH(e.expense_date) as month_num
       FROM expense e
+      INNER JOIN user u ON e.user_id = u.id
       WHERE 1=1
-      ${branchFilterExpense}
+      ${getFilter('u')}
       ${from_date && to_date ? `AND DATE(e.expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(e.expense_date, '%M'), MONTH(e.expense_date)
     `;
@@ -279,8 +286,9 @@ exports.getList = async (req, res) => {
         SUM(p.total_amount) AS total,
         MONTH(p.order_date) as month_num
       FROM purchase p
+      INNER JOIN user u ON p.user_id = u.id
       WHERE p.status IN ('confirmed', 'shipped', 'delivered')
-      ${branchFilterPurchase}
+      ${getFilter('u')}
       ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(p.order_date, '%M'), MONTH(p.order_date)
     `;
@@ -332,8 +340,9 @@ exports.getList = async (req, res) => {
         DATE_FORMAT(p.create_at, '%M') AS title,
         SUM(p.qty * p.unit_price) AS total
       FROM product p
+      INNER JOIN user u ON p.user_id = u.id
       WHERE p.status = 1
-      ${getFilter('p')}
+      ${getFilter('u')}
       ${from_date && to_date ? `AND DATE(p.create_at) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY MONTH(p.create_at), DATE_FORMAT(p.create_at, '%M')
       ORDER BY MONTH(p.create_at)
@@ -381,8 +390,9 @@ exports.getList = async (req, res) => {
         SUM(CASE WHEN e.gender = 'female' THEN 1 ELSE 0 END) AS female,
         SUM(CASE WHEN e.is_active = 1 THEN 1 ELSE 0 END) AS active
       FROM employee e
+      INNER JOIN user u ON e.creator_id = u.id
       WHERE 1=1
-      ${userRoleId !== 29 ? `AND e.branch_id = ${userBranchId}` : ''}
+      ${getFilter('u')}
     `;
     const [employee] = await db.query(employeeQuery);
 
