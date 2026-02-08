@@ -907,7 +907,7 @@ function PurchasePage() {
               >
                 <Select placeholder={t("select_branch")}>
                   {state.branches.map(b => (
-                    <Option key={b.id} value={b.branch_name}>{b.branch_name}</Option>
+                    <Option key={b.id} value={b.name}>{b.name}</Option>
                   ))}
                 </Select>
               </Form.Item>
@@ -1601,7 +1601,7 @@ function PurchasePage() {
               value={distributeModal.branch_id}
             >
               {state.branches.map(b => (
-                <Select.Option key={b.id} value={b.id}>{b.name}</Select.Option>
+                <Select.Option key={b.id} value={b.name}>{b.name}</Select.Option>
               ))}
             </Select>
           </div>

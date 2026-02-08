@@ -181,6 +181,7 @@ const menuItems = [
     category: "MANAGEMENT",
     children: [
       { key: "employee", label: "menu.employee" },
+      { key: "branch-permission", label: "menu.permission" }, // ✅ Added Permission item
       { key: "ip-Management", label: "menu.ip_management" },
     ]
   },

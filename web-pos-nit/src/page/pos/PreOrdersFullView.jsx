@@ -65,14 +65,18 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
 
     // Fetch Pre-Orders
     const fetchPreOrders = useCallback(async () => {
-        setLoading(true);
         try {
             const res = await request("pre-order/list", "get");
             if (res && res.success && res.list) {
-                const readyOrders = res.list.filter(
-                    order => order.status === 'ready' || order.status === 'confirmed'
-                );
-                setPreOrders(readyOrders);
+                // Show orders that have remaining quantities OR are in active statuses
+                const activeOrders = res.list.filter(order => {
+                    const hasRemainingQty = order.details_json && order.details_json.some(d =>
+                        parseFloat(d.remaining_qty || 0) > 0
+                    );
+                    const isActiveStatus = ['pending', 'confirmed', 'in_progress', 'ready'].includes(order.status);
+                    return hasRemainingQty || isActiveStatus;
+                });
+                setPreOrders(activeOrders);
             }
         } catch (error) {
             console.error("❌ Failed to fetch pre-orders:", error);
@@ -112,70 +116,75 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
 
                 const issues = [];
 
-                const newCartItems = orderDetails.details.map(item => {
-                    const reqQty = parseFloat(item.remaining_qty || item.qty);
+                const newCartItems = orderDetails.details
+                    .filter(item => parseFloat(item.remaining_qty || item.qty) > 0)
+                    .map(item => {
+                        const reqQty = parseFloat(item.remaining_qty || item.qty);
 
-                    // Override available_qty with data from stock stats if possible to ensure accuracy
-                    let availQty = parseFloat(item.available_qty || 0);
-                    // Robust matching (trim + lowercase) to ensure we find the correct stock
-                    const matchingStock = stockStats.find(s =>
-                        (s.product_name || "").trim().toLowerCase() === (item.product_name || "").trim().toLowerCase()
-                    );
+                        // Override available_qty with data from stock stats if possible to ensure accuracy
+                        let availQty = parseFloat(item.available_qty || 0);
+                        // Robust matching (trim + lowercase) to ensure we find the correct stock
+                        const matchingStock = stockStats.find(s =>
+                            (s.product_name || "").trim().toLowerCase() === (item.product_name || "").trim().toLowerCase()
+                        );
 
-                    if (matchingStock) {
-                        availQty = parseFloat(matchingStock.total_qty || 0);
-                    }
+                        if (matchingStock) {
+                            availQty = parseFloat(matchingStock.total_qty || 0);
+                        }
 
-                    let finalQty = reqQty;
-                    let stockWarning = null;
+                        let finalQty = reqQty;
+                        let stockWarning = null;
 
-                    // Removed clamping logic to allow user to see and adjust invalid quantities
+                        // Removed clamping logic to allow user to see and adjust invalid quantities
 
-                    // ✅ Robust conversion factor lookup logic
-                    let actual_price = 1000; // Default fallback
+                        // ✅ Robust conversion factor lookup logic
+                        let actual_price = 1000; // Default fallback
 
-                    // Priority 1: Use the factor saved with the product in DB
-                    const dbFactor = parseFloat(item.product_actual_price || item.actual_price || 0);
+                        // Priority 1: Use the factor saved with the product in DB
+                        const dbFactor = parseFloat(item.product_actual_price || item.actual_price || 0);
 
-                    if (dbFactor > 1) {
-                        actual_price = dbFactor;
-                    } else {
-                        // Priority 2: Force industry standards if DB has no factor set (>1)
-                        const searchName = `${item.product_name || ""} ${item.category_name || ""}`.toLowerCase();
-                        if (searchName.includes("diesel")) {
-                            actual_price = 1190;
-                        } else if (searchName.includes("gasoline")) {
-                            actual_price = 1370; // Standard Gasoline density factor
+                        if (dbFactor > 1) {
+                            actual_price = dbFactor;
                         } else {
-                            // Priority 3: Try matching by category name
-                            const category = categories.find(cat =>
-                                cat.name?.toLowerCase() === item.category_name?.toLowerCase()
-                            );
-                            if (category && category.actual_price && parseFloat(category.actual_price) > 0) {
-                                actual_price = parseFloat(category.actual_price);
+                            // Priority 2: Force industry standards if DB has no factor set (>1)
+                            const searchName = `${item.product_name || ""} ${item.category_name || ""}`.toLowerCase();
+                            if (searchName.includes("diesel") || searchName.includes("ម៉ាស៊ូត")) {
+                                actual_price = 1190;
+                            } else if (searchName.includes("gasoline") || searchName.includes("សាំង")) {
+                                actual_price = 1370;
+                            } else if (searchName.includes("lpg") || searchName.includes("ហ្គាស") || searchName.includes("gas")) {
+                                actual_price = 1000; // Default factor for Gas
+                            } else {
+                                // Priority 3: Try matching by category name
+                                const category = categories.find(cat =>
+                                    cat.name?.toLowerCase() === item.category_name?.toLowerCase()
+                                );
+                                if (category && category.actual_price && parseFloat(category.actual_price) > 0) {
+                                    actual_price = parseFloat(category.actual_price);
+                                }
                             }
                         }
-                    }
 
-                    return {
-                        id: item.product_id,
-                        name: item.product_name,
-                        category_name: item.category_name,
-                        selling_price: parseFloat(item.price),
-                        actual_price: actual_price,
-                        available_qty: availQty,
-                        cart_qty: finalQty,
-                        amount: parseFloat(item.amount),
-                        unit: item.unit || "L",
-                        customer_id: orderDetails.customer_id,
-                        customer_name: orderDetails.customer_name,
-                        discount: item.discount || 0,
-                        description: item.description || "",
-                        destination: item.destination || "",
-                        pre_order_remaining: reqQty,
-                        pre_order_original: parseFloat(item.qty)
-                    };
-                });
+                        return {
+                            id: item.product_id,
+                            pre_order_detail_id: item.id, // ✅ Keep track of specific detail row
+                            name: item.product_name,
+                            category_name: item.category_name,
+                            selling_price: parseFloat(item.price),
+                            actual_price: actual_price,
+                            available_qty: availQty,
+                            cart_qty: finalQty,
+                            amount: parseFloat(item.amount),
+                            unit: item.unit || "L",
+                            customer_id: orderDetails.customer_id,
+                            customer_name: orderDetails.customer_name,
+                            discount: item.discount || 0,
+                            description: item.description || "",
+                            destination: item.destination || "",
+                            pre_order_remaining: reqQty,
+                            pre_order_original: parseFloat(item.qty)
+                        };
+                    });
 
                 if (issues.length > 0) {
                     // Warning removed as requested
@@ -291,24 +300,27 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
         setIsCheckingOut(true);
 
         try {
-            const order_details = cartState.cart_list.map((item) => {
-                const qty = Number(item.cart_qty) || 0;
-                const price = Number(item.selling_price) || 0;
-                const actualPrice = Number(item.actual_price) || 1;
-                const discount = Number(item.discount) || 0;
-                const total = (qty * price * (1 - discount / 100)) / actualPrice;
+            const order_details = cartState.cart_list
+                .filter(item => Number(item.cart_qty) > 0)
+                .map((item) => {
+                    const qty = Number(item.cart_qty) || 0;
+                    const price = Number(item.selling_price) || 0;
+                    const actualPrice = Number(item.actual_price) || 1;
+                    const discount = Number(item.discount) || 0;
+                    const total = (qty * price * (1 - discount / 100)) / actualPrice;
 
-                return {
-                    product_id: item.id,
-                    qty: qty,
-                    price: price,
-                    discount: discount,
-                    total: total,
-                    actual_price: actualPrice,
-                    description: item.description || '',
-                    destination: item.destination || null
-                };
-            });
+                    return {
+                        product_id: item.id,
+                        pre_order_detail_id: item.pre_order_detail_id, // ✅ Pass specific detail ID
+                        qty: qty,
+                        price: price,
+                        discount: discount,
+                        total: total,
+                        actual_price: actualPrice,
+                        description: item.description || '',
+                        destination: item.destination || null
+                    };
+                });
 
             const totalAmount = order_details.reduce((sum, item) => sum + item.total, 0);
 
@@ -443,8 +455,23 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
             width: 140,
             align: 'center',
             render: (status) => {
-                const statusClass = status === 'ready' ? 'status-tag-ready' : 'status-tag-confirmed';
-                const statusText = status === 'ready' ? 'រៀបចំរួច' : 'បានបញ្ជាក់';
+                let statusClass = 'status-tag-confirmed';
+                let statusText = status;
+
+                if (status === 'ready') {
+                    statusClass = 'status-tag-ready';
+                    statusText = 'រៀបចំរួច';
+                } else if (status === 'confirmed') {
+                    statusClass = 'status-tag-confirmed';
+                    statusText = 'បានបញ្ជាក់';
+                } else if (status === 'pending') {
+                    statusClass = 'status-tag-pending';
+                    statusText = 'រង់ចាំ';
+                } else if (status === 'in_progress') {
+                    statusClass = 'status-tag-preparing';
+                    statusText = 'កំពុងរៀបចំ';
+                }
+
                 return (
                     <Tag className={`status-tag ${statusClass}`}>
                         {statusText}

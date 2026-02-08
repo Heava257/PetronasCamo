@@ -482,7 +482,7 @@ exports.getPosProducts = async (req, res) => {
                 cu.address AS customer_address,
                 cu.tel AS customer_tel,
                 
-                u.group_id,
+                u.branch_id,
                 u.name AS created_by_name,
                 u.username AS created_by_username,
                 
@@ -510,7 +510,7 @@ exports.getPosProducts = async (req, res) => {
             LEFT JOIN category c ON p.category_id = c.id
             LEFT JOIN customer cu ON p.customer_id = cu.id
             INNER JOIN user u ON p.user_id = u.id
-            WHERE u.group_id = (SELECT group_id FROM user WHERE id = ?)
+            WHERE u.branch_id = (SELECT branch_id FROM user WHERE id = ?)
         `;
 
         const params = [req.current_id];

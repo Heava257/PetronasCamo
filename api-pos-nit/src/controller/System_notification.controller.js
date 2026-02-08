@@ -47,7 +47,7 @@ exports.createSystemNotification = async (notificationData) => {
       user_id = null,
       created_by = null,
       branch_name = null,
-      group_id = null,
+      branch_id = null,
       priority = 'normal',
       severity = 'info',
       icon = '🔔',
@@ -61,7 +61,7 @@ exports.createSystemNotification = async (notificationData) => {
         notification_type, title, message, data,
         order_id, order_no, customer_id, customer_name, customer_address, customer_tel,
         total_amount, total_liters, card_number,
-        user_id, created_by, branch_name, group_id,
+        user_id, created_by, branch_name, branch_id,
         priority, severity, icon, color, action_url, expires_at
       ) VALUES (
         ?, ?, ?, ?,
@@ -89,7 +89,7 @@ exports.createSystemNotification = async (notificationData) => {
       user_id,
       created_by,
       branch_name,
-      group_id,
+      branch_id,
       priority,
       severity,
       icon,
@@ -559,7 +559,7 @@ exports.markAsRead = async (req, res) => {
     }
 
     const [notification] = await db.query(`
-      SELECT id, read_by, group_id
+      SELECT id, read_by, branch_id
       FROM system_notifications
       WHERE id = ?
     `, [id]);
@@ -612,7 +612,7 @@ exports.markAllAsRead = async (req, res) => {
     }
 
     const [currentUser] = await db.query(`
-      SELECT group_id FROM user WHERE id = ?
+      SELECT branch_id FROM user WHERE id = ?
     `, [current_user_id]);
 
     let sql = `
@@ -623,9 +623,9 @@ exports.markAllAsRead = async (req, res) => {
 
     const params = [];
 
-    if (currentUser[0].group_id) {
-      sql += ` AND group_id = ?`;
-      params.push(currentUser[0].group_id);
+    if (currentUser[0].branch_id) {
+      sql += ` AND branch_id = ?`;
+      params.push(currentUser[0].branch_id);
     }
 
     await db.query(sql, params);
@@ -743,10 +743,10 @@ exports.getBranchComparison = async (req, res) => {
     const current_user_id = req.current_id;
 
     const [currentUser] = await db.query(`
-      SELECT group_id FROM user WHERE id = ?
+      SELECT branch_id FROM user WHERE id = ?
     `, [current_user_id]);
 
-    const userGroupId = currentUser[0].group_id;
+    const userBranchId = currentUser[0].branch_id;
 
     const [comparison] = await db.query(`
       SELECT 
@@ -759,11 +759,11 @@ exports.getBranchComparison = async (req, res) => {
         SUM(COALESCE(total_liters, 0)) as total_liters,
         AVG(COALESCE(total_amount, 0)) as avg_amount
       FROM system_notifications
-      WHERE group_id = ?
+      WHERE branch_id = ?
         AND branch_name IN (?, ?)
         AND DATE(created_at) BETWEEN DATE(?) AND DATE(?)
       GROUP BY branch_name
-    `, [userGroupId, branch1, branch2, from_date, to_date]);
+    `, [userBranchId, branch1, branch2, from_date, to_date]);
 
     res.json({
       success: true,
@@ -790,10 +790,10 @@ exports.getTopPerformers = async (req, res) => {
     const current_user_id = req.current_id;
 
     const [currentUser] = await db.query(`
-      SELECT group_id FROM user WHERE id = ?
+      SELECT branch_id FROM user WHERE id = ?
     `, [current_user_id]);
 
-    const userGroupId = currentUser[0].group_id;
+    const userBranchId = currentUser[0].branch_id;
 
     let dateFrom;
     switch (period) {
@@ -828,13 +828,13 @@ exports.getTopPerformers = async (req, res) => {
         SUM(CASE WHEN notification_type = 'order_created' THEN 1 ELSE 0 END) as order_count,
         SUM(COALESCE(total_amount, 0)) as total_amount
       FROM system_notifications
-      WHERE group_id = ?
+      WHERE branch_id = ?
         AND DATE(created_at) >= DATE(?)
         AND branch_name IS NOT NULL
       GROUP BY branch_name
       ORDER BY ${orderByClause}
       LIMIT ?
-    `, [userGroupId, dateFrom, parseInt(limit)]);
+    `, [userBranchId, dateFrom, parseInt(limit)]);
 
     // Top Creators
     const [topCreators] = await db.query(`
@@ -845,13 +845,13 @@ exports.getTopPerformers = async (req, res) => {
         SUM(CASE WHEN notification_type = 'order_created' THEN 1 ELSE 0 END) as order_count,
         SUM(COALESCE(total_amount, 0)) as total_amount
       FROM system_notifications
-      WHERE group_id = ?
+      WHERE branch_id = ?
         AND DATE(created_at) >= DATE(?)
         AND created_by IS NOT NULL
       GROUP BY created_by, branch_name
       ORDER BY ${orderByClause}
       LIMIT ?
-    `, [userGroupId, dateFrom, parseInt(limit)]);
+    `, [userBranchId, dateFrom, parseInt(limit)]);
 
     res.json({
       success: true,

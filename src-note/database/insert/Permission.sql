@@ -693,12 +693,12 @@ INSERT INTO permissions	(name ,	`group`	,is_menu_web,	web_route_key	) VALUES
 
 INSERT INTO permission_roles (role_id, permission_id) VALUES
 
-(1,372),
-(1,373),
-(1,374),
-(1,375),
-(1,376),
-(1,377),
+(1,560),
+(1,561),
+(1,562),
+(1,563),
+(1,564),
+(1,565),
 (1,378),
 (1,379),
 (1,380),
@@ -932,6 +932,14 @@ INSERT INTO permission_roles (role_id, permission_id) VALUES
 
 
 
+
+INSERT INTO permission (name, `group`, is_menu_web, web_route_key) VALUES
+
+("branch-permission.getlist","branch-permission",1,"/branch-permission"),
+("branch-permission.getone","branch-permission",NULL,NULL),
+("branch-permission.create","branch-permission",NULL,NULL),
+("branch-permission.update","branch-permission",NULL,NULL),
+("branch-permission.remove","branch-permission",NULL,NULL),
 
 
 INSERT INTO permission (name, `group`, is_menu_web, web_route_key) VALUES

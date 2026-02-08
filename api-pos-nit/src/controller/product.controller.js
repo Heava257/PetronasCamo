@@ -200,6 +200,7 @@ exports.getCustomerProducts = async (req, res) => {
         c.email, 
         c.create_at, 
         c.user_id,
+        u.branch_id,
         u.branch_name as customer_branch
       FROM customer c
       INNER JOIN user u ON c.user_id = u.id
@@ -565,20 +566,20 @@ exports.getTotalPayments = async (req, res) => {
     const params = [req.current_id];
 
     if (order_date) {
-      sqlWhere += ` AND DATE(pd.created_at) = DATE(?)`;
+      sqlWhere += ` AND DATE(p.created_at) = DATE(?)`;
       params.push(order_date);
     } else if (receive_date) {
-      sqlWhere += ` AND DATE(pd.receive_date) = DATE(?)`;
+      sqlWhere += ` AND DATE(p.receive_date) = DATE(?)`;
       params.push(receive_date);
     } else if (from_date && to_date) {
       // ✅ ប្រើ BETWEEN ឬ datetime range
-      sqlWhere += ` AND pd.updated_at >= CONCAT(?, ' 00:00:00') AND pd.updated_at <= CONCAT(?, ' 23:59:59')`;
+      sqlWhere += ` AND p.payment_date >= CONCAT(?, ' 00:00:00') AND p.payment_date <= CONCAT(?, ' 23:59:59')`;
       params.push(from_date, to_date);
     } else if (from_date) {
-      sqlWhere += ` AND pd.updated_at >= CONCAT(?, ' 00:00:00')`;
+      sqlWhere += ` AND p.payment_date >= CONCAT(?, ' 00:00:00')`;
       params.push(from_date);
     } else if (to_date) {
-      sqlWhere += ` AND pd.updated_at <= CONCAT(?, ' 23:59:59')`;
+      sqlWhere += ` AND p.payment_date <= CONCAT(?, ' 23:59:59')`;
       params.push(to_date);
     }
 
@@ -586,8 +587,8 @@ exports.getTotalPayments = async (req, res) => {
       SELECT COALESCE(SUM(p.amount), 0) AS totalAmount
       FROM payments p
       INNER JOIN customer cu ON p.customer_id = cu.id
-      INNER JOIN user u ON cu.user_id = u.id
-      INNER JOIN user cu_user ON cu_user.group_id = u.group_id
+      INNER JOIN user u ON p.user_id = u.id
+      INNER JOIN user cu_user ON cu_user.branch_id = u.branch_id
       ${sqlWhere}
     `;
 
@@ -636,7 +637,7 @@ exports.getProductDetail = async (req, res) => {
         it.created_at AS product_created_at,
         p.receive_date AS receive_date,
         u.name as product_created_by,
-        u.group_id,
+        u.branch_id,
         u.name AS user_name
     `;
     let sqlFrom = `
@@ -651,7 +652,7 @@ exports.getProductDetail = async (req, res) => {
 
     // Filter by branch/group access if needed
     if (req.auth) {
-      sqlWhere += ` AND u.group_id = (SELECT group_id FROM user WHERE id = ?)`;
+      sqlWhere += ` AND u.branch_id = (SELECT branch_id FROM user WHERE id = ?)`;
       params.push(req.current_id);
     }
 
@@ -731,7 +732,7 @@ exports.getProductDetail = async (req, res) => {
       FROM payments pay
       INNER JOIN customer cu ON pay.customer_id = cu.id
       INNER JOIN user u ON cu.user_id = u.id
-      INNER JOIN user cu_user ON cu_user.group_id = u.group_id
+      INNER JOIN user cu_user ON cu_user.branch_id = u.branch_id
       ${paymentWhere}
     `;
 
@@ -793,6 +794,30 @@ exports.updateProductCompletion = async (req, res) => {
 
 exports.getListByCurrentUserGroup = async (req, res) => {
   try {
+    const currentUserId = req.current_id;
+
+    // ✅ Get current user info for role-based filtering
+    const [currentUser] = await db.query(`
+      SELECT branch_id, role_id FROM user WHERE id = ?
+    `, [currentUserId]);
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_id: userBranchId } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
+    let branchFilter = "";
+    let sqlParams = [];
+
+    if (!isSuperAdmin) {
+      branchFilter = " AND u.branch_id = ? ";
+      sqlParams.push(userBranchId);
+    } else {
+      sqlParams.push(null); // Keep array length for query if needed, but we'll use conditional params
+    }
+
     var sql = `
       SELECT 
         p.id, 
@@ -821,19 +846,22 @@ exports.getListByCurrentUserGroup = async (req, res) => {
           WHEN p.discount > 0 THEN ((p.qty * p.unit_price) * (1 - p.discount / 100)) / c.actual_price
           ELSE (p.qty * p.unit_price) / c.actual_price
         END AS total_price,
-        u.group_id,
+        u.branch_id,
         u.name AS created_by_name,
         u.username AS created_by_username
       FROM product p
       LEFT JOIN category c ON p.category_id = c.id
       LEFT JOIN customer cu ON p.customer_id = cu.id
       INNER JOIN user u ON p.user_id = u.id
-      WHERE u.group_id = (SELECT group_id FROM user WHERE id = ?)
+      WHERE 1=1
+        ${branchFilter}
         AND p.status != 'deleted'
       ORDER BY p.customer_id, p.id DESC
     `;
 
-    var [data] = await db.query(sql, [req.current_id]);
+    // Clean up params if super admin
+    const finalParams = isSuperAdmin ? [] : [userBranchId];
+    var [data] = await db.query(sql, finalParams);
 
     res.json({
       list: data,
@@ -1566,7 +1594,7 @@ exports.sendBatchTelegramNotification = async (products) => {
 
   const firstProduct = products[0];
   const branch_name = firstProduct.branch_name || null;
-  const group_id = firstProduct.group_id || null; // ✅ Get group_id if available
+  const branch_id = firstProduct.branch_id || null; // ✅ Get branch_id if available
 
   const now = new Date();
   const currentDate = now.toLocaleString('en-US', {
@@ -1727,7 +1755,7 @@ exports.sendBatchTelegramNotification = async (products) => {
       user_id: null,
       created_by: firstProduct.create_by,
       branch_name: branch_name,
-      group_id: group_id,
+      branch_id: branch_id,
       priority: grandTotal > 10000 ? 'high' : 'normal',
       severity: 'info',
       icon: '📦',

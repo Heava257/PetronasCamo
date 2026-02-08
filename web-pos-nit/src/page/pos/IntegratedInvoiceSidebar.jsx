@@ -75,7 +75,7 @@ const IntegratedInvoiceSidebar = ({
         let subtotal = 0;
         let totalQty = 0;
 
-        cartItems.forEach(item => {
+        cartItems.filter(item => Number(item.cart_qty) > 0).forEach(item => {
             const qty = Number(item.cart_qty || 0);
             const selling = Number(item.selling_price || 0);
             const actual = Number(item.actual_price || 1);
@@ -134,7 +134,7 @@ const IntegratedInvoiceSidebar = ({
         };
 
         fetchCustomerLocations();
-    }, [objSummary.customer_id, setSelectedLocation]);
+    }, [objSummary.customer_id, setSelectedLocation, selectedLocation]);
 
     const selectedLocationData = locations.find(loc => loc.id === selectedLocation);
     const selectedTruckData = trucks.find(truck => truck.id === selectedTruck);
@@ -160,8 +160,9 @@ const IntegratedInvoiceSidebar = ({
                         ) : (
                             cartItems.map((item, idx) => {
                                 const isExceeded = Number(item.cart_qty) > Number(item.available_qty);
+                                const isSkipped = !item.cart_qty || Number(item.cart_qty) <= 0;
                                 return (
-                                    <div key={item.id} className={`cart-item-compact ${isExceeded ? 'item-error-border' : ''}`}>
+                                    <div key={item.id} className={`cart-item-compact ${isExceeded ? 'item-error-border' : ''} ${isSkipped ? 'item-skipped-style' : ''}`}>
                                         <div className="item-header-row">
                                             <span className="item-number">#{idx + 1}</span>
                                             <span className="item-name">{item.name}</span>
@@ -179,7 +180,12 @@ const IntegratedInvoiceSidebar = ({
 
                                         <div className="item-controls-row">
                                             <div className="item-qty-control">
-                                                <label>បរិមាណ:</label>
+                                                <div className="item-preorder-context">
+                                                    <span className="text-gray-500">Balance: </span>
+                                                    <span className="font-bold text-orange-600">{formatQty(item.pre_order_remaining)}L</span>
+                                                    <span className="text-[10px] text-gray-400 ml-1">(Orig: {formatQty(item.pre_order_original)}L)</span>
+                                                </div>
+                                                <label>បរិមាណដឹកជាក់ស្តែង:</label>
                                                 <input
                                                     type="number"
                                                     value={item.cart_qty}

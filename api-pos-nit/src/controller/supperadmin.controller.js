@@ -4,38 +4,14 @@ const bcrypt = require("bcrypt");
 const { sendSmartNotification } = require("../util/Telegram.helpe");
 
 // ================================
-// 🔧 Helper Function: Auto-assign group_id based on branch
-// ================================
-const autoAssignGroupIdByBranch = async (branch_name, user_id, role_code) => {
+// Helper Function: Get branch_id from branch_name if needed
+const getBranchIdByName = async (branch_name) => {
   try {
-    // If user is Admin or Super Admin, set group_id to their own ID
-    if (role_code === 'ADMIN' || role_code === 'SUPER_ADMIN') {
-      return user_id;
-    }
-
-    // For regular users, find an admin in the same branch
-    const [adminInBranch] = await db.query(`
-      SELECT u.id, u.group_id
-      FROM user u
-      INNER JOIN role r ON u.role_id = r.id
-      WHERE u.branch_name = :branch_name
-        AND r.code IN ('ADMIN', 'SUPER_ADMIN')
-        AND u.is_active = 1
-      ORDER BY u.id ASC
-      LIMIT 1
-    `, { branch_name });
-
-    if (adminInBranch && adminInBranch.length > 0) {
-      const adminGroupId = adminInBranch[0].group_id || adminInBranch[0].id;
-      return adminGroupId;
-    }
-
-    // No admin found in branch, create a new group (use user's own ID)
-    return user_id;
-
+    const [branch] = await db.query("SELECT id FROM branch WHERE name = ?", [branch_name]);
+    return branch[0]?.id || null;
   } catch (error) {
-    console.error('❌ Error in autoAssignGroupIdByBranch:', error);
-    return user_id; // Fallback to user's own ID
+    console.error('❌ Error in getBranchIdByName:', error);
+    return null;
   }
 };
 
@@ -398,7 +374,7 @@ exports.getAllAdmins = async (req, res) => {
         u.create_by,
         r.name AS role_name,
         r.code AS role_code,
-        (SELECT COUNT(*) FROM user WHERE group_id = u.group_id AND id != u.id) AS managed_users_count
+        (SELECT COUNT(*) FROM user WHERE branch_name = u.branch_name AND id != u.id) AS managed_users_count
       FROM user u
       INNER JOIN role r ON u.role_id = r.id
       WHERE r.code IN ('ADMIN', 'SUPER_ADMIN')
@@ -567,10 +543,13 @@ exports.createNewAdmin = async (req, res) => {
     const newAdminId = newAdminResult.insertId;
 
     await db.query(`
-      UPDATE user 
-      SET group_id = :admin_id 
-      WHERE id = :admin_id
-    `, { admin_id: newAdminId });
+        UPDATE user 
+        SET branch_id = :branch_id 
+        WHERE id = :admin_id
+      `, {
+      admin_id: newAdminId,
+      branch_id: await getBranchIdByName(branch_name || oldAdminInfo?.branch_name)
+    });
 
     await db.query(
       "INSERT INTO user_roles (user_id, role_id) VALUES (:user_id, :role_id)",
@@ -578,24 +557,14 @@ exports.createNewAdmin = async (req, res) => {
     );
 
     if (old_admin_id && transfer_permissions && oldAdminInfo) {
-      await db.query(
-        `UPDATE user 
-         SET group_id = :new_group_id 
-         WHERE group_id = :old_group_id AND id != :old_admin_id`,
-        {
-          new_group_id: newAdminId,
-          old_group_id: oldAdminInfo.group_id,
-          old_admin_id: old_admin_id
-        }
-      );
-
+      // No more group_id to update, users remain in their branch
       await db.query(`
-        INSERT INTO user_roles (user_id, role_id)
-        SELECT :new_admin_id, role_id
-        FROM user_roles
-        WHERE user_id = :old_admin_id
-        AND role_id NOT IN (SELECT role_id FROM user_roles WHERE user_id = :new_admin_id)
-      `, {
+          INSERT INTO user_roles (user_id, role_id)
+          SELECT :new_admin_id, role_id
+          FROM user_roles
+          WHERE user_id = :old_admin_id
+          AND role_id NOT IN (SELECT role_id FROM user_roles WHERE user_id = :new_admin_id)
+        `, {
         new_admin_id: newAdminId,
         old_admin_id: old_admin_id
       });
@@ -635,8 +604,8 @@ exports.createNewAdmin = async (req, res) => {
       `, {
         user_id: newAdminId,
         description: transfer_permissions
-          ? `New admin account created with permissions transferred from admin ID ${old_admin_id} (group_id: ${newAdminId})`
-          : `New admin account created: ${name} (${username}) with group_id: ${newAdminId}`,
+          ? `New admin account created with permissions transferred from admin ID ${old_admin_id}`
+          : `New admin account created: ${name} (${username})`,
         ip_address: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown',
         user_agent: req.get('User-Agent') || 'Unknown',
         created_by: currentUserId
@@ -658,7 +627,6 @@ exports.createNewAdmin = async (req, res) => {
     alertMessage += `📧 <b>Email:</b> ${email || username}\n`;
     alertMessage += `🏢 <b>សាខា / Branch:</b> ${branch_name || 'N/A'}\n`;
     alertMessage += `📱 <b>Tel:</b> ${tel || 'N/A'}\n`;
-    alertMessage += `🔢 <b>Group ID:</b> ${newAdminId} ✅\n`;
 
     if (transfer_permissions && oldAdminInfo) {
       alertMessage += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n`;
@@ -702,7 +670,6 @@ exports.createNewAdmin = async (req, res) => {
         email: email || username,
         role: 'ADMIN',
         branch_name: branch_name,
-        group_id: newAdminId,
         is_active: true,
         created_at: creationTime,
         transferred_from: transfer_permissions ? old_admin_id : null,
@@ -846,19 +813,16 @@ exports.createUserWithRole = async (req, res) => {
 
     const newUserId = newUserResult.insertId;
 
-
-    // ✅ Auto-assign group_id based on branch and role
-    const assignedGroupId = await autoAssignGroupIdByBranch(
-      branch_name || 'Default',
-      newUserId,
-      roleCode
-    );
-
-    await db.query(
-      "UPDATE user SET group_id = :group_id WHERE id = :user_id",
-      { group_id: assignedGroupId, user_id: newUserId }
-    );
-
+    // ✅ Set branch_id if branch_name is provided
+    if (branch_name) {
+      const branchId = await getBranchIdByName(branch_name);
+      if (branchId) {
+        await db.query(
+          "UPDATE user SET branch_id = :branch_id WHERE id = :user_id",
+          { branch_id: branchId, user_id: newUserId }
+        );
+      }
+    }
 
     // ✅ Insert into user_roles
     await db.query(
@@ -888,7 +852,7 @@ exports.createUserWithRole = async (req, res) => {
         )
       `, {
         user_id: newUserId,
-        description: `User created with role ${roleName} (${roleCode}) in branch ${branch_name || 'N/A'}, group_id: ${assignedGroupId}`,
+        description: `User created with role ${roleName} (${roleCode}) in branch ${branch_name || 'N/A'}`,
         ip_address: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown',
         user_agent: req.get('User-Agent') || 'Unknown',
         created_by: currentUserId
@@ -915,7 +879,6 @@ exports.createUserWithRole = async (req, res) => {
 📱 <b>Tel:</b> ${tel || 'N/A'}
 
 🎭 <b>Role:</b> ${roleName} (${roleCode})
-🔢 <b>Group ID:</b> ${assignedGroupId}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 👨‍💼 <b>Created By:</b>
@@ -950,7 +913,6 @@ ${currentUser[0]?.name} (${currentUser[0]?.username})
         role: roleName,
         role_code: roleCode,
         branch_name: branch_name,
-        group_id: assignedGroupId,
         is_active: true,
         created_at: creationTime
       }
@@ -1177,7 +1139,7 @@ exports.getAdminDetails = async (req, res) => {
         u.*,
         r.name AS role_name,
         r.code AS role_code,
-        (SELECT COUNT(*) FROM user WHERE group_id = u.group_id AND id != u.id) AS managed_users_count,
+        (SELECT COUNT(*) FROM user WHERE branch_name = u.branch_name AND id != u.id) AS managed_users_count,
         (SELECT COUNT(*) FROM login_history WHERE user_id = u.id) AS login_count,
         (SELECT MAX(login_time) FROM login_history WHERE user_id = u.id AND status = 'success') AS last_login_time
       FROM user u
@@ -1195,10 +1157,10 @@ exports.getAdminDetails = async (req, res) => {
     const [managedUsers] = await db.query(`
       SELECT id, name, username, branch_name, is_active
       FROM user
-      WHERE group_id = :group_id AND id != :admin_id
+      WHERE branch_name = :branch_name AND id != :admin_id
       ORDER BY is_active DESC, name ASC
     `, {
-      group_id: adminInfo[0].group_id,
+      branch_name: adminInfo[0].branch_name,
       admin_id: admin_id
     });
 
@@ -1267,7 +1229,7 @@ exports.getInactiveAdmins = async (req, res) => {
           WHEN DATEDIFF(NOW(), MAX(lh.login_time)) >= 2 THEN 'Inactive 2-3 Days'
           ELSE 'Active (< 2 days)'
         END AS activity_status,
-        (SELECT COUNT(*) FROM user WHERE group_id = u.group_id AND id != u.id) AS managed_users_count
+        (SELECT COUNT(*) FROM user WHERE branch_name = u.branch_name AND id != u.id) AS managed_users_count
       FROM user u
       INNER JOIN role r ON u.role_id = r.id
       LEFT JOIN login_history lh ON u.id = lh.user_id AND lh.status = 'success'
@@ -1560,9 +1522,9 @@ exports.getSuperAdminUsers = async (req, res) => {
         u.tel,
         u.address,
         u.branch_name,
+        u.branch_id,
         u.profile_image,
         u.is_active,
-        u.group_id,
         u.barcode,
         u.create_by,
         u.create_at,
@@ -1570,7 +1532,7 @@ exports.getSuperAdminUsers = async (req, res) => {
         r.id AS role_id,
         r.name AS role_name,
         r.code AS role_code,
-        (SELECT COUNT(*) FROM user u2 WHERE u2.group_id = u.group_id AND u2.id != u.id) AS managed_users_count,
+        (SELECT COUNT(*) FROM user u2 WHERE u2.branch_name = u.branch_name AND u2.id != u.id) AS managed_users_count,
         (SELECT MAX(lh.login_time) FROM login_history lh WHERE lh.user_id = u.id AND lh.status = 'success') AS last_login_time,
         (SELECT COUNT(*) FROM login_history lh WHERE lh.user_id = u.id) AS total_logins
       FROM user u
@@ -1608,8 +1570,7 @@ exports.getSuperAdminUsers = async (req, res) => {
       SELECT 
         COUNT(*) AS total_users,
         SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_users,
-        COUNT(DISTINCT branch_name) AS total_branches,
-        COUNT(DISTINCT group_id) AS total_groups
+        COUNT(DISTINCT branch_name) AS total_branches
       FROM user
     `);
 
@@ -1920,7 +1881,7 @@ exports.getUsers = async (req, res) => {
         u.role_id,
         r.name AS role_name,
         r.code AS role_code,
-        (SELECT COUNT(*) FROM user WHERE group_id = u.group_id AND id != u.id) AS managed_users_count,
+        (SELECT COUNT(*) FROM user WHERE branch_name = u.branch_name AND id != u.id) AS managed_users_count,
         (SELECT MAX(login_time) FROM login_history WHERE user_id = u.id AND status = 'success') AS last_login_time
       FROM user u
       INNER JOIN role r ON u.role_id = r.id
@@ -1932,8 +1893,7 @@ exports.getUsers = async (req, res) => {
       SELECT 
         COUNT(*) AS total_users,
         SUM(CASE WHEN u.is_active = 1 THEN 1 ELSE 0 END) AS active_users,
-        COUNT(DISTINCT u.branch_name) AS total_branches,
-        COUNT(DISTINCT u.group_id) AS total_groups
+        COUNT(DISTINCT u.branch_name) AS total_branches
       FROM user u
       INNER JOIN role r ON u.role_id = r.id
     `);
@@ -2014,7 +1974,7 @@ exports.updateUserBySuperAdmin = async (req, res) => {
 
     // ✅ CRITICAL: Get existing user data FIRST
     const [existingUser] = await db.query(
-      `SELECT u.id, u.group_id, u.role_id, u.branch_name, r.code AS role_code
+      `SELECT u.id, u.branch_id, u.role_id, u.branch_name, r.code AS role_code
        FROM user u
        INNER JOIN role r ON u.role_id = r.id
        WHERE u.id = :user_id`,
@@ -2071,7 +2031,7 @@ exports.updateUserBySuperAdmin = async (req, res) => {
       params.password = hashedPassword;
     }
 
-    // ✅✅✅ IMPROVED: Handle role_id changes with smart group_id assignment
+    // ✅ Handle role_id changes with smart branch_id assignment
     if (role_id !== undefined && parseInt(role_id) !== parseInt(oldUser.role_id)) {
 
       updateFields.push('role_id = :role_id');
@@ -2084,38 +2044,8 @@ exports.updateUserBySuperAdmin = async (req, res) => {
       );
 
       if (newRole && newRole.length > 0) {
-        const newRoleCode = newRole[0].code;
-
-        // ✅ Handle Admin/Super Admin roles
-        if (newRoleCode === 'ADMIN' || newRoleCode === 'SUPER_ADMIN') {
-          // Becoming Admin - set group_id to own id
-          updateFields.push('group_id = :new_group_id');
-          params.new_group_id = user_id;
-        } else {
-          // ✅ Changed to non-admin role
-          // Auto-assign group_id based on branch
-          const userBranch = branch_name || oldUser.branch_name;
-          if (userBranch) {
-            // Find admin in same branch
-            const [adminInBranch] = await db.query(`
-              SELECT u.id, u.group_id
-              FROM user u
-              INNER JOIN role r ON u.role_id = r.id
-              WHERE u.branch_name = :branch_name
-                AND r.code IN ('ADMIN', 'SUPER_ADMIN')
-                AND u.is_active = 1
-                AND u.id != :user_id
-              ORDER BY u.id ASC
-              LIMIT 1
-            `, { branch_name: userBranch, user_id: user_id });
-
-            if (adminInBranch && adminInBranch.length > 0) {
-              const adminGroupId = adminInBranch[0].group_id || adminInBranch[0].id;
-              updateFields.push('group_id = :new_group_id');
-              params.new_group_id = adminGroupId;
-            }
-          }
-        }
+        // No longer need to change group_id based on role, 
+        // keep user in their branch.
 
         // Update user_roles table
         await db.query(
@@ -2130,25 +2060,10 @@ exports.updateUserBySuperAdmin = async (req, res) => {
     } else if (role_id === undefined || parseInt(role_id) === parseInt(oldUser.role_id)) {
       // ✅ No role change - check if branch changed
       if (branch_name && branch_name !== oldUser.branch_name) {
-
-        // If user is NOT an admin, reassign group_id based on new branch
-        if (oldUser.role_code !== 'ADMIN' && oldUser.role_code !== 'SUPER_ADMIN') {
-          const [adminInNewBranch] = await db.query(`
-            SELECT u.id, u.group_id
-            FROM user u
-            INNER JOIN role r ON u.role_id = r.id
-            WHERE u.branch_name = :branch_name
-              AND r.code IN ('ADMIN', 'SUPER_ADMIN')
-              AND u.is_active = 1
-            ORDER BY u.id ASC
-            LIMIT 1
-          `, { branch_name: branch_name });
-
-          if (adminInNewBranch && adminInNewBranch.length > 0) {
-            const newGroupId = adminInNewBranch[0].group_id || adminInNewBranch[0].id;
-            updateFields.push('group_id = :new_group_id');
-            params.new_group_id = newGroupId;
-          }
+        const newBranchId = await getBranchIdByName(branch_name);
+        if (newBranchId) {
+          updateFields.push('branch_id = :new_branch_id');
+          params.new_branch_id = newBranchId;
         }
       }
     }
@@ -2180,7 +2095,7 @@ exports.updateUserBySuperAdmin = async (req, res) => {
     const [updatedUser] = await db.query(
       `SELECT 
         u.id, u.name, u.username, u.email, u.tel, u.branch_name,
-        u.is_active, u.group_id, u.role_id,
+        u.is_active, u.role_id,
         r.name as role_name, r.code as role_code
        FROM user u
        INNER JOIN role r ON u.role_id = r.id
@@ -2211,7 +2126,7 @@ exports.updateUserBySuperAdmin = async (req, res) => {
         )
       `, {
         user_id: user_id,
-        description: `User updated by Super Admin. group_id: ${updatedUser[0]?.group_id}`,
+        description: `User updated by Super Admin`,
         ip_address: req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown',
         user_agent: req.get('User-Agent') || 'Unknown',
         created_by: currentUserId
@@ -2344,8 +2259,7 @@ exports.getSystemStatistics = async (req, res) => {
         COUNT(*) AS total_users,
         SUM(CASE WHEN is_active = 1 THEN 1 ELSE 0 END) AS active_users,
         SUM(CASE WHEN is_active = 0 THEN 1 ELSE 0 END) AS inactive_users,
-        COUNT(DISTINCT branch_name) AS total_branches,
-        COUNT(DISTINCT group_id) AS total_groups
+        COUNT(DISTINCT branch_name) AS total_branches
       FROM user
     `);
 

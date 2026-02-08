@@ -284,7 +284,7 @@ ${productDetails}
 // ========================================
 exports.recordDelivery = async (req, res) => {
   try {
-    const { pre_order_id, invoice_id, deliveries } = req.body;
+    const { pre_order_id, invoice_id, deliveries, notes } = req.body;
     // deliveries = [{pre_order_detail_id, delivered_qty, destination}]
 
     if (!pre_order_id || !deliveries || !Array.isArray(deliveries)) {
@@ -296,7 +296,7 @@ exports.recordDelivery = async (req, res) => {
 
     // Validate pre-order exists
     const [preOrder] = await db.query(
-      "SELECT id, pre_order_no FROM pre_order WHERE id = :id",
+      "SELECT id, pre_order_no, status FROM pre_order WHERE id = :id",
       { id: pre_order_id }
     );
 
@@ -317,7 +317,7 @@ exports.recordDelivery = async (req, res) => {
 
       // Check remaining quantity
       const [detail] = await db.query(
-        "SELECT remaining_qty FROM pre_order_detail WHERE id = :id",
+        "SELECT remaining_qty, product_id FROM pre_order_detail WHERE id = :id",
         { id: pre_order_detail_id }
       );
 
@@ -333,14 +333,14 @@ exports.recordDelivery = async (req, res) => {
         });
       }
 
-      // Insert delivery record (trigger will update remaining_qty)
+      // 1. Insert delivery record
       await db.query(`
         INSERT INTO pre_order_delivery (
           pre_order_id, pre_order_detail_id, invoice_id,
-          delivered_qty, delivery_date, destination, created_by
+          delivered_qty, delivery_date, destination, notes, created_by
         ) VALUES (
           :pre_order_id, :pre_order_detail_id, :invoice_id,
-          :delivered_qty, NOW(), :destination, :created_by
+          :delivered_qty, NOW(), :destination, :notes, :created_by
         )
       `, {
         pre_order_id,
@@ -348,8 +348,42 @@ exports.recordDelivery = async (req, res) => {
         invoice_id: invoice_id || null,
         delivered_qty,
         destination: destination || null,
+        notes: notes || null,
         created_by: req.auth?.id
       });
+
+      // 2. Update pre_order_detail (Subtract remaining, add delivered)
+      await db.query(`
+        UPDATE pre_order_detail 
+        SET 
+          remaining_qty = remaining_qty - :delivered_qty,
+          delivered_qty = delivered_qty + :delivered_qty
+        WHERE id = :id
+      `, {
+        delivered_qty,
+        id: pre_order_detail_id
+      });
+    }
+
+    // 3. Update Pre-Order status and last delivery date
+    await db.query(`
+      UPDATE pre_order 
+      SET actual_delivery_date = NOW(),
+          updated_at = NOW()
+      WHERE id = :id
+    `, { id: pre_order_id });
+
+    // Check if fully delivered
+    const [stats] = await db.query(`
+      SELECT SUM(remaining_qty) as total_remaining
+      FROM pre_order_detail
+      WHERE pre_order_id = :pre_order_id
+    `, { pre_order_id });
+
+    if (stats.length > 0 && parseFloat(stats[0].total_remaining || 0) <= 0.01) {
+      await db.query(`
+        UPDATE pre_order SET status = 'delivered' WHERE id = :id
+      `, { id: pre_order_id });
     }
 
     res.json({
@@ -386,6 +420,7 @@ exports.getPreOrderList = async (req, res) => {
     let sql = `
       SELECT
         po.*,
+        DATE_FORMAT(po.actual_delivery_date, '%Y-%m-%d %H:%i:%s') as actual_delivery_date_formatted,
         (SELECT COUNT(*) FROM pre_order_detail WHERE pre_order_id = po.id) as item_count,
         u_creator.branch_name as creator_branch,
         u_confirmed.name as confirmed_by_name
@@ -437,11 +472,14 @@ exports.getPreOrderList = async (req, res) => {
           pod.delivered_qty,
           pod.remaining_qty,
           pod.price,
+          pod.amount,
           pod.destination,
-          p.name as product_name,
+          COALESCE(pod.product_name, p.name) as product_name,
+          COALESCE(pod.category_name, c.name) as category_name,
           COALESCE(p.actual_price, 1) as actual_price
         FROM pre_order_detail pod
         LEFT JOIN product p ON pod.product_id = p.id
+        LEFT JOIN category c ON p.category_id = c.id
         WHERE pod.pre_order_id IN (:ids)
       `, { ids });
 
@@ -450,12 +488,38 @@ exports.getPreOrderList = async (req, res) => {
         if (!detailsMap[d.pre_order_id]) {
           detailsMap[d.pre_order_id] = [];
         }
+        const pName = (d.product_name || "").toLowerCase();
+        const cName = (d.category_name || "").toLowerCase();
+        const search = ` ${pName} ${cName} `.replace(/\s+/g, ' '); // Pad with spaces for better matching
+
+        let fuel_type = 'other';
+
+        // 1. Extra Keywords (Premium/95/Red) - Move 'super' and 'ស៊ុបពែរ' here
+        if (search.includes('extra') || search.includes('95') || search.includes('red') || search.includes('super') || search.includes('ស៊ុបពែរ') || search.includes('អិចត្រា') || search.includes('ក្រហម') || search.includes('gold')) {
+          fuel_type = 'extra';
+        }
+        // 2. Super Keywords (Regular/92/Green) - Usually matches 'gasoline' or 'សាំង'
+        else if (search.includes('92') || search.includes('regular') || search.includes('gasoline') || search.includes('សាំង') || search.includes('green') || search.includes('ខៀវ') || search.includes('បៃតង') || search.includes('បេងហ្សាំង')) {
+          fuel_type = 'super';
+        }
+        // 3. Diesel Keywords (DDO/Euro-5)
+        else if (search.includes('diesel') || search.includes('ddo') || search.includes('euro') || search.includes('ម៉ាស៊ូត') || search.includes('ឌីហ្សែល')) {
+          fuel_type = 'diesel';
+        }
+        // 4. LPG Keywords (Gas)
+        else if (search.includes('lpg') || search.includes('gas') || search.includes('ហ្គាស') || search.includes('ហ្កាស') || search.includes('ហ្គាស់') || search.includes('ហ្គាស៊') || search.includes('ហ្គាស៍') || search.includes('ហ្គាស៌')) {
+          fuel_type = 'lpg';
+        }
+
         detailsMap[d.pre_order_id].push({
           product_name: d.product_name,
+          category_name: d.category_name,
+          fuel_type,
           qty: d.qty,
           delivered_qty: d.delivered_qty,
           remaining_qty: d.remaining_qty,
           price: d.price,
+          amount: d.amount,
           actual_price: d.actual_price,
           destination: d.destination
         });

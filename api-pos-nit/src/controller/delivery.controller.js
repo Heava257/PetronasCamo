@@ -11,7 +11,7 @@
 //         FROM delivery_note dn
 //         LEFT JOIN customer c ON dn.customer_id = c.id
 //         INNER JOIN user u ON dn.created_by = u.id
-//         INNER JOIN user cu_user ON cu_user.group_id = u.group_id
+//         INNER JOIN user cu_user ON cu_user.branch_id = u.branch_id
 //         WHERE cu_user.id = :current_user_id
 //         ORDER BY dn.id DESC
 //       `;
@@ -36,7 +36,7 @@
 //         FROM delivery_note dn
 //         LEFT JOIN customer c ON dn.customer_id = c.id
 //         INNER JOIN user u ON dn.created_by = u.id
-//         INNER JOIN user cu_user ON cu_user.group_id = u.group_id
+//         INNER JOIN user cu_user ON cu_user.branch_id = u.branch_id
 //         WHERE dn.id = :id AND cu_user.id = :current_user_id
 //       `;
 //     const [rows] = await db.query(checkSql, {
@@ -323,7 +323,7 @@ exports.getList = async (req, res) => {
 FROM delivery_note dn
 LEFT JOIN customer c ON dn.customer_id = c.id
 INNER JOIN user u ON dn.created_by = u.id
-INNER JOIN user cu_user ON cu_user.group_id = u.group_id
+INNER JOIN user cu_user ON cu_user.branch_id = u.branch_id
 WHERE cu_user.id = :current_user_id
 ORDER BY dn.id DESC
 
@@ -365,7 +365,7 @@ LEFT JOIN user u ON dn.created_by = u.id
     // Check permission by group (if needed)
     const permissionSql = `
         SELECT 1 FROM user u1
-        INNER JOIN user u2 ON u1.group_id = u2.group_id
+        INNER JOIN user u2 ON u1.branch_id = u2.branch_id
         WHERE u1.id = :created_by AND u2.id = :current_user_id
       `;
     const [permissionRows] = await db.query(permissionSql, {
@@ -516,7 +516,7 @@ exports.update = async (req, res) => {
     const checkSql = `
         SELECT dn.id FROM delivery_note dn
         INNER JOIN user u1 ON dn.created_by = u1.id
-        INNER JOIN user u2 ON u1.group_id = u2.group_id
+        INNER JOIN user u2 ON u1.branch_id = u2.branch_id
         WHERE dn.id = :id AND u2.id = :current_user_id
       `;
     const [rows] = await db.query(checkSql, {
@@ -623,7 +623,7 @@ exports.remove = async (req, res) => {
     const checkSql = `
         SELECT dn.id FROM delivery_note dn
         INNER JOIN user u1 ON dn.created_by = u1.id
-        INNER JOIN user u2 ON u1.group_id = u2.group_id
+        INNER JOIN user u2 ON u1.branch_id = u2.branch_id
         WHERE dn.id = :id AND u2.id = :current_user_id
       `;
     const [rows] = await db.query(checkSql, {
@@ -934,7 +934,7 @@ exports.getDeliveryStats = async (req, res) => {
         
       FROM \`order\` o
       WHERE 1=1 ${dateFilter}
-        AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND o.user_id IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
     `;
 
     params.current_user_id = req.current_id;
@@ -950,7 +950,7 @@ exports.getDeliveryStats = async (req, res) => {
         SUM(CASE WHEN o.delivery_status = 'delivered' THEN 1 ELSE 0 END) as delivered_today
       FROM \`order\` o
       WHERE DATE(o.delivery_date) = CURDATE()
-        AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND o.user_id IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
     `;
 
     const [todayStats] = await db.query(scheduleSql, { current_user_id: req.current_id });
@@ -1008,7 +1008,7 @@ exports.getDeliveriesToday = async (req, res) => {
       LEFT JOIN customer_locations cl ON o.location_id = cl.id
       LEFT JOIN trucks t ON o.truck_id = t.id
       WHERE DATE(o.delivery_date) = CURDATE()
-        AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND o.user_id IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
     `;
 
     const params = { current_user_id: req.current_id };
@@ -1042,7 +1042,7 @@ exports.getDeliveriesToday = async (req, res) => {
         SUM(CASE WHEN delivery_status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_today
       FROM \`order\`
       WHERE DATE(delivery_date) = CURDATE()
-        AND user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND user_id IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
     `;
 
     const [summary] = await db.query(summarySql, { current_user_id: req.current_id });
@@ -1096,7 +1096,7 @@ exports.getDeliveryNoteDetail = async (req, res) => {
       LEFT JOIN user u2 ON dn.updated_by = u2.id
       LEFT JOIN \`order\` o ON dn.order_number = o.order_no
       WHERE dn.id = :id
-        AND dn.created_by IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND dn.created_by IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
     `;
 
     const [note] = await db.query(sql, {
@@ -1219,7 +1219,7 @@ exports.getActiveDeliveries = async (req, res) => {
       ) dt1 ON o.id = dt1.order_id
       LEFT JOIN drivers d ON o.driver_id = d.user_id
       WHERE o.delivery_status IN ('in_transit', 'pending')
-        AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND o.user_id IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
     `;
 
     const params = { current_user_id: req.current_id };
@@ -1266,7 +1266,7 @@ exports.assignTruckToOrder = async (req, res) => {
       FROM \`order\` o
       INNER JOIN user u ON o.user_id = u.id
       WHERE o.id = :order_id
-        AND u.group_id = (SELECT group_id FROM user WHERE id = :current_user_id)
+        AND u.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
     `;
 
     const [check] = await db.query(checkSql, {
@@ -1355,7 +1355,7 @@ exports.updateOrderDeliveryStatus = async (req, res) => {
       FROM \`order\` o
       INNER JOIN user u ON o.user_id = u.id
       WHERE o.id = :order_id
-        AND u.group_id = (SELECT group_id FROM user WHERE id = :current_user_id)
+        AND u.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
     `;
 
     const [check] = await db.query(checkSql, {
@@ -1509,7 +1509,7 @@ exports.updateDeliveryStatus = async (req, res) => {
        FROM \`order\` o
        INNER JOIN user u ON o.user_id = u.id
        WHERE o.id = ?
-         AND u.group_id = (SELECT group_id FROM user WHERE id = ?)`,
+         AND u.branch_id = (SELECT branch_id FROM user WHERE id = ?)`,
       [order_id, req.current_id]
     );
 
@@ -1600,7 +1600,7 @@ exports.getDeliveryTracking = async (req, res) => {
       FROM \`order\` o
       INNER JOIN user u ON o.user_id = u.id
       WHERE o.id = ?
-        AND u.group_id = (SELECT group_id FROM user WHERE id = ?)
+        AND u.branch_id = (SELECT branch_id FROM user WHERE id = ?)
     `;
 
     const [hasPermission] = await db.query(permissionSql, [orderId, req.current_id]);
@@ -1677,7 +1677,7 @@ exports.getDriverLocation = async (req, res) => {
       FROM \`order\` o
       INNER JOIN user u ON o.user_id = u.id
       WHERE o.id = ?
-        AND u.group_id = (SELECT group_id FROM user WHERE id = ?)
+        AND u.branch_id = (SELECT branch_id FROM user WHERE id = ?)
     `;
 
     const [hasPermission] = await db.query(permissionSql, [orderId, req.current_id]);
@@ -1764,7 +1764,7 @@ exports.getActiveDeliveries = async (req, res) => {
       LEFT JOIN customer_locations cl ON o.location_id = cl.id
       LEFT JOIN trucks t ON o.truck_id = t.id
       WHERE o.delivery_status IN ('pending', 'in_transit')
-        AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND o.user_id IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
     `;
 
     const params = { current_user_id: req.current_id };
@@ -1813,7 +1813,7 @@ exports.updateDeliveryLocation = async (req, res) => {
       FROM \`order\` o
       INNER JOIN user u ON o.user_id = u.id
       WHERE o.id = :order_id
-        AND u.group_id = (SELECT group_id FROM user WHERE id = :current_user_id)
+        AND u.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
     `;
 
     const [checkRows] = await db.query(checkSql, {
@@ -1931,7 +1931,7 @@ exports.getActiveDeliveriesWithLocation = async (req, res) => {
         WHERE latitude IS NOT NULL AND longitude IS NOT NULL
       ) dt ON o.id = dt.order_id AND dt.rn = 1
       WHERE o.delivery_status IN ('in_transit', 'pending')
-        AND o.user_id IN (SELECT id FROM user WHERE group_id = (SELECT group_id FROM user WHERE id = :current_user_id))
+        AND o.user_id IN (SELECT id FROM user WHERE branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id))
       ORDER BY o.delivery_date ASC
     `;
 
@@ -2093,7 +2093,7 @@ exports.checkDriverAuth = async (req, res) => {
 
     // Get user info
     const [userResult] = await db.query(
-      `SELECT tel, name, username, role_id, group_id FROM user WHERE id = :user_id`,
+      `SELECT tel, name, username, role_id, branch_id FROM user WHERE id = :user_id`,
       { user_id }
     );
 
@@ -2154,7 +2154,7 @@ exports.checkDriverAuth = async (req, res) => {
         user_name: user.name,
         username: user.username,
         role_id: user.role_id,
-        group_id: user.group_id,
+        branch_id: user.branch_id,
 
         // Truck info
         truck_id: truck.truck_id,
@@ -2197,7 +2197,7 @@ exports.checkDriverAuth = async (req, res) => {
         username: user.username,
         user_phone: userPhone,
         role_id: user.role_id,
-        group_id: user.group_id,
+        branch_id: user.branch_id,
 
         truck_id: null,
         plate_number: null,
@@ -2770,7 +2770,7 @@ exports.authByPhone = async (req, res) => {
 
       const [userResult] = await db.query(
         `SELECT 
-          id, name, username, email, tel, role_id, group_id,
+          id, name, username, email, tel, role_id, branch_id,
           is_active, profile_image, branch_name
          FROM user 
          WHERE tel LIKE :phonePattern
@@ -2793,7 +2793,7 @@ exports.authByPhone = async (req, res) => {
           email: user.email,
           user_phone: user.tel,
           role_id: user.role_id,
-          group_id: user.group_id,
+          branch_id: user.branch_id,
           is_active: user.is_active,
           profile_image: user.profile_image,
           branch_name: user.branch_name,
@@ -2895,7 +2895,7 @@ exports.authByTruck = async (req, res) => {
       const cleanPhone = truck.driver_phone.replace(/\D/g, '');
 
       const [userResult] = await db.query(
-        `SELECT id, name, username, email, role_id, group_id
+        `SELECT id, name, username, email, role_id, branch_id
          FROM user 
          WHERE tel LIKE :phonePattern
          LIMIT 1`,
@@ -2924,7 +2924,7 @@ exports.authByTruck = async (req, res) => {
       username: userInfo?.username || null,
       email: userInfo?.email || null,
       role_id: userInfo?.role_id || null,
-      group_id: userInfo?.group_id || null,
+      branch_id: userInfo?.branch_id || null,
 
       // 认证信息
       authenticated_at: new Date().toISOString(),

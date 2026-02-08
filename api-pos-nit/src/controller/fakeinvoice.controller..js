@@ -30,7 +30,7 @@ exports.create = async (req, res) => {
     } = req.body;
 
     const branch_name = req.auth?.branch_name || null;
-    const group_id = req.auth?.group_id || null;
+    const branch_id = req.auth?.branch_id || null;
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Items array is required and must not be empty." });
@@ -508,17 +508,28 @@ exports.getInvoiceDetailsByOrderNo = async (req, res) => {
 
 exports.getListByCurrentUserGroup = async (req, res) => {
   try {
-    // ទាញយក group_id របស់ user បច្ចុប្បន្ន
+    const currentUserId = req.current_id;
+
+    // ✅ Get current user info including role
     const [userResult] = await db.query(
-      "SELECT group_id FROM user WHERE id = ?",
-      [req.current_id]
+      "SELECT branch_id, role_id FROM user WHERE id = ?",
+      [currentUserId]
     );
 
-    if (!userResult.length) {
+    if (userResult.length === 0) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    const groupId = userResult[0].group_id;
+    const { branch_id: branchId, role_id: roleId } = userResult[0];
+    const isSuperAdmin = roleId === 29;
+
+    let branchFilter = "";
+    let sqlParams = [];
+
+    if (!isSuperAdmin) {
+      branchFilter = " WHERE u.branch_id = ? ";
+      sqlParams.push(branchId);
+    }
 
     // ទាញយក invoice ទាំងអស់ដែល user ក្នុង group នោះបានបង្កើត
     const sql = `
@@ -531,11 +542,11 @@ exports.getListByCurrentUserGroup = async (req, res) => {
       FROM fakeinvoice f
       INNER JOIN user u ON f.user_id = u.id
       LEFT JOIN customer cu ON f.customer_id = cu.id
-      WHERE u.group_id = ?
+      ${branchFilter}
       ORDER BY f.create_at DESC
     `;
 
-    const [data] = await db.query(sql, [groupId]);
+    const [data] = await db.query(sql, sqlParams);
     res.json({ list: data, message: "Success!" });
   } catch (error) {
     logError("fakeinvoice.getListByCurrentUserGroup", error, res);

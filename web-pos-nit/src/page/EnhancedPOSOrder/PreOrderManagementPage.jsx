@@ -37,6 +37,8 @@ import dayjs from "dayjs";
 import "./PreOrderManagement.css";
 import { useTranslation } from "../../locales/TranslationContext";
 import PreOrderForm from "./PreOrderForm";
+import PreOrderDeliveryModal from "./PreOrderDeliveryModal";
+import { CarOutlined } from "@ant-design/icons";
 
 function PreOrderManagementPage() {
   const { t } = useTranslation();
@@ -48,7 +50,9 @@ function PreOrderManagementPage() {
     list: [],
     total: 0,
     visibleModal: false,
+    visibleDeliveryModal: false,
     editRecord: null,
+    selectedPreOrderId: null,
     stats: {
       total: 0,
       pending: 0,
@@ -137,34 +141,45 @@ function PreOrderManagementPage() {
           const destinations = new Set();
 
           details.forEach(d => {
-            const name = (d.product_name || "").toLowerCase();
             const qty = Number(d.qty || 0);
             const delivered = Number(d.delivered_qty || 0);
             const remaining = Number(d.remaining_qty !== undefined ? d.remaining_qty : qty);
             const price = Number(d.price || 0);
+            let type = d.fuel_type || 'other';
 
             if (d.destination) destinations.add(d.destination);
 
-            if (name.includes('extra') || name.includes('red')) {
-              row.qty_extra = qty;
+            // ✅ Frontend Safety Net: If backend says 'other', try to guess one last time
+            if (type === 'other') {
+              const name = (d.product_name || "").toLowerCase();
+              const cat = (d.category_name || "").toLowerCase();
+              const s = `${name} ${cat}`;
+              if (s.includes('extra') || s.includes('95') || s.includes('red') || s.includes('super') || s.includes('ស៊ុបពែរ') || s.includes('អិចត្រា') || s.includes('ក្រហម') || s.includes('gold')) type = 'extra';
+              else if (s.includes('92') || s.includes('regular') || s.includes('gasoline') || s.includes('សាំង') || s.includes('green') || s.includes('ខៀវ') || s.includes('បៃតង') || s.includes('បេងហ្សាំង')) type = 'super';
+              else if (s.includes('diesel') || s.includes('ddo') || s.includes('euro') || s.includes('ម៉ាស៊ូត') || s.includes('ឌីហ្សែល')) type = 'diesel';
+              else if (s.includes('lpg') || s.includes('gas') || s.includes('ហ្គាស') || s.includes('ហ្កាស') || s.includes('ហ្គាស់') || s.includes('ហ្គាស៊') || s.includes('ហ្គាស៍') || s.includes('ហ្គាស៌')) type = 'lpg';
+            }
+
+            if (type === 'extra') {
+              row.qty_extra += qty;
               row.price_extra = price;
-              row.delivered_extra = delivered;
-              row.qty_extra_rem = remaining;
-            } else if (name.includes('super') || name.includes('green')) {
-              row.qty_super = qty;
+              row.delivered_extra += delivered;
+              row.qty_extra_rem += remaining;
+            } else if (type === 'super') {
+              row.qty_super += qty;
               row.price_super = price;
-              row.delivered_super = delivered;
-              row.qty_super_rem = remaining;
-            } else if (name.includes('diesel')) {
-              row.qty_diesel = qty;
+              row.delivered_super += delivered;
+              row.qty_super_rem += remaining;
+            } else if (type === 'diesel') {
+              row.qty_diesel += qty;
               row.price_diesel = price;
-              row.delivered_diesel = delivered;
-              row.qty_diesel_rem = remaining;
-            } else if (name.includes('lpg')) {
-              row.qty_lpg = qty;
+              row.delivered_diesel += delivered;
+              row.qty_diesel_rem += remaining;
+            } else if (type === 'lpg') {
+              row.qty_lpg += qty;
               row.price_lpg = price;
-              row.delivered_lpg = delivered;
-              row.qty_lpg_rem = remaining;
+              row.delivered_lpg += delivered;
+              row.qty_lpg_rem += remaining;
             }
           });
 
@@ -219,11 +234,18 @@ function PreOrderManagementPage() {
   };
 
   const handleEdit = (record) => {
-
     setState(prev => ({
       ...prev,
       editRecord: record,
       visibleModal: true
+    }));
+  };
+
+  const handleDeliver = (record) => {
+    setState(prev => ({
+      ...prev,
+      selectedPreOrderId: record.id,
+      visibleDeliveryModal: true
     }));
   };
 
@@ -341,9 +363,20 @@ function PreOrderManagementPage() {
     {
       title: 'ថ្ងៃទីទទួលទំនិញ',
       dataIndex: 'delivery_date',
-      width: 130,
+      width: 150,
       align: 'center',
-      render: (date) => date ? formatDateClient(date, "DD/MM/YYYY") : "-"
+      render: (date, record) => (
+        <div className="flex flex-col">
+          <span className="text-xs text-gray-500 whitespace-nowrap">
+            {t("expected") || "រំពឹងទុក"}: {date ? formatDateClient(date, "DD/MM/YYYY") : "-"}
+          </span>
+          {record.actual_delivery_date_formatted && (
+            <Tag color="green" className="m-0 mt-1 text-[10px] py-0 px-1">
+              {t("actual") || "ជាក់ស្តែង"}: {formatDateClient(record.actual_delivery_date_formatted, "DD/MM/YYYY")}
+            </Tag>
+          )}
+        </div>
+      )
     },
     {
       title: 'ឈ្មោះក្រុមហ៊ុនផ្តល់ផ្គង់',
@@ -360,28 +393,28 @@ function PreOrderManagementPage() {
           dataIndex: 'qty_extra',
           width: 80,
           align: 'center',
-          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v > 0) ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'Super',
           dataIndex: 'qty_super',
           width: 80,
           align: 'center',
-          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v > 0) ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'Diesel',
           dataIndex: 'qty_diesel',
           width: 80,
           align: 'center',
-          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v > 0) ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'LPG',
           dataIndex: 'qty_lpg',
           width: 80,
           align: 'center',
-          render: v => v ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v > 0) ? <span className="font-semibold">{Number(v).toLocaleString()}</span> : '-'
         },
       ]
     },
@@ -426,28 +459,28 @@ function PreOrderManagementPage() {
           dataIndex: 'delivered_extra',
           width: 90,
           align: 'center',
-          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: (v) => (v !== undefined && v !== null && v !== '') ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'Super',
           dataIndex: 'delivered_super',
           width: 90,
           align: 'center',
-          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: (v) => (v !== undefined && v !== null && v !== '') ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'Diesel',
           dataIndex: 'delivered_diesel',
           width: 90,
           align: 'center',
-          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: (v) => (v !== undefined && v !== null && v !== '') ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'LPG',
           dataIndex: 'delivered_lpg',
           width: 90,
           align: 'center',
-          render: (v) => v ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: (v) => (v !== undefined && v !== null && v !== '') ? <span className="text-green-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
 
       ]
@@ -460,70 +493,77 @@ function PreOrderManagementPage() {
           dataIndex: 'qty_extra_rem',
           width: 90,
           align: 'center',
-          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v !== undefined && v !== null && v !== '') ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'Super',
           dataIndex: 'qty_super_rem',
           width: 90,
           align: 'center',
-          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v !== undefined && v !== null && v !== '') ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'Diesel',
           dataIndex: 'qty_diesel_rem',
           width: 90,
           align: 'center',
-          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v !== undefined && v !== null && v !== '') ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
         {
           title: 'LPG',
           dataIndex: 'qty_lpg_rem',
           width: 90,
           align: 'center',
-          render: v => v ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
+          render: v => (v !== undefined && v !== null && v !== '') ? <span className="text-orange-600 font-bold">{Number(v).toLocaleString()}</span> : '-'
         },
       ]
     },
     {
-      title: <span className="khmer-text-product">ពិនិត្យមើល</span>,
-      width: 80,
+      title: <span className="khmer-text-product">សកម្មភាព</span>,
+      fixed: 'right',
+      width: 140,
       align: 'center',
-
       render: (_, record) => (
-        <Button
-          type="text"
-          icon={<EyeOutlined />}
-          className="text-blue-500"
-          onClick={() => handleViewDetail(record)}
-        />
+        <Space>
+          <Button
+            type="text"
+            icon={<EyeOutlined />}
+            className="text-blue-500"
+            onClick={() => handleViewDetail(record)}
+          />
+          <Button
+            type="text"
+            icon={<EditOutlined />}
+            className="text-orange-500"
+            onClick={() => handleEdit(record)}
+          />
+          {record.status !== 'delivered' && (
+            <Button
+              type="text"
+              icon={<CarOutlined />}
+              className="text-green-500"
+              onClick={() => handleDeliver(record)}
+            />
+          )}
+          <Button
+            type="text"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record)}
+          />
+        </Space>
       )
     },
     {
-      title: <span className="khmer-text-product">កែសម្រួល</span>,
-      width: 80,
+      title: <span className="khmer-text-product">Status</span>,
+      dataIndex: 'status',
+      width: 100,
       align: 'center',
-
-      render: (_, record) => (
-        <Button
-          type="text"
-          icon={<EditOutlined />}
-          className="text-orange-500"
-          onClick={() => handleEdit(record)}
-        />
-      )
-    },
-    {
-      title: <span className="khmer-text-product">កំណត់សម្គាល់</span>,
-      width: 110,
-      align: 'center',
-      render: (_, record) => (
-        <Input.TextArea
-          placeholder="បញ្ចូលកំណត់សម្គាល់..."
-          size="small"
-          rows={1}
-          style={{ fontSize: 11 }}
-        />
+      fixed: 'right',
+      render: (status) => (
+        <Tag color={getStatusColor(status)} className="khmer-text-product">
+          {getStatusText(status)}
+        </Tag>
       )
     },
     {
@@ -536,20 +576,6 @@ function PreOrderManagementPage() {
           icon={<PrinterOutlined />}
           className="text-gray-500"
           onClick={() => message.info('មុខងារព្រីននឹងមកដល់ឆាប់ៗ')}
-        />
-      )
-    },
-    {
-      title: <span className="khmer-text-product">លុបចេញ</span>,
-      width: 70,
-      align: 'center',
-
-      render: (_, record) => (
-        <Button
-          type="text"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record)}
         />
       )
     }
@@ -799,6 +825,16 @@ function PreOrderManagementPage() {
           onSuccess={() => {
             loadPreOrders();
             setState(prev => ({ ...prev, visibleModal: false, editRecord: null }));
+          }}
+        />
+
+        <PreOrderDeliveryModal
+          visible={state.visibleDeliveryModal}
+          preOrderId={state.selectedPreOrderId}
+          onCancel={() => setState(prev => ({ ...prev, visibleDeliveryModal: false, selectedPreOrderId: null }))}
+          onSuccess={() => {
+            loadPreOrders();
+            setState(prev => ({ ...prev, visibleDeliveryModal: false, selectedPreOrderId: null }));
           }}
         />
       </div>

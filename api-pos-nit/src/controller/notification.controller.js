@@ -692,7 +692,7 @@ exports.sendDeliveryNotification = async (orderId, status, driverId) => {
     // 1. Get order details
     const [order] = await db.query(`
       SELECT o.*, c.name as customer_name, c.tel as customer_phone, 
-             u.name as created_by, u.group_id
+             u.name as created_by_name, u.branch_id, u.branch_name
       FROM \`order\` o
       LEFT JOIN customer c ON o.customer_id = c.id
       LEFT JOIN user u ON o.user_id = u.id
@@ -712,16 +712,16 @@ exports.sendDeliveryNotification = async (orderId, status, driverId) => {
       'on_road': `🛵 កំពុងដឹកជញ្ជូនទៅកាន់ ${customer_name} (${order_no})`
     };
 
-    const message = messages[status] || `Status updated: ${status}`;
+    const message = messages[status] || `Status updated: ${status} `;
 
     // 3. Save to database
     await db.query(`
-      INSERT INTO notifications 
-        (user_id, title, message, type, data, is_read, created_at)
-      VALUES (?, ?, ?, ?, ?, 0, NOW())
+      INSERT INTO notifications
+      (user_id, title, message, type, data, is_read, created_at)
+    VALUES(?, ?, ?, ?, ?, 0, NOW())
     `, [
       orderData.user_id, // អ្នកគ្រប់គ្រង
-      `Delivery Update - ${order_no}`,
+      `Delivery Update - ${order_no} `,
       message,
       'delivery',
       JSON.stringify({ order_id: orderId, status }),
@@ -730,19 +730,20 @@ exports.sendDeliveryNotification = async (orderId, status, driverId) => {
     // 4. Send Telegram/SMS (optional)
     if (process.env.TELEGRAM_BOT_TOKEN) {
       const telegramMessage = `
-📦 *DELIVERY UPDATE*
-Order: ${order_no}
-Customer: ${customer_name}
-Status: ${status.toUpperCase()}
-Time: ${new Date().toLocaleString()}
-      `;
+📦 * DELIVERY UPDATE *
+      Order: ${order_no}
+    Customer: ${customer_name}
+    Status: ${status.toUpperCase()}
+    Time: ${new Date().toLocaleString()}
+    `;
 
-      await sendTelegramMessage(orderData.group_id, telegramMessage);
+      // Use sendSmartNotification if possible for branch-specific routing
+      await sendTelegramMessage(telegramMessage);
     }
 
     // 5. Send SMS to customer (optional)
     if (orderData.customer_phone && ['arrived', 'delivered'].includes(status)) {
-      const smsMessage = `អ្នកដឹកបាន${status === 'arrived' ? 'មកដល់' : 'បញ្ចប់ការដឹក'} លេខកម្មង់ ${order_no}`;
+      const smsMessage = `អ្នកដឹកបាន${status === 'arrived' ? 'មកដល់' : 'បញ្ចប់ការដឹក'} លេខកម្មង់ ${order_no} `;
       await sendSMS(orderData.customer_phone, smsMessage);
     }
 

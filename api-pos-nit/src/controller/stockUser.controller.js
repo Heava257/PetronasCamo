@@ -282,8 +282,10 @@ exports.gettotal_due = async (req, res) => {
           AVG(cd.actual_price) AS debt_actual_price,
           MAX(cd.pre_order_no) AS pre_order_no
         FROM customer_debt cd
-        JOIN user cu ON cu.group_id = (SELECT group_id FROM user WHERE id = cd.created_by)
-        WHERE cu.id = ?
+        JOIN user u ON cd.created_by = u.id
+        JOIN user cu ON cu.branch_id = u.branch_id
+        WHERE cu.id = :current_user_id
+          AND (:customer_id IS NULL OR cd.customer_id = :customer_id)
         GROUP BY cd.order_id, cd.customer_id, cd.category_id
       )
       SELECT 
@@ -1216,7 +1218,7 @@ exports.updateCustomerDebt = async (req, res) => {
         user_id: user_id,
         created_by: userName,
         branch_name: branch_name || null,
-        group_id: null,  // ✅ NULL = visible to all Super Admins
+        branch_id: null,  // ✅ NULL = visible to all Super Admins
 
         priority: paymentAmount >= 5000 ? 'critical' : paymentAmount >= 1000 ? 'high' : 'normal',
         severity: paymentAmount >= 5000 ? 'critical' : paymentAmount >= 1000 ? 'warning' : 'info',
@@ -1367,7 +1369,7 @@ exports.updateDebt = async (req, res) => {
       SELECT cd.id, cd.customer_id, cd.order_id, cd.category_id, cd.total_amount, cd.paid_amount, cd.actual_price
       FROM customer_debt cd
       JOIN user u ON cd.created_by = u.id
-      JOIN user cu ON cu.group_id = u.group_id
+      JOIN user cu ON cu.branch_id = u.branch_id
       WHERE cd.id = ? AND cu.id = ?
     `;
     const [existingDebt] = await db.query(checkQuery, [debt_id, req.current_id]);
@@ -1612,7 +1614,7 @@ exports.deleteDebt = async (req, res) => {
       JOIN customer c ON cd.customer_id = c.id
       JOIN \`order\` o ON cd.order_id = o.id
       JOIN user u ON cd.created_by = u.id
-      JOIN user cu ON cu.group_id = u.group_id
+      JOIN user cu ON cu.branch_id = u.branch_id
       WHERE cd.id = ? AND cu.id = ?
     `;
 

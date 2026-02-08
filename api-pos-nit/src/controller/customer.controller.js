@@ -5,9 +5,29 @@ const { createSystemNotification } = require("./System_notification.controller")
 exports.getListByCurrentUserGroup = async (req, res) => {
   try {
     const { txtSearch } = req.query;
-
-    const currentUserBranch = req.auth?.branch_name;
     const currentUserId = req.current_id;
+
+    // ✅ Get current user info for role-based filtering
+    const [currentUser] = await db.query(`
+      SELECT branch_id, branch_name, role_id FROM user WHERE id = :user_id
+    `, { user_id: currentUserId });
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
+    // ✅ Build branch filter consistent with dashboard
+    let branchFilter = "";
+    if (!isSuperAdmin) {
+      if (userBranchId) {
+        branchFilter = `AND u.branch_id = ${userBranchId}`;
+      } else if (userBranchName) {
+        branchFilter = `AND u.branch_name = '${userBranchName}'`;
+      }
+    }
 
     let sql = `
       SELECT 
@@ -27,29 +47,24 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.id_card_expiry, 
         c.spouse_name, 
         c.guarantor_name,
-        u.group_id,
+        u.branch_id,
         u.name as created_by_name,
         u.username as created_by_username,
         u.branch_name as creator_branch
       FROM customer c
       INNER JOIN user u ON c.user_id = u.id
-      INNER JOIN user cu ON cu.group_id = u.group_id
-      WHERE cu.id = :current_user_id
+      WHERE 1=1
+      ${branchFilter}
     `;
 
-    const params = { current_user_id: currentUserId };
-
-    if (currentUserBranch) {
-      sql += " AND c.branch_name = :branch_name";
-      params.branch_name = currentUserBranch;
-    }
+    const params = {};
 
     if (txtSearch) {
       sql += " AND (c.name LIKE :txtSearch OR c.tel LIKE :txtSearch OR c.email LIKE :txtSearch OR c.code LIKE :txtSearch)";
       params.txtSearch = `%${txtSearch}%`;
     }
 
-    sql += " ORDER BY c.create_at ASC";
+    sql += " ORDER BY c.create_at DESC";
 
     const [list] = await db.query(sql, params);
 
@@ -59,7 +74,7 @@ exports.getListByCurrentUserGroup = async (req, res) => {
       list,
       metadata: {
         total: list.length,
-        branch: currentUserBranch || 'All branches',
+        branch: userBranchName || 'All branches',
         user_id: currentUserId
       },
       message: "Success!"
@@ -73,13 +88,30 @@ exports.getListByCurrentUserGroup = async (req, res) => {
 exports.getDetailById = async (req, res) => {
   try {
     const { id } = req.params;
-    const currentUserBranch = req.auth?.branch_name;
 
     if (!id) {
-      return res.status(400).json({
-        success: false,
-        message: "Customer ID is required"
-      });
+      return res.status(400).json({ success: false, message: "Customer ID is required" });
+    }
+
+    // ✅ Get current user info for permission check
+    const [currentUser] = await db.query(`
+      SELECT branch_id, branch_name, role_id FROM user WHERE id = :user_id
+    `, { user_id: req.current_id });
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
+    let branchFilter = "";
+    if (!isSuperAdmin) {
+      if (userBranchId) {
+        branchFilter = `AND u.branch_id = ${userBranchId}`;
+      } else if (userBranchName) {
+        branchFilter = `AND u.branch_name = '${userBranchName}'`;
+      }
     }
 
     // Main customer information with branch filtering
@@ -111,7 +143,7 @@ exports.getDetailById = async (req, res) => {
         c.monthly_income,
         c.emergency_contact_name,
         c.emergency_contact_tel,
-        u.group_id,
+        u.branch_id,
         u.name as created_by_name,
         u.username as created_by_username,
         u.tel as created_by_tel,
@@ -124,26 +156,17 @@ exports.getDetailById = async (req, res) => {
         assigned_user.tel as assigned_user_tel
       FROM customer c
       INNER JOIN user u ON c.user_id = u.id
-      INNER JOIN user cu ON cu.group_id = u.group_id
       LEFT JOIN user uu ON c.update_by = uu.id
       LEFT JOIN user assigned_user ON c.user_id = assigned_user.id
-      WHERE cu.id = :current_user_id 
-        AND c.id = :customer_id
+      WHERE c.id = :customer_id
+      ${branchFilter}
     `;
 
     const params = {
-      current_user_id: req.current_id,
       customer_id: id
     };
 
-    // ✅ Add branch filter
-    let finalSql = customerSql;
-    if (currentUserBranch) {
-      finalSql += " AND c.branch_name = :branch_name";
-      params.branch_name = currentUserBranch;
-    }
-
-    const [customerResult] = await db.query(finalSql, params);
+    const [customerResult] = await db.query(customerSql, params);
 
     if (!customerResult || customerResult.length === 0) {
       return res.status(404).json({
@@ -311,7 +334,27 @@ exports.getDetailById = async (req, res) => {
 exports.getCustomerStatistics = async (req, res) => {
   try {
     const { period = '30' } = req.query;
-    const currentUserBranch = req.auth?.branch_name;
+
+    // ✅ Get current user info for permission check
+    const [currentUser] = await db.query(`
+      SELECT branch_id, branch_name, role_id FROM user WHERE id = :user_id
+    `, { user_id: req.current_id });
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
+    let branchFilter = "";
+    if (!isSuperAdmin) {
+      if (userBranchId) {
+        branchFilter = `AND u.branch_id = ${userBranchId}`;
+      } else if (userBranchName) {
+        branchFilter = `AND u.branch_name = '${userBranchName}'`;
+      }
+    }
 
     let statsSql = `
       SELECT 
@@ -326,21 +369,15 @@ exports.getCustomerStatistics = async (req, res) => {
         COUNT(DISTINCT p.id) as total_payments_count
       FROM customer c
       INNER JOIN user u ON c.user_id = u.id
-      INNER JOIN user cu ON cu.group_id = u.group_id
       LEFT JOIN loan l ON c.id = l.customer_id
       LEFT JOIN payment p ON l.id = p.loan_id
-      WHERE cu.id = :current_user_id
+      WHERE 1=1
+      ${branchFilter}
     `;
 
     const params = {
-      current_user_id: req.current_id,
       period: parseInt(period)
     };
-
-    if (currentUserBranch) {
-      statsSql += " AND c.branch_name = :branch_name";
-      params.branch_name = currentUserBranch;
-    }
 
     const [statsResult] = await db.query(statsSql, params);
     const stats = statsResult[0] || {};
@@ -353,16 +390,10 @@ exports.getCustomerStatistics = async (req, res) => {
         COALESCE(SUM(l.amount), 0) as loans_amount
       FROM customer c
       INNER JOIN user u ON c.user_id = u.id
-      INNER JOIN user cu ON cu.group_id = u.group_id
       LEFT JOIN loan l ON c.id = l.customer_id AND DATE_FORMAT(l.create_at, '%Y-%m') = DATE_FORMAT(c.create_at, '%Y-%m')
-      WHERE cu.id = :current_user_id 
-        AND c.create_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+      WHERE c.create_at >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+      ${branchFilter}
     `;
-
-    if (currentUserBranch) {
-      trendSql += " AND c.branch_name = :trend_branch_name";
-      params.trend_branch_name = currentUserBranch;
-    }
 
     trendSql += `
       GROUP BY DATE_FORMAT(c.create_at, '%Y-%m')
@@ -394,7 +425,7 @@ exports.getCustomerStatistics = async (req, res) => {
           loans_amount: parseFloat(item.loans_amount) || 0
         })),
         metadata: {
-          branch: currentUserBranch || 'All branches',
+          branch: userBranchName || 'All branches',
           period_days: parseInt(period)
         }
       },
@@ -470,7 +501,7 @@ exports.create = async (req, res) => {
     } = req.body;
 
     const branch_name = req.auth?.branch_name || null;
-    const group_id = req.auth?.group_id || null; // ✅ Get group_id
+    const branch_id = req.auth?.branch_id || null; // ✅ Get branch_id
     const createdBy = req.auth?.name || "system";
     const userId = req.auth?.id || null;
 
@@ -646,7 +677,7 @@ exports.create = async (req, res) => {
           user_id: userId,
           created_by: createdBy,
           branch_name: branch_name,
-          group_id: group_id,
+          branch_id: branch_id,
           priority: 'normal',
           severity: 'info',
           icon: '👤',

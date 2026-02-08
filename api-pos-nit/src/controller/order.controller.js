@@ -307,9 +307,9 @@ exports.create = async (req, res) => {
       }
     }
 
-    // ✅ Get branch name and group from auth
+    // ✅ Get branch name and branch_id from auth
     const branch_name = req.auth?.branch_name || null;
-    const group_id = req.auth?.group_id || null;
+    const branch_id = req.auth?.branch_id || null;
 
     // Get customer info
     const [customerResult] = await db.query(
@@ -522,7 +522,7 @@ exports.create = async (req, res) => {
         user_id: req.auth?.id || null,
         created_by: createdBy,
         branch_name: branch_name,
-        group_id: group_id,
+        branch_id: branch_id,
         priority: order.total_amount > 5000 ? 'high' : 'normal',
         severity: 'success',
         icon: '✅',
@@ -600,17 +600,84 @@ exports.create = async (req, res) => {
 
           // ✅ AUTO-UPDATE PRE-ORDER: Deduct remaining QTY
           if (order.pre_order_id) {
-            await db.query(`
-              UPDATE pre_order_detail
-              SET remaining_qty = remaining_qty - :qty,
-                  delivered_qty = delivered_qty + :qty
+            // ✅ CHECK IF DELIVERY ALREADY RECORDED (prevent double-counting)
+            // Use pre_order_detail_id if provided for more precision
+            const preOrderDetailId = item.pre_order_detail_id || null;
+
+            let existingDeliveryCheckSql = `
+              SELECT id FROM pre_order_delivery
               WHERE pre_order_id = :pre_order_id
-                AND product_id = :product_id
-            `, {
-              qty: item.qty,
+                AND invoice_id = :invoice_id
+            `;
+            if (preOrderDetailId) {
+              existingDeliveryCheckSql += ` AND pre_order_detail_id = :pre_order_detail_id `;
+            } else {
+              existingDeliveryCheckSql += ` AND pre_order_detail_id IN (
+                SELECT id FROM pre_order_detail 
+                WHERE pre_order_id = :pre_order_id 
+                  AND product_id = :product_id
+              ) `;
+            }
+            existingDeliveryCheckSql += ` LIMIT 1`;
+
+            const [existingDelivery] = await db.query(existingDeliveryCheckSql, {
               pre_order_id: order.pre_order_id,
-              product_id: item.product_id
+              invoice_id: orderResult.insertId,
+              product_id: item.product_id,
+              pre_order_detail_id: preOrderDetailId
             });
+
+            // Only record if not already recorded
+            if (!existingDelivery || existingDelivery.length === 0) {
+              // 1. Precise Update to pre_order_detail
+              let updateDetailSql = `
+                UPDATE pre_order_detail
+                SET remaining_qty = remaining_qty - :qty,
+                    delivered_qty = delivered_qty + :qty
+                WHERE pre_order_id = :pre_order_id
+              `;
+
+              if (preOrderDetailId) {
+                updateDetailSql += ` AND id = :pre_order_detail_id `;
+              } else {
+                updateDetailSql += ` AND product_id = :product_id `;
+                updateDetailSql += ` LIMIT 1 `; // ✅ CRITICAL: Prevent doubling if product ID matches multiple lines
+              }
+
+              await db.query(updateDetailSql, {
+                qty: item.qty,
+                pre_order_id: order.pre_order_id,
+                product_id: item.product_id,
+                pre_order_detail_id: preOrderDetailId
+              });
+
+              // 2. Precise Record in Delivery History
+              await db.query(`
+                INSERT INTO pre_order_delivery (
+                  pre_order_id, pre_order_detail_id, invoice_id,
+                  delivered_qty, delivery_date, created_by
+                ) 
+                SELECT :pre_order_id, id, :invoice_id, :qty, NOW(), :user_id
+                FROM pre_order_detail
+                WHERE pre_order_id = :pre_order_id 
+                  ${preOrderDetailId ? "AND id = :pre_order_detail_id" : "AND product_id = :product_id"}
+                LIMIT 1
+              `, {
+                pre_order_id: order.pre_order_id,
+                invoice_id: orderResult.insertId,
+                qty: item.qty,
+                product_id: item.product_id,
+                pre_order_detail_id: preOrderDetailId,
+                user_id: req.auth?.id
+              });
+
+              // ✅ UPDATE LAST ACTUAL DELIVERY DATE
+              await db.query(`
+                UPDATE pre_order 
+                SET actual_delivery_date = NOW() 
+                WHERE id = :id
+              `, { id: order.pre_order_id });
+            }
           }
 
           // Strategy 2: Query inventory_transaction for latest PURCHASE_IN
@@ -1201,7 +1268,7 @@ exports.processPayment = async (req, res) => {
       `SELECT o.total_amount, o.paid_amount, o.payment_status, o.user_id 
        FROM \`order\` o
        JOIN user u ON o.user_id = u.id
-       JOIN user cu ON cu.group_id = u.group_id
+       JOIN user cu ON cu.branch_id = u.branch_id
        WHERE o.id = :order_id AND cu.id = :current_user_id 
        LIMIT 1`,
       {
@@ -1234,7 +1301,7 @@ exports.processPayment = async (req, res) => {
     var [updateOrder] = await db.query(
       `UPDATE \`order\` o
        JOIN user u ON o.user_id = u.id
-       JOIN user cu ON cu.group_id = u.group_id
+       JOIN user cu ON cu.branch_id = u.branch_id
        SET o.paid_amount = :newPaidAmount,
            o.payment_method = :payment_method,
            o.payment_status = :payment_status,
@@ -1288,7 +1355,7 @@ exports.processPayment = async (req, res) => {
       FROM \`order\` AS orders
       JOIN customer c ON orders.customer_id = c.id
       JOIN user u ON orders.user_id = u.id
-      JOIN user cu ON cu.group_id = u.group_id
+      JOIN user cu ON cu.branch_id = u.branch_id
       WHERE orders.id = :order_id AND cu.id = :current_user_id`,
       {
         order_id,
@@ -1307,7 +1374,7 @@ exports.processPayment = async (req, res) => {
       FROM payments p
       JOIN \`order\` o ON p.order_id = o.id
       JOIN user u ON o.user_id = u.id
-      JOIN user cu ON cu.group_id = u.group_id
+      JOIN user cu ON cu.branch_id = u.branch_id
       WHERE p.order_id = :order_id AND cu.id = :current_user_id
       ORDER BY p.payment_date DESC 
       LIMIT 5`,
@@ -1371,7 +1438,7 @@ exports.getPaymentHistory = async (req, res) => {
       JOIN \`order\` o ON p.order_id = o.id
       JOIN customer c ON p.customer_id = c.id
       JOIN user u ON o.user_id = u.id
-      JOIN user cu ON cu.group_id = u.group_id
+      JOIN user cu ON cu.branch_id = u.branch_id
       WHERE cu.id = ?
     `;
 
@@ -1419,7 +1486,7 @@ exports.getPaymentHistory = async (req, res) => {
       JOIN \`order\` o ON p.order_id = o.id
       JOIN customer c ON p.customer_id = c.id
       JOIN user u ON o.user_id = u.id
-      JOIN user cu ON cu.group_id = u.group_id
+      JOIN user cu ON cu.branch_id = u.branch_id
       WHERE cu.id = ?
       ${conditions.length ? `AND ${conditions.join(' AND ')}` : ''}
     `;
@@ -1496,7 +1563,7 @@ exports.getPaymentHistory = async (req, res) => {
 //       JOIN \`order\` o ON p.order_id = o.id
 //       JOIN customer c ON p.customer_id = c.id
 //       JOIN user u ON o.user_id = u.id
-//       JOIN user cu ON cu.group_id = u.group_id
+//       JOIN user cu ON cu.branch_id = u.branch_id
 //       WHERE cu.id = ?
 //     `;
 
@@ -1523,7 +1590,7 @@ exports.getPaymentHistory = async (req, res) => {
 //       JOIN \`order\` o ON p.order_id = o.id
 //       JOIN customer c ON p.customer_id = c.id
 //       JOIN user u ON o.user_id = u.id
-//       JOIN user cu ON cu.group_id = u.group_id
+//       JOIN user cu ON cu.branch_id = u.branch_id
 //       WHERE cu.id = ?
 //       ${conditions.length ? `AND ${conditions.join(' AND ')}` : ''}
 //     `;
@@ -1589,7 +1656,7 @@ exports.updatePayment = async (req, res) => {
       SELECT 
         p.*,
         o.id as order_id,
-        u.group_id
+        u.branch_id
       FROM payments p
       JOIN \`order\` o ON p.order_id = o.id
       JOIN user u ON o.user_id = u.id
@@ -1606,10 +1673,10 @@ exports.updatePayment = async (req, res) => {
 
     // Verify user belongs to the same group
     const [currentUser] = await connection.query(`
-      SELECT group_id FROM user WHERE id = ?
+      SELECT branch_id FROM user WHERE id = ?
     `, [req.current_id]);
 
-    if (existingPayment[0].group_id !== currentUser[0].group_id) {
+    if (existingPayment[0].branch_id !== currentUser[0].branch_id) {
       await connection.rollback();
       return res.status(403).json({
         success: false,
@@ -1734,7 +1801,7 @@ exports.voidPayment = async (req, res) => {
 
     // ✅ Check if payment exists and belongs to user's group
     const [existingPayment] = await connection.query(`
-      SELECT p.*, u.group_id, o.id as order_id
+      SELECT p.*, u.branch_id, o.id as order_id
       FROM payments p
       JOIN \`order\` o ON p.order_id = o.id
       JOIN user u ON o.user_id = u.id
@@ -1751,10 +1818,10 @@ exports.voidPayment = async (req, res) => {
 
     // ✅ Verify user belongs to the same group
     const [currentUser] = await connection.query(`
-      SELECT group_id FROM user WHERE id = ?
+      SELECT branch_id FROM user WHERE id = ?
     `, [req.current_id]);
 
-    if (existingPayment[0].group_id !== currentUser[0].group_id) {
+    if (existingPayment[0].branch_id !== currentUser[0].branch_id) {
       await connection.rollback();
       return res.status(403).json({
         success: false,
@@ -1947,7 +2014,7 @@ exports.updateOrderCompletion = async (req, res) => {
 
     // ✅ FIXED: Corrected JOIN - o.user_id should join with u.id, not u.group_id
     const [existingOrder] = await db.query(`
-      SELECT o.id, o.user_id, u.group_id
+      SELECT o.id, o.user_id, u.branch_id
       FROM \`order\` o
       JOIN user u ON o.user_id = u.id
       WHERE o.id = :order_id
@@ -1963,7 +2030,7 @@ exports.updateOrderCompletion = async (req, res) => {
 
     // ✅ Get current user's group
     const [currentUser] = await db.query(`
-      SELECT group_id FROM user WHERE id = :current_id
+      SELECT branch_id FROM user WHERE id = :current_id
     `, { current_id: req.current_id });
 
 
@@ -1975,7 +2042,7 @@ exports.updateOrderCompletion = async (req, res) => {
     }
 
     // ✅ Verify user belongs to the same group
-    if (currentUser[0].group_id !== existingOrder[0].group_id) {
+    if (currentUser[0].branch_id !== existingOrder[0].branch_id) {
       return res.status(403).json({
         success: false,
         message: "You don't have permission to update this order"
@@ -2037,12 +2104,29 @@ exports.getList = async (req, res) => {
   try {
     const { from_date, to_date, txtSearch, order_date, delivery_date } = req.query;
 
-    if (!req.current_id) {
-      return res.status(400).json({ error: "User authentication required" });
+    // ✅ Get current user info for role-based filtering
+    const [currentUser] = await db.query(`
+      SELECT branch_id, branch_name, role_id FROM user WHERE id = :user_id
+    `, { user_id: req.current_id });
+
+    if (!currentUser || currentUser.length === 0) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    let sqlWhere = " WHERE cu_user.id = ? ";
-    let sqlParams = [req.current_id];
+    const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
+    const isSuperAdmin = role_id === 29;
+
+    let branchFilter = "";
+    if (!isSuperAdmin) {
+      if (userBranchId) {
+        branchFilter = `AND u.branch_id = ${userBranchId}`;
+      } else if (userBranchName) {
+        branchFilter = `AND u.branch_name = '${userBranchName}'`;
+      }
+    }
+
+    let sqlWhere = " WHERE 1=1 ";
+    let sqlParams = [];
 
     if (order_date) {
       sqlWhere += " AND DATE(o.order_date) = DATE(?) ";
@@ -2100,12 +2184,16 @@ exports.getList = async (req, res) => {
            ORDER BY it.created_at DESC 
            LIMIT 1),
           
-          -- Strategy 3: From inventory_transaction.notes (extract PO from notes)
+          -- Strategy 3: From inventory_transaction.notes (extracting PO: part)
           (SELECT 
-             SUBSTRING_INDEX(SUBSTRING_INDEX(it.notes, 'PO: ', -1), ')', 1)
+             CASE 
+               WHEN it.notes LIKE '%PO:%' THEN 
+                 SUBSTRING_INDEX(SUBSTRING_INDEX(it.notes, 'PO:', -1), ' ', 1)
+               ELSE NULL 
+             END
            FROM inventory_transaction it
            INNER JOIN order_detail od ON it.product_id = od.product_id
-           WHERE od.order_id = o.id
+           WHERE od.order_id = o.id 
              AND it.transaction_type = 'SALE_OUT'
              AND it.notes LIKE '%PO:%'
              AND DATE(it.created_at) = DATE(o.create_at)
@@ -2119,8 +2207,8 @@ exports.getList = async (req, res) => {
       FROM \`order\` o
       LEFT JOIN customer c ON o.customer_id = c.id
       INNER JOIN user u ON o.user_id = u.id
-      INNER JOIN user cu_user ON cu_user.group_id = u.group_id
       ${sqlWhere}
+      ${branchFilter}
       ORDER BY o.create_at DESC
     `;
 
@@ -2190,7 +2278,7 @@ exports.getList = async (req, res) => {
       FROM \`order\` o
       LEFT JOIN customer c ON o.customer_id = c.id
       INNER JOIN user u ON o.user_id = u.id
-      INNER JOIN user cu_user ON cu_user.group_id = u.group_id
+      INNER JOIN user cu_user ON cu_user.branch_id = u.branch_id
       ${sqlWhere}
     `;
 
@@ -2222,18 +2310,18 @@ exports.bulkUpdateOrderCompletion = async (req, res) => {
     // ✅ Security: Verify all orders belong to user's group
     const placeholders = order_ids.map(() => '?').join(',');
     const [orderCheck] = await db.query(`
-      SELECT o.id, u.group_id
+      SELECT o.id, u.branch_id
       FROM \`order\` o
       JOIN user u ON o.user_id = u.id
       WHERE o.id IN (${placeholders})
     `, order_ids);
 
     const [currentUser] = await db.query(`
-      SELECT group_id FROM user WHERE id = ?
+      SELECT branch_id FROM user WHERE id = ?
     `, [req.current_id]);
 
     const unauthorizedOrders = orderCheck.filter(
-      order => order.group_id !== currentUser[0]?.group_id
+      order => order.branch_id !== currentUser[0]?.branch_id
     );
 
     if (unauthorizedOrders.length > 0) {
@@ -2293,7 +2381,7 @@ exports.getOrderCompletionStats = async (req, res) => {
         ) as completion_rate
       FROM \`order\` o
       JOIN user u ON o.user_id = u.id
-      JOIN user cu ON cu.group_id = u.group_id
+      JOIN user cu ON cu.branch_id = u.branch_id
       WHERE cu.id = ?
     `;
 

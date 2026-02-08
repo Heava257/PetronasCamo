@@ -501,7 +501,7 @@ exports.getOrderDetailsForMap = async (req, res) => {
       LEFT JOIN user u ON o.user_id = u.id
       LEFT JOIN customer_locations cl ON o.location_id = cl.id
       LEFT JOIN trucks t ON o.truck_id = t.id
-      INNER JOIN user cu ON cu.group_id = u.group_id
+      INNER JOIN user cu ON cu.branch_id = u.branch_id
       WHERE o.id = :id AND cu.id = :current_user_id
     `;
 
@@ -654,7 +654,7 @@ exports.getOrdersWithLocations = async (req, res) => {
       LEFT JOIN customer_locations cl ON o.location_id = cl.id
       LEFT JOIN trucks t ON o.truck_id = t.id
       LEFT JOIN user u ON o.user_id = u.id
-      INNER JOIN user cu ON cu.group_id = u.group_id
+      INNER JOIN user cu ON cu.branch_id = u.branch_id
       WHERE cu.id = :current_user_id
     `;
 
@@ -699,7 +699,7 @@ exports.updateDeliveryLocation = async (req, res) => {
       SELECT o.id 
       FROM \`order\` o
       INNER JOIN user u ON o.user_id = u.id
-      INNER JOIN user cu ON u.group_id = cu.group_id
+      INNER JOIN user cu ON u.branch_id = cu.branch_id
       WHERE o.id = :order_id AND cu.id = :current_user_id
     `;
 

@@ -231,8 +231,16 @@ function PreOrderDetailPage() {
                                         </div>
                                     )}
                                     <div className="receipt-detail-row">
-                                        <span className="receipt-label khmer-text-product">• New Total:</span>
-                                        <span className="receipt-value">{parseFloat(item.qty).toLocaleString()}{item.unit}</span>
+                                        <span className="receipt-label khmer-text-product">• Total Quantity:</span>
+                                        <span className="receipt-value font-bold">{parseFloat(item.qty).toLocaleString()} {item.unit || "L"}</span>
+                                    </div>
+                                    <div className="receipt-detail-row">
+                                        <span className="receipt-label khmer-text-product text-green-600">• Delivered Qty:</span>
+                                        <span className="receipt-value text-green-600 font-bold">{parseFloat(item.delivered_qty || 0).toLocaleString()} {item.unit || "L"}</span>
+                                    </div>
+                                    <div className="receipt-detail-row">
+                                        <span className="receipt-label khmer-text-product text-orange-600">• Remaining Qty:</span>
+                                        <span className="receipt-value text-orange-600 font-bold">{parseFloat(item.remaining_qty || 0).toLocaleString()} {item.unit || "L"}</span>
                                     </div>
                                     <div className="receipt-detail-row">
                                         <span className="receipt-label khmer-text-product">• Unit Price:</span>
@@ -245,6 +253,33 @@ function PreOrderDetailPage() {
                                 </div>
                             ))}
                         </div>
+
+                        {state.preOrder.deliveries && state.preOrder.deliveries.length > 0 && (
+                            <>
+                                <div className="receipt-separator">━━━━━━━━━━━━━━━━━</div>
+                                <div className="receipt-section">
+                                    <div className="receipt-section-title khmer-text-product">
+                                        🚚 Delivery History:
+                                    </div>
+                                    {state.preOrder.deliveries.map((delivery, dIdx) => (
+                                        <div key={delivery.id || dIdx} className="mb-2 p-2 rounded-lg bg-gray-50 border border-gray-100">
+                                            <div className="flex justify-between text-xs mb-1">
+                                                <span className="font-bold">{dayjs(delivery.delivery_date).format("DD/MM/YYYY HH:mm")}</span>
+                                                <Tag color="green">Delivered</Tag>
+                                            </div>
+                                            <div className="text-sm font-semibold text-green-700">
+                                                {parseFloat(delivery.delivered_qty).toLocaleString()} L
+                                            </div>
+                                            {delivery.notes && (
+                                                <div className="text-[10px] text-gray-500 italic mt-1">
+                                                    Note: {delivery.notes}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
+                        )}
 
                         <div className="receipt-separator">━━━━━━━━━━━━━━━━━</div>
 

@@ -81,8 +81,24 @@ html.template-acledagold .ant-table-tbody>tr>td {
   color: #f1f5f9 !important;
 }
 
+/* Aggressively fix fixed columns overlap transparency */
+html.template-acledagold .ant-table-wrapper .ant-table-cell-fix-left,
+html.template-acledagold .ant-table-wrapper .ant-table-cell-fix-right,
+html.template-acledagold .ant-table-tbody>tr>td.ant-table-cell-fix-left,
+html.template-acledagold .ant-table-tbody>tr>td.ant-table-cell-fix-right {
+  background: #0f172a !important;
+  /* Solid opaque navy dark */
+  opacity: 1 !important;
+  z-index: 10 !important;
+}
+
 html.template-acledagold .ant-table-tbody>tr:hover>td {
   background: rgba(255, 215, 0, 0.08) !important;
+}
+
+html.template-acledagold .ant-table-tbody>tr:hover>td.ant-table-cell-fix-left,
+html.template-acledagold .ant-table-tbody>tr:hover>td.ant-table-cell-fix-right {
+  background: #1e293b !important;
 }
 
 /* FORM ELEMENTS */

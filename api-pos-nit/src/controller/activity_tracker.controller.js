@@ -161,7 +161,7 @@ exports.getInactiveAdmins = async (req, res) => {
           WHEN DATEDIFF(NOW(), MAX(lh.login_time)) >= 7 THEN 'Inactive 7-13 Days'
           ELSE 'Active (< 7 days)'
         END AS activity_status,
-        (SELECT COUNT(*) FROM user WHERE group_id = u.group_id AND id != u.id) AS managed_users_count
+        (SELECT COUNT(*) FROM user WHERE branch_id = u.branch_id AND id != u.id) AS managed_users_count
       FROM user u
       INNER JOIN role r ON u.role_id = r.id
       LEFT JOIN login_history lh ON u.id = lh.user_id AND lh.status = 'success'
@@ -214,7 +214,7 @@ exports.getInactiveAdmins = async (req, res) => {
   } catch (error) {
     console.error('❌ Error in getInactiveAdmins:', error);
     logError("admin.getInactiveAdmins", error, res);
-    
+
     return res.status(500).json({
       error: true,
       message: "Failed to retrieve inactive admins",

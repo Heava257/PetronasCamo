@@ -85,6 +85,7 @@ import { SettingsProvider } from "./settings";
 import DocuVerse from "./page/template/DocuVerse";
 import CareConcierge from "./page/template/CareConcierge";
 import CastleDashboard from "./page/template/CastleDashboard";
+import PermissionPage from "./page/employee/PermissionPage"; // ✅ Import PermissionPage
 
 function App() {
 
@@ -157,6 +158,7 @@ function App() {
               <Route path="/permission-management" element={<PermissionManagement />} />
               <Route path="/notify-inactive" element={<NotificationPanel />} />
               <Route path="/super-TelegramConfiguration" element={<TelegramConfiguration />} />
+              <Route path="/branch-permission" element={<PermissionPage />} /> {/* ✅ New Branch Permission Route */}
               <Route path="/BranchPermissionOverride" element={<BranchPermissionOverridePage />} />
               <Route path="/security/dashboard" element={<SecurityDashboard />} />
               <Route path="/notifications" element={<NotificationCenter />} />

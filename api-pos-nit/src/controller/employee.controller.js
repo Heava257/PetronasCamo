@@ -464,13 +464,16 @@ exports.createLoginAccount = async (req, res) => {
     const { employee_id, username, password, role_id } = req.body;
     const currentUserId = req.current_id;
 
-    if (!employee_id || !username || !password || !role_id) {
+    if (!employee_id || !username || !password) {
       return res.json({
         error: true,
-        message: "Employee ID, username, password and role are required",
-        message_kh: "ត្រូវការ Employee ID, username, password និង role"
+        message: "Employee ID, username and password are required",
+        message_kh: "ត្រូវការ Employee ID, username និង password"
       });
     }
+
+    // Default to Guest role (ID: 37) if not provided
+    const finalRoleId = role_id || 37;
 
     const [employee] = await db.query(
       `SELECT * FROM employee WHERE id = ?`,
@@ -507,7 +510,7 @@ exports.createLoginAccount = async (req, res) => {
     }
 
     const [creator] = await db.query(
-      `SELECT branch_name, group_id, role_id FROM user WHERE id = ?`,
+      `SELECT branch_name, branch_id, role_id FROM user WHERE id = ?`,
       [currentUserId]
     );
 
@@ -517,18 +520,18 @@ exports.createLoginAccount = async (req, res) => {
     const [userResult] = await db.query(
       `INSERT INTO user (
         username, password, role_id, name, tel, address,
-        branch_name, group_id, is_active, employee_id,
+        branch_name, branch_id, is_active, employee_id,
         create_by, create_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, NOW())`,
       [
         username,
         hashedPassword,
-        role_id,
+        finalRoleId,
         employee[0].name,
         employee[0].tel || null,
         employee[0].address || null,
         creator[0].branch_name,
-        creator[0].role_id === 29 ? userResult.insertId : creator[0].group_id,
+        creator[0].branch_id,
         employee_id,
         req.auth?.name || 'System'
       ]
@@ -538,7 +541,7 @@ exports.createLoginAccount = async (req, res) => {
 
     await db.query(
       `INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)`,
-      [userId, role_id]
+      [userId, finalRoleId]
     );
 
     await db.query(

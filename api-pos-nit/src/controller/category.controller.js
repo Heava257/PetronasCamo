@@ -21,7 +21,7 @@ exports.create = async (req, res) => {
   } catch (error) {
     logError("category.create", error, res);
   }
-}; 
+};
 
 exports.update = async (req, res) => {
   try {
@@ -76,16 +76,16 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.actual_price, 
         c.CreateAt, 
         c.user_id,
-        u.group_id,
+        u.branch_id,
         u.name as created_by_name,
         u.username as created_by_username
       FROM category c
       INNER JOIN user u ON c.user_id = u.id
-      INNER JOIN user cu ON cu.group_id = u.group_id
+      INNER JOIN user cu ON cu.branch_id = u.branch_id
       WHERE cu.id = :current_user_id
     `;
     var [data] = await db.query(sql, {
-      current_user_id: req.current_id 
+      current_user_id: req.current_id
     });
     res.json({
       list: data,
@@ -106,5 +106,25 @@ exports.remove = async (req, res) => {
     });
   } catch (error) {
     logError("remove.create", error, res);
+  }
+};
+
+exports.runMigration = async (req, res) => {
+  try {
+    // 1. Add notes to pre_order_delivery
+    const [cols1] = await db.query("SHOW COLUMNS FROM pre_order_delivery");
+    if (!cols1.some(c => c.Field === 'notes')) {
+      await db.query("ALTER TABLE pre_order_delivery ADD COLUMN notes TEXT NULL AFTER destination");
+    }
+
+    // 2. Add actual_delivery_date to pre_order
+    const [cols2] = await db.query("SHOW COLUMNS FROM pre_order");
+    if (!cols2.some(c => c.Field === 'actual_delivery_date')) {
+      await db.query("ALTER TABLE pre_order ADD COLUMN actual_delivery_date DATETIME NULL AFTER delivery_date");
+    }
+
+    res.json({ success: true, message: "Migration completed successfully." });
+  } catch (error) {
+    logError("category.runMigration", error, res);
   }
 };

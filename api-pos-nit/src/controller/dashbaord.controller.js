@@ -32,8 +32,8 @@ exports.getList = async (req, res) => {
     const [currentUser] = await db.query(`
       SELECT 
         u.id,
+        u.branch_id,
         u.branch_name,
-        u.group_id,
         u.role_id,
         r.code AS role_code,
         r.name AS role_name
@@ -53,20 +53,24 @@ exports.getList = async (req, res) => {
 
     const userRoleId = currentUser[0].role_id;
     const userBranch = currentUser[0].branch_name;
-    const userGroupId = currentUser[0].group_id;
+    const userBranchId = currentUser[0].branch_id; // ✅ New Branch ID
 
     // ✅ Branch filter
     let branchFilter = '';
     if (userRoleId !== 29) {
-      if (!userBranch) {
-        console.error('❌ Branch Admin has no branch_name');
+      if (userBranchId) {
+        branchFilter = `AND u.branch_id = ${userBranchId}`;
+      } else if (userBranch) {
+        // Fallback if branch_id is null (shouldn't happen after migration)
+        branchFilter = `AND u.branch_name = '${userBranch}'`;
+      } else {
+        console.error('❌ Branch Admin has no branch_name/id');
         return res.status(403).json({
           error: true,
           message: "Your account is not assigned to a branch",
           message_kh: "គណនីរបស់អ្នកមិនបានកំណត់សាខា"
         });
       }
-      branchFilter = `AND u.branch_name = '${userBranch}'`;
     }
 
     // ✅✅✅ TOP SALES QUERY ✅✅✅
@@ -511,7 +515,6 @@ exports.getList = async (req, res) => {
         branch: userRoleId === 29 ? 'All Branches' : userBranch,
         is_super_admin: userRoleId === 29,
         role_id: userRoleId,
-        group_id: userGroupId,
         date_range_applied: !!(from_date && to_date)
       }
     });

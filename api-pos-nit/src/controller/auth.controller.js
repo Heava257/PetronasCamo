@@ -31,7 +31,7 @@ exports.getList = async (req, res) => {
       `SELECT 
         u.id, 
         u.role_id, 
-        u.group_id, 
+        u.branch_id, 
         u.branch_name, 
         u.name, 
         r.code AS role_code,
@@ -53,29 +53,7 @@ exports.getList = async (req, res) => {
 
     const userRole = currentUser[0].role_code;
     const userRoleId = currentUser[0].role_id;
-    const userGroupId = currentUser[0].group_id;
-
-
-
-    // ✅✅✅ AUTO-FIX: If Admin has NULL group_id, fix it NOW ✅✅✅
-    if (userRoleId === 1 && (!userGroupId || userGroupId === 0)) {  // role_id = 1 is Admin
-
-      try {
-        await db.query(
-          `UPDATE user SET group_id = ? WHERE id = ?`,
-          [currentUserId, currentUserId]
-        );
-
-        currentUser[0].group_id = currentUserId;
-      } catch (fixError) {
-        console.error('❌ Failed to auto-fix group_id:', fixError);
-        return res.status(500).json({
-          error: true,
-          message: "Database error: Please contact administrator",
-          message_kh: "មានបញ្ហាទិន្នន័យ សូមទាក់ទងអ្នកគ្រប់គ្រង"
-        });
-      }
-    }
+    // const userGroupId = currentUser[0].group_id; // Removed as requested
 
     let sql;
     let params = {};
@@ -90,7 +68,7 @@ exports.getList = async (req, res) => {
           u.barcode, 
           u.username, 
           u.branch_name, 
-          u.group_id,
+          u.branch_id,
           u.create_by, 
           u.create_at, 
           u.address, 
@@ -104,11 +82,11 @@ exports.getList = async (req, res) => {
         ORDER BY u.branch_name, u.create_at DESC
       `;
     } else if (Number(userRoleId) === 1) {  // role_id = 1 is Admin
-      const filterGroupId = currentUser[0].group_id;
+      const filterBranchId = currentUser[0].branch_id;
+      const filterBranch = currentUser[0].branch_name;
 
-
-      if (!filterGroupId || filterGroupId === 0) {
-        console.error(`❌ CRITICAL: Admin still has invalid group_id!`);
+      if (!filterBranchId && !filterBranch) {
+        console.error(`❌ CRITICAL: Admin has no branch assigned!`);
         return res.status(500).json({
           error: true,
           message: "Account configuration error. Please contact administrator.",
@@ -123,7 +101,7 @@ exports.getList = async (req, res) => {
           u.barcode, 
           u.username, 
           u.branch_name, 
-          u.group_id,
+          u.branch_id,
           u.create_by, 
           u.create_at, 
           u.address, 
@@ -134,10 +112,11 @@ exports.getList = async (req, res) => {
           r.code AS role_code
         FROM user u 
         INNER JOIN role r ON u.role_id = r.id 
-        WHERE u.group_id = :current_group_id
+        WHERE (u.branch_id = :current_branch_id OR (u.branch_id IS NULL AND u.branch_name = :current_branch_name))
         ORDER BY u.create_at DESC
       `;
-      params.current_group_id = filterGroupId;
+      params.current_branch_id = filterBranchId;
+      params.current_branch_name = filterBranch;
     } else {
       // Regular user - no access to user list
       console.warn(`⚠️ User with role_id ${userRoleId} attempted to access user list`);
@@ -154,7 +133,7 @@ exports.getList = async (req, res) => {
     if (list.length > 0) {
 
     } else if (Number(userRoleId) === 1) {  // If Admin and no users found
-      console.warn(`⚠️ No users found for group_id: ${params.current_group_id}`);
+      console.warn(`⚠️ No users found for branch_id: ${params.current_branch_id} `);
     }
 
     // Get all roles
@@ -170,8 +149,8 @@ exports.getList = async (req, res) => {
         current_user_id: currentUserId,
         role: userRole,
         role_id: userRoleId,
-        group_id: currentUser[0].group_id,
-        filter_applied: params.current_group_id || 'none',
+        branch_id: currentUser[0].branch_id,
+        filter_applied: params.current_branch_id || 'none',
         users_found: list.length
       }
     });
@@ -250,9 +229,9 @@ exports.updateuserProfile = async (req, res) => {
 
     // ✅ Update user profile
     const updateSql = `
-      UPDATE user 
-      SET 
-        name = :name, 
+      UPDATE user
+      SET
+        name = :name,
         username = :username,
         profile_image = :profile_image
       WHERE id = :userId
@@ -268,20 +247,20 @@ exports.updateuserProfile = async (req, res) => {
     if (result.affectedRows > 0) {
       // ✅ Fetch updated user data
       const [updatedUser] = await db.query(`
-        SELECT 
-          u.id, 
-          u.name, 
-          u.username, 
-          u.email,
-          u.tel,
-          u.profile_image,
-          u.branch_name,
-          u.address,
-          r.name as role_name
-        FROM user u
-        INNER JOIN role r ON u.role_id = r.id
-        WHERE u.id = :userId
-      `, { userId });
+      SELECT
+        u.id,
+        u.name,
+        u.username,
+        u.email,
+        u.tel,
+        u.profile_image,
+        u.branch_name,
+        u.address,
+        r.name as role_name
+      FROM user u
+      INNER JOIN role r ON u.role_id = r.id
+      WHERE u.id = :userId
+    `, { userId });
 
 
       // ✅ Log activity
@@ -290,9 +269,9 @@ exports.updateuserProfile = async (req, res) => {
 
       try {
         await db.query(`
-          INSERT INTO user_activity_log (
-            user_id, 
-            action_type, 
+          INSERT INTO user_activity_log(
+            user_id,
+            action_type,
             action_description,
             ip_address,
             user_agent,
@@ -309,7 +288,7 @@ exports.updateuserProfile = async (req, res) => {
           )
         `, {
           user_id: userId,
-          description: `Profile updated: ${name} (${username})${req.file ? ' - Profile image changed' : ''}`,
+          description: `Profile updated: ${name} (${username})${req.file ? ' - Profile image changed' : ''} `,
           ip_address: clientIP,
           user_agent: userAgent,
           created_by: userId
@@ -360,20 +339,20 @@ exports.getuserProfile = async (req, res) => {
     }
 
     const sql = `
-      SELECT 
-        u.id, 
-        u.name, 
-        u.username, 
-        u.profile_image, 
-        u.address, 
-        u.tel, 
-        u.branch_name, 
-        u.is_active, 
+      SELECT
+      u.id,
+        u.name,
+        u.username,
+        u.profile_image,
+        u.address,
+        u.tel,
+        u.branch_name,
+        u.is_active,
         r.name AS role_name 
       FROM user u 
       INNER JOIN role r ON u.role_id = r.id 
       WHERE u.id = ?
-    `;
+        `;
 
     const [user] = await db.query(sql, [userId]);
 
@@ -442,19 +421,19 @@ exports.update = async (req, res) => {
     // Create the SQL query
     let sql = `
       UPDATE user SET
-        name = :name,
-        username = :username,
-        role_id = :role_id,
-        ${password ? "password = :password," : ""}
-        tel = :tel,
-        branch_name = :branch_name,
-        is_active = :is_active,
-        address = :address,
-        profile_image = :profile_image,
-        create_by = :create_by,
-        create_at = :create_at
-      WHERE id = :id
-    `;
+      name = : name,
+        username = : username,
+          role_id = : role_id,
+            ${password ? "password = :password," : ""}
+      tel = : tel,
+        branch_name = : branch_name,
+          is_active = : is_active,
+            address = : address,
+              profile_image = : profile_image,
+                create_by = : create_by,
+                  create_at = : create_at
+      WHERE id = : id
+        `;
 
     // Prepare the query parameters
     const queryParams = {
@@ -483,7 +462,6 @@ exports.register = async (req, res) => {
   try {
     const {
       role_id,
-      group_id: frontendGroupId,  // Rename to avoid confusion
       name,
       username,
       email,
@@ -491,6 +469,7 @@ exports.register = async (req, res) => {
       address,
       tel,
       branch_name: frontendBranchName,  // Rename to avoid confusion
+      branch_id: frontendBranchId,      // New field
       barcode,
       status,
     } = req.body;
@@ -542,13 +521,13 @@ exports.register = async (req, res) => {
 
     // ✅✅✅ STEP 1: GET CREATOR'S INFO FROM DATABASE ✅✅✅
     const [creator] = await db.query(`
-      SELECT 
-        u.id, 
-        u.username, 
-        u.name, 
-        u.branch_name, 
-        u.group_id,
-        r.code AS role_code, 
+      SELECT
+        u.id,
+        u.username,
+        u.name,
+        u.branch_name,
+        u.branch_id,
+        r.code AS role_code,
         r.name AS role_name,
         r.id AS creator_role_id
       FROM user u
@@ -568,7 +547,7 @@ exports.register = async (req, res) => {
 
     const creatorRole = creator[0].role_code;
     const creatorBranch = creator[0].branch_name;
-    const creatorGroup = creator[0].group_id;
+    const creatorBranchId = creator[0].branch_id;
     const creatorName = creator[0].name;
     const creatorRoleId = creator[0].creator_role_id;
 
@@ -616,16 +595,14 @@ exports.register = async (req, res) => {
       }
     }
 
-    // ✅✅✅ STEP 2: DETERMINE FINAL branch_name and group_id ✅✅✅
+    // ✅✅✅ STEP 2: DETERMINE FINAL branch_name and branch_id ✅✅✅
     let finalBranchName;
-    let finalGroupId;
+    let finalBranchId;
 
     if (creatorRoleId === 29) {
       // Super Admin - uses what they selected
       finalBranchName = frontendBranchName;
-      finalGroupId = frontendGroupId;
-
-
+      finalBranchId = frontendBranchId;
 
       if (!finalBranchName) {
         return res.status(400).json({
@@ -637,27 +614,15 @@ exports.register = async (req, res) => {
       }
     } else {
       finalBranchName = creatorBranch;
-      finalGroupId = creatorGroup;
+      finalBranchId = creatorBranchId;
 
-
-
-      // Validate creator has valid branch/group
+      // Validate creator has valid branch
       if (!finalBranchName || finalBranchName === 'null' || finalBranchName === '') {
         console.error('❌ Creator has invalid branch_name:', finalBranchName);
         return res.status(403).json({
           error: {
             message: "Your account doesn't have a valid branch. Contact administrator.",
             message_kh: "គណនីរបស់អ្នកមិនមានសាខាត្រឹមត្រូវ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។"
-          }
-        });
-      }
-
-      if (!finalGroupId || finalGroupId === 0) {
-        console.error('❌ Creator has invalid group_id:', finalGroupId);
-        return res.status(403).json({
-          error: {
-            message: "Your account doesn't have a valid group. Contact administrator.",
-            message_kh: "គណនីរបស់អ្នកមិនមានក្រុមត្រឹមត្រូវ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។"
           }
         });
       }
@@ -668,24 +633,23 @@ exports.register = async (req, res) => {
 
     // ✅✅✅ STEP 3: INSERT USER WITH CORRECT VALUES ✅✅✅
     let userSql = `
-      INSERT INTO user (
-        role_id, 
-        group_id, 
-        name, 
-        username,
-        email, 
-        password, 
-        is_active, 
-        address, 
-        tel, 
-        branch_name, 
-        barcode, 
-        profile_image, 
-        create_by, 
-        create_at
-      ) VALUES (
+      INSERT INTO user(
+          role_id,
+          name,
+          username,
+          email,
+          password,
+          is_active,
+          address,
+          tel,
+          branch_name,
+          branch_id,
+          barcode,
+          profile_image,
+          create_by,
+          create_at
+        ) VALUES(
         :role_id, 
-        :group_id, 
         :name, 
         :username, 
         :email,
@@ -694,16 +658,16 @@ exports.register = async (req, res) => {
         :address, 
         :tel, 
         :branch_name, 
+        :branch_id,
         :barcode, 
         :profile_image, 
         :create_by, 
         :create_at
-      );
-    `;
+        );
+      `;
 
     let [userData] = await db.query(userSql, {
       role_id,
-      group_id: finalGroupId,           // Initial value (might be 0)
       name,
       username,
       email: email || null,
@@ -712,6 +676,7 @@ exports.register = async (req, res) => {
       address: address || null,
       tel: tel || null,
       branch_name: finalBranchName,
+      branch_id: finalBranchId,
       barcode: barcode || null,
       profile_image: req.file?.path || null,
       create_by: creatorName,
@@ -733,57 +698,13 @@ exports.register = async (req, res) => {
     }
 
 
-    // Fix Admin/Super Admin - set group_id = own id
-    if (targetRoleCode === 'ADMIN' || targetRoleCode === 'SUPER_ADMIN') {
 
-      await db.query(`
-        UPDATE user 
-        SET group_id = :user_id 
-        WHERE id = :user_id
-      `, { user_id: userId });
-
-      finalGroupId = userId;
-    }
-    // Fix regular users with group_id = 0
-    else if (!finalGroupId || finalGroupId === 0 || finalGroupId === '0') {
-      // Auto-assigning regular user...
-
-      // Assign to first available admin in same branch
-      const [defaultAdmin] = await db.query(`
-        SELECT u.id 
-        FROM user u
-        INNER JOIN role r ON u.role_id = r.id
-        WHERE r.code = 'ADMIN' 
-          AND u.branch_name = :branch_name
-          AND u.group_id = u.id
-        ORDER BY u.id ASC
-        LIMIT 1
-      `, { branch_name: finalBranchName });
-
-      if (defaultAdmin && defaultAdmin.length > 0) {
-        finalGroupId = defaultAdmin[0].id;
-
-        await db.query(`
-          UPDATE user 
-          SET group_id = :group_id 
-          WHERE id = :user_id
-        `, {
-          group_id: finalGroupId,
-          user_id: userId
-        });
-
-      } else {
-        console.error('❌ No admin found in branch:', finalBranchName);
-        console.error('   User', userId, 'will have group_id = 0 (needs manual assignment)');
-      }
-    } else {
-    }
 
     // ✅ Insert into user_roles
     let rolesSql = `
-      INSERT INTO user_roles (user_id, role_id) 
-      VALUES (:user_id, :role_id);
-    `;
+      INSERT INTO user_roles(user_id, role_id)
+      VALUES(: user_id, : role_id);
+      `;
 
     await db.query(rolesSql, {
       user_id: userId,
@@ -792,7 +713,7 @@ exports.register = async (req, res) => {
 
     // ✅✅✅ STEP 5: VERIFY USER WAS CREATED CORRECTLY ✅✅✅
     const [verifyUser] = await db.query(
-      "SELECT id, name, username, branch_name, group_id FROM user WHERE id = :user_id",
+      "SELECT id, name, username, branch_name, branch_id FROM user WHERE id = :user_id",
       { user_id: userId }
     );
 
@@ -827,7 +748,6 @@ exports.register = async (req, res) => {
 📧 <b>Email:</b> ${email || 'N/A'}
 🎭 <b>តួនាទី / Role:</b> ${roleData[0]?.name || 'N/A'}
 🏢 <b>សាខា / Branch:</b> ${finalBranchName} ✅
-🔢 <b>Group ID:</b> ${finalGroupId} ✅
 📱 <b>ទូរស័ព្ទ / Tel:</b> ${tel || 'N/A'}
 📊 <b>Status:</b> ${status ? 'Active ✅' : 'Inactive ⏸️'}
 
@@ -836,7 +756,6 @@ exports.register = async (req, res) => {
 ${creatorName} (${creator[0].username})
 🎭 <b>Creator Role:</b> ${creator[0].role_name}
 🏢 <b>Creator Branch:</b> ${creatorBranch}
-🔢 <b>Creator Group:</b> ${creatorGroup}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 ⏰ <b>ពេលវេលាបង្កើត / Creation Time:</b>
@@ -849,7 +768,8 @@ ${locationInfo ? `
    • Country: ${locationInfo.country || 'Unknown'}
    • City: ${locationInfo.city || 'Unknown'}
    • ISP: ${locationInfo.isp || 'Unknown'}
-` : ''}
+` : ''
+      }
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 💻 <b>Device Information:</b>
@@ -861,13 +781,13 @@ ${locationInfo ? `
 🆔 <b>User ID:</b> ${userId}
 🔢 <b>Barcode:</b> ${barcode || 'N/A'}
 📸 <b>Profile Image:</b> ${req.file?.filename ? '✅ Uploaded' : '❌ No image'}
-    `;
+      `;
 
     // Send Telegram notification (non-blocking)
     sendSmartNotification({
       event_type: 'new_user',
       branch_name: finalBranchName,
-      title: `🆕 New Account: ${username}`,
+      title: `🆕 New Account: ${username} `,
       message: alertMessage,
       severity: 'info'
     }).catch(err => {
@@ -877,26 +797,26 @@ ${locationInfo ? `
     // ✅ Log activity
     try {
       await db.query(`
-        INSERT INTO user_activity_log (
-          user_id, 
-          action_type, 
-          action_description,
-          ip_address,
-          user_agent,
-          created_at,
-          created_by
-        ) VALUES (
-          :user_id,
-          'USER_CREATED',
-          :description,
-          :ip_address,
-          :user_agent,
-          NOW(),
-          :created_by
-        )
+        INSERT INTO user_activity_log(
+        user_id,
+        action_type,
+        action_description,
+        ip_address,
+        user_agent,
+        created_at,
+        created_by
+      ) VALUES(
+          : user_id,
+        'USER_CREATED',
+          : description,
+          : ip_address,
+          : user_agent,
+        NOW(),
+          : created_by
+      )
       `, {
         user_id: userId,
-        description: `New user created: ${name} (${username}) with role ${roleData[0]?.name}, branch: ${finalBranchName}, group: ${finalGroupId} by ${creatorName}`,
+        description: `New user created: ${name} (${username}) with role ${roleData[0]?.name}, branch: ${finalBranchName} by ${creatorName} `,
         ip_address: clientIP,
         user_agent: userAgent,
         created_by: req.current_id
@@ -915,7 +835,7 @@ ${locationInfo ? `
         name: name,
         role: roleData[0]?.name,
         branch_name: finalBranchName,
-        group_id: finalGroupId,
+        branch_id: finalBranchId,
         is_active: status,
         created_by: creatorName,
         profile_image: req.file?.filename || null
@@ -949,7 +869,7 @@ exports.newBarcode = async (req, res) => {
     var sql = `
       SELECT CONCAT('U', LPAD(COALESCE(MAX(id), 0) + 1, 3, '0')) AS barcode 
       FROM user
-    `;
+        `;
     var [data] = await db.query(sql);
 
     // If no users exist, default to "U001"
@@ -1104,22 +1024,22 @@ exports.changePassword = async (req, res) => {
 
     try {
       await db.query(`
-        INSERT INTO user_activity_log (
-          user_id, 
-          action_type, 
+        INSERT INTO user_activity_log(
+          user_id,
+          action_type,
           action_description,
           ip_address,
           user_agent,
           created_at,
           created_by
-        ) VALUES (
-          :user_id,
+        ) VALUES(
+          : user_id,
           'PASSWORD_CHANGED',
-          :description,
-          :ip_address,
-          :user_agent,
+          : description,
+          : ip_address,
+          : user_agent,
           NOW(),
-          :created_by
+          : created_by
         )
       `, {
         user_id: userId,
@@ -1158,10 +1078,10 @@ exports.logout = async (req, res) => {
     // ✅ Mark user as offline
     await db.query(`
       UPDATE user 
-      SET is_online = 0, 
-          online_status = 'offline'
+      SET is_online = 0,
+        online_status = 'offline'
       WHERE id = ?
-    `, [userId]);
+        `, [userId]);
 
     // ✅ Revoke refresh token
     const { refresh_token } = req.body;
@@ -1249,12 +1169,12 @@ exports.login = async (req, res) => {
     try {
       await db.query(`
         UPDATE user 
-        SET is_online = 1, 
-            last_activity = NOW(), 
-            online_status = 'online',
-            last_login = NOW()
+        SET is_online = 1,
+        last_activity = NOW(),
+        online_status = 'online',
+        last_login = NOW()
         WHERE id = ?
-      `, [data[0].id]);
+        `, [data[0].id]);
     } catch (updateErr) {
       console.warn('⚠️ Failed to update user status:', updateErr.message);
     }
@@ -1341,11 +1261,11 @@ exports.login = async (req, res) => {
 exports.logLoginActivity = async (activityData) => {
   try {
     const sql = `
-      INSERT INTO login_activity 
-      (user_id, username, ip_address, user_agent, device_info, location_info, login_time, status)
-      VALUES 
-      (:user_id, :username, :ip_address, :user_agent, :device_info, :location_info, :login_time, :status)
-    `;
+      INSERT INTO login_activity
+        (user_id, username, ip_address, user_agent, device_info, location_info, login_time, status)
+      VALUES
+        (:user_id, :username, :ip_address, :user_agent, :device_info, :location_info, :login_time, :status)
+        `;
 
     await db.query(sql, activityData);
     return true;
@@ -1357,14 +1277,14 @@ exports.logLoginActivity = async (activityData) => {
 exports.logLoginActivity = async (loginData) => {
   try {
     const sql = `
-      INSERT INTO login_history (
-        user_id, username, ip_address, user_agent, 
-        device_info, location_info, login_time, status
-      ) VALUES (
+      INSERT INTO login_history(
+          user_id, username, ip_address, user_agent,
+          device_info, location_info, login_time, status
+        ) VALUES(
         :user_id, :username, :ip_address, :user_agent,
         :device_info, :location_info, :login_time, :status
-      )
-    `;
+        )
+          `;
 
     await db.query(sql, loginData);
   } catch (error) {
@@ -1405,13 +1325,13 @@ exports.refreshToken = async (req, res) => {
 
         // Get user data
         const [userData] = await db.query(`
-          SELECT 
-            u.id, u.role_id, u.token_version,
-            u.name, u.username, u.email,
-            r.name as role_name
+      SELECT
+      u.id, u.role_id, u.token_version,
+        u.name, u.username, u.email,
+        r.name as role_name
           FROM user u
           INNER JOIN role r ON u.role_id = r.id
-          WHERE u.id = :userId
+          WHERE u.id = : userId
         `, { userId });
 
         if (userData.length === 0) {
@@ -1503,18 +1423,18 @@ exports.validate_token = (permission_name) => {
 
           // ✅ FETCH FULL USER DATA FROM DATABASE
           const [user] = await db.query(`
-            SELECT 
-              u.id,
-              u.name,
-              u.username,
-              u.email,
-              u.role_id,
+            SELECT
+              u.id, 
+              u.name, 
+              u.username, 
+              u.email, 
+              u.role_id, 
               u.is_active, 
-              u.token_version,
+              u.token_version, 
               u.last_activity,
               u.auto_logout_enabled,
               u.branch_name,
-              u.group_id,
+              u.branch_id,
               u.profile_image,
               r.name as role_name,
               r.code as role_code
@@ -1574,7 +1494,7 @@ exports.validate_token = (permission_name) => {
                 UPDATE user 
                 SET is_online = 0, online_status = 'offline'
                 WHERE id = ?
-              `, [userId]);
+            `, [userId]);
 
               return res.status(401).json({
                 message: `You have been logged out due to ${timeoutMinutes} minutes of inactivity.`,
@@ -1591,11 +1511,11 @@ exports.validate_token = (permission_name) => {
           // ✅ Update last_activity (non-blocking)
           db.query(`
             UPDATE user 
-            SET last_activity = NOW(), 
-                is_online = 1,
-                online_status = 'online'
+            SET last_activity = NOW(),
+            is_online = 1,
+            online_status = 'online'
             WHERE id = ?
-          `, [userId]).catch(err => {
+            `, [userId]).catch(err => {
             console.error('Failed to update activity:', err);
           });
 
@@ -1650,7 +1570,7 @@ const validateRefreshToken = async (userId, refreshToken) => {
     const sql = `
       SELECT id FROM refresh_tokens 
       WHERE user_id = :user_id AND token = :token AND expires_at > NOW() AND is_revoked = 0
-    `;
+            `;
 
     const [result] = await db.query(sql, {
       user_id: userId,
@@ -1672,7 +1592,7 @@ const updateRefreshToken = async (userId, oldToken, newToken) => {
       UPDATE refresh_tokens 
       SET token = :new_token, expires_at = :expires_at, created_at = :created_at
       WHERE user_id = :user_id AND token = :old_token
-    `;
+            `;
 
     await db.query(sql, {
       user_id: userId,
@@ -1694,7 +1614,7 @@ const revokeRefreshToken = async (userId, refreshToken) => {
       UPDATE refresh_tokens 
       SET is_revoked = 1 
       WHERE user_id = :user_id AND token = :token
-    `;
+            `;
 
     await db.query(sql, {
       user_id: userId,
@@ -1716,7 +1636,7 @@ const getPermissionByUser = async (user_id) => {
       FROM user u 
       INNER JOIN role r ON u.role_id = r.id 
       WHERE u.id = :id
-    `, { id: user_id });
+            `, { id: user_id });
     if (!users.length) return [];
 
     const { role_id, branch_name, role_code } = users[0];

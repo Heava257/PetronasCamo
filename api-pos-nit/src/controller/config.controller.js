@@ -7,7 +7,6 @@ exports.getList = async (req, res) => {
       SELECT 
         u.id,
         u.branch_name,
-        u.group_id,
         u.role_id,
         r.code AS role_code,
         r.name AS role_name

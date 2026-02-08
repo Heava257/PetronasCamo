@@ -19,7 +19,7 @@ exports.getExpenseTypes = async (req, res) => {
       SELECT 
         u.id,
         u.branch_name,
-        u.group_id,
+        u.branch_id,
         u.role_id,
         r.code AS role_code,
         r.name AS role_name
@@ -39,7 +39,7 @@ exports.getExpenseTypes = async (req, res) => {
 
         const userRoleId = currentUser[0].role_id;
         const userBranch = currentUser[0].branch_name;
-        const userGroupId = currentUser[0].group_id;
+        const userBranchId = currentUser[0].branch_id;
 
 
 
@@ -62,20 +62,23 @@ exports.getExpenseTypes = async (req, res) => {
         }
 
         let expenseTypeQuery;
+        let expenseTypeQueryParams = [];
 
         if (userRoleId === 29) {
             expenseTypeQuery = "SELECT * FROM expense_type ORDER BY id DESC";
         } else {
+            const currentUserBranchId = currentUser[0].branch_id; // Renamed for clarity within this block
             expenseTypeQuery = `
-        SELECT et.* 
-        FROM expense_type et
-        INNER JOIN user creator ON et.user_id = creator.id
-        WHERE creator.branch_name = '${userBranch}'
-        ORDER BY et.id DESC
-      `;
+            SELECT et.* 
+            FROM expense_type et
+            INNER JOIN user u ON et.user_id = u.id
+            WHERE u.branch_id = ? 
+            ORDER BY et.id DESC
+        `;
+            expenseTypeQueryParams.push(currentUserBranchId);
         }
 
-        const [data] = await db.query(expenseTypeQuery);
+        const [data] = await db.query(expenseTypeQuery, expenseTypeQueryParams); // Pass params here
 
         const usageQuery = `
       SELECT 
