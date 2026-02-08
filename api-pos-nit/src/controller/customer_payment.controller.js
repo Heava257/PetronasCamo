@@ -201,7 +201,7 @@ exports.getLedger = async (req, res) => {
             LEFT JOIN category c ON p.category_id = c.id
             WHERE od.order_id = o.id AND (
                  p.name LIKE '%EXTRA%' OR p.name LIKE '%95%' OR p.name LIKE '%RED%' 
-                 OR p.name LIKE '%ស៊ុបពែរ%' OR p.name LIKE '%អិចត្រា%' OR p.name LIKE '%SUPER%'
+                 OR p.name LIKE '%ស៊ុបពែរ%' OR p.name LIKE '%SUPER%'
                  OR c.name LIKE '%Premium%' OR c.name LIKE '%Extra%'
             )
         ) as fuel_extra,
@@ -215,7 +215,7 @@ exports.getLedger = async (req, res) => {
                  AND p.name NOT LIKE '%SUPER%' AND p.name NOT LIKE '%EXTRA%' AND p.name NOT LIKE '%ស៊ុបពែរ%'
                  OR (c.name LIKE '%Gasoline%' OR c.name LIKE '%Regular%' OR (c.name LIKE '%សាំង%' AND c.name NOT LIKE '%ស៊ុបពែរ%'))
             )
-        ) as fuel_super,
+        ) as fuel_regular,
         (
             SELECT SUM(od.qty) 
             FROM order_detail od 
@@ -273,7 +273,7 @@ exports.getLedger = async (req, res) => {
         0 as product_count, -- Placeholder
         NULL as description, -- Placeholder
         0 as fuel_extra, -- Placeholder
-        0 as fuel_super, -- Placeholder
+        0 as fuel_regular, -- Added for consistency with orderSql
         0 as fuel_gas, -- Placeholder
         0 as fuel_diesel, -- Placeholder
         p.reference_no as manual_ref,
@@ -332,7 +332,7 @@ exports.getLedger = async (req, res) => {
                 ...t,
                 running_balance: current_running_balance,
                 fuel_extra: t.fuel_extra || 0,
-                fuel_super: t.fuel_super || 0,
+                fuel_regular: t.fuel_regular || 0,
                 fuel_gas: t.fuel_gas || 0,
                 fuel_diesel: t.fuel_diesel || 0,
                 product_count: t.product_count || 0,
@@ -436,6 +436,10 @@ exports.exportExcel = async (req, res) => {
                 COALESCE(o.pre_order_no, o.order_no) as reference,
                 p.name as type,
                 od.qty,
+                od.price as unit_price,
+                od.total as debit,
+                0 as credit,
+                o.payment_method,
                 (
                     SELECT SUM(od2.qty) 
                     FROM order_detail od2 
@@ -448,7 +452,7 @@ exports.exportExcel = async (req, res) => {
                     JOIN product p2 ON od2.product_id = p2.id 
                     WHERE od2.order_id = o.id AND (p2.name LIKE '%92%' OR p2.name LIKE '%GASOLINE%' OR p2.name LIKE '%ធម្មតា%' OR p2.name LIKE '%សាំង%')
                     AND p2.name NOT LIKE '%SUPER%' AND p2.name NOT LIKE '%EXTRA%' AND p2.name NOT LIKE '%ស៊ុបពែរ%'
-                ) as fuel_super,
+                ) as fuel_regular,
                 (
                     SELECT SUM(od2.qty) 
                     FROM order_detail od2 
@@ -460,11 +464,7 @@ exports.exportExcel = async (req, res) => {
                     FROM order_detail od2 
                     JOIN product p2 ON od2.product_id = p2.id 
                     WHERE od2.order_id = o.id AND (p2.name LIKE '%DIESEL%' OR p2.name LIKE '%DO%' OR p2.name LIKE '%EURO%' OR p2.name LIKE '%ម៉ាស៊ូត%')
-                ) as fuel_diesel,
-                od.price as unit_price,
-                od.total as debit,
-                0 as credit,
-                o.payment_method
+                ) as fuel_diesel
             FROM \`order\` o
             JOIN order_detail od ON o.id = od.order_id
             LEFT JOIN product p ON od.product_id = p.id
@@ -486,14 +486,14 @@ exports.exportExcel = async (req, res) => {
                 CAST(p.order_id AS CHAR) as reference,
                 'Payment' as type,
                 NULL as qty,
-                0 as fuel_extra,
-                0 as fuel_super,
-                0 as fuel_gas,
-                0 as fuel_diesel,
                 NULL as unit_price,
                 0 as debit,
                 p.amount as credit,
-                p.payment_method
+                p.payment_method,
+                0 as fuel_extra,
+                0 as fuel_regular,
+                0 as fuel_gas,
+                0 as fuel_diesel
             FROM payments p
             WHERE p.customer_id = :customer_id
         `;
@@ -513,7 +513,7 @@ exports.exportExcel = async (req, res) => {
                 Reference: row.reference,
                 Type: row.type,
                 "Extra (L)": row.fuel_extra || 0,
-                "Super (L)": row.fuel_super || 0,
+                "Regular (L)": row.fuel_regular || 0,
                 "Gas (L)": row.fuel_gas || 0,
                 "Diesel (L)": row.fuel_diesel || 0,
                 Qty: row.qty,

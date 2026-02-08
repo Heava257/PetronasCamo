@@ -392,7 +392,7 @@ exports.getLedger = async (req, res) => {
 
             // Extract fuel details if purchase
             let fuel_extra = 0;
-            let fuel_super = 0;
+            let fuel_regular = 0;
             let fuel_diesel = 0;
             let fuel_gas = 0;
             if (t.transaction_type === 'purchase' && t.items) {
@@ -409,7 +409,7 @@ exports.getLedger = async (req, res) => {
                             name.includes('92') || name.includes('REGULAR') || name.includes('GASOLINE') ||
                             name.includes('ធម្មតា') || name.includes('សាំង') || name.includes('BENZINE')
                         ) {
-                            fuel_super += parseFloat(item.quantity || 0);
+                            fuel_regular += parseFloat(item.quantity || 0);
                         } else if (
                             name.includes('DIESEL') || name.includes('DO') || name.includes('EURO') ||
                             name.includes('ម៉ាស៊ូត')
@@ -431,7 +431,7 @@ exports.getLedger = async (req, res) => {
                 ...t,
                 running_balance: current_running_balance,
                 fuel_extra,
-                fuel_super,
+                fuel_regular,
                 fuel_diesel,
                 fuel_gas
             };
