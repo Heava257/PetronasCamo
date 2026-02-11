@@ -8,11 +8,9 @@ import {
   Select,
   Space,
   Tag,
-  message,
   Form,
   Row,
   Col,
-  Popconfirm,
   Divider,
   Statistic,
   Tooltip,
@@ -20,6 +18,7 @@ import {
   Alert,
   Checkbox,
 } from "antd";
+import Swal from "sweetalert2";
 import {
   PlusOutlined,
   EditOutlined,
@@ -36,13 +35,15 @@ import {
   FilterOutlined,
 } from "@ant-design/icons";
 import { request } from "../../../util/helper";
+import { useTranslation } from "../../../locales/TranslationContext";
 import dayjs from "dayjs";
 import MainPage from "../../../component/layout/MainPage";
 
 const { Option } = Select;
 const { TextArea } = Input;
 
-function TelegramConfiguration() {
+function TelegramConfigurationPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [testLoading, setTestLoading] = useState(null);
@@ -175,7 +176,11 @@ function TelegramConfiguration() {
       }
     } catch (error) {
       console.error("Error loading data:", error);
-      message.error("Failed to load configurations");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_load_telegram_config')
+      });
     } finally {
       setLoading(false);
     }
@@ -211,18 +216,45 @@ function TelegramConfiguration() {
   };
 
   const handleDelete = async (id) => {
-    try {
-      const res = await request(`telegram/configs/${id}`, "delete");
-      if (res && res.success) {
-        message.success(res.message);
-        loadData();
-      } else {
-        message.error(res.message || "Failed to delete configuration");
+    Swal.fire({
+      title: t('delete_config_confirmation_title'),
+      text: t('delete_config_confirmation_text'),
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: t('yes'),
+      cancelButtonText: t('cancel')
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request(`telegram/configs/${id}`, "delete");
+          if (res && res.success) {
+            Swal.fire({
+              icon: 'success',
+              title: t('success'),
+              text: res.message,
+              timer: 1500,
+              showConfirmButton: false
+            });
+            loadData();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: t('error'),
+              text: res.message || t('failed_to_delete_telegram_config')
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting config:", error);
+          Swal.fire({
+            icon: 'error',
+            title: t('error'),
+            text: t('failed_to_delete_telegram_config')
+          });
+        }
       }
-    } catch (error) {
-      console.error("Error deleting config:", error);
-      message.error("Failed to delete configuration");
-    }
+    });
   };
 
   const handleTest = async (id) => {
@@ -231,20 +263,28 @@ function TelegramConfiguration() {
       const res = await request(`telegram/configs/${id}/test`, "post");
 
       if (res && res.success) {
-        message.success({
-          content: res.message,
-          duration: 3,
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: t('telegram_config_test_success'),
+          timer: 3000,
+          showConfirmButton: false
         });
         loadData();
       } else {
-        message.error({
-          content: res.message || "Test failed",
-          duration: 5,
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('telegram_config_test_failed')
         });
       }
     } catch (error) {
       console.error("Error testing config:", error);
-      message.error("Failed to send test message");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការផ្ញើសារសាកល្បង"
+      });
     } finally {
       setTestLoading(null);
     }
@@ -261,17 +301,30 @@ function TelegramConfiguration() {
         : "telegram/configs";
 
       const res = await request(url, method, values);
-
       if (res && res.success) {
-        message.success(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: res.message || t('deleted_successfully'),
+          timer: 1500,
+          showConfirmButton: false
+        });
         setModalVisible(false);
         loadData();
       } else {
-        message.error(res.message || "Failed to save configuration");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('failed_to_save_telegram_config')
+        });
       }
     } catch (error) {
       console.error("Error saving config:", error);
-      message.error("Failed to save configuration");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_save_telegram_config')
+      });
     } finally {
       setLoading(false);
     }
@@ -443,17 +496,9 @@ function TelegramConfiguration() {
             កែប្រែ
           </Button>
 
-          <Popconfirm
-            title="លុបការកំណត់នេះ?"
-            description="តើអ្នកប្រាកដថាចង់លុបការកំណត់នេះ?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="បាទ/ចាស"
-            cancelText="មិន"
-          >
-            <Button danger icon={<DeleteOutlined />} size="small">
-              លុប
-            </Button>
-          </Popconfirm>
+          <Button danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record.id)}>
+            លុប
+          </Button>
         </Space>
       ),
     },
@@ -793,4 +838,4 @@ function TelegramConfiguration() {
   );
 }
 
-export default TelegramConfiguration;
+export default TelegramConfigurationPage;

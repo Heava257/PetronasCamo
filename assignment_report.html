@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="km">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Engineering Assignment - NIT Fuel POS System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@300;400;700&family=Moul&display=swap"
+        rel="stylesheet">
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --primary-color: #1a5f7a;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+
+            .page {
+                box-shadow: none;
+                margin: 0;
+                page-break-after: always;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+
+        body {
+            font-family: 'Kantumruy Pro', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px;
+            background-color: #f5f5f5;
+        }
+
+        .page {
+            background: white;
+            padding: 60px;
+            margin-bottom: 25px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            min-height: 1100px;
+        }
+
+        .title-page {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 1000px;
+        }
+
+        h1.moul {
+            font-family: 'Moul', serif;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        h2 {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+            padding-bottom: 10px;
+            margin-top: 30px;
+            font-size: 1.4em;
+        }
+
+        .diagram-container {
+            text-align: center;
+            margin: 25px 0;
+            padding: 25px;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background: #fff;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 40px;
+        }
+
+        .btn-print {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .highlight-box {
+            background: #eef7fa;
+            border-left: 5px solid var(--primary-color);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        ul {
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <button class="btn-print no-print" onclick="window.print()">Export to PDF</button>
+
+    <!-- Page 1: Title -->
+    <div class="page title-page">
+        <h1 class="moul">កិច្ចការផ្ទះ (Assignment)</h1>
+        <h2 style="border:none">មុខវិជ្ជា៖ Software Engineering</h2>
+        <div style="margin: 60px 0;">
+            <h1 style="font-size: 2.8em; color: #333;">NIT Fuel POS System</h1>
+            <p style="font-size: 1.2em;">(Multi-Branch Inventory & Credit Management)</p>
+        </div>
+        <div style="margin-top: 120px;">
+            <p>រៀបចំដោយ៖ <strong>ក្រុមនិស្សិត Software Engineering</strong></p>
+            <p>ជូនចំពោះលោកគ្រូ៖ <strong>សាស្រ្តាចារ្យវិស្វកម្មកម្មវិធី</strong></p>
+        </div>
+    </div>
+
+    <!-- Page 2: 1. Proposal of system -->
+    <div class="page">
+        <h1 class="moul">១. គម្រោងស្នើសុំប្រព័ន្ធ (Proposal of System)</h1>
+        <div class="highlight-box">
+            <p>ប្រព័ន្ធ NIT Fuel POS
+                គឺជាដំណោះស្រាយបច្ចេកវិទ្យាសម្រាប់គ្រប់គ្រងអាជីវកម្មចែកចាយប្រេងឥន្ធនៈដែលមានទីស្នាក់ការកណ្តាល
+                និងសាខាច្រើន។</p>
+        </div>
+
+        <h3>គោលបំណងចម្បង៖</h3>
+        <ul>
+            <li><strong>គ្រប់គ្រងស្តុកកណ្តាល៖</strong> ម្ចាស់អាជីវកម្ម (Owner) ជាអ្នកបញ្ជាទិញពី Supplier
+                និងបែងចែកទៅសាខា។</li>
+            <li><strong>គ្រប់គ្រងបំណុលពីរជាន់៖</strong> តាមដានបំណុលដែលOwnerជំពាក់Supplier
+                និងបំណុលដែលអតិថិជនជំពាក់តាមសាខា។</li>
+            <li><strong>បែងចែកសិទ្ធិអំណាច៖</strong> បែងចែកការងាររវាងអ្នកបច្ចេកទេស (Admin), ម្ចាស់អាជីវកម្ម,
+                អ្នកគ្រប់គ្រងសាខា និងបុគ្គលិកលក់។</li>
+        </ul>
+
+        <h3>លក្ខណៈពិសេសរបស់ប្រព័ន្ធ៖</h3>
+        <ul>
+            <li>ការបង្កើត Purchase Order (PO) និងការបញ្ជាក់ទទួលស្តុក (Verify Stock)។</li>
+            <li>ការលក់នៅបញ្ជរ POS និងការកត់ត្រាការជំពាក់-សងប្រាក់របស់អតិថិជន។</li>
+            <li>របាយការណ៍សរុប (Global Reports) សម្រាប់ម្ចាស់អាជីវកម្ម និងរបាយការណ៍សាខាសម្រាប់ Manager។</li>
+        </ul>
+    </div>
+
+    <!-- Page 3: 2. Context Diagram & 3. Use Case Diagram -->
+    <div class="page">
+        <h1 class="moul">២. Context Diagram (Level 0 DFD)</h1>
+        <div class="diagram-container">
+            <pre class="mermaid">
+            graph LR
+                S[Supplier] -- "Invoice/Fuel" --> System((NIT Fuel System))
+                System -- "Purchase Order" --> S
+                System -- "Consolidated Reports" --> O[Business Owner]
+                System -- "Fuel/Invoices" --> C[Customer]
+                C -- "Payments/Debt Settlement" --> System
+                M[Branch Manager] -- "Staff/Local Mgmt" --> System
+                System -- "Staff Access/Local Reports" --> M
+            </pre>
+            <p><em>របៀបនៃទំនាក់ទំនងរវាងប្រព័ន្ធ និង Entities ខាងក្រៅ</em></p>
+        </div>
+
+        <h1 class="moul">៣. Use Case Diagram</h1>
+        <div class="diagram-container">
+            <pre class="mermaid">
+            graph TD
+                subgraph NIT_Fuel_System
+                    UC1(Setup Branches)
+                    UC2(Generate PO & Manage Supplier Debt)
+                    UC3(Confirm Receipt & Distribute Stock)
+                    UC4(View All Branch Reports)
+                    UC5(Create/Manage Branch Staff)
+                    UC6(Process Sale & Recording Customer Debt)
+                    UC7(Record Customer Payment/Settlement)
+                end
+                
+                TECH[System Admin] --> UC1
+                OWNER[Business Owner] --> UC2
+                OWNER --> UC3
+                OWNER --> UC4
+                BM[Branch Manager] --> UC5
+                ST[Sales Staff] --> UC6
+                ST --> UC7
+            </pre>
+            <p><em>បង្ហាញពីមុខងារ និងសិទ្ធិប្រើប្រាស់តាមតួនាទីនីមួយៗ</em></p>
+        </div>
+    </div>
+
+    <!-- Page 4: 4. DFD Diagram (Level 1) -->
+    <div class="page">
+        <h1 class="moul">៤. Data Flow Diagram (Level 1 DFD)</h1>
+        <div class="diagram-container">
+            <pre class="mermaid">
+            graph TD
+                U((Owner/Manager)) -- "Auth Info" --> P1[1.0 Authentication]
+                P1 -- "Session" --> D1[(User/Role DB)]
+                
+                U -- "PO Details" --> P2[2.0 Purchasing Mgmt]
+                P2 -- "Order Status" --> D2[(Stock/PO DB)]
+                
+                D2 -- "Current Stock" --> P3[3.0 Distribution Mgmt]
+                P3 -- "Allocated Qty" --> D2
+                
+                Staff((Sales Staff)) -- "Sale/Debt Info" --> P4[4.0 POS Processing]
+                P4 -- "Transaction/Debt" --> D3[(Sales/Debt DB)]
+                
+                D3 -- "Raw Data" --> P5[5.0 Reporting Engine]
+                P5 -- "Consolidated Reports" --> U
+            </pre>
+            <p><em>បង្ហាញពីលំហូរទិន្នន័យ និងដំណើរការខាងក្នុងប្រព័ន្ធ</em></p>
+        </div>
+    </div>
+
+    <!-- Page 5: 5. ER-Diagram -->
+    <div class="page">
+        <h1 class="moul">៥. Entity Relationship Diagram (ER-Diagram)</h1>
+        <div class="diagram-container">
+            <pre class="mermaid">
+            erDiagram
+                SUPPLIER ||--o{ PURCHASE_ORDER : "receives"
+                PURCHASE_ORDER ||--o{ STOCK_RECEIPT : "validated_by"
+                STOCK_RECEIPT ||--o{ BRANCH_STOCK : "fills"
+                BRANCH ||--o{ BRANCH_MANAGER : "has"
+                BRANCH_MANAGER ||--o{ STAFF : "creates/manages"
+                STAFF ||--o{ TRANSACTION : "executes"
+                TRANSACTION ||--o{ CUSTOMER_DEBT : "generates"
+                CUSTOMER_DEBT }o--|| CUSTOMER : "accrues_to"
+                SUPPLIER_DEBT }o--|| BUSINESS_OWNER : "managed_by"
+            </pre>
+            <p><em>រចនាសម្ព័ន្ធមូលដ្ឋានទិន្នន័យ និងទំនាក់ទំនងរវាង Tables</em></p>
+        </div>
+        <div class="footer">
+            © 2026 - កិច្ចការស្រាវជ្រាវប្រព័ន្ធ NIT Fuel POS System
+        </div>
+    </div>
+</body>
+
+</html>

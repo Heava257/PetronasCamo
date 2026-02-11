@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
     Table, Tag, Button, Card, Row, Col, Select,
-    message, Spin, Typography, Tabs, Checkbox,
+    Spin, Typography, Tabs, Checkbox,
     Divider, Space, Alert
 } from "antd";
+import Swal from 'sweetalert2';
 import {
     SaveOutlined,
     ReloadOutlined,
@@ -38,16 +39,20 @@ const PermissionPage = () => {
                 setRoles(res.roles || []);
                 setPermissions(res.permissions || []);
 
-                // Auto-select first role if available
-                if (res.roles && res.roles.length > 0) {
-                    handleRoleChange(res.roles[0].id);
-                }
             } else {
-                message.error(res.message || t("Failed to load permissions"));
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message || t("Failed to load permissions"),
+                });
             }
         } catch (error) {
             console.error(error);
-            message.error(t("Failed to load data"));
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: t("Failed to load data"),
+            });
         } finally {
             setLoading(false);
         }
@@ -65,7 +70,11 @@ const PermissionPage = () => {
             }
         } catch (error) {
             console.error(error);
-            message.error(t("Failed to load role permissions"));
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: t("Failed to load role permissions"),
+            });
         } finally {
             setLoading(false);
         }
@@ -103,13 +112,27 @@ const PermissionPage = () => {
             });
 
             if (res && !res.error) {
-                message.success(t(res.message_kh || "Permissions updated successfully"));
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: t(res.message_kh || "Permissions updated successfully"),
+                    showConfirmButton: false,
+                    timer: 1500
+                });
             } else {
-                message.error(res.message || t("Failed to update permissions"));
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message || t("Failed to update permissions"),
+                });
             }
         } catch (error) {
             console.error(error);
-            message.error(t("Failed to save changes"));
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: t("Failed to save changes"),
+            });
         } finally {
             setSaving(false);
         }

@@ -58,7 +58,9 @@ import imageExtensions from 'image-extensions';
 import { useTranslation } from "../../locales/TranslationContext";
 import { getProfile } from "../../store/profile.store";
 import dayjs from "dayjs";
+import MainPage from "../../component/layout/MainPage";
 import "./user.css";
+import Swal from "sweetalert2";
 
 const { TabPane } = Tabs;
 
@@ -246,10 +248,18 @@ function AdminPage() {
           role: transformedRoles,
         }));
       } else {
-        message.error('Failed to load roles');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load roles',
+        });
       }
     } catch (error) {
-      message.error('Failed to load roles');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to load roles',
+      });
     }
   };
 
@@ -279,21 +289,35 @@ function AdminPage() {
   };
 
   const clickBtnDelete = (item) => {
-    Modal.confirm({
+    Swal.fire({
       title: t("Delete User"),
-      content: `${t("Are you sure you want to delete")} ${item.name}?`,
-      okText: t("Delete"),
-      cancelText: t("Cancel"),
-      okType: "danger",
-      onOk: async () => {
+      text: `${t("Are you sure you want to delete")} ${item.name}?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t("Delete"),
+      cancelButtonText: t("Cancel")
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         const res = await request("user", "delete", { id: item.id });
         if (res && !res.error) {
-          message.success(res.message);
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: res.message,
+            showConfirmButton: false,
+            timer: 1500
+          });
           getList();
         } else {
-          message.error(res.message || t("Cannot delete user"));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res.message || t("Cannot delete user"),
+          });
         }
-      },
+      }
     });
   };
 
@@ -326,13 +350,21 @@ function AdminPage() {
     const isImage = file.type.startsWith('image/');
 
     if (!isValidExtension || !isImage) {
-      message.error(t('You can only upload image files!'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('You can only upload image files!'),
+      });
       return false;
     }
 
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      message.error(t('Image must be smaller than 2MB!'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('Image must be smaller than 2MB!'),
+      });
       return false;
     }
 
@@ -342,7 +374,11 @@ function AdminPage() {
   const onFinish = async (items) => {
     try {
       if (items.password !== items.confirm_password) {
-        message.error(t("Passwords do not match"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t("Passwords do not match"),
+        });
         return;
       }
 
@@ -354,7 +390,11 @@ function AdminPage() {
       );
 
       if (isEmailExist) {
-        message.error(t("Email already exists"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t("Email already exists"),
+        });
         return;
       }
 
@@ -363,7 +403,11 @@ function AdminPage() {
       );
 
       if (isTelExist) {
-        message.error(t("Phone number already exists"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t("Phone number already exists"),
+        });
         return;
       }
 
@@ -411,15 +455,29 @@ function AdminPage() {
       setState(prev => ({ ...prev, loading: false }));
 
       if (res && !res.error) {
-        message.success(res.message || t('User saved successfully!'));
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: res.message || t('User saved successfully!'),
+          showConfirmButton: false,
+          timer: 1500
+        });
         getList();
         handleCloseModal();
       } else {
-        message.error(res.message || t("An error occurred"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || t("An error occurred"),
+        });
       }
     } catch (error) {
       setState(prev => ({ ...prev, loading: false }));
-      message.error(t('Failed to save user'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('Failed to save user'),
+      });
     }
   };
 
@@ -484,7 +542,11 @@ function AdminPage() {
   };
 
   const exportToExcel = () => {
-    message.info("Export function would be implemented here");
+    Swal.fire({
+      icon: 'info',
+      title: 'Info',
+      text: "Export function would be implemented here",
+    });
   };
 
   // ✅ Mobile Stats Cards - Compact Version
@@ -1039,148 +1101,143 @@ function AdminPage() {
   );
 
   return (
-    <div className="min-h-screen p-2 sm:p-4 bg-gray-50 dark:bg-gray-900">
-      {/* ✅ Responsive Header */}
-      <div className="mb-4">
-        {/* Title & New Button */}
-        <div className="flex justify-between items-center gap-3 mb-4">
-          <div className="flex-1 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold dark:text-white truncate">
-              {t("user_management")}
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
-              {t("user_management_subtitle")}
-            </p>
+    <MainPage loading={state.loading}>
+      <div className="min-h-screen p-2 sm:p-4 bg-gray-50 dark:bg-gray-900">
+        {/* ✅ Responsive Header */}
+        <div className="mb-4">
+          {/* Title & New Button */}
+          <div className="flex justify-between items-center gap-3 mb-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold dark:text-white truncate">
+                {t("user_management")}
+              </h1>
+              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:block">
+                {t("user_management_subtitle")}
+              </p>
+            </div>
+
+            {isPermission("user.create") && (
+              <Button
+                type="primary"
+                onClick={handleOpenModal}
+                icon={<MdOutlineCreateNewFolder />}
+                size={isMobile ? "middle" : "large"}
+              >
+                {isMobile ? "New" : "New User"}
+              </Button>
+            )}
           </div>
 
-          {isPermission("user.create") && (
-            <Button
-              type="primary"
-              onClick={handleOpenModal}
-              icon={<MdOutlineCreateNewFolder />}
-              size={isMobile ? "middle" : "large"}
-            >
-              {isMobile ? "New" : "New User"}
-            </Button>
+          {/* Statistics */}
+          {renderStatsCards()}
+
+          {/* Search Bar */}
+          <div className="mb-3">
+            <Input.Search
+              placeholder={t("search_users")}
+              onSearch={handleSearch}
+              allowClear
+              size={isMobile ? "large" : "middle"}
+              enterButton
+            />
+          </div>
+
+          {/* Filters */}
+          {isMobile ? (
+            <>
+              <Button
+                block
+                icon={<FilterOutlined />}
+                onClick={() => setFilterDrawerVisible(true)}
+                className="mb-3"
+                size="large"
+              >
+                Filters & Export
+                {(filterStatus !== "all" || selectedRole !== "all") && (
+                  <Badge
+                    count={
+                      (filterStatus !== "all" ? 1 : 0) +
+                      (selectedRole !== "all" ? 1 : 0)
+                    }
+                    className="ml-2"
+                  />
+                )}
+              </Button>
+              {renderFilterDrawer()}
+            </>
+          ) : (
+            renderDesktopFilters()
           )}
         </div>
 
-        {/* Statistics */}
-        {renderStatsCards()}
-
-        {/* Search Bar */}
-        <div className="mb-3">
-          <Input.Search
-            placeholder={t("search_users")}
-            onSearch={handleSearch}
-            allowClear
-            size={isMobile ? "large" : "middle"}
-            enterButton
-          />
-        </div>
-
-        {/* Filters */}
+        {/* ✅ Main Content - Responsive */}
         {isMobile ? (
-          <>
-            <Button
-              block
-              icon={<FilterOutlined />}
-              onClick={() => setFilterDrawerVisible(true)}
-              className="mb-3"
-              size="large"
-            >
-              Filters & Export
-              {(filterStatus !== "all" || selectedRole !== "all") && (
-                <Badge
-                  count={
-                    (filterStatus !== "all" ? 1 : 0) +
-                    (selectedRole !== "all" ? 1 : 0)
-                  }
-                  className="ml-2"
-                />
-              )}
-            </Button>
-            {renderFilterDrawer()}
-          </>
-        ) : (
-          renderDesktopFilters()
-        )}
-      </div>
-
-      {/* ✅ Main Content - Responsive */}
-      {isMobile ? (
-        /* Mobile: Card View */
-        <div>
-          <div className="mb-3 flex justify-between items-center">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {state.filteredList.length} {t("users_found")}
-            </span>
-          </div>
-          {state.loading ? (
-            <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-solid border-blue-500 border-r-transparent" />
+          /* Mobile: Card View */
+          <div>
+            <div className="mb-3 flex justify-between items-center">
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {state.filteredList.length} {t("users_found")}
+              </span>
             </div>
-          ) : (
             <div className="space-y-3">
               {state.filteredList.map(user => renderMobileUserCard(user))}
             </div>
-          )}
-        </div>
-      ) : (
-        /* Desktop: Table View */
-        <Card>
-          <Table
-            dataSource={state.filteredList}
-            columns={columns}
-            rowKey="id"
-            loading={state.loading}
-            scroll={{ x: 800 }}
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `${t("total_users_count")}: ${total}`,
-              responsive: true
-            }}
-          />
-        </Card>
-      )}
-
-      {/* ✅ Responsive Modal */}
-      <Modal
-        open={state.visible}
-        onCancel={handleCloseModal}
-        title={
-          <div className="khmer-title1" style={{ color: '#e8c12f' }}>
-            {form.getFieldValue("id") ? t("edit_user") : t("new_user")}
           </div>
-        }
-        footer={null}
-        width={isMobile ? "100%" : 700}
-        style={isMobile ? { top: 0, paddingBottom: 0, maxWidth: "100vw" } : {}}
-        styles={isMobile ? {
-          body: {
-            maxHeight: 'calc(100vh - 100px)',
-            overflowY: 'auto'
-          }
-        } : {}}
-        centered={!isMobile}
-      >
-        <FormContent />
-      </Modal>
+        ) : (
+          /* Desktop: Table View */
+          <Card>
+            <Table
+              dataSource={state.filteredList}
+              columns={columns}
+              rowKey="id"
+              scroll={{ x: 800 }}
+              pagination={{
+                pageSize: 10,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `${t("total_users_count")}: ${total}`,
+                responsive: true
+              }}
+            />
+          </Card>
+        )}
 
-      {/* Image Preview Modal */}
-      <Modal
-        open={previewOpen}
-        title="Image Preview"
-        footer={null}
-        onCancel={() => setPreviewOpen(false)}
-        centered
-        width={isMobile ? "90%" : 600}
-      >
-        <img alt="Preview" className="w-full rounded-lg" src={previewImage} />
-      </Modal>
-    </div>
+        {/* ✅ Responsive Modal */}
+        <Modal
+          open={state.visible}
+          onCancel={handleCloseModal}
+          title={
+            <div className="khmer-title1" style={{ color: '#e8c12f' }}>
+              {form.getFieldValue("id") ? t("edit_user") : t("new_user")}
+            </div>
+          }
+          footer={null}
+          width={isMobile ? "100%" : 700}
+          style={isMobile ? { top: 0, paddingBottom: 0, maxWidth: "100vw" } : {}}
+          styles={isMobile ? {
+            body: {
+              maxHeight: 'calc(100vh - 100px)',
+              overflowY: 'auto'
+            }
+          } : {}}
+          centered={!isMobile}
+        >
+          <FormContent />
+        </Modal>
+
+        {/* Image Preview Modal */}
+        <Modal
+          open={previewOpen}
+          title="Image Preview"
+          footer={null}
+          onCancel={() => setPreviewOpen(false)}
+          centered
+          width={isMobile ? "90%" : 600}
+        >
+          <img alt="Preview" className="w-full rounded-lg" src={previewImage} />
+        </Modal>
+      </div>
+    </MainPage>
   );
 }
 

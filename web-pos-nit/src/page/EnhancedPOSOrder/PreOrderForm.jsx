@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Modal, Form, Select, Input, InputNumber, Button, DatePicker, message, Row, Col, Space, Typography, Divider } from "antd";
+import Swal from "sweetalert2";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
 import { request, formatPrice } from "../../util/helper";
 import dayjs from "dayjs";
@@ -71,7 +72,11 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
       }
     } catch (error) {
       console.error("Error loading edit data:", error);
-      message.error("Failed to load data");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "Failed to load data",
+      });
     }
   };
 
@@ -211,7 +216,11 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
     const validProducts = (values.products || []).filter(p => p.product_id && p.qty > 0);
 
     if (validProducts.length === 0) {
-      message.error("សូមជ្រើសរើសមុខទំនិញយ៉ាងហោចណាស់មួយ");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "សូមជ្រើសរើសមុខទំនិញយ៉ាងហោចណាស់មួយ",
+      });
       setLoading(false);
       return;
     }
@@ -243,14 +252,28 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
       const res = await request(url, method, payload);
 
       if (res && res.success) {
-        message.success(res.message || (isEdit ? "បានកែប្រែជោគជ័យ" : "Pre-Order created successfully"));
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: res.message || (isEdit ? "បានកែប្រែជោគជ័យ" : "Pre-Order created successfully"),
+          showConfirmButton: false,
+          timer: 1500
+        });
         onSuccess();
       } else {
-        message.error(res.message || "Failed to save Pre-Order");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || "Failed to save Pre-Order",
+        });
       }
     } catch (error) {
       console.error("Submit error", error);
-      message.error("System Error");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "System Error",
+      });
     } finally {
       setLoading(false);
     }

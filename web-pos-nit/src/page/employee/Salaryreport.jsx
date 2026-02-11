@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { 
-  Card, 
-  Row, 
-  Col, 
-  Button, 
-  Typography, 
+import {
+  Card,
+  Row,
+  Col,
+  Button,
+  Typography,
   Table,
   Tag,
   Space,
-  message,
   DatePicker,
   Select,
   Divider,
   Statistic
 } from "antd";
+import Swal from 'sweetalert2';
 import {
   PrinterOutlined,
   DownloadOutlined,
@@ -34,13 +34,13 @@ const { Option } = Select;
 
 function SalaryReport() {
   const { t } = useTranslation();
-  
+
   const [report, setReport] = useState([]);
   const [summary, setSummary] = useState(null);
   const [period, setPeriod] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [dateRange, setDateRange] = useState([
-    moment().startOf('month'), 
+    moment().startOf('month'),
     moment().endOf('month')
   ]);
 
@@ -65,9 +65,9 @@ function SalaryReport() {
     try {
       const fromDate = dateRange[0].format('YYYY-MM-DD');
       const toDate = dateRange[1].format('YYYY-MM-DD');
-      
+
       const res = await request(`attendance/salary-report?from_date=${fromDate}&to_date=${toDate}`, 'get');
-      
+
       if (res && !res.error) {
         setReport(res.report || []);
         setSummary(res.summary || {});
@@ -75,7 +75,11 @@ function SalaryReport() {
       }
     } catch (error) {
       console.error('Error fetching salary report:', error);
-      message.error(t('Failed to fetch salary report'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('Failed to fetch salary report'),
+      });
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +91,11 @@ function SalaryReport() {
 
   const handleExportExcel = () => {
     if (report.length === 0) {
-      message.warning(t('No data to export'));
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: t('No data to export'),
+      });
       return;
     }
 
@@ -113,7 +121,7 @@ function SalaryReport() {
     const ws = XLSX.utils.json_to_sheet(exportData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Salary Report');
-    
+
     // Add summary sheet
     const summaryData = [
       { 'Metric': 'Total Employees', 'Value': summary.total_employees },
@@ -125,9 +133,15 @@ function SalaryReport() {
     ];
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
     XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
-    
+
     XLSX.writeFile(wb, `Salary_Report_${period.month || moment().format('YYYY-MM')}.xlsx`);
-    message.success(t('Report exported successfully!'));
+    Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: t('Report exported successfully!'),
+      showConfirmButton: false,
+      timer: 1500
+    });
   };
 
   const columns = [

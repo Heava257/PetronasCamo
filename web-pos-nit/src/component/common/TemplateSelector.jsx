@@ -12,6 +12,7 @@ const TemplateSelector = ({ isMobile }) => {
         currentTemplate,
         applyTemplate,
         toggleDarkMode,
+        updateSetting,
         isDarkMode
     } = useSettings();
 
@@ -189,6 +190,38 @@ const TemplateSelector = ({ isMobile }) => {
                         </Col>
                     ))}
                 </Row>
+
+                <Divider />
+
+                <Title level={5} style={{ marginBottom: 16 }}>Menu Style</Title>
+                <Row gutter={[8, 8]}>
+                    {[
+                        { id: 'modern', name: 'Modern' },
+                        { id: 'classic', name: 'Classic' },
+                        { id: 'tree', name: 'Diagram (Tree)' }
+                    ].map(style => (
+                        <Col span={8} key={style.id}>
+                            <Button
+                                block
+                                type={settings.menuItemTemplate === style.id ? 'primary' : 'default'}
+                                onClick={() => updateSetting('menuItemTemplate', style.id)}
+                                style={{
+                                    height: 'auto',
+                                    padding: '8px 4px',
+                                    fontSize: '12px',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: 4
+                                }}
+                            >
+                                {style.name}
+                                {settings.menuItemTemplate === style.id && <CheckOutlined />}
+                            </Button>
+                        </Col>
+                    ))}
+                </Row>
+
             </Modal>
         </>
     );

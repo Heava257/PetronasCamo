@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
+import './styles/petronas-theme.css'
 import './locales/i18n'
 
 import { registerSW } from 'virtual:pwa-register'

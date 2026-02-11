@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Select, Button, message, Card, Row, Col } from 'antd';
+import { Modal, Form, Select, Button, Card, Row, Col } from 'antd';
+import Swal from 'sweetalert2';
 import { MdLocalShipping, MdPerson, MdPhone } from 'react-icons/md';
 import { useTranslation } from '../../locales/TranslationContext';
 import { request } from '../../util/helper';
@@ -29,7 +30,11 @@ const TruckAssignmentModal = ({ visible, orderId, orderNo, onClose, onSuccess })
       }
     } catch (error) {
       console.error('Error loading trucks:', error);
-      message.error(t('failed_to_load_trucks'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('failed_to_load_trucks'),
+      });
     } finally {
       setLoading(false);
     }
@@ -52,7 +57,13 @@ const TruckAssignmentModal = ({ visible, orderId, orderNo, onClose, onSuccess })
       });
 
       if (res && res.success) {
-        message.success(t('truck_assigned_successfully'));
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: t('truck_assigned_successfully'),
+          showConfirmButton: false,
+          timer: 1500
+        });
 
         if (onSuccess) {
           onSuccess();
@@ -60,11 +71,19 @@ const TruckAssignmentModal = ({ visible, orderId, orderNo, onClose, onSuccess })
 
         onClose();
       } else {
-        message.error(res.message || t('failed_to_assign_truck'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || t('failed_to_assign_truck'),
+        });
       }
     } catch (error) {
       console.error('Error assigning truck:', error);
-      message.error(t('failed_to_assign_truck'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('failed_to_assign_truck'),
+      });
     } finally {
       setSubmitting(false);
     }

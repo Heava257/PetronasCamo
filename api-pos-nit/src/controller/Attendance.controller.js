@@ -9,10 +9,10 @@ const moment = require("moment");
  */
 const formatLateTime = (minutes) => {
   if (!minutes || minutes <= 0) return null;
-  
+
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  
+
   if (hours > 0 && mins > 0) {
     return {
       en: `${hours}h ${mins}min`,
@@ -49,24 +49,34 @@ const formatLateTime = (minutes) => {
 exports.checkIP = async (req, res) => {
   try {
     const { ip } = req.query;
-    
-    if (isEmpty(ip)) {
+    // Strip everything except numbers, dots, and colons (for IPv6)
+    const sanitizedIp = ip ? ip.replace(/[^0-9a-fA-F.:]/g, '').trim() : "";
+
+    if (isEmpty(sanitizedIp)) {
       return res.json({
         error: false,
-        allowed: false, 
+        allowed: false,
         message: "No IP provided"
       });
     }
 
     const [result] = await db.query(
-      `SELECT * FROM allowed_ips WHERE ip_address = ? AND is_active = 1`,
-      [ip]
+      "SELECT * FROM allowed_ips WHERE (TRIM(ip_address) = ? OR ip_address LIKE ?) AND is_active = 1",
+      [sanitizedIp, sanitizedIp]
     );
+
+    // Logging to a temp file for debugging
+    try {
+      const logMsg = `${new Date().toISOString()} - IP Check: [${sanitizedIp}] - Found: ${result.length > 0}\n`;
+      fsSync.appendFileSync(path.join(__dirname, "../../ip_debug.log"), logMsg);
+    } catch (e) { }
+
+    console.log(`IP Check: [${sanitizedIp}] - Allowed: ${result.length > 0}`);
 
     res.json({
       error: false,
       allowed: result.length > 0,
-      ip: ip,
+      ip: sanitizedIp,
       ip_info: result.length > 0 ? result[0] : null
     });
   } catch (error) {
@@ -121,26 +131,27 @@ exports.checkIn = async (req, res) => {
   try {
     const currentUserId = req.current_id;
     const { ip_address, location, check_in_time } = req.body;
+    const sanitizedIp = ip_address ? ip_address.replace(/[^0-9a-fA-F.:]/g, '').trim() : "";
     const today = moment().format('YYYY-MM-DD');
     const checkInTime = check_in_time || moment().format('YYYY-MM-DD HH:mm:ss');
 
     // 1. Check IP validation
     const [allowedIP] = await db.query(
-      `SELECT * FROM allowed_ips WHERE ip_address = ? AND is_active = 1`,
-      [ip_address]
+      "SELECT * FROM allowed_ips WHERE TRIM(ip_address) = ? AND is_active = 1",
+      [sanitizedIp]
     );
 
     if (allowedIP.length === 0) {
       const [allIPs] = await db.query(
-        `SELECT ip_address, description FROM allowed_ips WHERE is_active = 1`
+        "SELECT ip_address, description FROM allowed_ips WHERE is_active = 1"
       );
-      
+
       return res.json({
         error: true,
-        message: `IP address (${ip_address}) is not allowed`,
-        message_kh: `អាសយដ្ឋាន IP (${ip_address}) មិនត្រូវបានអនុញ្ញាត`,
+        message: `IP address (${sanitizedIp}) is not allowed`,
+        message_kh: `អាសយដ្ឋាន IP (${sanitizedIp}) មិនត្រូវបានអនុញ្ញាត`,
         allowed_ips: allIPs,
-        your_ip: ip_address
+        your_ip: sanitizedIp
       });
     }
 
@@ -187,7 +198,7 @@ exports.checkIn = async (req, res) => {
       try {
         workingDays = JSON.parse(employee[0].working_days || '[]');
       } catch (e) {
-        workingDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        workingDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       }
 
       if (!workingDays.includes(dayOfWeek)) {
@@ -323,16 +334,16 @@ exports.checkOut = async (req, res) => {
     // 3. ✅ Calculate early departure minutes WITH VALIDATION
     let earlyDepartureMinutes = 0;
     let scheduledEndTime = attendance[0].scheduled_end_time;
-    
+
     // Check if scheduled_end_time exists and is valid
     if (scheduledEndTime && scheduledEndTime !== '00:00:00' && scheduledEndTime !== null) {
       try {
         const scheduledEnd = moment(`${attendance[0].date} ${scheduledEndTime}`);
-        
+
         // Validate that scheduledEnd is a valid moment
         if (scheduledEnd.isValid()) {
           earlyDepartureMinutes = scheduledEnd.diff(checkOut, 'minutes');
-          
+
           // Double check for NaN
           if (isNaN(earlyDepartureMinutes)) {
             console.warn('earlyDepartureMinutes is NaN after calculation, setting to 0');
@@ -383,7 +394,7 @@ exports.checkOut = async (req, res) => {
 
     let earlyMessage = '';
     let earlyMessageKh = '';
-    
+
     if (earlyDepartureMinutes > 0 && earlyTimeFormatted) {
       earlyMessage = ` (Left ${earlyTimeFormatted.en} early)`;
       earlyMessageKh = ` (ចេញមុនម៉ោង ${earlyTimeFormatted.kh})`;
@@ -502,7 +513,7 @@ exports.getAttendanceList = async (req, res) => {
       late_grace: attendance.filter(a => a.status === 'late-grace').length,
       late_penalty: attendance.filter(a => a.status === 'late-penalty').length,
       absent: attendance.filter(a => a.status === 'absent').length,
-      avg_late_minutes: attendance.length > 0 
+      avg_late_minutes: attendance.length > 0
         ? (attendance.reduce((sum, a) => sum + (a.late_minutes || 0), 0) / attendance.length).toFixed(1)
         : 0,
       total_late_minutes: attendance.reduce((sum, a) => sum + (a.late_minutes > 0 ? a.late_minutes : 0), 0)
@@ -545,8 +556,8 @@ exports.getLateReport = async (req, res) => {
       params.push(department_id);
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(' AND ')}` 
+    const whereClause = whereConditions.length > 0
+      ? `WHERE ${whereConditions.join(' AND ')}`
       : '';
 
     const [report] = await db.query(
@@ -606,6 +617,106 @@ exports.getLateReport = async (req, res) => {
   }
 };
 
+// ==================== DASHBOARD STATISTICS ====================
+
+/**
+ * Get attendance statistics for dashboard
+ * GET /api/attendance/dashboard-stats?date=YYYY-MM-DD
+ */
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const { date } = req.query;
+    const targetDate = date || moment().format('YYYY-MM-DD');
+    const yesterday = moment(targetDate).subtract(1, 'days').format('YYYY-MM-DD');
+    const currentUserId = req.current_id;
+
+    // Get current user branch to filter
+    const [currentUser] = await db.query(
+      `SELECT branch_name, role_id FROM user WHERE id = ?`,
+      [currentUserId]
+    );
+
+    const isSuperAdmin = currentUser[0]?.role_id === 29;
+    const branchName = currentUser[0]?.branch_name;
+
+    // Helper to get stats for a specific date
+    const getStatsForDate = async (dt) => {
+      let branchFilter = "";
+      let params = [dt];
+
+      if (!isSuperAdmin && branchName) {
+        branchFilter = " AND u.branch_name = ?";
+        params.push(branchName);
+      }
+
+      const sql = `
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN a.status = 'on-time' THEN 1 ELSE 0 END) as on_time,
+          SUM(CASE WHEN a.status LIKE 'late%' THEN 1 ELSE 0 END) as late,
+          SUM(CASE WHEN a.status = 'absent' THEN 1 ELSE 0 END) as absent,
+          SUM(CASE WHEN a.check_in_time IS NOT NULL AND a.check_in_time < a.scheduled_start_time THEN 1 ELSE 0 END) as early_clock_in,
+          SUM(CASE WHEN a.check_out_time IS NULL AND a.check_in_time IS NOT NULL THEN 1 ELSE 0 END) as no_clock_out
+        FROM attendance a
+        INNER JOIN user u ON a.user_id = u.id
+        WHERE DATE(a.date) = ? ${branchFilter}
+      `;
+      const [result] = await db.query(sql, params);
+      return result[0];
+    };
+
+    const todayStats = await getStatsForDate(targetDate);
+    const yesterdayStats = await getStatsForDate(yesterday);
+
+    // Get Total Employees for "No clock-in" calculation
+    let totalEmpSql = "SELECT COUNT(*) as count FROM employee e INNER JOIN user u ON e.user_id = u.id WHERE e.is_active = 1";
+    let totalEmpParams = [];
+    if (!isSuperAdmin && branchName) {
+      totalEmpSql += " AND u.branch_name = ?";
+      totalEmpParams.push(branchName);
+    }
+    const [totalEmpResult] = await db.query(totalEmpSql, totalEmpParams);
+    const totalEmployees = totalEmpResult[0].count;
+
+    res.json({
+      error: false,
+      date: targetDate,
+      summary: {
+        present: {
+          total: todayStats.on_time + todayStats.late,
+          on_time: todayStats.on_time || 0,
+          late: todayStats.late || 0,
+          early: todayStats.early_clock_in || 0,
+          comparison: {
+            on_time: todayStats.on_time - yesterdayStats.on_time,
+            late: todayStats.late - yesterdayStats.late,
+            early: todayStats.early_clock_in - yesterdayStats.early_clock_in
+          }
+        },
+        not_present: {
+          absent: todayStats.absent || 0,
+          no_clock_in: Math.max(0, totalEmployees - (todayStats.on_time + todayStats.late + todayStats.absent)),
+          no_clock_out: todayStats.no_clock_out || 0,
+          comparison: {
+            absent: todayStats.absent - yesterdayStats.absent
+          }
+        },
+        away: {
+          day_off: 0, // Need leave management table for this
+          time_off: 0,
+          comparison: {
+            day_off: 0,
+            time_off: 0
+          }
+        }
+      }
+    });
+
+  } catch (error) {
+    logError("Attendance.getDashboardStats", error, res);
+  }
+};
+
 // ==================== OTHER REPORTS ====================
 
 exports.getAttendanceReport = async (req, res) => {
@@ -625,8 +736,8 @@ exports.getAttendanceReport = async (req, res) => {
       params.push(user_id);
     }
 
-    const whereClause = whereConditions.length > 0 
-      ? `WHERE ${whereConditions.join(' AND ')}` 
+    const whereClause = whereConditions.length > 0
+      ? `WHERE ${whereConditions.join(' AND ')}`
       : '';
 
     const [report] = await db.query(
@@ -657,7 +768,7 @@ exports.getAttendanceReport = async (req, res) => {
       report,
       summary: {
         total_employees: report.length,
-        avg_attendance: report.length > 0 
+        avg_attendance: report.length > 0
           ? (report.reduce((sum, r) => sum + r.days_present, 0) / report.length).toFixed(1)
           : 0
       }

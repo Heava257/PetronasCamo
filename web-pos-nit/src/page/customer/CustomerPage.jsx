@@ -15,6 +15,7 @@ import {
   Checkbox,
   Tooltip,
 } from "antd";
+import Swal from "sweetalert2";
 import { CiSearch } from "react-icons/ci";
 import { MdOutlineCreateNewFolder, MdSecurity, MdDelete, MdEdit, MdFullscreen, MdFullscreenExit, MdLocationOn, MdFormatListBulleted, MdGridView } from "react-icons/md";
 import { IoPersonAddSharp } from "react-icons/io5";
@@ -89,7 +90,11 @@ function CustomerPage() {
       setState((prev) => ({ ...prev, user_id: profileData.id }));
       setPermissionsLoaded(true);
     } else {
-      message.error(t("មិនមានលេខសម្គាល់អ្នកប្រើប្រាស់។ សូមចូលម្តងទៀត។"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("មិនមានលេខសម្គាល់អ្នកប្រើប្រាស់។ សូមចូលម្តងទៀត។"),
+      });
     }
   }, [t]);
 
@@ -97,16 +102,8 @@ function CustomerPage() {
     if (state.user_id) {
       getList();
     }
-  }, [state.user_id]);
+  }, [state.user_id, state.txtSearch, state.customerTypeFilter]);
 
-  useEffect(() => {
-    if (state.customerTypeFilter) {
-      const filtered = list.filter(item => item.type === state.customerTypeFilter);
-      setFilteredList(filtered);
-    } else {
-      setFilteredList(list);
-    }
-  }, [list, state.customerTypeFilter]);
 
   useEffect(() => {
     const saved = localStorage.getItem("blocked_user_ids");
@@ -138,7 +135,11 @@ function CustomerPage() {
 
   const getList = async () => {
     if (!state.user_id) {
-      message.error(t("តម្រូវឱ្យមានលេខសម្គាល់អ្នកប្រើប្រាស់!"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("តម្រូវឱ្យមានលេខសម្គាល់អ្នកប្រើប្រាស់!"),
+      });
       return;
     }
     const param = {
@@ -147,19 +148,25 @@ function CustomerPage() {
     };
     try {
       setLoading(true);
-      const { id } = getProfile();
-      if (!id) return;
       const res = await request(`customer/my-group`, "get", param);
       setLoading(false);
       if (res?.success) {
         setList(res.list || []);
       } else {
-        message.error(res?.message || t("Failed to fetch customer list"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res?.message || t("Failed to fetch customer list"),
+        });
       }
     } catch (error) {
       setLoading(false);
       console.error("Error fetching customer list:", error);
-      message.error(t("Failed to fetch customer list"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("Failed to fetch customer list"),
+      });
     }
   };
 
@@ -171,7 +178,11 @@ function CustomerPage() {
         setIsFullscreen(true);
       }).catch((err) => {
         console.error('Fullscreen error:', err);
-        message.error(t("Cannot enter fullscreen"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t("Cannot enter fullscreen"),
+        });
       });
     } else {
       if (document.exitFullscreen) {
@@ -256,26 +267,51 @@ function CustomerPage() {
 
   const onClickDelete = (record) => {
     if (!record.id) {
-      message.error(t("មិនមានលេខសម្គាល់អតិថិជន!"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("មិនមានលេខសម្គាល់អតិថិជន!"),
+      });
       return;
     }
-    Modal.confirm({
+    Swal.fire({
       title: t("Delete Customer"),
-      content: t("Are you sure you want to delete this customer?"),
-      onOk: async () => {
+      text: t("Are you sure you want to delete this customer?"),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t("confirm"),
+      cancelButtonText: t("cancel")
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         try {
           const res = await request(`customer/${record.id}`, "delete");
           if (res && !res.error) {
-            message.success(res.message);
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: res.message,
+              showConfirmButton: false,
+              timer: 1500
+            });
             getList();
           } else {
-            message.error(res.message || t("Customer is in use and cannot be deleted!"));
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: res.message || t("Customer is in use and cannot be deleted!"),
+            });
           }
         } catch (error) {
           console.error("Delete Error:", error);
-          message.error(t("មានបញ្ហាកើតឡើងខណៈពេលលុបអតិថិជន។"));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: t("មានបញ្ហាកើតឡើងខណៈពេលលុបអតិថិជន។"),
+          });
         }
-      },
+      }
     });
   };
 
@@ -291,25 +327,49 @@ function CustomerPage() {
       if (isEditing) {
         const res = await request(`customer/${id}`, "put", values);
         if (res && res.success && !res.error) {
-          message.success(t("អតិថិជនត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!"));
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: t("អតិថិជនត្រូវបានធ្វើបច្ចុប្បន្នភាពដោយជោគជ័យ!"),
+            showConfirmButton: false,
+            timer: 1500
+          });
           setState((prev) => ({ ...prev, visibleModal: false }));
           getList();
         } else {
-          message.error(res?.message || t("បរាជ័យក្នុងការធ្វើបច្ចុប្បន្នភាពអតិថិជន។"));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res?.message || t("បរាជ័យក្នុងការធ្វើបច្ចុប្បន្នភាពអតិថិជន។"),
+          });
         }
       } else {
         const res = await request("customer", "post", values);
         if (res && res.success && !res.error) {
-          message.success(t("Customer created successfully!"));
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: t("Customer created successfully!"),
+            showConfirmButton: false,
+            timer: 1500
+          });
           setState((prev) => ({ ...prev, visibleModal: false }));
           getList();
         } else {
-          message.error(res?.message || t("Phone number already exists"));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res?.message || t("Phone number already exists"),
+          });
         }
       }
     } catch (error) {
       console.error("Validation or API error:", error);
-      message.error(t("មានបញ្ហាកើតឡើងក្នុងការរក្សាទុកទិន្នន័យ។"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("មានបញ្ហាកើតឡើងក្នុងការរក្សាទុកទិន្នន័យ។"),
+      });
     }
   };
 
@@ -331,7 +391,11 @@ function CustomerPage() {
       const values = await assignForm.validateFields();
 
       if (!values.customer_id || !values.assigned_user_id) {
-        message.error(t("តម្រូវឱ្យមានអតិថិជននិងអ្នកប្រើប្រាស់!"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t("តម្រូវឱ្យមានអតិថិជននិងអ្នកប្រើប្រាស់!"),
+        });
         return;
       }
 
@@ -341,16 +405,30 @@ function CustomerPage() {
       });
 
       if (res && res.success) {
-        message.success(t("Customer assigned successfully!"));
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: t("Customer assigned successfully!"),
+          showConfirmButton: false,
+          timer: 1500
+        });
         setState((prev) => ({ ...prev, visibleAssignModal: false }));
         assignForm.resetFields();
         getList();
       } else {
-        message.error(res?.message || t("បរាជ័យក្នុងការកំណត់អតិថិជន។"));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res?.message || t("បរាជ័យក្នុងការកំណត់អតិថិជន។"),
+        });
       }
     } catch (error) {
       console.error("Validation or API error:", error);
-      message.error(t("មានបញ្ហាកើតឡើងខណៈពេលកំណត់អតិថិជន។"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("មានបញ្ហាកើតឡើងខណៈពេលកំណត់អតិថិជន។"),
+      });
     }
   };
 
@@ -425,9 +503,9 @@ function CustomerPage() {
 
   // Calculate gender statistics
   const getGenderStats = () => {
-    const total = filteredList.length;
-    const male = filteredList.filter(c => c.gender === 'Male').length;
-    const female = filteredList.filter(c => c.gender === 'Female').length;
+    const total = list.length;
+    const male = list.filter(c => c.gender === 'Male').length;
+    const female = list.filter(c => c.gender === 'Female').length;
     const other = total - male - female;
 
     return { total, male, female, other };
@@ -939,7 +1017,7 @@ function CustomerPage() {
           placeholder={t("ជ្រើសរើសអតិថិជន")}
           optionFilterProp="label"
         >
-          {filteredList.map(customer => (
+          {list.map(customer => (
             <Select.Option key={customer.id} value={customer.id} label={`${customer.name} - ${customer.tel}`}>
               {customer.name} - {customer.tel}
             </Select.Option>
@@ -1108,12 +1186,8 @@ function CustomerPage() {
       {/* Table for Desktop / Cards for Mobile */}
       {isMobile ? (
         <div className="px-2 sm:px-4 pb-4">
-          {loading ? (
-            <div className="text-center py-8 text-gray-500">
-              {t("កំពុងផ្ទុក...")}
-            </div>
-          ) : filteredList.length > 0 ? (
-            filteredList.map((record, index) => (
+          {list.length > 0 ? (
+            list.map((record, index) => (
               <MobileCustomerCard
                 key={record.id}
                 record={record}
@@ -1229,7 +1303,7 @@ function CustomerPage() {
                 className="customer-table-modern"
                 rowClassName={() => "customer-table-row"}
                 rowKey="id"
-                dataSource={filteredList}
+                dataSource={list}
                 columns={columns}
                 pagination={false}
                 expandable={{
@@ -1248,7 +1322,7 @@ function CustomerPage() {
               />
             ) : (
               <Row gutter={[20, 20]} className="p-2 sm:p-4">
-                {filteredList.map((record, index) => (
+                {list.map((record, index) => (
                   <Col key={record.id} xs={24} sm={12} md={12} lg={8} xl={6}>
                     <div
                       className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-pointer overflow-hidden flex flex-col h-full group"

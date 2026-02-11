@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Table, Tag, Button, Modal, message, Input, Badge, Row, Col, Typography, App } from "antd";
+import Swal from "sweetalert2";
 const { Title, Text } = Typography;
 import {
     FaBox,
@@ -80,7 +81,11 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
             }
         } catch (error) {
             console.error("❌ Failed to fetch pre-orders:", error);
-            message.error(t("failed_to_load_orders"));
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: t("failed_to_load_orders"),
+            });
         } finally {
             setLoading(false);
         }
@@ -215,11 +220,14 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                 setSelectedLocation(orderDetails.location_name || orderDetails.location_id || null);
                 setSelectedTruck(orderDetails.truck_id || null);
                 setIsModalVisible(true);
-                messageApi.success(`✅ បានផ្ទុក Pre-Order សម្រាប់ ${orderDetails.customer_name}`);
             }
         } catch (error) {
             console.error("Error loading pre-order:", error);
-            messageApi.error("មិនអាចផ្ទុក Pre-Order បានទេ");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "មិនអាចផ្ទុក Pre-Order បានទេ",
+            });
         } finally {
             setLoading(false);
         }
@@ -289,12 +297,20 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
 
     const handleClickOut = async () => {
         if (!cartState.cart_list.length) {
-            message.error(t("cart_is_empty"));
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: t("cart_is_empty"),
+            });
             return;
         }
 
         if (!selectedLocation) {
-            message.error("សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "សូមជ្រើសរើសទីតាំងដឹកជញ្ជូន",
+            });
             return;
         }
 
@@ -353,7 +369,16 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
             const res = await request("order", "post", param);
 
             if (res && !res.error && res.order) {
-                message.success("✅ Order បានបង្កើតជោគជ័យ!");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: "✅ Order បានបង្កើតជោគជ័យ!",
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    setIsModalVisible(false);
+                    setShowPreviewModal(true);
+                });
 
                 setObjSummary(prev => ({
                     ...prev,
@@ -366,19 +391,20 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
 
                 fetchPreOrders();
                 fetchStockStats();
-
-                // Close modal and show print preview
-                setTimeout(() => {
-                    setIsModalVisible(false);
-                    setShowPreviewModal(true);
-                    // Cart will be cleared when Preview Modal is closed
-                }, 1000);
             } else {
-                message.error("មិនអាចបង្កើត Order បានទេ");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: "មិនអាចបង្កើត Order បានទេ",
+                });
             }
         } catch (error) {
             console.error("Order creation error:", error);
-            message.error("មិនអាចបង្កើត Order បានទេ");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "មិនអាចបង្កើត Order បានទេ",
+            });
         } finally {
             setTimeout(() => {
                 setIsCheckingOut(false);

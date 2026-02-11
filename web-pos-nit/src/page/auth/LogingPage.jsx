@@ -184,6 +184,22 @@ function LoginPage() {
         setRemainingTime(seconds);
         setIsBlocked(true);
         message.error(`អ្នកត្រូវបានទប់ស្កាត់! សូមរង់ចាំ ${formatTime(seconds)}`);
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        // Handle Wrong Password or Inactive account
+        const newAttemptCount = attemptCount + 1;
+        setAttemptCount(newAttemptCount);
+
+        const rawData = error.response?.data;
+        const serverMessage = rawData?.error?.message_kh || rawData?.error?.password_kh || rawData?.error?.username_kh || rawData?.message_kh || "ព័ត៌មានមិនត្រឹមត្រូវ";
+        console.log("Debug Auth Error:", rawData);
+
+        if (newAttemptCount >= 5) {
+          setRemainingTime(900);
+          setIsBlocked(true);
+          message.error("អ្នកបានព្យាយាម Login ច្រើនដងពេក! សូមរង់ចាំ 15 នាទី");
+        } else {
+          message.error(`${serverMessage}! អ្នកនៅសល់ ${5 - newAttemptCount} ដងទៀត`);
+        }
       } else {
         const newAttemptCount = attemptCount + 1;
         setAttemptCount(newAttemptCount);
@@ -193,7 +209,7 @@ function LoginPage() {
           setIsBlocked(true);
           message.error("អ្នកបានព្យាយាម Login ច្រើនដងពេក! សូមរង់ចាំ 15 នាទី");
         } else {
-          message.error(`An error occurred. អ្នកនៅសល់ ${5 - newAttemptCount} ដងទៀត`);
+          message.error(`មានបញ្ហាក្នុងការភ្ជាប់ទៅកាន់ Server។ អ្នកនៅសល់ ${5 - newAttemptCount} ដងទៀត`);
         }
       }
     } finally {

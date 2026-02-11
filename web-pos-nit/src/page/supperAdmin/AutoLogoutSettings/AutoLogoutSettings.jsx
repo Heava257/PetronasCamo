@@ -1,9 +1,10 @@
 // components/admin/AutoLogoutSettings.jsx
 
 import React, { useState, useEffect } from 'react';
-import { Form, InputNumber, Button, Card, message, Switch } from 'antd';
+import { Form, InputNumber, Button, Card, Switch } from 'antd';
 import { ClockCircleOutlined } from '@ant-design/icons';
 import { request } from '../../util/helper';
+import Swal from 'sweetalert2';
 
 function AutoLogoutSettings() {
   const [loading, setLoading] = useState(false);
@@ -22,7 +23,11 @@ function AutoLogoutSettings() {
         });
       }
     } catch (error) {
-      message.error('Failed to load configuration');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to load configuration'
+      });
     }
   };
 
@@ -30,21 +35,35 @@ function AutoLogoutSettings() {
     try {
       setLoading(true);
       const res = await request('config/auto-logout', 'put', values);
-      
+
       if (res.success) {
-        message.success(res.message_kh || res.message);
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: res.message_kh || res.message,
+          timer: 1500,
+          showConfirmButton: false
+        });
       } else {
-        message.error('Failed to update');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to update'
+        });
       }
     } catch (error) {
-      message.error('Error updating configuration');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Error updating configuration'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card 
+    <Card
       title={
         <span>
           <ClockCircleOutlined /> Auto-Logout Configuration
@@ -68,8 +87,8 @@ function AutoLogoutSettings() {
           ]}
           extra="Users will be automatically logged out after this many minutes of inactivity"
         >
-          <InputNumber 
-            min={5} 
+          <InputNumber
+            min={5}
             max={1440}
             style={{ width: 200 }}
             addonAfter="minutes"

@@ -48,9 +48,13 @@ exports.getList = async (req, res) => {
         TIME_FORMAT(e.work_end_time, '%h:%i %p') as work_end_display,
         TIMESTAMPDIFF(HOUR, e.work_start_time, e.work_end_time) as daily_hours,
         e.create_at,
-        u.name as created_by_name
+        u.name as created_by_name,
+        e.has_account,
+        usr.role_id as account_role_id,
+        usr.id as account_id
       FROM employee e
       LEFT JOIN user u ON e.creator_id = u.id
+      LEFT JOIN user usr ON e.id = usr.employee_id
       WHERE 1=1
     `;
 
@@ -135,8 +139,9 @@ exports.create = async (req, res) => {
         website, note, is_active,
         work_type, work_start_time, work_end_time, grace_period_minutes,
         working_days, schedule_notes,
+        monthly_salary,
         create_at, creator_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
       [
         code || null,
         name,
@@ -155,6 +160,7 @@ exports.create = async (req, res) => {
         grace_period_minutes || 30,
         working_days ? JSON.stringify(working_days) : JSON.stringify(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]),
         schedule_notes || null,
+        salary || 0, // monthly_salary
         req.current_id // ✅ Added creator_id
       ]
     );
@@ -231,7 +237,7 @@ exports.update = async (req, res) => {
     await db.query(
       `UPDATE employee SET
         code = ?, name = ?, gender = ?,
-        position = ?, salary = ?,
+        position = ?, salary = ?, monthly_salary = ?,
         tel = ?, email = ?, address = ?, website = ?, note = ?,
         is_active = ?,
         work_type = ?, work_start_time = ?, work_end_time = ?,
@@ -244,6 +250,7 @@ exports.update = async (req, res) => {
         gender === 'Male' ? 1 : 0,
         position,
         salary || 0,
+        salary || 0, // monthly_salary
         tel || null,
         email || null,
         address || null,
@@ -260,8 +267,8 @@ exports.update = async (req, res) => {
       ]
     );
 
-    // Log salary change if changed
-    if (oldEmployee.length > 0 && oldEmployee[0].salary !== salary) {
+    // Log salary change if changed (numerical comparison)
+    if (oldEmployee.length > 0 && parseFloat(oldEmployee[0].salary) !== parseFloat(salary)) {
       await db.query(
         `INSERT INTO salary_history (
           employee_id, old_salary, new_salary, effective_date,
@@ -519,15 +526,16 @@ exports.createLoginAccount = async (req, res) => {
 
     const [userResult] = await db.query(
       `INSERT INTO user (
-        username, password, role_id, name, tel, address,
+        username, password, role_id, name, email, tel, address,
         branch_name, branch_id, is_active, employee_id,
         create_by, create_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, NOW())`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, NOW())`,
       [
         username,
         hashedPassword,
         finalRoleId,
         employee[0].name,
+        employee[0].email || null,
         employee[0].tel || null,
         employee[0].address || null,
         creator[0].branch_name,
@@ -834,5 +842,95 @@ exports.deleteAllowedIP = async (req, res) => {
     });
   } catch (error) {
     logError("Attendance.deleteAllowedIP", error, res);
+  }
+};
+
+exports.resetAccountPassword = async (req, res) => {
+  try {
+    const { employee_id, new_password, role_id } = req.body;
+    const currentUserId = req.current_id;
+
+    if (isEmpty(employee_id)) {
+      return res.json({
+        error: true,
+        message: "Employee ID is required",
+        message_kh: "តម្រូវឱ្យមានអត្តសញ្ញាណបុគ្គលិក"
+      });
+    }
+
+    if (isEmpty(new_password) && isEmpty(role_id)) {
+      return res.json({
+        error: true,
+        message: "Either new password or role is required",
+        message_kh: "តម្រូវឱ្យមានពាក្យសម្ងាត់ថ្មី ឬតួនាទី"
+      });
+    }
+
+    // 1. Check if employee exists and has a user_id
+    const [employee] = await db.query(
+      "SELECT user_id, name FROM employee WHERE id = ?",
+      [employee_id]
+    );
+
+    if (employee.length === 0 || !employee[0].user_id) {
+      return res.json({
+        error: true,
+        message: "Employee account not found",
+        message_kh: "រកមិនឃើញគណនីបុគ្គលិក"
+      });
+    }
+
+    const userId = employee[0].user_id;
+
+    // 3. Update password, role and ensure user is active in user table
+    let updateFields = ["is_active = 1"];
+    let updateParams = [];
+
+    if (!isEmpty(new_password)) {
+      const trimmedPassword = new_password.trim();
+      const bcrypt = require("bcrypt");
+      const hashedPassword = bcrypt.hashSync(trimmedPassword, 10);
+      updateFields.push("password = ?");
+      updateParams.push(hashedPassword);
+    }
+
+    if (!isEmpty(role_id)) {
+      updateFields.push("role_id = ?");
+      updateParams.push(role_id);
+    }
+
+    updateParams.push(userId);
+    const updateSql = `UPDATE user SET ${updateFields.join(", ")} WHERE id = ?`;
+    await db.query(updateSql, updateParams);
+
+    // 4. Log activity
+    try {
+      const clientIP = req.ip || req.headers['x-forwarded-for']?.split(',')[0] || 'Unknown';
+      const userAgent = req.get('User-Agent') || 'Unknown';
+
+      await db.query(`
+        INSERT INTO user_activity_log (
+          user_id, action_type, action_description,
+          ip_address, user_agent, created_at, created_by
+        ) VALUES (?, 'PASSWORD_RESET', ?, ?, ?, NOW(), ?)
+      `, [
+        userId,
+        `Password reset for employee: ${employee[0].name} by admin`,
+        clientIP,
+        userAgent,
+        currentUserId
+      ]);
+    } catch (logError) {
+      console.error("Failed to log activity:", logError);
+    }
+
+    res.json({
+      error: false,
+      message: "Password reset successfully",
+      message_kh: "បានប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ"
+    });
+
+  } catch (error) {
+    logError("Employee.resetAccountPassword", error, res);
   }
 };

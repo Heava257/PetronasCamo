@@ -64,6 +64,11 @@ exports.getList = async (req, res) => {
       return `AND ${alias}.branch_id = ${userBranchId}`;
     };
 
+    const role_code = (currentUser[0].role_code || "").toLowerCase();
+    const isSuperAdmin = userRoleId === 29 || role_code === "super_admin";
+    const isAdmin = role_code === "admin" || userRoleId === 1;
+
+
     const branchFilterOrder = getFilter('o');
     const branchFilterExpense = getFilter('e');
     const branchFilterPurchase = getFilter('p');
@@ -343,38 +348,67 @@ exports.getList = async (req, res) => {
     `;
     const [Product_Summary_By_Month] = await db.query(productSummaryQuery);
 
-    // ✅✅✅ USER SUMMARY - COMPLETELY FIXED TO SHOW ALL ROLES ✅✅✅
-    const userSummaryQuery = `
-      SELECT 
-        r.id AS role_id,
-        r.name AS role_name,
-        r.code AS role_code,
-        COUNT(u.id) AS total_users,
-        GROUP_CONCAT(u.name SEPARATOR ', ') as user_names
-      FROM role r
-      LEFT JOIN user u ON u.role_id = r.id 
-        AND u.is_active = 1
-        ${userRoleId !== 29 && userBranch ? `AND u.branch_name = '${userBranch}'` : ''}
-      GROUP BY r.id, r.name, r.code
-      HAVING total_users > 0
-      ORDER BY total_users DESC, r.name ASC
-    `;
-    const [User_Summary] = await db.query(userSummaryQuery);
+    // ✅✅✅ EMPLOYEE SUMMARY - Restricted by Role ✅✅✅
+    let Employee_Summary = [];
+    let Employee_Positions = [];
+    let totalEmployees = 0;
+    let employeeSummaryObject = {};
 
-    // ✅ Calculate total users correctly
-    const totalUsers = User_Summary.reduce((sum, row) => sum + row.total_users, 0);
+    if (isSuperAdmin || isAdmin) {
+      // Get Positions Breakdown
+      const positionQuery = `
+        SELECT 
+          COALESCE(e.position, 'Other') AS position_name,
+          COUNT(e.id) AS total_count
+        FROM employee e
+        INNER JOIN user u_creator ON e.creator_id = u_creator.id
+        LEFT JOIN user u_acc ON e.user_id = u_acc.id
+        LEFT JOIN role r ON u_acc.role_id = r.id
+        WHERE 1=1
+        ${getFilter('u_creator')}
+        ${!isSuperAdmin ? "AND (r.code IS NULL OR r.code NOT IN ('ADMIN', 'SUPER_ADMIN'))" : ""}
+        GROUP BY e.position
+        ORDER BY total_count DESC
+      `;
+      [Employee_Positions] = await db.query(positionQuery);
 
-    // ✅ Also get count by status for verification
-    const userStatusQuery = `
-      SELECT 
-        COUNT(CASE WHEN is_active = 1 THEN 1 END) AS active_users,
-        COUNT(CASE WHEN is_active = 0 THEN 1 END) AS inactive_users,
-        COUNT(*) AS total_all_users
-      FROM user
-      WHERE 1=1
-      ${userRoleId !== 29 ? `AND branch_id = ${userBranchId}` : ''}
-    `;
-    const [userStatus] = await db.query(userStatusQuery);
+      // Get Overall Employee Stats
+      const employeeQuery = `
+        SELECT 
+          COUNT(e.id) AS total,
+          SUM(CASE WHEN e.gender = 1 THEN 1 ELSE 0 END) AS male,
+          SUM(CASE WHEN e.gender = 0 THEN 1 ELSE 0 END) AS female,
+          SUM(CASE WHEN e.is_active = 1 THEN 1 ELSE 0 END) AS active
+        FROM employee e
+        INNER JOIN user u_creator ON e.creator_id = u_creator.id
+        LEFT JOIN user u_acc ON e.user_id = u_acc.id
+        LEFT JOIN role r ON u_acc.role_id = r.id
+        WHERE 1=1
+        ${getFilter('u_creator')}
+        ${!isSuperAdmin ? "AND (r.code IS NULL OR r.code NOT IN ('ADMIN', 'SUPER_ADMIN'))" : ""}
+      `;
+      const [employeeResult] = await db.query(employeeQuery);
+      const emp = employeeResult[0] || {};
+      totalEmployees = emp.total || 0;
+
+      employeeSummaryObject = {
+        "សរុប": formatNumber(totalEmployees) + " នាក់",
+        "បុរស": formatNumber(emp.male) + " នាក់",
+        "ស្ត្រី": formatNumber(emp.female) + " នាក់",
+        "កំពុងបម្រើការ": formatNumber(emp.active) + " នាក់", // Active Employees
+      };
+
+      // Add positions to the summary
+      Employee_Positions.forEach(pos => {
+        employeeSummaryObject[pos.position_name] = pos.total_count + " នាក់";
+      });
+    }
+
+
+    let dashboardData = [];
+    const [totalBranches] = await db.query('SELECT COUNT(DISTINCT branch_name) as count FROM user WHERE branch_name IS NOT NULL AND branch_name != ""');
+
+    const [totalAdmins] = await db.query("SELECT COUNT(*) as count FROM user u JOIN role r ON u.role_id = r.id WHERE r.code IN ('ADMIN', 'SUPER_ADMIN')");
 
     // ✅✅✅ EMPLOYEE QUERY ✅✅✅
     const employeeQuery = `
@@ -390,33 +424,13 @@ exports.getList = async (req, res) => {
     `;
     const [employee] = await db.query(employeeQuery);
 
-    // ✅✅✅ BUILD DASHBOARD with all roles and PROFIT CARD ✅✅✅
-    const [onlineUsers] = await db.query("SELECT COUNT(*) as count FROM user WHERE is_online = 1");
-    const [totalRoles] = await db.query("SELECT COUNT(*) as count FROM role");
-
-    const userSummaryObject = {
-      "សរុប": formatNumber(totalUsers) + " នាក់",
-      "កំពុងប្រើប្រាស់": formatNumber(onlineUsers[0]?.count) + " នាក់", // Online Users
-      "ចំនួនតួនាទី": formatNumber(totalRoles[0]?.count) + "", // Total Roles
-    };
-
-    // Add each role to the summary
-    User_Summary.forEach(role => {
-      userSummaryObject[role.role_name] = role.total_users + " នាក់";
-    });
-
-    let dashboardData = [];
-    const isSuperAdmin = userRoleId === 29;
-
-    const [totalBranches] = await db.query('SELECT COUNT(DISTINCT branch_name) as count FROM user WHERE branch_name IS NOT NULL AND branch_name != ""');
-
-    const [totalAdmins] = await db.query("SELECT COUNT(*) as count FROM user u JOIN role r ON u.role_id = r.id WHERE r.code IN ('ADMIN', 'SUPER_ADMIN')");
 
     dashboardData = [
-      {
-        title: "អ្នកប្រើប្រាស់",
-        Summary: userSummaryObject
-      },
+      ...(isSuperAdmin || isAdmin ? [{
+        title: "បុគ្គលិក", // Employee
+        Summary: employeeSummaryObject
+      }] : []),
+
       {
         title: "អតិថិជន",
         Summary: {
@@ -491,10 +505,8 @@ exports.getList = async (req, res) => {
         cogs: parseFloat(totalCogs.toFixed(2))
       },
       user_details: {
-        active_users: userStatus[0]?.active_users || 0,
-        inactive_users: userStatus[0]?.inactive_users || 0,
-        total_all_users: userStatus[0]?.total_all_users || 0,
-        roles_breakdown: User_Summary
+        total_employees: totalEmployees,
+        positions_breakdown: Employee_Positions
       },
       filter_info: {
         from_date,

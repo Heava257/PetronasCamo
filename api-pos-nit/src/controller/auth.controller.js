@@ -1108,6 +1108,7 @@ exports.logout = async (req, res) => {
 // Replace the existing login function with this safer version
 
 exports.login = async (req, res) => {
+  console.log("🚀 Login attempt for:", req.body.username);
   try {
     let { password, username } = req.body;
 
@@ -1127,10 +1128,10 @@ exports.login = async (req, res) => {
       " r.name as role_name," +
       " r.code as role_code" +
       " FROM user u " +
-      " INNER JOIN role r ON u.role_id = r.id " +
-      " WHERE u.username=:username ";
+      " LEFT JOIN role r ON u.role_id = r.id " +
+      " WHERE (u.username=:username OR u.email=:username) ";
 
-    let [data] = await db.query(sql, { username: username });
+    let [data] = await db.query(sql, { username: username.trim() });
 
     // Username doesn't exist
     if (data.length == 0) {
@@ -1143,14 +1144,22 @@ exports.login = async (req, res) => {
     }
 
     let dbPass = data[0].password;
-    let isCorrectPass = bcrypt.compareSync(password, dbPass);
+    const trimmedInputPass = password ? password.toString().trim() : "";
+    let isCorrectPass = bcrypt.compareSync(trimmedInputPass, dbPass);
 
     // Wrong password
     if (!isCorrectPass) {
+      console.warn(`⚠️ Login failed for user ${username}: InputLen=${trimmedInputPass.length}, HashLen=${dbPass?.length}`);
       return res.status(401).json({
         error: {
           password: "Password incorrect!",
-          password_kh: "ពាក្យសម្ងាត់មិនត្រឹមត្រូវ!"
+          password_kh: "ពាក្យសម្ងាត់មិនត្រឹមត្រូវ!",
+          message_kh: "ពាក្យសម្ងាត់មិនត្រឹមត្រូវ!",
+          incorrect: true,
+          debug: {
+            inputLen: trimmedInputPass.length,
+            hashLen: dbPass?.length
+          }
         }
       });
     }
@@ -1634,7 +1643,7 @@ const getPermissionByUser = async (user_id) => {
     const [users] = await db.query(`
       SELECT u.role_id, u.branch_name, r.code as role_code 
       FROM user u 
-      INNER JOIN role r ON u.role_id = r.id 
+      LEFT JOIN role r ON u.role_id = r.id 
       WHERE u.id = :id
             `, { id: user_id });
     if (!users.length) return [];

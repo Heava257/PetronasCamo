@@ -11,19 +11,18 @@ import {
   Row,
   Col,
   Statistic,
-  message,
   Tabs,
   Badge,
   Checkbox,
   Collapse,
   Empty,
   Switch,
-  Popconfirm,
   Form,
   Input,
   Divider,
   Avatar,
 } from "antd";
+import Swal from "sweetalert2";
 import {
   SafetyCertificateOutlined,
   UserOutlined,
@@ -120,7 +119,11 @@ function PermissionManagement() {
 
     } catch (error) {
       console.error("Error loading data:", error);
-      message.error("Failed to load data");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការទាញយកទិន្នន័យ"
+      });
     } finally {
       setLoading(false);
     }
@@ -150,11 +153,19 @@ function PermissionManagement() {
           branchStats: res.stats
         }));
       } else {
-        message.error("Failed to load branch permissions");
+        Swal.fire({
+          icon: 'error',
+          title: 'កំហុស',
+          text: "បរាជ័យក្នុងការទាញយកសិទ្ធិតាមសាខា"
+        });
       }
     } catch (error) {
       console.error("Error loading branch permissions:", error);
-      message.error("Failed to load branch permissions");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការទាញយកសិទ្ធិតាមសាខា"
+      });
     } finally {
       setLoading(false);
     }
@@ -175,11 +186,19 @@ function PermissionManagement() {
         setModalType('view');
         setModalVisible(true);
       } else {
-        message.error("Failed to load user permissions");
+        Swal.fire({
+          icon: 'error',
+          title: 'កំហុស',
+          text: "បរាជ័យក្នុងការទាញយកសិទ្ធិរបស់អ្នកប្រើប្រាស់"
+        });
       }
     } catch (error) {
       console.error("Error loading user permissions:", error);
-      message.error("Failed to load user permissions");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការទាញយកសិទ្ធិរបស់អ្នកប្រើប្រាស់"
+      });
     } finally {
       setLoading(false);
     }
@@ -208,7 +227,11 @@ function PermissionManagement() {
       }
     } catch (error) {
       console.error("Error loading role permissions:", error);
-      message.error("Failed to load role permissions");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការទាញយកសិទ្ធិតាមតួនាទី"
+      });
     } finally {
       setLoading(false);
     }
@@ -228,7 +251,11 @@ function PermissionManagement() {
       }
     } catch (error) {
       console.error("Error loading comparison matrix:", error);
-      message.error("Failed to load comparison matrix");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការទាញយកតារាងប្រៀបធៀប"
+      });
     } finally {
       setLoading(false);
     }
@@ -244,47 +271,56 @@ function PermissionManagement() {
       });
 
       if (res && res.success) {
-        message.success(res.message);
-
-        // ✅ Show confirmation modal for force refresh
-        Modal.confirm({
-          title: '🔄 Force Refresh Permissions?',
-          content: (
+        Swal.fire({
+          title: '🔄 បង្ខំឱ្យធ្វើឱ្យស្រស់សិទ្ធិ?',
+          html: `
             <div>
-              <p>Permissions have been updated successfully.</p>
-              <p className="mt-2 text-orange-600">
-                <strong>Would you like to force all affected users to re-login?</strong>
+              <p>សិទ្ធិត្រូវបានធ្វើឱ្យស្រស់ដោយជោគជ័យ។</p>
+              <p style="margin-top: 10px; color: #d46b08;">
+                <strong>តើអ្នកចង់បង្ខំអ្នកប្រើប្រាស់ទាំងអស់ដែលរងផលប៉ះពាល់ឱ្យចូលម្តងទៀតដែរឬទេ?</strong>
               </p>
-              <p className="text-sm text-gray-600 mt-2">
-                • Yes: Users will be logged out immediately and must re-login<br />
-                • No: Users will see updated permissions on next login
+              <p style="font-size: 13px; color: #666; margin-top: 10px;">
+                • បាទ/ចាស: អ្នកប្រើប្រាស់នឹងត្រូវបានចាកចេញភ្លាមៗ ហើយត្រូវចូលម្តងទៀត<br />
+                • ទេ: អ្នកប្រើប្រាស់នឹងឃើញសិទ្ធិដែលបានធ្វើឱ្យស្រស់នៅពេលចូលម្តងក្រោយ
               </p>
             </div>
-          ),
-          okText: 'បាទ/ចាស - Force Logout',
-          cancelText: 'ទេ - Next Login',
-          okButtonProps: { danger: true },
-          onOk: async () => {
+          `,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'បាទ/ចាស - បង្ខំឱ្យចាកចេញ',
+          cancelButtonText: 'ទេ - ទុកពេលចូលលើកក្រោយ',
+          confirmButtonColor: '#d33',
+        }).then(async (result) => {
+          if (result.isConfirmed) {
             try {
-              // ✅ Force refresh permissions
               const refreshRes = await request(
                 `permissions/refresh/role/${state.selectedRole}`,
                 "post"
               );
 
               if (refreshRes && refreshRes.success) {
-                message.success({
-                  content: `✅ ${refreshRes.affected_users} users will be logged out`,
-                  duration: 5
+                Swal.fire({
+                  icon: 'success',
+                  title: 'ជោគជ័យ',
+                  text: `✅ អ្នកប្រើប្រាស់ចំនួន ${refreshRes.affected_users} នាក់នឹងត្រូវបានចាកចេញ`,
                 });
               }
             } catch (error) {
               console.error("Failed to force refresh:", error);
-              message.error("Failed to force logout users");
+              Swal.fire({
+                icon: 'error',
+                title: 'កំហុស',
+                text: "បរាជ័យក្នុងការបង្ខំឱ្យអ្នកប្រើប្រាស់ចាកចេញ"
+              });
             }
-          },
-          onCancel: () => {
-            message.info('Users will see updated permissions on next login');
+          } else {
+            Swal.fire({
+              icon: 'info',
+              title: 'ព័ត៌មាន',
+              text: 'អ្នកប្រើប្រាស់នឹងឃើញសិទ្ធិដែលបានធ្វើឱ្យស្រស់នៅពេលចូលម្តងក្រោយ',
+              timer: 2000,
+              showConfirmButton: false
+            });
           }
         });
 
@@ -292,11 +328,19 @@ function PermissionManagement() {
         setModalVisible(false);
         setEditMode(false);
       } else {
-        message.error("Failed to update permissions");
+        Swal.fire({
+          icon: 'error',
+          title: 'កំហុស',
+          text: "បរាជ័យក្នុងការធ្វើបច្ចុប្បន្នភាពសិទ្ធិ"
+        });
       }
     } catch (error) {
       console.error("Error updating permissions:", error);
-      message.error("Failed to update permissions");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការធ្វើបច្ចុប្បន្នភាពសិទ្ធិ"
+      });
     } finally {
       setLoading(false);
     }
@@ -305,21 +349,36 @@ function PermissionManagement() {
     const [loading, setLoading] = useState(false);
 
     const handleForceRefresh = async () => {
-      Modal.confirm({
-        title: 'Force Logout User?',
-        content: `This will immediately log out ${userName} and require them to login again.`,
-        okText: 'Force Logout',
-        okButtonProps: { danger: true },
-        onOk: async () => {
+      Swal.fire({
+        title: 'បង្ខំឱ្យអ្នកប្រើប្រាស់ចាកចេញ?',
+        text: `វានឹងធ្វើឱ្យចាកចេញពី ${userName} ភ្លាមៗ ហើយតម្រូវឱ្យពួកគេចូលម្តងទៀត។`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'បង្ខំឱ្យចាកចេញ',
+        cancelButtonText: 'បោះបង់'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
           try {
             setLoading(true);
             const res = await request(`permissions/refresh/user/${userId}`, "post");
 
             if (res && res.success) {
-              message.success(res.message_kh || res.message);
+              Swal.fire({
+                icon: 'success',
+                title: 'ជោគជ័យ',
+                text: res.message_kh || res.message,
+                timer: 1500,
+                showConfirmButton: false
+              });
             }
           } catch (error) {
-            message.error("Failed to force refresh");
+            Swal.fire({
+              icon: 'error',
+              title: 'កំហុស',
+              text: "បរាជ័យក្នុងការបង្ខំឱ្យធ្វើឱ្យស្រស់"
+            });
           } finally {
             setLoading(false);
           }
@@ -349,16 +408,30 @@ function PermissionManagement() {
       });
 
       if (res && res.success) {
-        message.success(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: 'ជោគជ័យ',
+          text: res.message,
+          timer: 1500,
+          showConfirmButton: false
+        });
         loadComparisonMatrix();
         setCloneModalVisible(false);
         cloneForm.resetFields();
       } else {
-        message.error("Failed to clone permissions");
+        Swal.fire({
+          icon: 'error',
+          title: 'កំហុស',
+          text: "បរាជ័យក្នុងការចម្លងសិទ្ធិ"
+        });
       }
     } catch (error) {
       console.error("Error cloning permissions:", error);
-      message.error("Failed to clone permissions");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "Failed to clone permissions"
+      });
     } finally {
       setLoading(false);
     }
@@ -1030,23 +1103,30 @@ function PermissionManagement() {
                     >
                       បោះបង់
                     </Button>
-                    <Popconfirm
-                      title="រក្សាទុកការផ្លាស់ប្តូរ?"
-                      description={`តើអ្នកចង់រក្សាទុកការផ្លាស់ប្តូរសិទ្ធិសម្រាប់តួនាទី ${getRoleById(state.selectedRole)?.name}?`}
-                      onConfirm={handleUpdateRolePermissions}
-                      okText="បាទ/ចាស"
-                      cancelText="មិន"
+                    <Button
+                      type="primary"
+                      icon={<SaveOutlined />}
+                      loading={loading}
+                      className="bg-green-600 hover:bg-green-700"
+                      block={window.innerWidth < 640}
+                      onClick={async () => {
+                        const roleName = getRoleById(state.selectedRole)?.name;
+                        const result = await Swal.fire({
+                          title: "រក្សាទុកការផ្លាស់ប្តូរ?",
+                          text: `តើអ្នកចង់រក្សាទុកការផ្លាស់ប្តូរសិទ្ធិសម្រាប់តួនាទី ${roleName}?`,
+                          icon: "question",
+                          showCancelButton: true,
+                          confirmButtonText: "បាទ/ចាស",
+                          cancelButtonText: "មិន",
+                          confirmButtonColor: "#10b981", // green-600
+                        });
+                        if (result.isConfirmed) {
+                          handleUpdateRolePermissions();
+                        }
+                      }}
                     >
-                      <Button
-                        type="primary"
-                        icon={<SaveOutlined />}
-                        loading={loading}
-                        className="bg-green-600 hover:bg-green-700"
-                        block={window.innerWidth < 640}
-                      >
-                        រក្សាទុក
-                      </Button>
-                    </Popconfirm>
+                      រក្សាទុក
+                    </Button>
                   </>
                 )}
               </Space>

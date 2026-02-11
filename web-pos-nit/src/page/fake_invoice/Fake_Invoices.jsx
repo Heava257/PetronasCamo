@@ -17,6 +17,7 @@ import {
   Card,
   Statistic
 } from "antd";
+import Swal from "sweetalert2";
 import moment from 'moment';
 import dayjs from 'dayjs';
 import { formatDateClient, formatDateServer, isPermission, request } from "../../util/helper";
@@ -81,7 +82,11 @@ function FakeInvoicePage() {
         getList()
       ]);
     } catch (error) {
-      message.error(t('cannot_load_data'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('cannot_load_data'),
+      });
     } finally {
       setLoading(false);
     }
@@ -94,10 +99,18 @@ function FakeInvoicePage() {
         setList(res.list || []);
         calculateStatistics(res.list || []);
       } else {
-        message.error(t('cannot_load_invoice_list'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('cannot_load_invoice_list'),
+        });
       }
     } catch (error) {
-      message.error(t('error_loading_data'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('error_loading_data'),
+      });
     }
   };
 
@@ -232,33 +245,60 @@ function FakeInvoicePage() {
           customer_address: invoiceInfo.customer_address
         });
       } else {
-        message.error(t('cannot_load_products_for_edit'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('cannot_load_products_for_edit'),
+        });
       }
     } catch (error) {
-      message.error(t('error_loading_details') + ": " + error.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('error_loading_details') + ": " + error.message,
+      });
     }
   };
 
   const onClickDelete = async (data) => {
-    Modal.confirm({
-      title: <span className="invoice-khmer-title">{t('delete_invoice')}</span>,
-      content: t('delete_invoice_confirm'),
-      okText: <span className="khmer-text">{t('confirm')}</span>,
-      cancelText: <span className="khmer-text">{t('cancel')}</span>,
-      onOk: async () => {
+    Swal.fire({
+      title: t('delete_invoice'),
+      text: t('delete_invoice_confirm'),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t('confirm'),
+      cancelButtonText: t('cancel')
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         try {
           const res = await request("fakeinvoice", "delete", { order_no: data.order_no });
           if (res && !res.error) {
-            message.success(t('deleted_successfully'));
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: t('deleted_successfully'),
+              showConfirmButton: false,
+              timer: 1500
+            });
             setList((prev) => prev.filter((item) => item.order_no !== data.order_no));
             calculateStatistics();
           } else {
-            message.error(t('cannot_delete'));
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: t('cannot_delete'),
+            });
           }
         } catch (error) {
-          message.error(t('delete_error'));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: t('delete_error'),
+          });
         }
-      },
+      }
     });
   };
 
@@ -358,11 +398,19 @@ function FakeInvoicePage() {
 
         setTimeout(() => handlePrint(), 200);
       } else {
-        message.error(t('cannot_find_product_data'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('cannot_find_product_data'),
+        });
         setIsPrinting(false);
       }
     } catch (error) {
-      message.error(t('cannot_prepare_print') + ": " + error.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('cannot_prepare_print') + ": " + error.message,
+      });
       setIsPrinting(false);
     }
   };
@@ -392,26 +440,46 @@ function FakeInvoicePage() {
     try {
       const user_id = getProfile()?.id;
       if (!values.order_no) {
-        message.error(t('please_enter_invoice_number'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('please_enter_invoice_number'),
+        });
         return;
       }
       if (state.customerMode === 'existing' && !values.customer_id) {
-        message.error(t('please_select_customer'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('please_select_customer'),
+        });
         return;
       }
       if (state.customerMode === 'manual' && !values.manual_customer_name) {
-        message.error(t('please_enter_manual_customer_name'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('please_enter_manual_customer_name'),
+        });
         return;
       }
       if (!values.items || values.items.length === 0) {
-        message.error(t('please_add_at_least_one_product'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('please_add_at_least_one_product'),
+        });
         return;
       }
 
       for (let i = 0; i < values.items.length; i++) {
         const item = values.items[i];
         if (!item.product_id || !item.quantity || !item.unit_price) {
-          message.error(t('please_complete_product_info') + ` ${i + 1}`);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: t('please_complete_product_info') + ` ${i + 1}`,
+          });
           return;
         }
       }
@@ -476,14 +544,28 @@ function FakeInvoicePage() {
       const res = await request("fakeinvoice", method, payload);
 
       if (res && res.success && !res.error) {
-        message.success(res.message || t('saved_successfully'));
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: res.message || t('saved_successfully'),
+          showConfirmButton: false,
+          timer: 1500
+        });
         await getList();
         onCloseModal();
       } else {
-        message.error(res?.message || res?.error || t('cannot_save'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res?.message || res?.error || t('cannot_save'),
+        });
       }
     } catch (error) {
-      message.error(t('save_error') + ": " + error.message);
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('save_error') + ": " + error.message,
+      });
     }
   };
 

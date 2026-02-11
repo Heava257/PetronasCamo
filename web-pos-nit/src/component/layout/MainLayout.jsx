@@ -12,6 +12,7 @@ import {
   HomeOutlined,
   UserOutlined,
   SettingOutlined,
+  ClockCircleOutlined,
 } from "@ant-design/icons";
 import {
   LayoutDashboard,
@@ -71,9 +72,11 @@ const menuItems = [
     children: [
       { key: "invoices", label: "menu.create_invoice" },
       { key: "order", label: "menu.invoice_details" },
+      { key: "fakeinvoices", label: "menu.fake_invoices" },
 
     ]
   },
+
   // {
   //   key: "EnhancedPOSOrder",
   //   icon: ShoppingCart,
@@ -83,25 +86,10 @@ const menuItems = [
   //     { key: "pre-order-management", label: "menu.pre_order_management" },
   //   ]
   // },
-  {
-    key: "fakeinvoices",
-    icon: FileText,
-    label: "menu.fake_invoices",
-    category: "OPERATIONS",
-  },
+
 
   // INVENTORY
-  {
-    key: "products",
-    icon: Package,
-    label: "menu.products",
-    category: "OPERATIONS",
-    children: [
-      { key: "category", label: "menu.category" },
-      { key: "product", label: "menu.product_list" },
 
-    ]
-  },
   {
     key: "purchase",
     icon: ShoppingCart,
@@ -112,14 +100,10 @@ const menuItems = [
       { key: "supplier", label: "menu.supplier" },
       { key: "purchase-orders", label: "menu.purchase_orders" },
       { key: "inventory-transactions", label: "menu.inventory_transactions" },
+      { key: "admin-StockReconciliation", icon: Package, label: "menu.stock_reconciliation", category: "OPERATIONS", },
     ]
   },
-  {
-    key: "admin-StockReconciliation",
-    icon: Package,
-    label: "menu.stock_reconciliation",
-    category: "OPERATIONS",
-  },
+
 
   // LOGISTICS
   {
@@ -140,31 +124,22 @@ const menuItems = [
 
   // FINANCE
   {
-    key: "finance",
+    key: "finance-management",
     icon: DollarSign,
     label: "menu.family_finance",
     category: "FINANCE",
-  },
-  {
-    key: "customer-payment",
-    icon: DollarSign,
-    label: "menu.customer_payment_ledger",
-    category: "FINANCE",
-  },
-  {
-    key: "supplier-payment",
-    icon: DollarSign,
-    label: "menu.supplier_payment_ledger",
-    category: "FINANCE",
-  },
-  {
-    key: "expense",
-    icon: DollarSign,
-    label: "menu.expense",
-    category: "FINANCE",
     children: [
-      { key: "expanse", label: "menu.expense" },
-      { key: "expanse_type", label: "menu.expense_type" },
+      { key: "finance", label: "menu.family_finance" },
+      { key: "customer-payment", label: "menu.customer_payment_ledger" },
+      { key: "supplier-payment", label: "menu.supplier_payment_ledger" },
+      {
+        key: "expense",
+        label: "menu.expense",
+        children: [
+          { key: "expanse", label: "menu.expense" },
+          { key: "expanse_type", label: "menu.expense_type" },
+        ]
+      },
     ]
   },
 
@@ -183,10 +158,14 @@ const menuItems = [
     children: [
       { key: "customer", label: "menu.customer" },
       { key: "employee", label: "menu.employee" },
+      { key: "category", label: "menu.category" },
+      { key: "product", label: "menu.product_list" },
+
       { key: "branch-permission", label: "menu.permission" }, // ✅ Added Permission item
       { key: "ip-Management", label: "menu.ip_management" },
     ]
   },
+
   {
     key: "user-management",
     icon: User,
@@ -271,7 +250,7 @@ const menuItems = [
 const CleanDarkLayout = () => {
   /* Dark Mode & Theme - Replaced with SettingsContext */
   /* Dark Mode & Theme - Replaced with SettingsContext */
-  const { isSettingsOpen, isDarkMode, currentTemplate } = useSettings();
+  const { isSettingsOpen, isDarkMode, currentTemplate, settings } = useSettings();
   // ... (lines 356-847 remain same, I will use multiple replace chunks or just update the useSettings line and the Layout line separate if they are far apart)
 
   // Actually, useSettings is around line 355. Layout is line 848. I should use separate chunks.
@@ -559,7 +538,7 @@ const CleanDarkLayout = () => {
     }
   };
 
-  const toggleExpanded = (key, level = 0) => {
+  const toggleExpanded = (key, level = 0, siblings = []) => {
     setExpandedKeys((prev) => {
       const isExpanded = prev.includes(key);
 
@@ -568,15 +547,18 @@ const CleanDarkLayout = () => {
         return prev.filter((k) => k !== key);
       }
 
-      // If opening a top-level item (level 0), close all other level 0 items (Accordion mode)
+      // Accordion mode:
+      let filteredPrev = prev;
       if (level === 0) {
-        const otherRootKeys = menuItems.map(item => item.key);
-        const filteredPrev = prev.filter(k => !otherRootKeys.includes(k));
-        return [...filteredPrev, key];
+        // Strict Root Accordion: Close all other root keys globally
+        const rootKeys = filteredMenuItems.map(m => m.key);
+        filteredPrev = prev.filter(k => !rootKeys.includes(k));
+      } else {
+        // Standard Accordion: Close siblings at the same level
+        filteredPrev = prev.filter(k => !siblings.includes(k));
       }
 
-      // Otherwise just add it (allow multiple open at deeper levels)
-      return [...prev, key];
+      return [...filteredPrev, key];
     });
   };
 
@@ -642,32 +624,38 @@ const CleanDarkLayout = () => {
   }, [filteredMenuItems]);
 
   // Render menu item
-  const renderMenuItem = (item, level = 0) => {
+  const renderMenuItem = (item, level = 0, siblings = []) => {
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedKeys.includes(item.key);
     const Icon = item.icon;
     const isSelected = selectedKey === item.key;
 
     return (
-      <div key={item.key} className={`menu-item-container level-${level}`}>
+      <div key={item.key} className={`menu-item-container level-${level} ${settings.menuItemTemplate === 'tree' ? 'tree-node' : ''} ${hasChildren ? 'has-children' : 'leaf-node'} ${isExpanded ? 'is-expanded' : ''}`}>
         <button
           onClick={() => {
             if (hasChildren) {
-              toggleExpanded(item.key, level);
+              toggleExpanded(item.key, level, siblings);
             } else {
               handleMenuClick(item.key);
             }
           }}
           className={`hierarchical-menu-item ${isSelected ? "selected" : ""} ${collapsed && level === 0 ? "collapsed" : ""} ${hasChildren ? "has-children" : ""}`}
-          style={{ paddingLeft: `${12 + level * 16}px` }}
+          style={settings.menuItemTemplate === 'tree' ? {} : { paddingLeft: `${12 + level * 16}px` }}
         >
-          {Icon && <Icon size={18} className="menu-icon" />}
+          {Icon && settings.menuItemTemplate !== 'tree' && <Icon size={18} className="menu-icon" />}
           {!collapsed && (
             <>
               <span className="menu-label">{t(item.label)}</span>
               {hasChildren && (
                 <span className="expand-icon">
-                  {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  {settings.menuItemTemplate === 'tree' ? (
+                    <span className="tree-toggle-box">
+                      {isExpanded ? "-" : "+"}
+                    </span>
+                  ) : (
+                    isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />
+                  )}
                 </span>
               )}
             </>
@@ -677,7 +665,7 @@ const CleanDarkLayout = () => {
         {hasChildren && !collapsed && (
           <div className={`submenu ${isExpanded ? 'expanded' : ''}`}>
             <div className="submenu-inner">
-              {item.children.map((child) => renderMenuItem(child, level + 1))}
+              {item.children.map((child) => renderMenuItem(child, level + 1, item.children.map(c => c.key)))}
             </div>
           </div>
         )}
@@ -766,7 +754,7 @@ const CleanDarkLayout = () => {
                   {t(`menu.categories.${category.toLowerCase()}`)}
                 </div>
               )}
-              {categoryItems.map((item) => renderMenuItem(item))}
+              {categoryItems.map((item) => renderMenuItem(item, 0, filteredMenuItems.map(m => m.key)))}
             </div>
           );
         })}
@@ -880,6 +868,17 @@ const CleanDarkLayout = () => {
 
 
 
+            {/* Attendance Quick Access */}
+            {(profile?.role_code === 'SUPER_ADMIN' || permision?.some(p => p.web_route_key === '/attendance')) && (
+              <div
+                className={`header-icon glass-pill ${location.pathname === '/attendance' ? 'active' : ''}`}
+                onClick={() => navigate('/attendance')}
+              >
+                <ClockCircleOutlined />
+                {!isMobile && <span className="pill-label">{t('menu.attendance')}</span>}
+              </div>
+            )}
+
             {/* <TemplateSelector isMobile={isMobile} /> */}
             <div
               className={`header-icon glass-pill ${isFullScreen ? "active" : ""}`}
@@ -893,15 +892,6 @@ const CleanDarkLayout = () => {
             {/* <NotificationBell /> */}
 
 
-            {/* <Link to="/attendance">
-              <div
-                className={`header-icon glass-pill ${location.pathname === "/attendance" ? "active" : ""}`}
-                title="Attendance"
-              >
-                <HomeOutlined />
-                {!isMobile && <span className="pill-label">Attendance</span>}
-              </div>
-            </Link> */}
 
             {/* Profile moved to sidebar footer */}
           </div>

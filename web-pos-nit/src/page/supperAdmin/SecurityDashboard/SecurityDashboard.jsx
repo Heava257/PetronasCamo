@@ -11,9 +11,12 @@ import {
   AlertCircle
 } from 'lucide-react';
 import './Securitydashboard.css';
-import { request } from '../../../util/helper';
+import { formatDateServer, request } from "../../../util/helper";
+import { useTranslation } from "../../../locales/TranslationContext";
+import OnlineStatusAvatar from '../../supperAdmin/OnlineStatus/OnlineStatusAvatar';
 
 const SecurityDashboard = () => {
+  const { t } = useTranslation();
   const [dashboard, setDashboard] = useState(null);
   const [timeRange, setTimeRange] = useState('24h');
   const [loading, setLoading] = useState(true);
@@ -62,20 +65,41 @@ const SecurityDashboard = () => {
   };
 
   const blockIP = async (ipAddress) => {
-    if (!window.confirm(`Block IP ${ipAddress}?`)) return;
+    Swal.fire({
+      title: t('block_ip_confirmation_title'),
+      html: t('block_ip_confirmation_text').replace('{ip}', `<strong>${ipAddress}</strong>`),
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: t('confirm'),
+      cancelButtonText: t('cancel')
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          await request('security/block-ip', 'post', {
+            ip_address: ipAddress,
+            reason: 'Blocked from security dashboard - multiple threats detected'
+          });
 
-    try {
-      await request('security/block-ip', 'post', {
-        ip_address: ipAddress,
-        reason: 'Blocked from security dashboard - multiple threats detected'
-      });
-
-      alert('✅ IP blocked successfully');
-      fetchDashboard();
-    } catch (error) {
-      console.error('Failed to block IP:', error);
-      alert('❌ Failed to block IP: ' + (error.response?.data?.message || error.message));
-    }
+          Swal.fire({
+            icon: 'success',
+            title: t('ip_blocked_success'),
+            text: t('ip_blocked_msg'),
+            timer: 1500,
+            showConfirmButton: false
+          });
+          fetchDashboard();
+        } catch (error) {
+          console.error('Failed to block IP:', error);
+          Swal.fire({
+            icon: 'error',
+            title: t('error'),
+            text: error.response?.data?.message || error.message || t('failed_to_block_ip')
+          });
+        }
+      }
+    });
   };
 
   const getRiskColor = (score) => {

@@ -16,6 +16,7 @@ import {
     Col,
     Statistic,
 } from "antd";
+import Swal from "sweetalert2";
 import { isPermission, request } from "../../util/helper";
 import { MdDelete, MdEdit, MdOutlineCreateNewFolder } from "react-icons/md";
 import { EyeOutlined, DollarOutlined, CalendarOutlined } from '@ant-design/icons';
@@ -76,20 +77,36 @@ function ExpansePage() {
     };
 
     const onClickDelete = async (data) => {
-        Modal.confirm({
+        Swal.fire({
             title: t("លុប"),
-            content: t("Are you sure to remove?"),
-            okText: t("យល់ព្រម"),
-            onOk: async () => {
+            text: t("Are you sure to remove?"),
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: t("យល់ព្រម"),
+            cancelButtonText: t("បោះបង់")
+        }).then(async (result) => {
+            if (result.isConfirmed) {
                 const res = await request(`expense/${data.id}`, "delete");
                 if (res && !res.error) {
-                    message.success(res.message);
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Deleted!',
+                        text: res.message,
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     const newList = list.filter((item) => item.id !== data.id);
                     setList(newList);
                 } else {
-                    message.error(res?.message || "Failed to delete expense.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res?.message || "Failed to delete expense.",
+                    });
                 }
-            },
+            }
         });
     };
 
@@ -126,11 +143,21 @@ function ExpansePage() {
 
         const res = await request(url, method, data);
         if (res && !res.error) {
-            message.success(res.message);
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: res.message,
+                showConfirmButton: false,
+                timer: 1500
+            });
             getList();
             onCloseModal();
         } else {
-            message.error(res?.message || "Failed to save expense.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: res?.message || "Failed to save expense.",
+            });
         }
     };
 
@@ -700,11 +727,7 @@ function ExpansePage() {
 
                 {/* Mobile Card View */}
                 <div className="md:hidden">
-                    {loading ? (
-                        <div className="text-center py-8">
-                            <div className="text-gray-500 dark:text-gray-400">{t("Loading...")}</div>
-                        </div>
-                    ) : filteredList.length > 0 ? (
+                    {filteredList.length > 0 ? (
                         <div className="space-y-3">
                             {filteredList.map((expense, index) => (
                                 <ExpenseMobileCard

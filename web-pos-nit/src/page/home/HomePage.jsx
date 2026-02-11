@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { request } from "../../util/helper";
 import {
   Button, Card, Row, Col, Typography, Badge, Spin, Empty, DatePicker,
-  message, Alert, Modal, Descriptions, Tag
+  Alert, Modal, Descriptions, Tag
 } from "antd";
 import {
   UserOutlined,
@@ -43,6 +43,7 @@ import { useTranslation } from "../../locales/TranslationContext";
 import { getProfile } from "../../store/profile.store";
 import { useSettings } from "../../settings/SettingsContext";
 import moment from "moment";
+import MainPage from "../../component/layout/MainPage";
 import "./HomePage.css";
 
 const { Title, Text } = Typography;
@@ -165,13 +166,9 @@ function HomePage() {
           setTopSales([]);
         }
 
-        message.success(t('Dashboard loaded successfully!') || 'Dashboard loaded successfully!');
-      } else {
-        message.error(res.message || t('Failed to load dashboard data'));
       }
     } catch (error) {
       console.error("❌ Error fetching dashboard:", error);
-      message.error(t('Failed to load dashboard data'));
     } finally {
       setIsLoading(false);
     }
@@ -286,7 +283,6 @@ function HomePage() {
 
   const handleFilter = () => {
     if (!dateRange || !dateRange[0] || !dateRange[1]) {
-      message.warning(t('Please select a date range'));
       return;
     }
     getList();
@@ -422,8 +418,8 @@ function HomePage() {
 
   // Handle card click
   const handleCardClick = (title) => {
-    // Special handling for user card - show modal
-    if (title === 'អ្នកប្រើប្រាស់') {
+    // Special handling for employee card - show modal
+    if (title === 'បុគ្គលិក') {
       setShowUserModal(true);
       return;
     }
@@ -441,8 +437,8 @@ function HomePage() {
     }));
   };
 
-  // Render User Details Modal
-  const renderUserModal = () => {
+  // Render Employee Details Modal
+  const renderEmployeeModal = () => {
     if (!userDetails) return null;
 
     return (
@@ -450,7 +446,7 @@ function HomePage() {
         title={
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <UsergroupAddOutlined style={{ fontSize: 24, color: '#3b82f6' }} />
-            <span>{t('អ្នកប្រើប្រាស់ប្រព័ន្ធ')} - {t('User Details')}</span>
+            <span>{t('ព័ត៌មានបុគ្គលិក')} - {t('Employee Details')}</span>
           </div>
         }
         open={showUserModal}
@@ -458,9 +454,9 @@ function HomePage() {
         footer={[
           <Button key="navigate" type="primary" onClick={() => {
             setShowUserModal(false);
-            navigate('/user');
+            navigate('/employee');
           }}>
-            {t('Go to User Management')}
+            {t('Go to Employee Management')}
           </Button>,
           <Button key="close" onClick={() => setShowUserModal(false)}>
             {t('Close')}
@@ -468,25 +464,22 @@ function HomePage() {
         ]}
         width={700}
       >
-        <Descriptions bordered column={2} size="small">
-          <Descriptions.Item label={t('Total Users')} span={2}>
+        <Descriptions bordered column={1} size="small">
+          <Descriptions.Item label={t('Total Employees')}>
             <Tag color="blue" style={{ fontSize: 16, padding: '4px 12px' }}>
-              {userDetails.active_users} {t('Active Users')}
-            </Tag>
-            <Tag color="red" style={{ fontSize: 16, padding: '4px 12px', marginLeft: 8 }}>
-              {userDetails.inactive_users} {t('Inactive')}
+              {userDetails.total_employees} {t('Employees')}
             </Tag>
           </Descriptions.Item>
         </Descriptions>
 
         <Title level={5} style={{ marginTop: 24, marginBottom: 16 }}>
-          👥 {t('Users by Role')}:
+          👥 {t('Employees by Position')}:
         </Title>
 
         <div style={{ maxHeight: 400, overflowY: 'auto' }}>
-          {userDetails.roles_breakdown && userDetails.roles_breakdown.map((role, index) => (
+          {userDetails.positions_breakdown && userDetails.positions_breakdown.map((pos, index) => (
             <Card
-              key={role.role_id}
+              key={index}
               size="small"
               style={{ marginBottom: 8 }}
               bodyStyle={{ padding: '12px 16px' }}
@@ -494,15 +487,12 @@ function HomePage() {
               <Row justify="space-between" align="middle">
                 <Col>
                   <Text strong style={{ fontSize: 15 }}>
-                    {role.role_name}
-                  </Text>
-                  <Text type="secondary" style={{ marginLeft: 8, fontSize: 12 }}>
-                    ({role.role_code})
+                    {pos.position_name}
                   </Text>
                 </Col>
                 <Col>
                   <Badge
-                    count={role.total_users}
+                    count={pos.total_count}
                     style={{
                       backgroundColor: COLORS[index % COLORS.length],
                       fontSize: 14,
@@ -513,15 +503,6 @@ function HomePage() {
                   />
                 </Col>
               </Row>
-
-              {role.user_names && (
-                <div style={{ marginTop: 8, fontSize: 12, color: '#888' }}>
-                  <UserOutlined style={{ marginRight: 4 }} />
-                  {role.user_names.length > 100
-                    ? role.user_names.substring(0, 100) + '...'
-                    : role.user_names}
-                </div>
-              )}
             </Card>
           ))}
         </div>
@@ -530,468 +511,459 @@ function HomePage() {
   };
 
   return (
-    <div className={`dashboard-container ${isDarkMode ? 'dark' : 'light'}`}>
-      {/* User Details Modal */}
-      {renderUserModal()}
+    <MainPage loading={isLoading}>
+      <div className={`dashboard-container ${isDarkMode ? 'dark' : 'light'}`}>
+        {/* Employee Details Modal */}
+        {renderEmployeeModal()}
 
-      {/* Header with Filters */}
-      <Card className="dashboard-header-card">
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={24} md={8}>
-            <div className="header-title-section">
-              <div className="header-icon-wrapper">
-                <FilterOutlined className="header-icon" />
+        {/* Header with Filters */}
+        <Card className="dashboard-header-card">
+          <Row gutter={[16, 16]} align="middle">
+            <Col xs={24} md={8}>
+              <div className="header-title-section">
+                <div className="header-icon-wrapper">
+                  <FilterOutlined className="header-icon" />
+                </div>
+                <div>
+                  <Title level={3} className="header-title">
+                    {t('ផ្ទាំងគ្រប់គ្រង')}
+                  </Title>
+                  {filterInfo && (
+                    <Text className="header-subtitle">
+                      📍 {filterInfo.branch}
+                    </Text>
+                  )}
+                </div>
               </div>
-              <div>
-                <Title level={3} className="header-title">
-                  {t('ផ្ទាំងគ្រប់គ្រង')}
-                </Title>
-                {filterInfo && (
-                  <Text className="header-subtitle">
-                    📍 {filterInfo.branch}
-                  </Text>
-                )}
-              </div>
-            </div>
-          </Col>
+            </Col>
 
-          <Col xs={24} md={16}>
-            <Row gutter={[8, 8]} justify="end">
-              <Col xs={24} sm={12}>
-                <RangePicker
-                  value={dateRange}
-                  onChange={handleDateRangeChange}
-                  style={{ width: '100%' }}
-                />
-              </Col>
-              <Col xs={8} sm={4}>
-                <Button
-                  type="primary"
-                  icon={<CalendarOutlined />}
-                  onClick={handleFilter}
-                  loading={isLoading}
-                  className="filter-button"
-                  block
-                >
-                  {t('Filter')}
-                </Button>
-              </Col>
-              <Col xs={8} sm={4}>
-                <Button
-                  icon={<PrinterOutlined />}
-                  onClick={handlePrint}
-                  className="print-button"
-                  block
-                >
-                  {t('Print')}
-                </Button>
-              </Col>
-              <Col xs={8} sm={4}>
-                <Button
-                  icon={<ReloadOutlined />}
-                  onClick={getList}
-                  loading={isLoading}
-                  className="refresh-button"
-                  block
-                >
-                  {t('Refresh')}
-                </Button>
-              </Col>
-            </Row>
-          </Col>
-        </Row>
-
-        {/* Quick Date Range Buttons */}
-        <Row gutter={[8, 8]} style={{ marginTop: 16 }}>
-          <Col>
-            <Button size="small" onClick={() => handleQuickDateRange('today')}>
-              {t('Today')}
-            </Button>
-          </Col>
-          <Col>
-            <Button size="small" onClick={() => handleQuickDateRange('this_week')}>
-              {t('This Week')}
-            </Button>
-          </Col>
-          <Col>
-            <Button size="small" onClick={() => handleQuickDateRange('this_month')}>
-              {t('This Month')}
-            </Button>
-          </Col>
-          <Col>
-            <Button size="small" onClick={() => handleQuickDateRange('this_year')}>
-              {t('This Year')}
-            </Button>
-          </Col>
-          <Col>
-            <Button size="small" onClick={() => handleQuickDateRange('last_year')}>
-              {t('Last Year')} (2025)
-            </Button>
-          </Col>
-          <Col>
-            <Button size="small" onClick={() => handleQuickDateRange('all_time')}>
-              {t('All Time')}
-            </Button>
-          </Col>
-        </Row>
-
-        {filterInfo?.date_range_applied && (
-          <div className="filter-info-banner">
-            <Text className="filter-info-text">
-              📅 {filterInfo.from_date} → {filterInfo.to_date}
-              {filterInfo.is_super_admin && (
-                <Badge
-                  count="Super Admin"
-                  className="admin-badge"
-                  style={{ marginLeft: 8 }}
-                />
-              )}
-            </Text>
-          </div>
-        )}
-
-        {showDateWarning && (
-          <Alert
-            message={t('No data found for selected date range')}
-            description={
-              <>
-                {t('Your expense data may be from a different year. Try selecting')}{' '}
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => handleQuickDateRange('last_year')}
-                  style={{ padding: 0 }}
-                >
-                  Last Year (2025)
-                </Button>
-                {' '}or{' '}
-                <Button
-                  type="link"
-                  size="small"
-                  onClick={() => handleQuickDateRange('all_time')}
-                  style={{ padding: 0 }}
-                >
-                  All Time
-                </Button>
-              </>
-            }
-            type="warning"
-            showIcon
-            icon={<InfoCircleOutlined />}
-            closable
-            onClose={() => setShowDateWarning(false)}
-            style={{ marginTop: 16 }}
-          />
-        )}
-      </Card>
-
-      {isLoading ? (
-        <div className="loading-container">
-          <Spin size="large" />
-          <div className="loading-text">
-            {t('កំពុងផ្ទុកទិន្នន័យ...')}
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Top Metrics Cards */}
-          <Row gutter={[24, 24]} className="metrics-row">
-            {dashboard.map((item, index) => {
-              const cardColor = getCardColor(index);
-              const mainValue = getMainValue(item.Summary, item.title);
-              const isUserCard = item.title === 'អ្នកប្រើប្រាស់';
-
-              return (
-                <Col xs={24} sm={12} lg={index < 4 ? 6 : 12} key={index}>
-                  <Card
-                    hoverable
-                    className="metric-card"
-                    onClick={() => handleCardClick(item.title)}
+            <Col xs={24} md={16}>
+              <Row gutter={[8, 8]} justify="end">
+                <Col xs={24} sm={12}>
+                  <RangePicker
+                    value={dateRange}
+                    onChange={handleDateRangeChange}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+                <Col xs={8} sm={4}>
+                  <Button
+                    type="primary"
+                    icon={<CalendarOutlined />}
+                    onClick={handleFilter}
+                    loading={isLoading}
+                    className="filter-button"
+                    block
                   >
-                    <div className="metric-card-header">
-                      <Text className="metric-label">
-                        {t(item.title)}
-                        {isUserCard && userDetails && (
-                          <EyeOutlined
-                            style={{
-                              marginLeft: 8,
-                              fontSize: 12,
-                              color: '#3b82f6',
-                              cursor: 'pointer'
-                            }}
-                          />
-                        )}
-                      </Text>
-                      <div
-                        className="metric-icon-wrapper"
-                        style={{ background: cardColor.bg }}
+                    {t('Filter')}
+                  </Button>
+                </Col>
+                <Col xs={8} sm={4}>
+                  <Button
+                    icon={<PrinterOutlined />}
+                    onClick={handlePrint}
+                    className="print-button"
+                    block
+                  >
+                    {t('Print')}
+                  </Button>
+                </Col>
+                <Col xs={8} sm={4}>
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={getList}
+                    loading={isLoading}
+                    className="refresh-button"
+                    block
+                  >
+                    {t('Refresh')}
+                  </Button>
+                </Col>
+              </Row>
+            </Col>
+          </Row>
+
+          {/* Quick Date Range Buttons */}
+          <Row gutter={[8, 8]} style={{ marginTop: 16 }}>
+            <Col>
+              <Button size="small" onClick={() => handleQuickDateRange('today')}>
+                {t('Today')}
+              </Button>
+            </Col>
+            <Col>
+              <Button size="small" onClick={() => handleQuickDateRange('this_week')}>
+                {t('This Week')}
+              </Button>
+            </Col>
+            <Col>
+              <Button size="small" onClick={() => handleQuickDateRange('this_month')}>
+                {t('This Month')}
+              </Button>
+            </Col>
+            <Col>
+              <Button size="small" onClick={() => handleQuickDateRange('this_year')}>
+                {t('This Year')}
+              </Button>
+            </Col>
+            <Col>
+              <Button size="small" onClick={() => handleQuickDateRange('last_year')}>
+                {t('Last Year')} (2025)
+              </Button>
+            </Col>
+            <Col>
+              <Button size="small" onClick={() => handleQuickDateRange('all_time')}>
+                {t('All Time')}
+              </Button>
+            </Col>
+          </Row>
+
+          {filterInfo?.date_range_applied && (
+            <div className="filter-info-banner">
+              <Text className="filter-info-text">
+                📅 {filterInfo.from_date} → {filterInfo.to_date}
+                {filterInfo.is_super_admin && (
+                  <Badge
+                    count="Super Admin"
+                    className="admin-badge"
+                    style={{ marginLeft: 8 }}
+                  />
+                )}
+              </Text>
+            </div>
+          )}
+
+          {showDateWarning && (
+            <Alert
+              message={t('No data found for selected date range')}
+              description={
+                <>
+                  {t('Your expense data may be from a different year. Try selecting')}{' '}
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() => handleQuickDateRange('last_year')}
+                    style={{ padding: 0 }}
+                  >
+                    Last Year (2025)
+                  </Button>
+                  {' '}or{' '}
+                  <Button
+                    type="link"
+                    size="small"
+                    onClick={() => handleQuickDateRange('all_time')}
+                    style={{ padding: 0 }}
+                  >
+                    All Time
+                  </Button>
+                </>
+              }
+              type="warning"
+              showIcon
+              icon={<InfoCircleOutlined />}
+              closable
+              onClose={() => setShowDateWarning(false)}
+              style={{ marginTop: 16 }}
+            />
+          )}
+        </Card>
+
+        {/* Top Metrics Cards */}
+        <Row gutter={[24, 24]} className="metrics-row">
+          {dashboard.map((item, index) => {
+            const cardColor = getCardColor(index);
+            const mainValue = getMainValue(item.Summary, item.title);
+            const isEmployeeCard = item.title === 'បុគ្គលិក';
+
+            return (
+              <Col xs={24} sm={12} lg={index < 4 ? 6 : 12} key={index}>
+                <Card
+                  hoverable
+                  className="metric-card"
+                  onClick={() => handleCardClick(item.title)}
+                >
+                  <div className="metric-card-header">
+                    <Text className="metric-label">
+                      {t(item.title)}
+                      {isEmployeeCard && userDetails && (
+                        <EyeOutlined
+                          style={{
+                            marginLeft: 8,
+                            fontSize: 12,
+                            color: '#3b82f6',
+                            cursor: 'pointer'
+                          }}
+                        />
+                      )}
+                    </Text>
+                    <div
+                      className="metric-icon-wrapper"
+                      style={{ background: cardColor.bg }}
+                    >
+                      {React.cloneElement(getCardIcon(item.title), {
+                        style: { fontSize: 20, color: cardColor.color }
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="metric-value-section">
+                    <Title level={3} className="metric-value">
+                      {typeof mainValue === 'string' ?
+                        mainValue.replace(/នាក់/g, '').replace(/People/g, '').trim()
+                          .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
+                        : mainValue}
+                    </Title>
+                  </div>
+
+                  <div className="metric-card-footer">
+                    {/* ✅ Toggle Details Button */}
+                    <div className="detail-toggle-section">
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={(e) => toggleDetails(e, item.title)}
+                        icon={expandedCards[item.title] ? <EyeOutlined /> : <InfoCircleOutlined />}
+                        className="detail-toggle-btn"
                       >
-                        {React.cloneElement(getCardIcon(item.title), {
-                          style: { fontSize: 20, color: cardColor.color }
-                        })}
+                        {expandedCards[item.title] ? t('Hide details') : t('Show details')}
+                      </Button>
+                    </div>
+
+                    {expandedCards[item.title] && (
+                      <div className="metric-details-wrapper">
+                        {Object.entries(item.Summary)
+                          .filter(([key]) => {
+                            const val = item.Summary[key];
+                            // Hide the center value and the static "Current Stock" label
+                            return formatDisplayValue(val) !== mainValue && val !== "Current Stock";
+                          })
+                          .map(([key, value], idx) => (
+                            <div key={idx} className="metric-detail-row">
+                              <Text className="metric-detail-label">{t(key)}:</Text>
+                              <Text className="metric-detail-value">
+                                {typeof value === 'string' ?
+                                  formatDisplayValue(value).replace(/នាក់/g, '').replace(/People/g, '').trim()
+                                    .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
+                                  : formatDisplayValue(value)}
+                              </Text>
+                            </div>
+                          ))}
                       </div>
-                    </div>
+                    )}
 
-                    <div className="metric-value-section">
-                      <Title level={3} className="metric-value">
-                        {typeof mainValue === 'string' ?
-                          mainValue.replace(/នាក់/g, '').replace(/People/g, '').trim()
-                            .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
-                          : mainValue}
-                      </Title>
-                    </div>
-
-                    <div className="metric-card-footer">
-                      {/* ✅ Toggle Details Button */}
-                      <div className="detail-toggle-section">
+                    {/* Show "View All" for employee card if more than 2 roles/positions */}
+                    {isEmployeeCard && expandedCards[item.title] && Object.keys(item.Summary).length > 3 && (
+                      <div style={{ marginTop: 8, textAlign: 'center' }}>
                         <Button
                           type="link"
                           size="small"
-                          onClick={(e) => toggleDetails(e, item.title)}
-                          icon={expandedCards[item.title] ? <EyeOutlined /> : <InfoCircleOutlined />}
-                          className="detail-toggle-btn"
+                          icon={<EyeOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowUserModal(true);
+                          }}
                         >
-                          {expandedCards[item.title] ? t('Hide details') : t('Show details')}
+                          {t('View All')} {Object.keys(item.Summary).length - 1} {t('Positions')}
                         </Button>
                       </div>
-
-                      {expandedCards[item.title] && (
-                        <div className="metric-details-wrapper">
-                          {Object.entries(item.Summary)
-                            .filter(([key]) => {
-                              const val = item.Summary[key];
-                              // Hide the center value and the static "Current Stock" label
-                              return formatDisplayValue(val) !== mainValue && val !== "Current Stock";
-                            })
-                            .map(([key, value], idx) => (
-                              <div key={idx} className="metric-detail-row">
-                                <Text className="metric-detail-label">{t(key)}:</Text>
-                                <Text className="metric-detail-value">
-                                  {typeof value === 'string' ?
-                                    formatDisplayValue(value).replace(/នាក់/g, '').replace(/People/g, '').trim()
-                                      .replace(/ប្រុស/g, t('Male')).replace(/ស្រី/g, t('Female'))
-                                    : formatDisplayValue(value)}
-                                </Text>
-                              </div>
-                            ))}
-                        </div>
-                      )}
-
-                      {/* Show "View All" for user card if more than 2 roles */}
-                      {isUserCard && expandedCards[item.title] && Object.keys(item.Summary).length > 3 && (
-                        <div style={{ marginTop: 8, textAlign: 'center' }}>
-                          <Button
-                            type="link"
-                            size="small"
-                            icon={<EyeOutlined />}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowUserModal(true);
-                            }}
-                          >
-                            {t('View All')} {Object.keys(item.Summary).length - 1} {t('Roles')}
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </Card>
-                </Col>
-              );
-            })}
-          </Row>
-
-
-
-          <Row gutter={[24, 24]} className="charts-row">
-            <Col xs={24} lg={14}>
-              <Card className="chart-card">
-                <div className="chart-header">
-                  <div>
-                    <Title level={4} className="chart-title">
-                      {t('Financial Overview')}
-                    </Title>
-                    <Text className="chart-subtitle">
-                      {t('Sales vs Expenses vs Profit')}
-                    </Text>
+                    )}
                   </div>
-                  <Badge count={combinedData.length} className="chart-badge" />
+                </Card>
+              </Col>
+            );
+          })}
+        </Row>
+
+
+
+        <Row gutter={[24, 24]} className="charts-row">
+          <Col xs={24} lg={14}>
+            <Card className="chart-card">
+              <div className="chart-header">
+                <div>
+                  <Title level={4} className="chart-title">
+                    {t('Financial Overview')}
+                  </Title>
+                  <Text className="chart-subtitle">
+                    {t('Sales vs Expenses vs Profit')}
+                  </Text>
                 </div>
+                <Badge count={combinedData.length} className="chart-badge" />
+              </div>
 
-                {combinedData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <AreaChart data={combinedData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
-                        </linearGradient>
-                        <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05} />
-                        </linearGradient>
-                        {/* ✅ NEW: Profit gradient */}
-                        <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0.05} />
-                        </linearGradient>
-                      </defs>
+              {combinedData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                  <AreaChart data={combinedData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.05} />
+                      </linearGradient>
+                      <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0.05} />
+                      </linearGradient>
+                      {/* ✅ NEW: Profit gradient */}
+                      <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.05} />
+                      </linearGradient>
+                    </defs>
 
-                      <CartesianGrid strokeDasharray="3 3" className="chart-grid" />
-                      <XAxis dataKey="month" className="chart-axis" />
-                      <YAxis
-                        className="chart-axis"
-                        tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'var(--card-bg)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: 12,
-                          color: 'var(--text-primary)'
-                        }}
-                        formatter={(value, name) => {
-                          const labels = {
-                            sales: 'Sales',
-                            expenses: 'Expenses',
-                            profit: 'Profit'
-                          };
-                          const colors = {
-                            sales: '#3b82f6',
-                            expenses: '#ef4444',
-                            profit: '#10b981'
-                          };
-                          return [
-                            <span style={{ color: colors[name] }}>
-                              ${value.toLocaleString()}
-                            </span>,
-                            t(labels[name])
-                          ];
-                        }}
-                      />
-                      <Legend />
-
-                      {/* Sales Area */}
-                      <Area
-                        type="monotone"
-                        dataKey="sales"
-                        name={t('Sales')}
-                        stroke="#3b82f6"
-                        strokeWidth={3}
-                        fill="url(#salesGradient)"
-                        dot={{ fill: '#3b82f6', r: 4 }}
-                      />
-
-                      {/* Expenses Area */}
-                      <Area
-                        type="monotone"
-                        dataKey="expenses"
-                        name={t('Expenses')}
-                        stroke="#ef4444"
-                        strokeWidth={3}
-                        fill="url(#expensesGradient)"
-                        dot={{ fill: '#ef4444', r: 4 }}
-                      />
-
-                      {/* ✅✅✅ NEW: Profit Area ✅✅✅ */}
-                      <Area
-                        type="monotone"
-                        dataKey="profit"
-                        name={t('Profit')}
-                        stroke="#10b981"
-                        strokeWidth={3}
-                        fill="url(#profitGradient)"
-                        dot={{ fill: '#10b981', r: 4 }}
-                        strokeDasharray="5 5"  // ✅ Dashed line
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="empty-state">
-                    <Empty description={t('No chart data available')} />
-                  </div>
-                )}
-              </Card>
-            </Col>
-
-            <Col xs={24} lg={10}>
-              <Card className="chart-card">
-                <div className="chart-header">
-                  <div>
-                    <Title level={4} className="chart-title">
-                      {t('Top 5 Categories')}
-                    </Title>
-                    <Text className="chart-subtitle">
-                      {t('By sales amount')}
-                    </Text>
-                  </div>
-                  <Badge count={topSales.length} className="chart-badge success" />
-                </div>
-
-                {topSales.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={320}>
-                    <PieChart>
-                      <Pie
-                        data={topSales}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-                        outerRadius={100}
-                        dataKey="value"
-                        stroke="var(--card-bg)"
-                        strokeWidth={2}
-                      >
-                        {topSales.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={{
-                          background: 'var(--card-bg)',
-                          border: '1px solid var(--border-color)',
-                          borderRadius: 12,
-                          color: 'var(--text-primary)'
-                        }}
-                        formatter={(value, name, props) => [
-                          <>
-                            <div>${value.toLocaleString()}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
-                              Qty: {props.payload.qty.toLocaleString()}
-                            </div>
-                          </>,
-                          props.payload.name
-                        ]}
-                      />
-                      <Legend
-                        wrapperStyle={{ fontSize: 11 }}
-                        formatter={(value, entry) => (
-                          <span style={{ color: 'var(--text-primary)' }}>
-                            {entry.payload.name}
-                          </span>
-                        )}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                ) : (
-                  <div className="empty-state">
-                    <Empty
-                      description={
-                        <>
-                          <div>{t('No sales data available')}</div>
-                          <div style={{ fontSize: 12, marginTop: 8 }}>
-                            {t('Try changing the date range to see data')}
-                          </div>
-                        </>
-                      }
+                    <CartesianGrid strokeDasharray="3 3" className="chart-grid" />
+                    <XAxis dataKey="month" className="chart-axis" />
+                    <YAxis
+                      className="chart-axis"
+                      tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
                     />
-                  </div>
-                )}
-              </Card>
-            </Col>
-          </Row>
-        </>
-      )}
-    </div>
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 12,
+                        color: 'var(--text-primary)'
+                      }}
+                      formatter={(value, name) => {
+                        const labels = {
+                          sales: 'Sales',
+                          expenses: 'Expenses',
+                          profit: 'Profit'
+                        };
+                        const colors = {
+                          sales: '#3b82f6',
+                          expenses: '#ef4444',
+                          profit: '#10b981'
+                        };
+                        return [
+                          <span style={{ color: colors[name] }}>
+                            ${value.toLocaleString()}
+                          </span>,
+                          t(labels[name])
+                        ];
+                      }}
+                    />
+                    <Legend />
+
+                    {/* Sales Area */}
+                    <Area
+                      type="monotone"
+                      dataKey="sales"
+                      name={t('Sales')}
+                      stroke="#3b82f6"
+                      strokeWidth={3}
+                      fill="url(#salesGradient)"
+                      dot={{ fill: '#3b82f6', r: 4 }}
+                    />
+
+                    {/* Expenses Area */}
+                    <Area
+                      type="monotone"
+                      dataKey="expenses"
+                      name={t('Expenses')}
+                      stroke="#ef4444"
+                      strokeWidth={3}
+                      fill="url(#expensesGradient)"
+                      dot={{ fill: '#ef4444', r: 4 }}
+                    />
+
+                    {/* ✅✅✅ NEW: Profit Area ✅✅✅ */}
+                    <Area
+                      type="monotone"
+                      dataKey="profit"
+                      name={t('Profit')}
+                      stroke="#10b981"
+                      strokeWidth={3}
+                      fill="url(#profitGradient)"
+                      dot={{ fill: '#10b981', r: 4 }}
+                      strokeDasharray="5 5"  // ✅ Dashed line
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="empty-state">
+                  <Empty description={t('No chart data available')} />
+                </div>
+              )}
+            </Card>
+          </Col>
+
+          <Col xs={24} lg={10}>
+            <Card className="chart-card">
+              <div className="chart-header">
+                <div>
+                  <Title level={4} className="chart-title">
+                    {t('Top 5 Categories')}
+                  </Title>
+                  <Text className="chart-subtitle">
+                    {t('By sales amount')}
+                  </Text>
+                </div>
+                <Badge count={topSales.length} className="chart-badge success" />
+              </div>
+
+              {topSales.length > 0 ? (
+                <ResponsiveContainer width="100%" height={320}>
+                  <PieChart>
+                    <Pie
+                      data={topSales}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      dataKey="value"
+                      stroke="var(--card-bg)"
+                      strokeWidth={2}
+                    >
+                      {topSales.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 12,
+                        color: 'var(--text-primary)'
+                      }}
+                      formatter={(value, name, props) => [
+                        <>
+                          <div>${value.toLocaleString()}</div>
+                          <div style={{ fontSize: 11, color: 'var(--text-secondary)' }}>
+                            Qty: {props.payload.qty.toLocaleString()}
+                          </div>
+                        </>,
+                        props.payload.name
+                      ]}
+                    />
+                    <Legend
+                      wrapperStyle={{ fontSize: 11 }}
+                      formatter={(value, entry) => (
+                        <span style={{ color: 'var(--text-primary)' }}>
+                          {entry.payload.name}
+                        </span>
+                      )}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="empty-state">
+                  <Empty
+                    description={
+                      <>
+                        <div>{t('No sales data available')}</div>
+                        <div style={{ fontSize: 12, marginTop: 8 }}>
+                          {t('Try changing the date range to see data')}
+                        </div>
+                      </>
+                    }
+                  />
+                </div>
+              )}
+            </Card>
+          </Col>
+        </Row>
+      </div>
+    </MainPage>
   );
 }
 

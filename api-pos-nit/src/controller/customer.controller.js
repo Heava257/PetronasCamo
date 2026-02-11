@@ -4,24 +4,25 @@ const { createSystemNotification } = require("./System_notification.controller")
 
 exports.getListByCurrentUserGroup = async (req, res) => {
   try {
-    const { txtSearch } = req.query;
-    const currentUserId = req.current_id;
+    const { txtSearch, type } = req.query;
+    const user = req.auth;
 
-    // ✅ Get current user info for role-based filtering
-    const [currentUser] = await db.query(`
-      SELECT branch_id, branch_name, role_id FROM user WHERE id = :user_id
-    `, { user_id: currentUserId });
-
-    if (!currentUser || currentUser.length === 0) {
-      return res.status(404).json({ success: false, message: "User not found" });
+    if (!user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { role_id, branch_id: userBranchId, branch_name: userBranchName } = currentUser[0];
-    const isSuperAdmin = role_id === 29;
-    const selectedBranchId = req.query.branch_id || req.query.branchId;
+    const params = {};
+    let whereClause = " WHERE 1=1";
 
-    // ✅ Customers are shared across all branches as per user request
-    let branchFilter = "";
+    if (txtSearch) {
+      whereClause += " AND (c.name LIKE :txtSearch OR c.tel LIKE :txtSearch OR c.email LIKE :txtSearch OR c.code LIKE :txtSearch)";
+      params.txtSearch = `%${txtSearch}%`;
+    }
+
+    if (type) {
+      whereClause += " AND c.type = :type";
+      params.type = type;
+    }
 
     let sql = `
       SELECT 
@@ -43,33 +44,21 @@ exports.getListByCurrentUserGroup = async (req, res) => {
         c.spouse_name, 
         c.guarantor_name,
         u.name as created_by_name,
-        u.username as created_by_username,
-        c.branch_name as creator_branch
+        u.username as created_by_username
       FROM customer c
-      INNER JOIN user u ON c.user_id = u.id
-      WHERE 1=1
-      ${branchFilter}
+      LEFT JOIN user u ON c.user_id = u.id
+      ${whereClause}
+      ORDER BY c.create_at DESC
     `;
 
-    const params = {};
-
-    if (txtSearch) {
-      sql += " AND (c.name LIKE :txtSearch OR c.tel LIKE :txtSearch OR c.email LIKE :txtSearch OR c.code LIKE :txtSearch)";
-      params.txtSearch = `%${txtSearch}%`;
-    }
-
-    sql += " ORDER BY c.create_at DESC";
-
     const [list] = await db.query(sql, params);
-
 
     res.json({
       success: true,
       list,
       metadata: {
         total: list.length,
-        branch: userBranchName || 'All branches',
-        user_id: currentUserId
+        branch: user.branch_name || 'All branches'
       },
       message: "Success!"
     });

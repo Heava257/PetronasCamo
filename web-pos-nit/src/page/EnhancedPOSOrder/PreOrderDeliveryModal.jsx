@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Modal, Table, Form, InputNumber, Input, Button, message, Space, Tag, Typography } from "antd";
+import Swal from "sweetalert2";
 import { request, formatPrice } from "../../util/helper";
 import { CheckCircleOutlined } from "@ant-design/icons";
 
@@ -35,7 +36,11 @@ const PreOrderDeliveryModal = ({ visible, preOrderId, onCancel, onSuccess }) => 
             }
         } catch (error) {
             console.error("Error loading pre-order detail:", error);
-            message.error("មិនអាចទាញយកព័ត៌មានបានទេ");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "មិនអាចទាញយកព័ត៌មានបានទេ",
+            });
         } finally {
             setLoading(false);
         }
@@ -51,7 +56,11 @@ const PreOrderDeliveryModal = ({ visible, preOrderId, onCancel, onSuccess }) => 
             }));
 
         if (deliveries.length === 0) {
-            message.warning("សូមបញ្ចូលបរិមាណដែលត្រូវដឹកជញ្ជូនយ៉ាងហោចណាស់មួយមុខ");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning',
+                text: "សូមបញ្ចូលបរិមាណដែលត្រូវដឹកជញ្ជូនយ៉ាងហោចណាស់មួយមុខ",
+            });
             return;
         }
 
@@ -65,15 +74,29 @@ const PreOrderDeliveryModal = ({ visible, preOrderId, onCancel, onSuccess }) => 
 
             const res = await request("pre-order/record-delivery", "post", payload);
             if (res && res.success) {
-                message.success(res.message_kh || "បានកត់ត្រាការដឹកជញ្ជូនជោគជ័យ");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: res.message_kh || "បានកត់ត្រាការដឹកជញ្ជូនជោគជ័យ",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
                 onSuccess();
                 form.resetFields();
             } else {
-                message.error(res.message || "មានបញ្ហាពេលរក្សាទុក");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message || "មានបញ្ហាពេលរក្សាទុក",
+                });
             }
         } catch (error) {
             console.error("Delivery recording error:", error);
-            message.error("កំហុសប្រព័ន្ធ");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "កំហុសប្រព័ន្ធ",
+            });
         } finally {
             setLoading(false);
         }

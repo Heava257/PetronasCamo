@@ -97,6 +97,8 @@ require("./src/route/product.route")(app);
 require("./src/route/customer.route")(app);
 require("./src/route/expanse.route")(app);
 require("./src/route/employee.route")(app);
+require("./src/route/Attendance.route")(app);
+require("./src/route/Salary.routes")(app);
 require("./src/route/order.route")(app);
 require("./src/route/customer_payment.route")(app);
 require("./src/route/dashbaord.route")(app);

@@ -1,12 +1,13 @@
 // PreOrderQuickSelect.jsx - Component for selecting Pre-Orders in POS
 import React, { useEffect, useState } from 'react';
 import { Select, Button, message, Tag, Spin, Alert } from 'antd';
+import Swal from 'sweetalert2';
 import { ThunderboltOutlined, ReloadOutlined } from '@ant-design/icons';
 import { request } from '../../util/helper';
 import dayjs from 'dayjs';
 
-const PreOrderQuickSelect = ({ 
-  onSelectPreOrder, 
+const PreOrderQuickSelect = ({
+  onSelectPreOrder,
   onClearSelection,
   disabled = false,
   style = {}
@@ -24,18 +25,22 @@ const PreOrderQuickSelect = ({
     try {
       // Call the backend API to get pre-orders
       const res = await request("pre-order/list", "get");
-      
-      
+
+
       if (res && res.success && res.list) {
         // Filter only confirmed/ready pre-orders
         const activeOrders = res.list.filter(
           order => order.status === 'confirmed' || order.status === 'ready'
         );
-        
+
         setPreOrders(activeOrders);
-        
+
         if (activeOrders.length === 0) {
-          message.info("មិនមាន Pre-Order ដែលត្រៀមរួចរាល់ទេ");
+          Swal.fire({
+            icon: 'info',
+            title: 'Information',
+            text: "មិនមាន Pre-Order ដែលត្រៀមរួចរាល់ទេ",
+          });
         }
       } else {
         console.warn("⚠️ No pre-orders found in response");
@@ -43,7 +48,11 @@ const PreOrderQuickSelect = ({
       }
     } catch (error) {
       console.error("❌ Error fetching pre-orders:", error);
-      message.error("មិនអាចផ្ទុកបញ្ជីកម្មង់ជាមុនបានទេ");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "មិនអាចផ្ទុកបញ្ជីកម្មង់ជាមុនបានទេ",
+      });
       setPreOrders([]);
     } finally {
       setLoading(false);
@@ -61,7 +70,7 @@ const PreOrderQuickSelect = ({
     if (!selectedPreOrder) return;
 
     setSelectedValue(value);
-    
+
     if (onSelectPreOrder) {
       await onSelectPreOrder(selectedPreOrder);
     }
@@ -70,7 +79,7 @@ const PreOrderQuickSelect = ({
   const formatPreOrderOption = (preOrder) => {
     // Handle both possible field names from backend
     const totalAmount = parseFloat(preOrder.total_amount || 0);
-    const deliveryDate = preOrder.delivery_date 
+    const deliveryDate = preOrder.delivery_date
       ? dayjs(preOrder.delivery_date).format('DD/MM/YYYY')
       : '-';
     const orderDate = preOrder.order_date
@@ -80,15 +89,15 @@ const PreOrderQuickSelect = ({
     return {
       value: preOrder.id,
       label: (
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           padding: '6px 0'
         }}>
           <div style={{ flex: 1 }}>
-            <div style={{ 
-              fontSize: '14px', 
+            <div style={{
+              fontSize: '14px',
               fontWeight: '600',
               color: '#1a1a1a',
               marginBottom: '4px',
@@ -96,8 +105,8 @@ const PreOrderQuickSelect = ({
             }}>
               {preOrder.customer_name || 'N/A'}
             </div>
-            <div style={{ 
-              fontSize: '12px', 
+            <div style={{
+              fontSize: '12px',
               color: '#8c8c8c',
               display: 'flex',
               gap: '12px',
@@ -117,11 +126,11 @@ const PreOrderQuickSelect = ({
               </span>
             </div>
           </div>
-          <div style={{ 
+          <div style={{
             textAlign: 'right',
             marginLeft: '16px'
           }}>
-            <Tag color="green" style={{ 
+            <Tag color="green" style={{
               margin: 0,
               fontSize: '13px',
               fontWeight: '600',
@@ -140,7 +149,7 @@ const PreOrderQuickSelect = ({
   const options = preOrders.map(formatPreOrderOption);
 
   return (
-    <div style={{ 
+    <div style={{
       background: 'linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%)',
       padding: '16px',
       borderRadius: '12px',
@@ -149,16 +158,16 @@ const PreOrderQuickSelect = ({
       ...style
     }}>
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
+      <div style={{
+        display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: '12px'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ThunderboltOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
-          <span style={{ 
-            fontSize: '15px', 
+          <span style={{
+            fontSize: '15px',
             fontWeight: '700',
             color: '#0050b3'
           }}>
@@ -176,7 +185,7 @@ const PreOrderQuickSelect = ({
           icon={<ReloadOutlined />}
           onClick={fetchPreOrders}
           loading={loading}
-          style={{ 
+          style={{
             color: '#1890ff',
             fontWeight: '600'
           }}
@@ -191,7 +200,7 @@ const PreOrderQuickSelect = ({
           message="ជ្រើសរើសកម្មង់ជាមុន ដើម្បីបញ្ចូលទៅ Cart ភ្លាមៗ"
           type="info"
           showIcon
-          style={{ 
+          style={{
             marginBottom: '12px',
             fontSize: '13px',
             backgroundColor: '#f0f5ff',
@@ -244,8 +253,8 @@ const PreOrderQuickSelect = ({
           border: '1px solid #b7eb8f',
           borderRadius: '8px'
         }}>
-          <div style={{ 
-            display: 'flex', 
+          <div style={{
+            display: 'flex',
             alignItems: 'center',
             gap: '8px',
             color: '#52c41a',

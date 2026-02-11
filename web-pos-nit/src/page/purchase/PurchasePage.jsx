@@ -25,6 +25,7 @@ import {
   Tooltip,
   Upload
 } from "antd";
+import Swal from "sweetalert2";
 import dayjs from "dayjs";
 import {
   MdOutlineCreateNewFolder,
@@ -134,10 +135,20 @@ function PurchasePage() {
       const res = await request("purchase/" + receivingOrder.id, "put", purchaseData);
 
       if (res && !res.error) {
-        message.success("Order marked as Delivered & Stock Updated!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: "Order marked as Delivered & Stock Updated!",
+          showConfirmButton: false,
+          timer: 1500
+        });
         getList();
       } else {
-        message.error(res.message || "Failed to update order");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || "Failed to update order",
+        });
       }
     } catch (error) {
       message.error("An error occurred");
@@ -185,13 +196,23 @@ function PurchasePage() {
 
       const res = await request("inventory/transfer", "post", payload);
       if (res && !res.error) {
-        message.success(t("Transfer Successful"));
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: t("Transfer Successful"),
+          showConfirmButton: false,
+          timer: 1500
+        });
         setTransferModal({ visible: false, selectedProduct: null });
         // Refresh stock/list
         fetchProductsWithStock();
         getList();
       } else {
-        message.error(res.error?.message || "Transfer Failed");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.error?.message || "Transfer Failed",
+        });
       }
     } catch (err) {
       console.error(err);
@@ -310,9 +331,19 @@ function PurchasePage() {
     if (res && !res.error) {
       getList();
       closeModal();
-      message.success(res.message || t("purchase_order_saved_successfully"));
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: res.message || t("purchase_order_saved_successfully"),
+        showConfirmButton: false,
+        timer: 1500
+      });
     } else {
-      message.error(res.message || t("failed_to_save_purchase_order"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: res.message || t("failed_to_save_purchase_order"),
+      });
       setState((p) => ({
         ...p,
         loading: false,
@@ -432,10 +463,16 @@ function PurchasePage() {
   };
 
   const onClickBtnDelete = (items) => {
-    Modal.confirm({
+    Swal.fire({
       title: t("delete_purchase_order"),
-      content: t("confirm_delete_purchase_order"),
-      onOk: async () => {
+      text: t("confirm_delete_purchase_order"),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t("yes_delete_it") || "Yes, delete it!"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         setState((p) => ({
           ...p,
           loading: true,
@@ -449,15 +486,25 @@ function PurchasePage() {
             list: newList,
             loading: false,
           }));
-          message.success(t("delete_success"));
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: t("delete_success"),
+            showConfirmButton: false,
+            timer: 1500
+          });
         } else {
-          message.error(res?.message || t("cannot_delete_in_use"));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res?.message || t("cannot_delete_in_use"),
+          });
           setState((p) => ({
             ...p,
             loading: false,
           }));
         }
-      },
+      }
     });
   };
 
@@ -594,11 +641,21 @@ function PurchasePage() {
     setState(p => ({ ...p, loading: false }));
 
     if (res && res.success) {
-      message.success(t("distribute_success") || "Stock distributed successfully");
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: t("distribute_success") || "Stock distributed successfully",
+        showConfirmButton: false,
+        timer: 1500
+      });
       setDistributeModal({ visible: false, purchase: null, branch_id: null, distributions: [] });
       getList(); // Refresh
     } else {
-      message.error(res?.message || t("error_occurred"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: res?.message || t("error_occurred"),
+      });
     }
   };
 
@@ -1536,11 +1593,7 @@ function PurchasePage() {
         </div>
 
         <div className="md:hidden">
-          {state.loading ? (
-            <div className="text-center py-8">
-              <div className="text-gray-500 dark:text-gray-400">{t("Loading...")}</div>
-            </div>
-          ) : filteredList.length > 0 ? (
+          {filteredList.length > 0 ? (
             <div className="space-y-3">
               {filteredList.map((purchase, index) => (
                 <PurchaseMobileCard

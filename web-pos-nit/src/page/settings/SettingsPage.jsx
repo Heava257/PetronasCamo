@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Card, Row, Col, Switch, Button, Radio, Divider, message, Tag, Space, Tabs } from 'antd';
+import { Card, Row, Col, Switch, Button, Radio, Divider, Tag, Space, Tabs } from 'antd';
+import Swal from 'sweetalert2';
 import {
     CheckCircleFilled,
     ReloadOutlined,
@@ -41,12 +42,24 @@ function SettingsPage() {
 
     const handleTemplateChange = (templateId) => {
         applyTemplate(templateId);
-        message.success(`Applied ${templateId} template successfully!`);
+        Swal.fire({
+            icon: 'success',
+            title: 'Template Applied',
+            text: `Applied ${templateId} template successfully!`,
+            timer: 1500,
+            showConfirmButton: false
+        });
     };
 
     const handleReset = () => {
         resetSettings();
-        message.info('Settings reset to default');
+        Swal.fire({
+            icon: 'info',
+            title: 'Settings Reset',
+            text: 'Settings reset to default',
+            timer: 1500,
+            showConfirmButton: false
+        });
     };
 
     // Tab items for better organization
@@ -341,7 +354,12 @@ function SettingsPage() {
                                         checked={settings.faceLogin}
                                         onChange={(checked) => {
                                             updateSetting('faceLogin', checked);
-                                            message.success(checked ? 'Face Login Enabled' : 'Face Login Disabled');
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: checked ? 'Face Login Enabled' : 'Face Login Disabled',
+                                                timer: 1500,
+                                                showConfirmButton: false
+                                            });
                                         }}
                                         size="large"
                                     />
@@ -364,7 +382,13 @@ function SettingsPage() {
                                         value={settings.passwordComplexity}
                                         onChange={(e) => {
                                             updateSetting('passwordComplexity', e.target.value);
-                                            message.success(`Password Policy set to ${e.target.value === 'high' ? 'Strong' : 'Standard'}`);
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Policy Updated',
+                                                text: `Password Policy set to ${e.target.value === 'high' ? 'Strong' : 'Standard'}`,
+                                                timer: 1500,
+                                                showConfirmButton: false
+                                            });
                                         }}
                                         buttonStyle="solid"
                                     >

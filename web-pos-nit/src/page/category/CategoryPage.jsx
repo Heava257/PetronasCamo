@@ -14,6 +14,7 @@ import {
   Tag,
   Radio,
 } from "antd";
+import Swal from "sweetalert2";
 import { isPermission, request } from "../../util/helper";
 import { MdAdd, MdDelete, MdEdit, MdOutlineCreateNewFolder } from "react-icons/md";
 import MainPage from "../../component/layout/MainPage";
@@ -64,7 +65,11 @@ function CategoryPage() {
         setList(res.list);
       }
     } catch (error) {
-      message.error(t("Error loading categories"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("Error loading categories"),
+      });
     } finally {
       setLoading(false);
     }
@@ -89,26 +94,41 @@ function CategoryPage() {
   const onClickDelete = async (data) => {
     const { id: currentUserId } = getProfile();
     if (viewMode === 'group' && data.user_id !== currentUserId) {
-      message.warning(t("can_only_delete_own"));
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: t("can_only_delete_own"),
+      });
       return;
     }
 
-    Modal.confirm({
+    Swal.fire({
       title: t("delete"),
-      content: t("Are you sure you want to remove this category?"),
-      okText: t("confirm"),
-      cancelText: t("cancel"),
-      onOk: async () => {
+      text: t("Are you sure you want to remove this category?"),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t("confirm"),
+      cancelButtonText: t("cancel")
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         const { id: user_id } = getProfile();
         const res = await request("category", "delete", {
           id: data.id,
           user_id: user_id
         });
         if (res && !res.error) {
-          message.success(res.message);
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: res.message,
+            showConfirmButton: false,
+            timer: 1500
+          });
           setList(list.filter((item) => item.id !== data.id));
         }
-      },
+      }
     });
   };
 
@@ -145,7 +165,13 @@ function CategoryPage() {
 
     const res = await request("category", method, data);
     if (res && !res.error) {
-      message.success(res.message);
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: res.message,
+        showConfirmButton: false,
+        timer: 1500
+      });
       getList();
       onCloseModal();
     }
@@ -262,7 +288,6 @@ function CategoryPage() {
           )}
           rowKey="id"
           scroll={{ x: 1200 }}
-          loading={loading}
           columns={[
             {
               key: "No",
@@ -371,13 +396,8 @@ function CategoryPage() {
         />
       </div>
 
-      {/* Mobile/Tablet Card View */}
       <div className="block lg:hidden">
-        {loading ? (
-          <div className="flex justify-center items-center py-16">
-            <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : list.filter(item =>
+        {list.filter(item =>
           !state.txtSearch ||
           item.name?.toLowerCase().includes(state.txtSearch.toLowerCase()) ||
           item.barcode?.toLowerCase().includes(state.txtSearch.toLowerCase())

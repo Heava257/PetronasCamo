@@ -386,10 +386,10 @@ exports.create = async (req, res) => {
     const sqlOrder = `
      INSERT INTO \`order\` 
         (order_no, pre_order_no, customer_id, location_id, truck_id, total_amount, paid_amount, 
-         payment_method, remark, user_id, branch_id, branch_name, create_by, order_date, delivery_date, receive_date) 
+         payment_method, remark, user_id, branch_id, create_by, order_date, delivery_date, receive_date) 
       VALUES 
         (:order_no, :pre_order_no, :customer_id, :location_id, :truck_id, :total_amount, :paid_amount, 
-         :payment_method, :remark, :user_id, :branch_id, :branch_name, :create_by, :order_date, :delivery_date, :receive_date)
+         :payment_method, :remark, :user_id, :branch_id, :create_by, :order_date, :delivery_date, :receive_date)
     `;
 
     // Build notification messages
@@ -483,12 +483,11 @@ exports.create = async (req, res) => {
     const [orderResult] = await db.query(sqlOrder, {
       ...order,
       order_no,
-      pre_order_no,  // ✅ ADD THIS
+      pre_order_no,
       location_id: order.location_id || null,
       truck_id: order.truck_id || null,
       user_id: req.auth?.id || null,
       branch_id,
-      branch_name,
       create_by: req.auth?.name || "System",
       order_date,
       delivery_date,

@@ -17,6 +17,7 @@ import {
   Badge,
   Divider
 } from "antd";
+import Swal from "sweetalert2";
 import {
   PlusOutlined,
   EyeOutlined,
@@ -212,7 +213,11 @@ function PreOrderManagementPage() {
       }
     } catch (error) {
       console.error("Error:", error);
-      message.error(t("failed_load_pre_orders") || "Failed to load pre-orders");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("failed_load_pre_orders") || "Failed to load pre-orders",
+      });
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -260,42 +265,78 @@ function PreOrderManagementPage() {
     const adminRoles = [1, 29];
 
     if (['confirmed', 'ready'].includes(status) && !adminRoles.includes(profile.role_id)) {
-      message.error(t("admin_permission_required") || "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចបញ្ជាក់បាន");
+      Swal.fire({
+        icon: 'error',
+        title: 'Permission Denied',
+        text: t("admin_permission_required") || "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចបញ្ជាក់បាន",
+      });
       return;
     }
 
     try {
       const res = await request(`pre-order/${id}/status`, "put", { status });
       if (res && res.success) {
-        message.success(t("status_updated") || "បច្ចុប្បន្នភាព Status បានជោគជ័យ");
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: t("status_updated") || "បច្ចុប្បន្នភាព Status បានជោគជ័យ",
+          showConfirmButton: false,
+          timer: 1500
+        });
         loadPreOrders();
       } else {
-        message.error(res.message || "Something went wrong");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || "Something went wrong",
+        });
       }
     } catch (error) {
       console.error("Error updating status:", error);
-      message.error("Failed to update status");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "Failed to update status",
+      });
     }
   };
 
   const handleDelete = (record) => {
-    Modal.confirm({
+    Swal.fire({
       title: 'តើអ្នកប្រាកដថាចង់លុប Pre-Order នេះមែនទេ?',
-      content: 'សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ។',
-      okText: 'លុប',
-      okType: 'danger',
-      cancelText: 'បោះបង់',
-      onOk: async () => {
+      text: 'សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ។',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'លុប',
+      cancelButtonText: 'បោះបង់'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         try {
           const res = await request(`pre-order/${record.id}`, "delete");
           if (res && res.success) {
-            message.success('បានលុបជោគជ័យ');
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: 'បានលុបជោគជ័យ',
+              showConfirmButton: false,
+              timer: 1500
+            });
             loadPreOrders();
           } else {
-            message.error(res.message || 'លុបមិនបានជោគជ័យ');
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: res.message || 'លុបមិនបានជោគជ័យ',
+            });
           }
         } catch (error) {
-          message.error('មានបញ្ហាពេលលុប');
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'មានបញ្ហាពេលលុប',
+          });
         }
       }
     });
@@ -581,7 +622,11 @@ function PreOrderManagementPage() {
           type="text"
           icon={<PrinterOutlined />}
           className="text-gray-500"
-          onClick={() => message.info('មុខងារព្រីននឹងមកដល់ឆាប់ៗ')}
+          onClick={() => Swal.fire({
+            icon: 'info',
+            title: 'Information',
+            text: 'មុខងារព្រីននឹងមកដល់ឆាប់ៗ',
+          })}
         />
       )
     }

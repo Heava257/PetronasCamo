@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Button, Modal, Form, Input, Switch, Space,
-  Tag, Alert, message, Popconfirm, Tooltip, Row, Col
+  Tag, Alert, Tooltip, Row, Col
 } from 'antd';
+import Swal from 'sweetalert2';
 import {
   PlusOutlined, EditOutlined, DeleteOutlined,
   ReloadOutlined, CheckCircleOutlined, CloseCircleOutlined
@@ -66,17 +67,31 @@ function IPManagementPage() {
       );
 
       if (res && !res.error) {
-        message.success(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: res.message,
+          showConfirmButton: false,
+          timer: 1500
+        });
         setModalVisible(false);
         form.resetFields();
         setEditingIp(null);
         getIpList();
       } else {
-        message.error(res.message || 'Failed to save IP');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || 'Failed to save IP',
+        });
       }
     } catch (error) {
       console.error('Save IP error:', error);
-      message.error('Failed to save IP');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to save IP',
+      });
     }
   };
 
@@ -91,30 +106,64 @@ function IPManagementPage() {
   };
 
   const handleDelete = async (id) => {
-    try {
-      const res = await request('attendance/allowed-ips', 'delete', { id });
-      if (res && !res.error) {
-        message.success(res.message);
-        getIpList();
-      } else {
-        message.error(res.message || 'Failed to delete IP');
+    Swal.fire({
+      title: 'Are you sure to delete this IP?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request('attendance/allowed-ips', 'delete', { id });
+          if (res && !res.error) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: res.message,
+              showConfirmButton: false,
+              timer: 1500
+            });
+            getIpList();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: res.message || 'Failed to delete IP',
+            });
+          }
+        } catch (error) {
+          console.error('Delete IP error:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to delete IP',
+          });
+        }
       }
-    } catch (error) {
-      console.error('Delete IP error:', error);
-      message.error('Failed to delete IP');
-    }
+    });
   };
 
   const addCurrentIp = async () => {
     if (!currentIp) {
-      message.warning('Cannot detect current IP address');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: 'Cannot detect current IP address',
+      });
       return;
     }
 
     // Check if IP already exists
     const exists = ipList.find(ip => ip.ip_address === currentIp);
     if (exists) {
-      message.warning('Your IP is already in the list');
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: 'Your IP is already in the list',
+      });
       return;
     }
 
@@ -126,11 +175,21 @@ function IPManagementPage() {
       });
 
       if (res && !res.error) {
-        message.success('Your IP has been added successfully!');
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Your IP has been added successfully!',
+          showConfirmButton: false,
+          timer: 1500
+        });
         getIpList();
       }
     } catch (error) {
-      message.error('Failed to add your IP');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to add your IP',
+      });
     }
   };
 
@@ -179,18 +238,12 @@ function IPManagementPage() {
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
           />
-          <Popconfirm
-            title="Are you sure to delete this IP?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="Yes"
-            cancelText="No"
-          >
-            <Button
-              size="small"
-              danger
-              icon={<DeleteOutlined />}
-            />
-          </Popconfirm>
+          <Button
+            size="small"
+            danger
+            icon={<DeleteOutlined />}
+            onClick={() => handleDelete(record.id)}
+          />
         </Space>
       )
     }

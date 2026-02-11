@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { request, formatPrice } from "../../util/helper";
+import { request, formatPrice, formatRiel } from "../../util/helper";
 import MainPage from "../../component/layout/MainPage";
 import {
     Button,
@@ -13,12 +13,10 @@ import {
     Modal,
     Form,
     Input,
-    message,
     InputNumber,
     Space,
     Tag,
     Upload,
-    Popconfirm,
     Alert
 } from "antd";
 import dayjs from "dayjs";
@@ -34,6 +32,7 @@ import {
 } from '@ant-design/icons';
 import { useTranslation } from "../../locales/TranslationContext";
 import * as XLSX from 'xlsx';
+import Swal from "sweetalert2";
 import { Image } from "antd";
 import { Config } from "../../util/config";
 import { debounce } from "lodash";
@@ -173,7 +172,12 @@ function CustomerPaymentPage() {
             }));
         } else {
             setState(p => ({ ...p, loading: false }));
-            message.error(res?.message || "Failed to load ledger");
+            Swal.fire({
+                icon: 'error',
+                title: t('error'),
+                text: res?.message || t('failed_to_load_ledger'),
+                confirmButtonText: t('ok')
+            });
         }
     };
 
@@ -192,10 +196,11 @@ function CustomerPaymentPage() {
 
                 if (duplicate) {
                     setState(p => ({ ...p, duplicateSlipFound: true, invalidSlipFound: false }));
-                    message.error({
-                        content: duplicateMessage,
-                        duration: 5,
-                        style: { marginTop: '20vh' }
+                    Swal.fire({
+                        icon: 'error',
+                        title: t('duplicate_slip'),
+                        text: duplicateMessage,
+                        confirmButtonText: t('ok')
                     });
                     // Fill form with nulls to clear previous stale data
                     form.setFieldsValue({
@@ -212,10 +217,11 @@ function CustomerPaymentPage() {
                 // New: Check if it's a valid slip
                 if (res.data.isValidSlip === false) {
                     setState(p => ({ ...p, invalidSlipFound: true, duplicateSlipFound: false }));
-                    message.warning({
-                        content: res.data.invalidMessage,
-                        duration: 7,
-                        style: { marginTop: '20vh' }
+                    Swal.fire({
+                        icon: 'warning',
+                        title: t('invalid_slip'),
+                        text: res.data.invalidMessage,
+                        confirmButtonText: t('ok')
                     });
                     form.setFieldsValue({
                         amount: undefined,
@@ -250,19 +256,32 @@ function CustomerPaymentPage() {
                             linkedOrderId: matchingInv.id,
                             invoiceStatus: { status: 'success', help: `Auto-linked to Invoice: ${matchingInv.invoice_no}` }
                         }));
-                        // Also set the Select component's value via its bound name if we were using it, 
-                        // but here we manually manage the value since we don't have 'name' on the Select's Form.Item 
-                        // to avoid conflicts with reference_no. Actually, let's just update state.
                     }
                 }
 
-                message.success("Slip scanned successfully! Details filled.");
+                Swal.fire({
+                    icon: 'success',
+                    title: t('success'),
+                    text: t('slip_scanned_success'),
+                    showConfirmButton: false,
+                    timer: 1500
+                });
             } else {
-                message.warning("Could not read slip details. Please fill manually.");
+                Swal.fire({
+                    icon: 'warning',
+                    title: t('warning'),
+                    text: t('could_not_read_slip'),
+                    confirmButtonText: t('ok')
+                });
             }
         } catch (error) {
             console.error("Scan error:", error);
-            message.error("Failed to scan slip.");
+            Swal.fire({
+                icon: 'error',
+                title: t('error'),
+                text: t('failed_to_scan_slip'),
+                confirmButtonText: t('ok')
+            });
         } finally {
             setState(p => ({ ...p, scanning: false }));
         }
@@ -378,7 +397,12 @@ function CustomerPaymentPage() {
 
     const handleCreatePayment = async (values) => {
         if (state.duplicateSlipFound || state.invalidSlipFound) {
-            message.error("This payment is blocked. Please provide a valid, unique bank slip.");
+            Swal.fire({
+                icon: 'error',
+                title: t('payment_blocked'),
+                text: t('provide_valid_slip'),
+                confirmButtonText: t('ok')
+            });
             return;
         }
         setState(p => ({ ...p, submitting: true }));
@@ -403,21 +427,34 @@ function CustomerPaymentPage() {
             }
 
             const res = await request("customer_payment", "post", formData);
-            if (res && res.payment_status === 'duplicate') { // Check specifically if backend returns structure for duplicates without throwing 400, OR if axios resolved. 
-                // But wait, I set backend to return 400. So verify catch block.
-            }
 
             if (res && res.success) {
-                message.success(res.message);
+                Swal.fire({
+                    icon: 'success',
+                    title: t('success'),
+                    text: res.message || t('payment_create_success'),
+                    showConfirmButton: false,
+                    timer: 1500
+                });
                 setState(p => ({ ...p, paymentModalVisible: false, shouldScrollToBottom: true }));
                 form.resetFields();
                 loadLedger(); // Reload ledger
             } else {
-                message.error(res?.message || "Failed to create payment");
+                Swal.fire({
+                    icon: 'error',
+                    title: t('error'),
+                    text: res?.message || t('failed_to_create_payment'),
+                    confirmButtonText: t('ok')
+                });
             }
         } catch (error) {
             const messageText = error.response?.data?.message || "Failed to create payment";
-            message.error(messageText);
+            Swal.fire({
+                icon: 'error',
+                title: t('error'),
+                text: messageText || t('failed_to_create_payment'),
+                confirmButtonText: t('ok')
+            });
         } finally {
             setState(p => ({ ...p, submitting: false }));
         }
@@ -510,7 +547,7 @@ function CustomerPaymentPage() {
                     </div>
                     <div class="summary-card">
                         <span class="label">បានបង់សរុប<br>Total Payments</span>
-                        <span class="value">(${formatPrice(state.summary.total_payments)})</span>
+                        <span class="value">${formatPrice(state.summary.total_payments)}</span>
                     </div>
                     <div class="summary-card ending">
                         <span class="label">សមតុល្យត្រូវបង់<br>Ending Balance</span>
@@ -523,15 +560,17 @@ function CustomerPaymentPage() {
                         <tr>
                             <th width="70">Date</th>
                             <th width="80">Ref</th>
-                            <th width="160">Items / Details</th>
                             <th width="45">Extra</th>
                             <th width="45">Super</th>
                             <th width="45">Diesel</th>
                             <th width="45">LPG</th>
-                            <th width="75">Total ($)</th>
-                            <th width="75">Paid ($)</th>
+                            <th width="75">Total (USD)</th>
+                            <th width="85">Total (KH)</th>
+                            <th width="75">Paid (USD)</th>
+                            <th width="85">Paid (KH)</th>
                             <th width="75">Inv. Bal</th>
-                            <th width="85">Balance</th>
+                            <th width="85">Balance (USD)</th>
+                            <th width="95">Balance (KH)</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -539,25 +578,24 @@ function CustomerPaymentPage() {
                             <tr>
                                 <td class="text-center">${dayjs(item.transaction_date).format('DD/MM/YY')}</td>
                                 <td class="text-center" style="color: #1890ff; font-size: 10px;">${item.reference_no || item.reference || '-'}</td>
-                                <td class="col-desc">
-                                    <strong>${item.description || item.transaction_type || '-'}</strong>
-                                    ${item.note && item.note !== 'undefined' && item.note !== '' ? `<div style="color: #666; font-style: italic; margin-top: 2px;">${item.note}</div>` : ''}
-                                </td>
                                 <td class="col-qty">${item.fuel_extra > 0 ? Number(item.fuel_extra).toLocaleString() : '-'}</td>
                                 <td class="col-qty">${item.fuel_regular > 0 ? Number(item.fuel_regular).toLocaleString() : '-'}</td>
                                 <td class="col-qty">${item.fuel_gas > 0 ? Number(item.fuel_gas).toLocaleString() : '-'}</td>
                                 <td class="col-qty">${item.fuel_diesel > 0 ? Number(item.fuel_diesel).toLocaleString() : '-'}</td>
                                 <td class="col-money">${item.debit > 0 ? formatPrice(item.debit) : '-'}</td>
+                                <td class="col-money">${item.debit > 0 ? formatRiel(item.debit * state.exchangeRate) : '-'}</td>
                                 <td class="col-money">${item.credit > 0 ? formatPrice(item.credit) : (item.paid_amount > 0 ? formatPrice(item.paid_amount) : '-')}</td>
+                                <td class="col-money">${item.credit > 0 ? formatRiel(item.credit * state.exchangeRate) : (item.paid_amount > 0 ? formatRiel(item.paid_amount * state.exchangeRate) : '-')}</td>
                                 <td class="col-money" style="color: #faad14;">${item.remaining_balance > 0 ? formatPrice(item.remaining_balance) : '-'}</td>
                                 <td class="col-money text-bold">${formatPrice(item.running_balance)}</td>
+                                <td class="col-money text-bold">${formatRiel(item.running_balance * state.exchangeRate)}</td>
                             </tr>
                         `).join('')}
                     </tbody>
                     <tfoot>
                          <tr style="background-color: #fafafa; font-weight: bold; border-top: 2px solid #ddd;">
-                            <td colspan="9" class="text-right">សមតុល្យចុងគ្រា (Ending Balance Account):</td>
-                            <td class="text-right" style="color: #f5222d; font-size: 13px;">${formatPrice(state.summary.ending_balance)}</td>
+                            <td colspan="11" class="text-right">សមតុល្យចុងគ្រា (Ending Balance Account):</td>
+                            <td colspan="2" class="text-right" style="color: #f5222d; font-size: 13px;">${formatPrice(state.summary.ending_balance)}<br>${formatRiel(state.summary.ending_balance * state.exchangeRate)}</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -588,13 +626,36 @@ function CustomerPaymentPage() {
 
 
     const handleDeletePayment = async (id) => {
-        const res = await request(`customer_payment/${id}`, "delete");
-        if (res && res.success) {
-            message.success(res.message);
-            loadLedger();
-        } else {
-            message.error(res?.message || "Failed to delete payment");
-        }
+        Swal.fire({
+            title: t('delete_payment_confirmation_title'),
+            text: t('delete_payment_confirmation_text'),
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: t('yes')
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                const res = await request(`customer_payment/${id}`, "delete");
+                if (res && res.success) {
+                    Swal.fire({
+                        title: t('success'),
+                        text: res.message || t('payment_deleted_success'),
+                        icon: 'success',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                    loadLedger();
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: t('error'),
+                        text: res?.message || t('failed_to_delete_payment'),
+                        confirmButtonText: t('ok')
+                    });
+                }
+            }
+        });
     };
 
     const columns = [
@@ -616,30 +677,14 @@ function CustomerPaymentPage() {
             render: (text) => <Tag color="blue">{text || '-'}</Tag>
         },
         {
-            title: 'អធិប្បាយ (Description)',
-            dataIndex: 'description',
-            key: 'desc',
-            width: 220,
-            render: (text, record) => (
-                <div style={{ whiteSpace: 'normal', wordBreak: 'break-word', fontSize: '11px' }}>
-                    <Text strong>{record.description || record.transaction_type}</Text>
-                    {record.note && record.note !== 'undefined' && record.note !== '' && (
-                        <div style={{ color: '#888', fontStyle: 'italic', marginTop: '2px' }}>
-                            {record.note}
-                        </div>
-                    )}
-                </div>
-            )
-        },
-        {
-            title: 'កំណើនក្នុងគ្រា (Increase during the period)',
+            title: 'កំណើនក្នុងគ្រា',
             children: [
                 {
                     title: 'Extra',
                     dataIndex: 'fuel_extra',
                     key: 'qty_extra',
                     width: 80,
-                    align: 'right',
+                    align: 'center',
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
@@ -647,7 +692,7 @@ function CustomerPaymentPage() {
                     dataIndex: 'fuel_regular',
                     key: 'qty_regular',
                     width: 80,
-                    align: 'right',
+                    align: 'center',
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
@@ -655,7 +700,7 @@ function CustomerPaymentPage() {
                     dataIndex: 'fuel_diesel',
                     key: 'qty_diesel',
                     width: 80,
-                    align: 'right',
+                    align: 'center',
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
@@ -663,34 +708,34 @@ function CustomerPaymentPage() {
                     dataIndex: 'fuel_gas',
                     key: 'qty_gas',
                     width: 80,
-                    align: 'right',
+                    align: 'center',
                     render: (val) => val > 0 ? val.toLocaleString() : '-'
                 },
                 {
-                    title: 'Dollar',
+                    title: 'USD',
                     dataIndex: 'debit',
                     key: 'inc_usd',
-                    width: 100,
-                    align: 'right',
+                    width: 'auto',
+                    align: 'center',
                     render: (val, record) => record.transaction_type === 'order' && val > 0 ? formatPrice(val) : ''
                 },
                 {
-                    title: 'Riel',
+                    title: 'KH',
                     key: 'inc_riel',
-                    width: 110,
-                    align: 'right',
-                    render: (_, record) => record.transaction_type === 'order' && record.debit > 0 ? `៛${(record.debit * state.exchangeRate).toLocaleString()}` : ''
+                    width: 'auto',
+                    align: 'center',
+                    render: (_, record) => record.transaction_type === 'order' && record.debit > 0 ? formatRiel(record.debit * state.exchangeRate) : ''
                 }
             ]
         },
         {
-            title: 'សងក្នុងគ្រា (Payments during the period)',
+            title: 'សងក្នុងគ្រា',
             children: [
                 {
                     title: 'លេខប័ណ្ណ (Ref)',
                     key: 'pay_ref',
-                    width: 150,
-                    align: 'left',
+                    width: 'auto',
+                    align: 'center',
                     render: (_, record) => record.transaction_type.startsWith('Payment') ?
                         <Space direction="vertical" size={0}>
                             <Text strong style={{ fontSize: '12px' }}>{record.bank_name || record.payment_method}</Text>
@@ -705,75 +750,74 @@ function CustomerPaymentPage() {
                         : '-'
                 },
                 {
-                    title: 'Dollar',
+                    title: 'USD',
                     dataIndex: 'credit',
                     key: 'pay_usd',
-                    width: 100,
-                    align: 'right',
-                    render: (val, record) => record.transaction_type.startsWith('Payment') && val > 0 ? `$${formatPrice(val)}` : ''
+                    width: 'auto',
+                    align: 'center',
+                    render: (val, record) => record.transaction_type.startsWith('Payment') && val > 0 ? formatPrice(val) : ''
                 },
                 {
-                    title: 'Riel',
+                    title: 'KH',
                     key: 'pay_riel',
-                    width: 110,
-                    align: 'right',
-                    render: (_, record) => record.transaction_type.startsWith('Payment') && record.credit > 0 ? `៛${(record.credit * state.exchangeRate).toLocaleString()}` : '-'
+                    width: 'auto',
+                    align: 'center',
+                    render: (_, record) => record.transaction_type.startsWith('Payment') && record.credit > 0 ? formatRiel(record.credit * state.exchangeRate) : '-'
                 }
             ]
         },
         {
-            title: 'សមតុល្យ (Balance)',
+            title: 'សមតុល្យ',
             children: [
                 {
-                    title: 'Paid ($)',
+                    title: 'បានបង់ (USD)',
                     dataIndex: 'paid_amount',
                     key: 'paid_usd',
-                    width: 90,
-                    align: 'right',
+                    width: 'auto',
+                    align: 'center',
                     render: (val, record) => record.transaction_type === 'order' && val > 0 ? formatPrice(val) : ''
                 },
                 {
-                    title: 'Inv. Bal ($)',
+                    title: 'តុល្យភាពវិក្កយបត្រ (USD)',
                     dataIndex: 'remaining_balance',
                     key: 'inv_bal',
-                    width: 100,
-                    align: 'right',
+                    width: 180,
+                    align: 'center',
                     render: (val, record) => record.transaction_type === 'order' ?
                         <Text strong style={{ color: val > 0 ? '#faad14' : '#52c41a' }}>{formatPrice(val)}</Text> : ''
                 },
                 {
-                    title: 'Account ($)',
+                    title: 'សមតុល្យគណនី (USD)',
                     dataIndex: 'running_balance',
                     key: 'acc_bal',
-                    width: 100,
-                    align: 'right',
+                    width: 180,
+                    align: 'center',
                     render: (val) => <Text strong style={{ color: val >= 0 ? '#ff4d4f' : '#52c41a' }}>{formatPrice(val)}</Text>
                 },
                 {
-                    title: 'Account (៛)',
+                    title: 'សមតុល្យគណនី (KH)',
                     key: 'bal_riel',
-                    width: 120,
-                    align: 'right',
-                    render: (_, record) => <Text type="secondary" style={{ fontSize: '11px' }}>៛{(record.running_balance * state.exchangeRate).toLocaleString()}</Text>
+                    width: 'auto',
+                    align: 'center',
+                    render: (_, record) => <Text strong style={{ fontSize: '12px', color: '#0e0c0cff' }}>{formatRiel(record.running_balance * state.exchangeRate)}</Text>
                 }
             ]
         },
         {
-            title: 'Action',
+            title: 'សកម្មភាព',
             key: 'action',
             width: 80,
             align: 'center',
             render: (_, record) => record.transaction_type.startsWith('Payment') ? (
                 <Space>
                     <Button size="small" type="link" icon={<EyeOutlined />} onClick={() => setState(p => ({ ...p, detailModalVisible: true, selectedPayment: record }))} />
-                    <Popconfirm
-                        title="Delete this payment?"
-                        onConfirm={() => handleDeletePayment(record.original_id)}
-                        okText="Yes"
-                        cancelText="No"
-                    >
-                        <Button size="small" type="link" danger icon={<DeleteOutlined />} />
-                    </Popconfirm>
+                    <Button
+                        size="small"
+                        type="link"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeletePayment(record.original_id)}
+                    />
                 </Space>
             ) : null
         }
@@ -792,13 +836,13 @@ function CustomerPaymentPage() {
                                     icon={<ArrowUpOutlined rotate={-90} />}
                                     onClick={() => setState(p => ({ ...p, selectedCustomer: null, ledger: [], summary: { beginning_balance: 0, increase: 0, total_payments: 0, ending_balance: 0 } }))}
                                 >
-                                    Back
+                                    ត្រឡប់ក្រោយ
                                 </Button>
                             )}
                             <Select
                                 showSearch
                                 style={{ width: 250 }}
-                                placeholder="Select Customer to View Ledger"
+                                placeholder="ជ្រើសរើសអតិថិជន"
                                 value={state.selectedCustomer}
                                 onChange={(val) => setState(p => ({ ...p, selectedCustomer: val }))}
                                 filterOption={(input, option) =>
@@ -814,7 +858,7 @@ function CustomerPaymentPage() {
                             {!state.selectedCustomer && (
                                 <Select
                                     style={{ width: 150 }}
-                                    placeholder="Filter Branch"
+                                    placeholder="ចម្រោះតាមសាខា"
                                     value={state.branchFilter}
                                     allowClear
                                     onChange={(val) => {
@@ -839,7 +883,7 @@ function CustomerPaymentPage() {
                     <Col xs={24} md={4}>
                         {state.selectedCustomer && (
                             <div style={{ display: 'flex', alignItems: 'center', color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
-                                <span style={{ marginRight: 8 }}>Rate:</span>
+                                <span style={{ marginRight: 8 }}>អត្រាប្តូរប្រាក់:</span>
                                 <InputNumber
                                     value={state.exchangeRate}
                                     onChange={(val) => setState(p => ({ ...p, exchangeRate: val }))}
@@ -855,7 +899,12 @@ function CustomerPaymentPage() {
                                 icon={<PlusOutlined />}
                                 onClick={() => {
                                     if (!state.selectedCustomer) {
-                                        message.warning("Please select a customer first to create payment.");
+                                        Swal.fire({
+                                            icon: 'warning',
+                                            title: 'Warning',
+                                            text: "សូមជ្រើសរើសអតិថិជនជាមុនសិន។",
+                                            confirmButtonText: 'OK'
+                                        });
                                         return;
                                     }
                                     setState(p => ({ ...p, paymentModalVisible: true }));
@@ -863,21 +912,21 @@ function CustomerPaymentPage() {
                                 }}
                                 disabled={!state.selectedCustomer}
                             >
-                                New Payment
+                                បង់ប្រាក់បន្ថែម
                             </Button>
                             <Button
                                 icon={<DownloadOutlined />}
                                 onClick={handleExportExcel}
                                 disabled={!state.selectedCustomer}
                             >
-                                Export
+                                ទាញយក
                             </Button>
                             <Button
                                 icon={<PrinterOutlined />}
                                 onClick={handlePrint}
                                 disabled={!state.selectedCustomer}
                             >
-                                Print
+                                បោះពុម្ព
                             </Button>
                         </Space>
                     </Col>
@@ -888,7 +937,7 @@ function CustomerPaymentPage() {
                 // Debtor List Table
                 <Card style={{ background: isDarkMode ? '#141414' : '#fff', border: isDarkMode ? '1px solid #303030' : undefined, borderRadius: '16px' }}>
                     <div style={{ marginBottom: 16 }}>
-                        <Title level={4} style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a', margin: 0 }}>Outstanding Debtors</Title>
+                        <Title level={4} style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a', margin: 0 }}>បញ្ជីអតិថិជនជំពាក់ប្រាក់</Title>
                     </div>
                     <Table
                         dataSource={state.debtors}
@@ -897,14 +946,14 @@ function CustomerPaymentPage() {
                         style={{ border: isDarkMode ? '1px solid #303030' : '1px solid #d4d4d4' }}
                         columns={[
                             {
-                                title: 'No',
+                                title: 'ល.រ',
                                 key: 'index',
                                 width: 60,
                                 align: 'center',
                                 render: (_, __, index) => index + 1
                             },
                             {
-                                title: 'Customer',
+                                title: 'អតិថិជន',
                                 dataIndex: 'customer_name',
                                 key: 'customer_name',
                                 render: (text, record) => (
@@ -915,53 +964,53 @@ function CustomerPaymentPage() {
                                 )
                             },
                             {
-                                title: 'Address',
+                                title: 'អាសយដ្ឋាន',
                                 dataIndex: 'address',
                                 key: 'address',
                                 ellipsis: true
                             },
                             {
-                                title: 'Branch',
+                                title: 'សាខា',
                                 dataIndex: 'branch_name',
                                 key: 'branch_name',
                                 width: 100
                             },
                             {
-                                title: 'Overdue (Days)',
+                                title: 'ហួសកំណត់ (ថ្ងៃ)',
                                 dataIndex: 'days_overdue',
                                 key: 'days_overdue',
                                 align: 'center',
                                 width: 120,
                                 render: (days) => (
                                     <Tag color={days > 30 ? 'red' : days > 15 ? 'orange' : 'green'}>
-                                        {days} Days
+                                        {days} ថ្ងៃ
                                     </Tag>
                                 )
                             },
                             {
-                                title: 'Unpaid Invoices',
+                                title: 'វិក្កយបត្រមិនទាន់បង់',
                                 dataIndex: 'unpaid_invoices_count',
                                 key: 'unpaid_invoices_count',
                                 align: 'center',
                                 width: 120
                             },
                             {
-                                title: 'Total Debt',
+                                title: 'បំណុលសរុប',
                                 dataIndex: 'total_debt',
                                 key: 'total_debt',
                                 align: 'right',
                                 width: 150,
                                 render: (val, record) => (
-                                    <div title={`Billed: $${formatPrice(record.total_order_amount || 0)} | Paid: $${formatPrice(record.total_payment_amount || 0)}`}>
-                                        <Text strong type="danger">${formatPrice(val)}</Text>
+                                    <div title={`Billed: ${formatPrice(record.total_order_amount || 0)} | Paid: ${formatPrice(record.total_payment_amount || 0)}`}>
+                                        <Text strong type="danger">{formatPrice(val)}</Text>
                                         <div style={{ fontSize: '10px', color: '#888' }}>
-                                            Bill: ${formatPrice(record.total_order_amount || 0)}
+                                            សរុប: ${formatPrice(record.total_order_amount || 0)}
                                         </div>
                                     </div>
                                 )
                             },
                             {
-                                title: 'Seller / Admin',
+                                title: 'អ្នកលក់ / អ្នកគ្រប់គ្រង',
                                 dataIndex: 'seller_name',
                                 key: 'seller_name',
                                 render: (text, record) => (
@@ -976,7 +1025,7 @@ function CustomerPaymentPage() {
                                 )
                             },
                             {
-                                title: 'Action',
+                                title: 'សកម្មភាព',
                                 key: 'action',
                                 align: 'center',
                                 width: 100,
@@ -986,7 +1035,7 @@ function CustomerPaymentPage() {
                                         size="small"
                                         onClick={() => setState(p => ({ ...p, selectedCustomer: record.customer_id }))}
                                     >
-                                        View
+                                        មើល
                                     </Button>
                                 )
                             }
@@ -1011,7 +1060,7 @@ function CustomerPaymentPage() {
                                         <Text strong style={{ color: '#ff4d4f', fontSize: '15px' }}>{formatPrice(state.summary.ending_balance)}</Text>
                                     </Table.Summary.Cell>
                                     <Table.Summary.Cell index={2} align="right" style={{ color: isDarkMode ? '#d9d9d9' : '#1a1a1a' }}>
-                                        <Text strong style={{ color: '#ff4d4f', fontSize: '14px' }}>៛{(state.summary.ending_balance * state.exchangeRate).toLocaleString()}</Text>
+                                        <Text strong style={{ color: '#ff4d4f', fontSize: '14px' }}>{formatRiel(state.summary.ending_balance * state.exchangeRate)}</Text>
                                     </Table.Summary.Cell>
                                     <Table.Summary.Cell index={3}></Table.Summary.Cell>
                                 </Table.Summary.Row>
@@ -1024,18 +1073,17 @@ function CustomerPaymentPage() {
                         <Row gutter={[32, 16]} align="top">
                             <Col xs={24} md={14}>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) 1.5fr', gap: '8px' }}>
-                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Beginning Balance (សមតុល្យដើមគ្រា) :</Text>
+                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- សមតុល្យដើមគ្រា :</Text>
                                     <Text strong style={{ color: isDarkMode ? '#fff' : '#000', textAlign: 'right' }}>{formatPrice(state.summary.beginning_balance)}</Text>
 
-                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Increase (កំណើនក្នុងគ្រា) [{state.summary.increase_count}] :</Text>
+                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- កំណើនក្នុងគ្រា [{state.summary.increase_count}] :</Text>
                                     <Text strong style={{ color: isDarkMode ? '#fff' : '#000', textAlign: 'right' }}>{formatPrice(state.summary.increase)}</Text>
 
-                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- Payments (សងក្នុងគ្រា) [{state.summary.payment_count}] :</Text>
-                                    <Text strong style={{ color: '#52c41a', textAlign: 'right' }}>({formatPrice(state.summary.total_payments)})</Text>
-
+                                    <Text style={{ color: isDarkMode ? '#aaa' : '#666' }}>- ការបង់ប្រាក់សរុប [{state.summary.payment_count}] :</Text>
+                                    <Text strong style={{ color: '#52c41a', textAlign: 'right' }}>{formatPrice(state.summary.total_payments)}</Text>
                                     <div style={{ margin: '8px 0', gridColumn: 'span 2', borderTop: isDarkMode ? '1px solid #333' : '1px solid #eee' }}></div>
 
-                                    <Text strong style={{ color: isDarkMode ? '#fff' : '#000' }}>Ending Balance (សមតុល្យចុងគ្រា) :</Text>
+                                    <Text strong style={{ color: isDarkMode ? '#fff' : '#000' }}>សមតុល្យចុងគ្រា :</Text>
                                     <Text strong style={{ color: '#ff4d4f', textAlign: 'right', fontSize: '18px' }}>
                                         {formatPrice(state.summary.ending_balance)}
                                     </Text>
@@ -1043,7 +1091,7 @@ function CustomerPaymentPage() {
                             </Col>
                             <Col xs={24} md={10} style={{ borderLeft: isDarkMode ? '1px solid #333' : '1px solid #eee', paddingLeft: '32px' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <Text type="secondary" style={{ display: 'block', marginBottom: 10, color: isDarkMode ? '#aaa' : '#888' }}>Comparison with last transactions</Text>
+                                    <Text type="secondary" style={{ display: 'block', marginBottom: 10, color: isDarkMode ? '#aaa' : '#888' }}>ការប្រៀបធៀបជាមួយប្រតិបត្តិការមុន</Text>
                                     <div style={{
                                         color: state.summary.comparison >= 0 ? '#ff4d4f' : '#52c41a',
                                         fontSize: '24px',
@@ -1057,7 +1105,7 @@ function CustomerPaymentPage() {
                                         {formatPrice(Math.abs(state.summary.comparison))}
                                     </div>
                                     <Text style={{ color: state.summary.comparison >= 0 ? '#ff4d4f' : '#52c41a', fontSize: '12px' }}>
-                                        {state.summary.comparison >= 0 ? 'Debt Increased this month' : 'Debt Decreased this month'}
+                                        {state.summary.comparison >= 0 ? 'បំណុលកើនឡើងក្នុងខែនេះ' : 'បំណុលថយចុះក្នុងខែនេះ'}
                                     </Text>
                                 </div>
                             </Col>
@@ -1069,7 +1117,7 @@ function CustomerPaymentPage() {
 
             {/* New Payment Modal */}
             <Modal
-                title="New Payment"
+                title="ការបង់ប្រាក់ថ្មី"
                 open={state.paymentModalVisible}
                 onCancel={() => {
                     setState(p => ({
@@ -1102,13 +1150,13 @@ function CustomerPaymentPage() {
 
                     <Form.Item
                         name="payment_method"
-                        label="Payment Method"
-                        rules={[{ required: true }]}
+                        label="វិធីសាស្ត្រទូទាត់"
+                        rules={[{ required: true, message: 'សូមជ្រើសរើសវិធីសាស្ត្រទូទាត់' }]}
                     >
                         {state.duplicateSlipFound && (
                             <Alert
-                                message="Submission Blocked"
-                                description="This bank slip has already been used. Please use a unique slip."
+                                message="ការបញ្ជូនត្រូវបានរារាំង"
+                                description="បង្កាន់ដៃធនាគារនេះត្រូវបានប្រើប្រាស់រួចហើយ។ សូមប្រើបង្កាន់ដៃថ្មី។"
                                 type="error"
                                 showIcon
                                 style={{ marginBottom: 16 }}
@@ -1127,20 +1175,20 @@ function CustomerPaymentPage() {
                             onChange={(val) => {
                                 setState(p => ({ ...p, paymentMethod: val }));
                             }}
-                            placeholder="Select Payment Method"
+                            placeholder="ជ្រើសរើសវិធីសាស្ត្រទូទាត់"
                         >
-                            <Option value="cash">Cash (សាច់ប្រាក់)</Option>
-                            <Option value="debenture">Debenture (ជំពាក់សិន)</Option>
-                            <Option value="bank_transfer">Bank Transfer (ផ្ទេរប្រាក់)</Option>
+                            <Option value="cash">សាច់ប្រាក់ (Cash)</Option>
+                            <Option value="debenture">ជំពាក់សិន (Debenture)</Option>
+                            <Option value="bank_transfer">ផ្ទេរប្រាក់ (Bank Transfer)</Option>
                         </Select>
                     </Form.Item>
                     <Form.Item
                         name="order_id"
                         label={
                             <div style={{ display: 'flex', justifyContent: 'space-between', width: '380px', alignItems: 'center' }}>
-                                <span>Invoice No (Ref)</span>
+                                <span>លេខវិក្កយបត្រ (លេខយោង)</span>
                                 <Space>
-                                    <Text type="secondary" style={{ fontSize: '11px' }}>Show All</Text>
+                                    <Text type="secondary" style={{ fontSize: '11px' }}>បង្ហាញទាំងអស់</Text>
                                     <input
                                         type="checkbox"
                                         checked={state.showAllInvoices}
@@ -1159,7 +1207,7 @@ function CustomerPaymentPage() {
                     >
                         <Select
                             showSearch
-                            placeholder="Select Invoice"
+                            placeholder="ជ្រើសរើសវិក្កយបត្រ"
                             allowClear
                             optionFilterProp="label"
                             onChange={(val) => {
@@ -1233,7 +1281,7 @@ function CustomerPaymentPage() {
                                     {isBank && (
                                         <Form.Item
                                             name="slip_image"
-                                            label="Upload Slip"
+                                            label="បង្ហោះបង្កាន់ដៃ"
                                             valuePropName="file"
                                         >
                                             <Upload
@@ -1259,7 +1307,7 @@ function CustomerPaymentPage() {
                                                 }}
                                             >
                                                 <Button icon={<PlusOutlined />} loading={state.scanning}>
-                                                    {state.scanning ? 'Scanning...' : 'Click to Upload Slip'}
+                                                    {state.scanning ? 'កំពុងស្កេន...' : 'ចុចដើម្បីបង្ហោះបង្កាន់ដៃ'}
                                                 </Button>
                                             </Upload>
                                         </Form.Item>
@@ -1275,8 +1323,8 @@ function CustomerPaymentPage() {
                                         <>
                                             <Form.Item
                                                 name="payment_date"
-                                                label="Payment Date"
-                                                rules={[{ required: true }]}
+                                                label="ថ្ងៃខែឆ្នាំបង់ប្រាក់"
+                                                rules={[{ required: true, message: 'សូមបញ្ចូលថ្ងៃខែឆ្នាំបង់ប្រាក់' }]}
                                             >
                                                 <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
                                             </Form.Item>
@@ -1284,8 +1332,8 @@ function CustomerPaymentPage() {
                                             <Form.Item
                                                 name="amount"
                                                 label={state.selectedInvoice ?
-                                                    <span>Amount ($) - <Text type="danger" strong>Balance: {formatPrice(state.selectedInvoice.balance)}</Text></span> :
-                                                    "Amount ($)"}
+                                                    <span>ចំនួនទឹកប្រាក់ (USD) - <Text type="danger" strong>សមតុល្យត្រូវបង់: {formatPrice(state.selectedInvoice.balance)}</Text></span> :
+                                                    "ចំនួនទឹកប្រាក់ (USD)"}
                                                 rules={[
                                                     { required: true },
                                                     () => ({
@@ -1310,10 +1358,10 @@ function CustomerPaymentPage() {
                                     {isBank && (hasAmount || hasSlip) && (
                                         <Form.Item
                                             name="bank_name"
-                                            label="Bank Name"
-                                            rules={[{ required: true, message: 'Please select a bank' }]}
+                                            label="ឈ្មោះធនាគារ"
+                                            rules={[{ required: true, message: 'សូមជ្រើសរើសធនាគារ' }]}
                                         >
-                                            <Select placeholder="Select Bank">
+                                            <Select placeholder="ជ្រើសរើសធនាគារ">
                                                 <Option value="ABA Bank">ABA Bank</Option>
                                                 <Option value="ACLEDA Bank">ACLEDA Bank</Option>
                                                 <Option value="Canadia Bank">Canadia Bank</Option>
@@ -1332,7 +1380,7 @@ function CustomerPaymentPage() {
                                     {method !== 'bank_transfer' && method && (
                                         <Form.Item
                                             name="note"
-                                            label="Note"
+                                            label="ចំណាំ"
                                         >
                                             <Input.TextArea />
                                         </Form.Item>
@@ -1345,7 +1393,7 @@ function CustomerPaymentPage() {
                     <Form.Item>
                         <div style={{ textAlign: 'right' }}>
                             <Button onClick={() => setState(p => ({ ...p, paymentModalVisible: false }))} style={{ marginRight: 8 }}>
-                                Cancel
+                                បោះបង់
                             </Button>
                             <Button
                                 type="primary"
@@ -1353,8 +1401,8 @@ function CustomerPaymentPage() {
                                 loading={state.submitting}
                                 disabled={state.duplicateSlipFound || state.invalidSlipFound}
                             >
-                                {state.duplicateSlipFound ? "BLOCKED: Duplicate Slip" :
-                                    state.invalidSlipFound ? "BLOCKED: Invalid Slip" : "Save Payment"}
+                                {state.duplicateSlipFound ? "បានរារាំង: បង្កាន់ដៃស្ទួន" :
+                                    state.invalidSlipFound ? "បានរារាំង: រូបភាពមិនត្រឹមត្រូវ" : "រក្សាទុកការបង់ប្រាក់"}
                             </Button>
                         </div>
                     </Form.Item>
@@ -1362,26 +1410,26 @@ function CustomerPaymentPage() {
             </Modal>
             {/* Payment Detail Modal */}
             <Modal
-                title="Payment Details"
+                title="ព័ត៌មានលម្អិតនៃការបង់ប្រាក់"
                 open={state.detailModalVisible}
                 onCancel={() => setState(p => ({ ...p, detailModalVisible: false, selectedPayment: null }))}
                 footer={[
                     <Button key="close" onClick={() => setState(p => ({ ...p, detailModalVisible: false, selectedPayment: null }))}>
-                        Close
+                        បិទ
                     </Button>
                 ]}
             >
                 {state.selectedPayment && (
                     <div style={{ padding: 10 }}>
-                        <p><strong>Date:</strong> {dayjs(state.selectedPayment.transaction_date).format("DD/MM/YYYY")}</p>
-                        <p><strong>Method:</strong> {state.selectedPayment.payment_method} {state.selectedPayment.bank_name ? `(${state.selectedPayment.bank_name})` : ''}</p>
-                        <p><strong>Reference:</strong> {state.selectedPayment.reference || state.selectedPayment.manual_ref || '-'}</p>
-                        <p><strong>Amount:</strong> <Text type="success">${formatPrice(state.selectedPayment.credit)}</Text></p>
-                        <p><strong>Note:</strong> {state.selectedPayment.note || '-'}</p>
+                        <p><strong>ថ្ងៃទី:</strong> {dayjs(state.selectedPayment.transaction_date).format("DD/MM/YYYY")}</p>
+                        <p><strong>វិធីសាស្ត្រ:</strong> {state.selectedPayment.payment_method === 'cash' ? 'សាច់ប្រាក់' : state.selectedPayment.payment_method === 'bank_transfer' ? 'ផ្ទេរប្រាក់' : 'ជំពាក់សិន'} {state.selectedPayment.bank_name ? `(${state.selectedPayment.bank_name})` : ''}</p>
+                        <p><strong>លេខយោង:</strong> {state.selectedPayment.reference || state.selectedPayment.manual_ref || '-'}</p>
+                        <p><strong>ចំនួនទឹកប្រាក់:</strong> <Text type="success">{formatPrice(state.selectedPayment.credit)}</Text></p>
+                        <p><strong>ចំណាំ:</strong> {state.selectedPayment.note || '-'}</p>
 
                         {state.selectedPayment.slip_image && (
                             <div style={{ marginTop: 15 }}>
-                                <p><strong>Payment Slip:</strong></p>
+                                <p><strong>បង្កាន់ដៃបង់ប្រាក់:</strong></p>
                                 <Image
                                     src={state.selectedPayment.slip_image}
                                     alt="Payment Slip"

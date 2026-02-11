@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { request } from "../../util/helper";
 import { getProfile } from "../../store/profile.store";
-import { Button, Select, Table, Tag, message, Modal, Input, Spin, Result, Tooltip } from "antd";
+import { Button, Select, Table, Tag, Modal, Input, Spin, Result, Tooltip } from "antd";
 import { useTranslation } from "../../locales/TranslationContext";
 import { configStore } from "../../store/configStore";
 import { PlusOutlined, DeleteOutlined, InfoCircleOutlined, CheckCircleOutlined, CloseCircleOutlined } from "@ant-design/icons";
+import Swal from "sweetalert2";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -97,7 +98,11 @@ function BranchPermissionOverridePage() {
                 setAllPermissions(permsRes.list || []);
             }
         } catch (error) {
-            message.error("Failed to load initial data");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "Failed to load initial data"
+            });
         } finally {
             setLoading(false);
         }
@@ -114,7 +119,11 @@ function BranchPermissionOverridePage() {
                 setBasePermissions(res.base_permissions || []);
             }
         } catch (error) {
-            message.error("Failed to load overrides");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "Failed to load overrides"
+            });
         } finally {
             setLoading(false);
         }
@@ -122,7 +131,11 @@ function BranchPermissionOverridePage() {
 
     const handleAddOverride = async () => {
         if (!selectedPermission || !reason.trim()) {
-            message.warning("Please select a permission and provide a reason");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning',
+                text: "Please select a permission and provide a reason"
+            });
             return;
         }
 
@@ -136,32 +149,62 @@ function BranchPermissionOverridePage() {
             });
 
             if (res && !res.error) {
-                message.success(res.message || "Override added successfully");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: res.message || "Override added successfully",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
                 setModalVisible(false);
                 setSelectedPermission(null);
                 setReason('');
                 loadOverrides();
             } else {
-                message.error(res.message || "Failed to add override");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message || "Failed to add override"
+                });
             }
         } catch (error) {
-            message.error("Failed to add override");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "Failed to add override"
+            });
         }
     };
 
     const handleDeleteOverride = (overrideId) => {
-        Modal.confirm({
+        Swal.fire({
             title: "Delete Override",
-            content: "Are you sure you want to delete this override?",
-            onOk: async () => {
+            text: "Are you sure you want to delete this override?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, delete it!"
+        }).then(async (result) => {
+            if (result.isConfirmed) {
                 try {
                     const res = await request(`branch-permissions/overrides/${overrideId}`, "delete");
                     if (res && !res.error) {
-                        message.success("Override deleted successfully");
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Deleted!',
+                            text: "Override deleted successfully",
+                            timer: 1500,
+                            showConfirmButton: false
+                        });
                         loadOverrides();
                     }
                 } catch (error) {
-                    message.error("Failed to delete override");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: "Failed to delete override"
+                    });
                 }
             }
         });

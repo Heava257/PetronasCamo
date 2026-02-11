@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIT POS System Presentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Kantumruy+Pro:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --bg: #0f172a;
+            --text: #f1f5f9;
+            --card: rgba(30, 41, 59, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Kantumruy Pro', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        .slide-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            transition: transform 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .slide {
+            min-width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem;
+            position: relative;
+            background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent),
+                radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.1), transparent);
+        }
+
+        .slide::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('pos_system_presentation_bg.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.15;
+            z-index: -1;
+        }
+
+        h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary);
+            border-left: 5px solid var(--secondary);
+            padding-left: 1.5rem;
+        }
+
+        p,
+        li {
+            font-size: 1.35rem;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            color: #cbd5e1;
+        }
+
+        ul {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        li::before {
+            content: "✦";
+            color: var(--secondary);
+            margin-right: 1rem;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .diagram-box {
+            background: var(--card);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            gap: 1rem;
+            z-index: 100;
+        }
+
+        button {
+            background: var(--card);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 1rem;
+            border-radius: 50%;
+            cursor: pointer;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: var(--primary);
+            transform: scale(1.1);
+        }
+
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            transition: width 0.3s;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--primary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="progress-bar" id="progress"></div>
+
+    <div class="slide-container" id="container">
+        <!-- Slide 1: Title -->
+        <section class="slide">
+            <div class="badge">Final Project Presentation</div>
+            <h1>NIT POS System</h1>
+            <p style="font-size: 1.8rem; font-weight: 300;">Multi-Branch Inventory & Sales Management</p>
+            <div style="margin-top: 4rem;">
+                <p><strong>Subject:</strong> Software Engineering</p>
+                <p><strong>Proposed for:</strong> Comprehensive Business Solutions</p>
+            </div>
+        </section>
+
+        <!-- Slide 2: Proposal -->
+        <section class="slide">
+            <h2>Project Proposal</h2>
+            <div class="content-grid">
+                <div>
+                    <p>ប្រព័ន្ធគ្រប់គ្រងការលក់ និងស្តុកទំនិញតាមសាខា៖</p>
+                    <ul>
+                        <li>គ្រប់គ្រងសាខាច្រើនក្នុងពេលតែមួយ (Multi-branch)</li>
+                        <li>ស្វ័យប្រវត្តិកម្មនៃការកត់ត្រាទិន្នន័យ (Automation)</li>
+                        <li>បង្កើនភាពត្រឹមត្រូវនៃរបាយការណ៍ (Accuracy)</li>
+                        <li>គ្រប់គ្រងសិទ្ធិអ្នកប្រើប្រាស់ (Security & Roles)</li>
+                    </ul>
+                </div>
+                <div class="diagram-box">
+                    [System Overview Visualization]
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 3: Context Diagram -->
+        <section class="slide">
+            <h2>Context Diagram</h2>
+            <div class="content-grid">
+                <div>
+                    <p>ចំណុចសំខាន់នៃទំនាក់ទំនងខាងក្រៅ៖</p>
+                    <ul>
+                        <li><strong>Admins:</strong> គ្រប់គ្រងប្រព័ន្ធ និងមើលរបាយការណ៍</li>
+                        <li><strong>Salespeople:</strong> បញ្ចូលទិន្នន័យលក់ និងស្តុក</li>
+                        <li><strong>Customers:</strong> ទទួលបានវិក្កយបត្រ</li>
+                        <li><strong>Telegram Bot:</strong> ទទួលការជូនដំណឹងភ្លាមៗ</li>
+                    </ul>
+                </div>
+                <div class="diagram-box">
+                    <img src="https://mermaid.ink/img/pako:eNptkL8OwiAQhV_l5mY6-AIdDBu3NjrC6uAUE-mPtCHG9-5iWqPEnS7f93In9_mO6sYh6MreX1R2R8_GskV7V_R0_W6mF8pY0GfUv8H7I99u6tM3SjtV8R0FmS_V_Ue7u_25vWnpsu7pL_vXw3t7v0O_z7E7e9uL7G1_G7-6v9C3u-h_w70_pByuM_w?type=png"
+                        style="max-width: 100%;" alt="Context Diagram">
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 4: Use Case Diagram -->
+        <section class="slide">
+            <h2>Use Case Diagram</h2>
+            <div class="diagram-box" style="margin-top: 1rem;">
+                <img src="https://mermaid.ink/img/pako:eNp1ksFu2zAMhl_F4NyWAt2GAd02YFCHosXWokOXYocmI1ESZ8uSLDlL0SDvvvJlWZYzW2_6_f8kSkosWjZKWpST7_zN8zT7o76_N99vXv7f_P-6vHk288f3v7Mvy-I0f3h4n_1YFk_L8_mDeT3Nn-ZPt3dfly_T0_p0-vT9Y_Uye5ifZ_X3h78_p_XF_L8-m_vH98_zx9N5fr58mP3S-G_z8_v507uS_y2K69G8-Y18eP_O65TzUe1N6D6FmK8XG3iS19O6uG5-rY76qNfr69vBPNR7PdR7PdRHfVQd9VEf9VE_9VE_9Y-f-sdP_TMv-c-idC-L0vX7Hl-S-v_f_f3yY_5t-TS7nd-G6_6fX_t-3_S7_v80Xp-W3_Pr-fL3-X-P9Hj_AmUf8gY?type=png"
+                    style="max-height: 80%;" alt="Use Case Diagram">
+            </div>
+        </section>
+
+        <!-- Slide 5: DFD Level 1 -->
+        <section class="slide">
+            <h2>Data Flow Diagram (Level 1)</h2>
+            <div class="content-grid">
+                <div class="diagram-box">
+                    <img src="https://mermaid.ink/img/pako:eNptkcEKwjAMhl9l5NIBvXmBDgbbeLbRba7TptO2YicK797FqV4mO_T78idNyXWto9pxCLqW-4PK7uDZWNZo70Zf-z9YvyT6mPoH2H5kt1vS7S3R9m7738GfD-9tV6m3W6W9m_mO9N8u_T_W_uS_vG-5f_mv_uvmPd_v5G-p_Xl_9_9-1qG_l9zvw_F_uL_7746P?type=png"
+                        style="max-width: 100%;" alt="DFD Diagram">
+                </div>
+                <div>
+                    <p>លំហូរទិន្នន័យសំខាន់ៗ៖</p>
+                    <ul>
+                        <li><strong>Process 1.0:</strong> សុពលភាពនៃការចូលប្រើប្រាស់</li>
+                        <li><strong>Process 2.0:</strong> ការគ្រប់គ្រងការលក់</li>
+                        <li><strong>Process 3.0:</strong> លំហូរស្តុកទំនិញ</li>
+                        <li><strong>Process 4.0:</strong> ការទូទាត់ និងហិរញ្ញវត្ថុ</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Slide 6: ER-Diagram -->
+        <section class="slide">
+            <h2>ER-Diagram</h2>
+            <div class="diagram-box" style="height: 400px;">
+                <img src="https://mermaid.ink/img/pako:eNp9kc1OwzAMx1_F8nltAnQDpMaNE9h67IBInLpM9Q9pU0nUVtW7T3baNlSnXGz597NjZ_vS-0Yp6YlePbPqTpa1YYv2LqvR9bv-HghjQZ9RfwH7b-R2S3v6WmmrSh8oYI8p_f-n8cl_ec_8n_6p_-pfr89868_6euvvB3ffT-979N6O7UWu9v9Cr64_0Je7yL-D_S-kHzfM_R4?type=png"
+                    style="max-height: 100%;" alt="ERD">
+            </div>
+            <p style="margin-top: 1.5rem; text-align: center;">
+                រចនាសម្ព័ន្ធមូលដ្ឋានទិន្នន័យដែលមានភាពប្រទាក់ក្រឡាក្នុងការគ្រប់គ្រងសាខា និងការលក់។</p>
+        </section>
+
+        <!-- Slide 7: Conclusion -->
+        <section class="slide">
+            <h1>Thank You!</h1>
+            <p>Q&A Session</p>
+            <div style="margin-top: 3rem;">
+                <p><strong>NIT POS System</strong> is ready to transform business operations into a digital ecosystem.
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <div class="controls">
+        <button id="prev">←</button>
+        <button id="next">→</button>
+    </div>
+
+    <script>
+        const container = document.getElementById('container');
+        const slides = document.querySelectorAll('.slide');
+        const nextBtn = document.getElementById('next');
+        const prevBtn = document.getElementById('prev');
+        const progress = document.getElementById('progress');
+
+        let currentSlide = 0;
+
+        function updateSlide() {
+            container.style.transform = `translateX(-${currentSlide * 100}vw)`;
+            progress.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextBtn.click();
+            if (e.key === 'ArrowLeft') prevBtn.click();
+        });
+    </script>
+</body>
+
+</html>

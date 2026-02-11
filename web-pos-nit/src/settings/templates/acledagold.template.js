@@ -707,12 +707,12 @@ export const acledaGoldTemplate = {
              background: rgba(255, 255, 255, 0.05) !important;
              backdrop-filter: blur(12px) !important;
              border: 1px solid rgba(255, 215, 0, 0.2) !important;
-             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
         }
 
         /* Metric/Stat Cards - Aggressively Compact & Clean */
         .layout-root.template-acledagold .metric-card {
-             background: rgba(15, 23, 42, 0.8) !important;
+             background: var(--bg-card, rgba(15, 23, 42, 0.8)) !important;
              backdrop-filter: blur(12px) !important;
              border: 1px solid rgba(255, 215, 0, 0.2) !important;
              border-radius: 12px !important;
@@ -750,12 +750,12 @@ export const acledaGoldTemplate = {
         .layout-root.template-acledagold .metric-card:hover {
              border-color: rgba(255, 215, 0, 0.6) !important;
              transform: translateY(-5px);
-             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2) !important;
         }
 
         /* Chart Cards - Large Glass Panel */
         .layout-root.template-acledagold .chart-card {
-             background: rgba(15, 23, 42, 0.7) !important;
+             background: var(--bg-card, rgba(15, 23, 42, 0.7)) !important;
              backdrop-filter: blur(15px) !important;
              border: 1px solid rgba(255, 215, 0, 0.2) !important;
              border-radius: 24px !important;

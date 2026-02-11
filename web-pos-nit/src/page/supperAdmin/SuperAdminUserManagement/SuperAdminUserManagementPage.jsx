@@ -13,8 +13,6 @@ import {
   Row,
   Col,
   Statistic,
-  message,
-  Popconfirm,
   Upload,
   Badge,
   Tabs,
@@ -23,6 +21,7 @@ import {
   Drawer,
   Result // ✅ Import Result
 } from "antd";
+import Swal from "sweetalert2";
 import {
   UserOutlined,
   PlusOutlined,
@@ -45,6 +44,7 @@ import dayjs from "dayjs";
 import { Config } from "../../../util/config";
 import { formatDateServer, request } from "../../../util/helper";
 import { configStore } from "../../../store/configStore";
+import { useTranslation } from "../../../locales/TranslationContext";
 import { getProfile } from "../../../store/profile.store"; // ✅ Import getProfile
 import OnlineStatusAvatar from '../OnlineStatus/OnlineStatusAvatar';
 
@@ -52,11 +52,12 @@ const { TabPane } = Tabs;
 const { Option } = Select;
 const { TextArea } = Input;
 
-function SuperAdminUserManagement() {
+function SuperAdminUserManagementPage() {
+  const { t } = useTranslation();
   const { config } = configStore();
   let user = config.user || {};
 
-  // �️ Fallback: If config.user is empty (e.g. on hard refresh), try localStorage
+  // ️ Fallback: If config.user is empty (e.g. on hard refresh), try localStorage
   if (!user.id || !user.role_id) {
     const savedProfile = getProfile();
     if (savedProfile) {
@@ -64,7 +65,7 @@ function SuperAdminUserManagement() {
     }
   }
 
-  // �🔒 Security Check: Only Super Admin (ID 29)
+  // 🔒 Security Check: Only Super Admin (ID 29)
   // Fix: Check for 'Supper' (typo support) and string/number role_id
   const roleName = String(
     user.role_name ||
@@ -137,8 +138,6 @@ function SuperAdminUserManagement() {
       const res = await request(`superadmin/users?${queryParams.toString()}`, "get");
 
       if (res && res.success) {
-
-
         setState((prev) => ({
           ...prev,
           users: res.users || [],
@@ -148,11 +147,19 @@ function SuperAdminUserManagement() {
           filters: res.filters_applied
         }));
       } else {
-        message.error(res.message || "Failed to load users");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('failed_to_delete')
+        });
       }
     } catch (error) {
       console.error("Error loading users:", error);
-      message.error("Failed to load user list");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_load_super_admins')
+      });
     } finally {
       setLoading(false);
     }
@@ -208,19 +215,45 @@ function SuperAdminUserManagement() {
   };
 
   const handleDelete = async (userId) => {
-    try {
-      const res = await request("superadmin/users", "delete", { user_id: userId });
-
-      if (res && res.success) {
-        message.success(res.message);
-        loadUserData();
-      } else {
-        message.error(res.message || "Failed to delete user");
+    Swal.fire({
+      title: t('delete_user_confirmation_title'),
+      text: t('delete_user_confirmation_text'),
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: t('yes'),
+      cancelButtonText: t('cancel')
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request("superadmin/users", "delete", { user_id: userId });
+          if (res && res.success) {
+            Swal.fire({
+              icon: 'success',
+              title: t('success'),
+              text: res.message || t('deleted_successfully'),
+              timer: 1500,
+              showConfirmButton: false
+            });
+            loadUserData();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: t('error'),
+              text: res.message || t('failed_to_delete_user')
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting user:", error);
+          Swal.fire({
+            icon: 'error',
+            title: t('error'),
+            text: t('failed_to_delete_user')
+          });
+        }
       }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      message.error("Failed to delete user");
-    }
+    });
   };
 
   const handleSubmitSuperAdmin = async (values) => {
@@ -241,15 +274,29 @@ function SuperAdminUserManagement() {
       const res = await request("superadmin/create-superadmin", "post", formData);
 
       if (res && res.success) {
-        message.success(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: res.message || t('created_successfully'),
+          timer: 1500,
+          showConfirmButton: false
+        });
         setSuperAdminModalVisible(false);
         loadUserData();
       } else {
-        message.error(res.message || "Failed to create Super Admin");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('super_admin_create_failed')
+        });
       }
     } catch (error) {
       console.error("Error creating Super Admin:", error);
-      message.error("Failed to create Super Admin account");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('super_admin_create_failed')
+      });
     } finally {
       setLoading(false);
     }
@@ -277,15 +324,29 @@ function SuperAdminUserManagement() {
       const res = await request(url, method, formData);
 
       if (res && res.success) {
-        message.success(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: res.message || t('saved_successfully'),
+          timer: 1500,
+          showConfirmButton: false
+        });
         setModalVisible(false);
         loadUserData();
       } else {
-        message.error(res.message || "Failed to save user");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('failed_to_save_user')
+        });
       }
     } catch (error) {
       console.error("Error saving user:", error);
-      message.error("Failed to save user");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_delete')
+      });
     } finally {
       setLoading(false);
     }
@@ -298,12 +359,20 @@ function SuperAdminUserManagement() {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("You can only upload image files!");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('invalid_file_image')
+      });
       return false;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      message.error("Image must be smaller than 2MB!");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('file_too_large')
+      });
       return false;
     }
     return false;
@@ -424,17 +493,9 @@ function SuperAdminUserManagement() {
             >
               កែប្រែ
             </Button>
-            <Popconfirm
-              title="លុបអ្នកប្រើប្រាស់នេះ?"
-              description="តើអ្នកប្រាកដថាចង់លុបអ្នកប្រើប្រាស់នេះ?"
-              onConfirm={() => handleDelete(record.id)}
-              okText="បាទ/ចាស"
-              cancelText="មិន"
-            >
-              <Button danger icon={<DeleteOutlined />} size="small">
-                លុប
-              </Button>
-            </Popconfirm>
+            <Button danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record.id)}>
+              លុប
+            </Button>
           </Space>
         );
       },
@@ -862,4 +923,4 @@ function SuperAdminUserManagement() {
   );
 }
 
-export default SuperAdminUserManagement;
+export default SuperAdminUserManagementPage;

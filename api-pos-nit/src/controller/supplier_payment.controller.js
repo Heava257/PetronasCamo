@@ -302,6 +302,7 @@ exports.getLedger = async (req, res) => {
       SELECT 
         CONCAT('pur-', p.id) as id,
         p.order_no,
+        p.order_no as group_ref,
         p.order_date as transaction_date,
         p.total_amount as debit,
         0 as credit,
@@ -314,7 +315,8 @@ exports.getLedger = async (req, res) => {
         NULL as slip_image,
         p.notes as note,
         COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0) as paid_amount,
-        (p.total_amount - COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0)) as remaining_amount
+        (p.total_amount - COALESCE((SELECT SUM(sp.amount) FROM supplier_payment sp WHERE sp.purchase_id = p.id), 0)) as remaining_amount,
+        p.created_at
       FROM purchase p
       WHERE p.supplier_id = :supplier_id
     `;
@@ -334,6 +336,7 @@ exports.getLedger = async (req, res) => {
       SELECT 
         CONCAT('pay-', sp.id) as id,
         p.order_no as order_no,
+        COALESCE(p.order_no, sp.reference_no) as group_ref,
         sp.payment_date as transaction_date,
         0 as debit,
         sp.amount as credit,
@@ -346,7 +349,8 @@ exports.getLedger = async (req, res) => {
         sp.slip_image,
         sp.note,
         0 as paid_amount,
-        0 as remaining_amount
+        0 as remaining_amount,
+        sp.created_at
       FROM supplier_payment sp
       LEFT JOIN purchase p ON sp.purchase_id = p.id
       WHERE sp.supplier_id = :supplier_id
@@ -366,7 +370,7 @@ exports.getLedger = async (req, res) => {
       (${purchaseSql})
       UNION ALL
       (${paymentSql})
-      ORDER BY transaction_date ASC, transaction_type DESC
+      ORDER BY group_ref ASC, transaction_date ASC, created_at ASC
     `;
 
         const [transactions] = await db.query(combinedSql, params);

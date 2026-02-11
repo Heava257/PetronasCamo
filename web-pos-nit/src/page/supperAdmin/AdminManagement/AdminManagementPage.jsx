@@ -14,14 +14,13 @@ import {
   Row,
   Col,
   Statistic,
-  message,
-  Popconfirm,
   Upload,
   Badge,
   Tabs,
   Progress,
   Empty,
 } from "antd";
+import Swal from "sweetalert2";
 import {
   UserOutlined,
   PlusOutlined,
@@ -49,6 +48,7 @@ import { formatDateServer, request } from "../../../util/helper";
 import { configStore } from "../../../store/configStore";
 import OnlineStatusAvatar from '../../supperAdmin/OnlineStatus/OnlineStatusAvatar';
 import { useAdminActivity } from "../../supperAdmin/OnlineStatus/useOnlineStatus.hook";
+import { useTranslation } from "../../../locales/TranslationContext";
 import { useOnlineStatus } from "../../supperAdmin/OnlineStatus/useOnlineStatus.hook";
 import "./AdminManagement.fullheight.css"; // ✅ Import external CSS
 
@@ -57,7 +57,9 @@ dayjs.extend(relativeTime);
 const { TabPane } = Tabs;
 const { TextArea } = Input;
 
-function AdminManagement() {
+function AdminManagementPage() {
+  const { t } = useTranslation();
+  const { config } = configStore();
   const { stats, loading: statsLoading, refresh: refreshStats } = useOnlineStatus(15000);
   const [loading, setLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
@@ -67,7 +69,6 @@ function AdminManagement() {
   const [notifyModalVisible, setNotifyModalVisible] = useState(false);
   const [selectedAdmins, setSelectedAdmins] = useState([]);
   const [activeTab, setActiveTab] = useState("list");
-  const { config } = configStore();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -149,11 +150,19 @@ function AdminManagement() {
           stats: res.stats || {},
         }));
       } else {
-        message.error(res.message || "Failed to load admin list");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('admin_load_failed')
+        });
       }
     } catch (error) {
       console.error("Error loading admins:", error);
-      message.error("Failed to load admin list");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('admin_load_failed')
+      });
     } finally {
       setLoading(false);
     }
@@ -179,7 +188,11 @@ function AdminManagement() {
 
       if (res && res.success) {
         if (res.inactive_admins.length === 0) {
-          message.info(`គ្មាន Admin inactive ${days}+ days។ សាកល្បងប្តូរ filter!`);
+          Swal.fire({
+            icon: 'info',
+            title: t('info'),
+            text: t('no_inactive_found')
+          });
         }
 
         setState((prev) => ({
@@ -191,11 +204,19 @@ function AdminManagement() {
         }));
       } else {
         console.error("❌ API returned error:", res);
-        message.error(res?.message || "Failed to load inactive admins");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res?.message || t('inactive_admin_load_failed')
+        });
       }
     } catch (error) {
       console.error("❌ Error loading inactive admins:", error);
-      message.error("Failed to load data: " + error.message);
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('cannot_load_data') + ": " + error.message
+      });
     }
   };
 
@@ -247,15 +268,29 @@ function AdminManagement() {
       });
 
       if (res && res.success) {
-        message.success(`បានផ្ញើការជូនដំណឹងទៅ ${adminIds.length} Admin`);
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: t('notification_sent_success'),
+          timer: 1500,
+          showConfirmButton: false
+        });
         setNotifyModalVisible(false);
         document.getElementById("notification-message").value = "";
       } else {
-        message.error(res.message || "Failed to send notification");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('notification_send_failed')
+        });
       }
     } catch (error) {
       console.error("Error sending notification:", error);
-      message.error("Failed to send notification");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('notification_send_failed')
+      });
     }
   };
 
@@ -323,65 +358,131 @@ function AdminManagement() {
 
     try {
       setLoading(true);
-      
+
       const endpoint = transferMode ? "admin/create" : "admin/create-user";
       const res = await request(endpoint, "post", submitData);
 
       if (res && res.success) {
-        message.success(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: res.message || t('created_successfully'),
+          timer: 1500,
+          showConfirmButton: false
+        });
         handleCloseModal();
         getAdminList();
-        
+
         if (activeTab === "activity") {
           loadActivityData();
         }
       } else {
-        message.error(res.message || "Failed to create user");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res.message || t('user_create_failed')
+        });
       }
     } catch (error) {
       console.error("Error creating user:", error);
-      message.error("Failed to create user account");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('user_create_failed')
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeactivate = async (adminId) => {
-    try {
-      const res = await request("admin/deactivate", "post", { admin_id: adminId });
-
-      if (res && res.success) {
-        message.success(res.message);
-        getAdminList();
-        if (activeTab === "activity") {
-          loadActivityData();
+    Swal.fire({
+      title: "បិទគណនី Admin នេះ?",
+      text: "តើអ្នកប្រាកដថាចង់បិទគណនី Admin នេះ?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "បាទ/ចាស",
+      cancelButtonText: "មិន"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request("admin/deactivate", "post", { admin_id: adminId });
+          if (res && res.success) {
+            Swal.fire({
+              icon: 'success',
+              title: t('success'),
+              text: res.message || t('admin_deactivated_success'),
+              timer: 1500,
+              showConfirmButton: false
+            });
+            getAdminList();
+            if (activeTab === "activity") {
+              loadActivityData();
+            }
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: t('error'),
+              text: res.message || t('admin_deactivate_failed')
+            });
+          }
+        } catch (error) {
+          console.error("Error deactivating admin:", error);
+          Swal.fire({
+            icon: 'error',
+            title: t('error'),
+            text: t('admin_deactivate_failed')
+          });
         }
-      } else {
-        message.error(res.message || "Failed to deactivate admin");
       }
-    } catch (error) {
-      console.error("Error deactivating admin:", error);
-      message.error("Failed to deactivate admin");
-    }
+    });
   };
 
   const handleReactivate = async (adminId) => {
-    try {
-      const res = await request("admin/reactivate", "post", { admin_id: adminId });
-
-      if (res && res.success) {
-        message.success(res.message);
-        getAdminList();
-        if (activeTab === "activity") {
-          loadActivityData();
+    Swal.fire({
+      title: "បើកគណនី Admin នេះ?",
+      text: "តើអ្នកប្រាកដថាចង់បើកគណនី Admin នេះ?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "បាទ/ចាស",
+      cancelButtonText: "មិន"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request("admin/reactivate", "post", { admin_id: adminId });
+          if (res && res.success) {
+            Swal.fire({
+              icon: 'success',
+              title: t('success'),
+              text: res.message || t('admin_reactivated_success'),
+              timer: 1500,
+              showConfirmButton: false
+            });
+            getAdminList();
+            if (activeTab === "activity") {
+              loadActivityData();
+            }
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: t('error'),
+              text: res.message || t('admin_reactivate_failed')
+            });
+          }
+        } catch (error) {
+          console.error("Error reactivating admin:", error);
+          Swal.fire({
+            icon: 'error',
+            title: t('error'),
+            text: t('admin_reactivate_failed')
+          });
         }
-      } else {
-        message.error(res.message || "Failed to reactivate admin");
       }
-    } catch (error) {
-      console.error("Error reactivating admin:", error);
-      message.error("Failed to reactivate admin");
-    }
+    });
   };
 
   const handleUploadChange = ({ fileList: newFileList }) => {
@@ -391,12 +492,20 @@ function AdminManagement() {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      message.error("You can only upload image files!");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('invalid_file_image')
+      });
       return false;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      message.error("Image must be smaller than 2MB!");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('file_too_large')
+      });
       return false;
     }
     return false;
@@ -442,8 +551,8 @@ function AdminManagement() {
                 {admin.username}
               </p>
               <div className="flex flex-wrap gap-1 mt-1">
-                <Tag 
-                  color={admin.role_code === "SUPER_ADMIN" ? "gold" : "blue"} 
+                <Tag
+                  color={admin.role_code === "SUPER_ADMIN" ? "gold" : "blue"}
                   className="text-xs m-0 px-1.5 py-0.5"
                 >
                   {admin.role_name}
@@ -456,8 +565,8 @@ function AdminManagement() {
               </div>
             </div>
           </div>
-          <Tag 
-            color={admin.is_active ? "green" : "red"} 
+          <Tag
+            color={admin.is_active ? "green" : "red"}
             className="text-xs px-2 py-1 shrink-0"
           >
             {admin.is_active ? "សកម្ម" : "អសកម្ម"}
@@ -523,39 +632,27 @@ function AdminManagement() {
                 >
                   <span className="hidden xs:inline">ផ្ទេរ</span>
                 </Button>
-                <Popconfirm
-                  title="បិទគណនី Admin នេះ?"
-                  onConfirm={() => handleDeactivate(admin.id)}
-                  okText="បាទ/ចាស"
-                  cancelText="មិន"
+                <Button
+                  danger
+                  icon={<StopOutlined />}
+                  size="small"
+                  className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
+                  onClick={() => handleDeactivate(admin.id)}
                 >
-                  <Button 
-                    danger 
-                    icon={<StopOutlined />} 
-                    size="small" 
-                    className="flex-1 text-xs sm:text-sm h-8 sm:h-9"
-                  >
-                    <span className="hidden xs:inline">បិទ</span>
-                  </Button>
-                </Popconfirm>
+                  <span className="hidden xs:inline">បិទ</span>
+                </Button>
               </>
             ) : (
-              <Popconfirm
-                title="បើកគណនី Admin នេះ?"
-                onConfirm={() => handleReactivate(admin.id)}
-                okText="បាទ/ចាស"
-                cancelText="មិន"
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                size="small"
+                block
+                className="text-xs sm:text-sm h-8 sm:h-9"
+                onClick={() => handleReactivate(admin.id)}
               >
-                <Button 
-                  type="primary" 
-                  icon={<CheckCircleOutlined />} 
-                  size="small" 
-                  block
-                  className="text-xs sm:text-sm h-8 sm:h-9"
-                >
-                  បើក
-                </Button>
-              </Popconfirm>
+                បើក
+              </Button>
             )}
           </div>
         )}
@@ -572,9 +669,9 @@ function AdminManagement() {
       <div className="space-y-2 sm:space-y-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Badge 
-              count={getUrgencyIcon(admin.days_inactive)} 
-              offset={[-3, 3]} 
+            <Badge
+              count={getUrgencyIcon(admin.days_inactive)}
+              offset={[-3, 3]}
               size="small"
               className="flex-shrink-0"
             >
@@ -587,8 +684,8 @@ function AdminManagement() {
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 truncate">
                 {admin.username}
               </p>
-              <Tag 
-                color={getStatusColor(admin.activity_status)} 
+              <Tag
+                color={getStatusColor(admin.activity_status)}
                 className="text-xs mt-1 px-1.5 py-0.5"
               >
                 {admin.activity_status}
@@ -596,12 +693,11 @@ function AdminManagement() {
             </div>
           </div>
           <div className="text-center shrink-0">
-            <div className={`text-xl sm:text-2xl font-bold ${
-              admin.days_inactive >= 90 ? "text-red-600 dark:text-red-400" :
+            <div className={`text-xl sm:text-2xl font-bold ${admin.days_inactive >= 90 ? "text-red-600 dark:text-red-400" :
               admin.days_inactive >= 60 ? "text-orange-500 dark:text-orange-400" :
-              admin.days_inactive >= 30 ? "text-yellow-600 dark:text-yellow-500" : 
-              "text-blue-600 dark:text-blue-400"
-            }`}>
+                admin.days_inactive >= 30 ? "text-yellow-600 dark:text-yellow-500" :
+                  "text-blue-600 dark:text-blue-400"
+              }`}>
               {admin.days_inactive}
             </div>
             <div className="text-xs text-gray-500 dark:text-gray-400">ថ្ងៃ</div>
@@ -793,30 +889,24 @@ function AdminManagement() {
                     ផ្ទេរ
                   </Button>
                 </Tooltip>
-                <Popconfirm
-                  title="បិទគណនី Admin នេះ?"
-                  description="តើអ្នកប្រាកដថាចង់បិទគណនី Admin នេះ?"
-                  onConfirm={() => handleDeactivate(record.id)}
-                  okText="បាទ/ចាស"
-                  cancelText="មិន"
+                <Button
+                  danger
+                  icon={<StopOutlined />}
+                  size="small"
+                  onClick={() => handleDeactivate(record.id)}
                 >
-                  <Button danger icon={<StopOutlined />} size="small">
-                    បិទ
-                  </Button>
-                </Popconfirm>
+                  បិទ
+                </Button>
               </>
             ) : (
-              <Popconfirm
-                title="បើកគណនី Admin នេះ?"
-                description="តើអ្នកចង់បើកគណនី Admin នេះម្តងទៀត?"
-                onConfirm={() => handleReactivate(record.id)}
-                okText="បាទ/ចាស"
-                cancelText="មិន"
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                size="small"
+                onClick={() => handleReactivate(record.id)}
               >
-                <Button type="primary" icon={<CheckCircleOutlined />} size="small">
-                  បើក
-                </Button>
-              </Popconfirm>
+                បើក
+              </Button>
             )}
           </Space>
         );
@@ -899,12 +989,12 @@ function AdminManagement() {
         <div className="text-center">
           <div
             className={`text-2xl font-bold ${record.days_inactive >= 90
-                ? "text-red-600"
-                : record.days_inactive >= 60
-                  ? "text-orange-500"
-                  : record.days_inactive >= 30
-                    ? "text-yellow-600"
-                    : "text-blue-600"
+              ? "text-red-600"
+              : record.days_inactive >= 60
+                ? "text-orange-500"
+                : record.days_inactive >= 30
+                  ? "text-yellow-600"
+                  : "text-blue-600"
               }`}
           >
             {record.days_inactive}
@@ -1076,7 +1166,7 @@ function AdminManagement() {
   return (
     <div className="admin-management-root">
       <div className="admin-content-wrapper">
-        
+
         {/* Header with gradient */}
         <Card className="mb-3 sm:mb-4 shadow-lg bg-gradient-to-r from-blue-600 to-purple-600 border-0">
           <div className="flex flex-col gap-2 sm:gap-3 md:gap-4">
@@ -1130,8 +1220,8 @@ function AdminManagement() {
                   }
                   value={state.stats.total_admins || 0}
                   prefix={<UserOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#3f8600", 
+                  valueStyle={{
+                    color: "#3f8600",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1146,8 +1236,8 @@ function AdminManagement() {
                   }
                   value={state.stats.active_admins || 0}
                   prefix={<CheckCircleOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#52c41a", 
+                  valueStyle={{
+                    color: "#52c41a",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1162,8 +1252,8 @@ function AdminManagement() {
                   }
                   value={state.stats.inactive_admins || 0}
                   prefix={<StopOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#cf1322", 
+                  valueStyle={{
+                    color: "#cf1322",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1178,8 +1268,8 @@ function AdminManagement() {
                   }
                   value={state.stats.super_admins || 0}
                   prefix={<CrownOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#faad14", 
+                  valueStyle={{
+                    color: "#faad14",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1197,8 +1287,8 @@ function AdminManagement() {
                   }
                   value={state.inactiveStats.total_inactive || 0}
                   prefix={<WarningOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#ff4d4f", 
+                  valueStyle={{
+                    color: "#ff4d4f",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1213,8 +1303,8 @@ function AdminManagement() {
                   }
                   value={state.inactiveStats.never_logged_in || 0}
                   prefix={<ExclamationCircleOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#ff7a45", 
+                  valueStyle={{
+                    color: "#ff7a45",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1229,8 +1319,8 @@ function AdminManagement() {
                   }
                   value={state.inactiveStats.inactive_90_plus || 0}
                   prefix={<FireOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#fa8c16", 
+                  valueStyle={{
+                    color: "#fa8c16",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1245,8 +1335,8 @@ function AdminManagement() {
                   }
                   value={state.inactiveStats.total_managed_users || 0}
                   prefix={<TeamOutlined className="text-sm sm:text-base md:text-lg" />}
-                  valueStyle={{ 
-                    color: "#722ed1", 
+                  valueStyle={{
+                    color: "#722ed1",
                     fontSize: "clamp(1.1rem, 3.5vw, 1.5rem)",
                     fontWeight: 700
                   }}
@@ -1258,8 +1348,8 @@ function AdminManagement() {
 
         {/* Main Content Card */}
         <Card className="admin-main-card">
-          <Tabs 
-            activeKey={activeTab} 
+          <Tabs
+            activeKey={activeTab}
             onChange={setActiveTab}
             className="admin-tabs-container"
             size={isMobile ? 'small' : 'default'}
@@ -1318,8 +1408,8 @@ function AdminManagement() {
               key="activity"
             >
               {/* Filter */}
-              <Card 
-                className="mb-3 sm:mb-4 bg-blue-50 dark:bg-blue-900/20" 
+              <Card
+                className="mb-3 sm:mb-4 bg-blue-50 dark:bg-blue-900/20"
                 bodyStyle={{ padding: isMobile ? '10px' : '12px' }}
               >
                 <div className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-2 xs:gap-3">
@@ -1455,16 +1545,16 @@ function AdminManagement() {
                   key="stats"
                 >
                   <div className="admin-stats-grid">
-                    <Card 
-                      title={<span className="text-sm sm:text-base">Activity Distribution</span>} 
-                      className="admin-stats-card shadow-sm" 
+                    <Card
+                      title={<span className="text-sm sm:text-base">Activity Distribution</span>}
+                      className="admin-stats-card shadow-sm"
                       bodyStyle={{ padding: isMobile ? '10px' : '16px' }}
                     >
                       {renderActivityChart()}
                     </Card>
-                    <Card 
-                      title={<span className="text-sm sm:text-base">Overall Statistics</span>} 
-                      className="admin-stats-card shadow-sm" 
+                    <Card
+                      title={<span className="text-sm sm:text-base">Overall Statistics</span>}
+                      className="admin-stats-card shadow-sm"
                       bodyStyle={{ padding: isMobile ? '10px' : '16px' }}
                     >
                       <div className="space-y-2 sm:space-y-3 md:space-y-4">
@@ -1562,7 +1652,7 @@ function AdminManagement() {
                   className="text-sm"
                 />
               </div>
-              
+
               <div className="space-y-1 sm:space-y-2">
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                   Username *
@@ -1636,7 +1726,7 @@ function AdminManagement() {
 
             <div className="mt-2 sm:mt-3 md:mt-4 space-y-1 sm:space-y-2">
               <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
-                Role * 
+                Role *
                 {transferMode && (
                   <span className="text-gray-500 ml-2 text-xs">(ADMIN role for transfer)</span>
                 )}
@@ -1654,7 +1744,7 @@ function AdminManagement() {
                   <Select.Option key={role.id} value={role.id}>
                     <Space>
                       <span className="text-xs sm:text-sm">{role.name}</span>
-                      <Tag 
+                      <Tag
                         color={role.code === 'SUPER_ADMIN' ? 'gold' : role.code === 'ADMIN' ? 'blue' : 'default'}
                         className="text-xs"
                       >
@@ -1702,16 +1792,16 @@ function AdminManagement() {
             <Divider className="my-2 sm:my-3" />
 
             <div className="flex flex-col xs:flex-row justify-end gap-2">
-              <Button 
-                onClick={handleCloseModal} 
+              <Button
+                onClick={handleCloseModal}
                 size={isMobile ? "middle" : "large"}
                 className="text-xs sm:text-sm"
               >
                 បោះបង់
               </Button>
-              <Button 
-                type="primary" 
-                htmlType="submit" 
+              <Button
+                type="primary"
+                htmlType="submit"
                 loading={loading}
                 size={isMobile ? "middle" : "large"}
                 className="text-xs sm:text-sm"
@@ -1767,16 +1857,16 @@ function AdminManagement() {
           </div>
 
           <div className="flex flex-col xs:flex-row justify-end gap-2">
-            <Button 
+            <Button
               onClick={() => setNotifyModalVisible(false)}
               size={isMobile ? "middle" : "large"}
               className="text-xs sm:text-sm"
             >
               បោះបង់
             </Button>
-            <Button 
-              type="primary" 
-              onClick={handleSendNotification} 
+            <Button
+              type="primary"
+              onClick={handleSendNotification}
               icon={<MailOutlined />}
               size={isMobile ? "middle" : "large"}
               className="text-xs sm:text-sm"
@@ -1790,4 +1880,4 @@ function AdminManagement() {
   );
 }
 
-export default AdminManagement;
+export default AdminManagementPage;

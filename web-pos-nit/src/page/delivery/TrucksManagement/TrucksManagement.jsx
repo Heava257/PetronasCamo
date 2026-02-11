@@ -7,15 +7,14 @@ import {
   Form,
   Input,
   Select,
-  message,
   Space,
   Tag,
-  Popconfirm,
   Row,
   Col,
   Statistic,
   Tooltip
 } from 'antd';
+import Swal from 'sweetalert2';
 import {
   PlusOutlined,
   EditOutlined,
@@ -32,7 +31,7 @@ import { request } from '../../../util/helper';
 const TrucksManagement = () => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
-  
+
   const [state, setState] = useState({
     trucks: [],
     loading: false,
@@ -54,10 +53,10 @@ const TrucksManagement = () => {
   // ✅ Load all trucks
   const loadTrucks = async () => {
     setState(prev => ({ ...prev, loading: true }));
-    
+
     try {
       const res = await request('trucks', 'get');
-      
+
       if (res && res.list) {
         // Calculate statistics
         const stats = {
@@ -67,7 +66,7 @@ const TrucksManagement = () => {
           maintenance: res.list.filter(truck => truck.status === 'maintenance').length,
           inactive: res.list.filter(truck => !truck.status || truck.status === 'inactive').length
         };
-        
+
         setState(prev => ({
           ...prev,
           trucks: res.list,
@@ -77,7 +76,11 @@ const TrucksManagement = () => {
       }
     } catch (error) {
       console.error('Error loading trucks:', error);
-      message.error(t('Failed to load trucks') || 'មិនអាចទាញបញ្ជីឡានបានទេ');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('Failed to load trucks') || 'មិនអាចទាញបញ្ជីឡានបានទេ',
+      });
       setState(prev => ({ ...prev, loading: false }));
     }
   };
@@ -123,7 +126,7 @@ const TrucksManagement = () => {
   // ✅ Save truck (create or update)
   const saveTruck = async (values) => {
     setState(prev => ({ ...prev, loading: true }));
-    
+
     try {
       const data = {
         ...values,
@@ -136,29 +139,53 @@ const TrucksManagement = () => {
         // Update
         data.id = state.editingTruck.id;
         const res = await request('trucks', 'put', data);
-        
+
         if (res && !res.error) {
-          message.success(t('Truck updated successfully') || 'កែប្រែឡានបានជោគជ័យ');
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: t('Truck updated successfully') || 'កែប្រែឡានបានជោគជ័យ',
+            showConfirmButton: false,
+            timer: 1500
+          });
           loadTrucks();
           closeModal();
         } else {
-          message.error(res.message || t('Failed to update truck'));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res.message || t('Failed to update truck'),
+          });
         }
       } else {
         // Create
         const res = await request('trucks', 'post', data);
-        
+
         if (res && !res.error) {
-          message.success(t('Truck created successfully') || 'បង្កើតឡានបានជោគជ័យ');
+          Swal.fire({
+            icon: 'success',
+            title: 'Success',
+            text: t('Truck created successfully') || 'បង្កើតឡានបានជោគជ័យ',
+            showConfirmButton: false,
+            timer: 1500
+          });
           loadTrucks();
           closeModal();
         } else {
-          message.error(res.message || t('Failed to create truck'));
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res.message || t('Failed to create truck'),
+          });
         }
       }
     } catch (error) {
       console.error('Error saving truck:', error);
-      message.error(t('An error occurred') || 'មានបញ្ហាកើតឡើង');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t('An error occurred') || 'មានបញ្ហាកើតឡើង',
+      });
     } finally {
       setState(prev => ({ ...prev, loading: false }));
     }
@@ -166,19 +193,46 @@ const TrucksManagement = () => {
 
   // ✅ Delete truck
   const deleteTruck = async (id) => {
-    try {
-      const res = await request('trucks', 'delete', { id });
-      
-      if (res && !res.error) {
-        message.success(t('Truck deleted successfully') || 'លុបឡានបានជោគជ័យ');
-        loadTrucks();
-      } else {
-        message.error(res.message || t('Failed to delete truck'));
+    Swal.fire({
+      title: t('Delete this truck?') || 'លុបឡាននេះ?',
+      text: t('confirm_delete_data') || 'Are you sure you want to delete this truck?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t('confirm') || 'លុប',
+      cancelButtonText: t('cancel') || 'បោះបង់'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request('trucks', 'delete', { id });
+
+          if (res && !res.error) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: t('Truck deleted successfully') || 'លុបឡានបានជោគជ័យ',
+              showConfirmButton: false,
+              timer: 1500
+            });
+            loadTrucks();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: res.message || t('Failed to delete truck'),
+            });
+          }
+        } catch (error) {
+          console.error('Error deleting truck:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: t('Cannot delete truck with active deliveries') || 'មិនអាចលុបឡានដែលមានការដឹកជញ្ជូនសកម្ម',
+          });
+        }
       }
-    } catch (error) {
-      console.error('Error deleting truck:', error);
-      message.error(t('Cannot delete truck with active deliveries') || 'មិនអាចលុបឡានដែលមានការដឹកជញ្ជូនសកម្ម');
-    }
+    });
   };
 
   // Status badge
@@ -207,7 +261,7 @@ const TrucksManagement = () => {
     };
 
     const statusInfo = statusMap[status] || statusMap['inactive'];
-    
+
     return (
       <Tag color={statusInfo.color} icon={statusInfo.icon}>
         {statusInfo.text}
@@ -299,18 +353,12 @@ const TrucksManagement = () => {
             />
           </Tooltip>
           <Tooltip title={t('Delete') || 'លុប'}>
-            <Popconfirm
-              title={t('Delete this truck?') || 'លុបឡាននេះ?'}
-              onConfirm={() => deleteTruck(record.id)}
-              okText={t('Yes') || 'បាទ/ចាស'}
-              cancelText={t('No') || 'ទេ'}
-            >
-              <Button
-                danger
-                size="small"
-                icon={<DeleteOutlined />}
-              />
-            </Popconfirm>
+            <Button
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => deleteTruck(record.id)}
+            />
           </Tooltip>
         </Space>
       )

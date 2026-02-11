@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { isPermission, request } from "../../util/helper";
 import MainPage from "../../component/layout/MainPage";
 import { Button, Form, Input, message, Modal, Space, Table, Card, Typography, Row, Col, Select, Tag, Divider, Tooltip } from "antd";
+import Swal from "sweetalert2";
 import dayjs from "dayjs";
 import { MdOutlineCreateNewFolder } from "react-icons/md";
 import { EyeOutlined, EditOutlined, DeleteOutlined, SearchOutlined, EyeInvisibleOutlined, PhoneOutlined, MailOutlined, EnvironmentOutlined, GlobalOutlined } from '@ant-design/icons';
@@ -128,7 +129,13 @@ function SupplierPage() {
     if (res && !res.error) {
       getList();
       closeModal();
-      message.success(res.message);
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: res.message,
+        showConfirmButton: false,
+        timer: 1500
+      });
     }
   };
 
@@ -142,10 +149,17 @@ function SupplierPage() {
   };
 
   const onClickBtnDelete = (items) => {
-    Modal.confirm({
+    Swal.fire({
       title: t("delete_supplier"),
-      content: t("confirm_delete_data"),
-      onOk: async () => {
+      text: t("confirm_delete_data"),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t("confirm"),
+      cancelButtonText: t("cancel")
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         setState((p) => ({
           ...p,
           loading: true,
@@ -161,24 +175,35 @@ function SupplierPage() {
             list: newList,
             loading: false,
           }));
-          message.success(t("delete_success"));
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: t("delete_success"),
+            showConfirmButton: false,
+            timer: 1500
+          });
         } else {
           const errorMessage = res?.message || "";
+          let errorText = t("cannot_delete_in_use");
           if (
             errorMessage.includes("Cannot delete or update a parent row") &&
             errorMessage.includes("foreign key constraint fails")
           ) {
-            message.error(t("delete_error"));
-          } else {
-            message.error(t("cannot_delete_in_use"));
+            errorText = t("delete_error");
           }
+
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: errorText,
+          });
 
           setState((p) => ({
             ...p,
             loading: false,
           }));
         }
-      },
+      }
     });
   };
 
@@ -190,7 +215,13 @@ function SupplierPage() {
     });
 
     if (res && !res.error) {
-      message.success(newStatus === 1 ? t("Activated successfully") : t("Deactivated successfully"));
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: newStatus === 1 ? t("Activated successfully") : t("Deactivated successfully"),
+        showConfirmButton: false,
+        timer: 1500
+      });
       getList();
     }
   };

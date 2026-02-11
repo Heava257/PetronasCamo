@@ -15,6 +15,7 @@ const {
   updateAllowedIP,
   deleteAllowedIP,
   diagnoseIP,
+  resetAccountPassword,
 } = require("../controller/employee.controller");
 
 module.exports = (app) => {
@@ -62,6 +63,11 @@ module.exports = (app) => {
   app.get("/api/employee/:id/has-account",
     validate_token(),
     checkHasAccount
+  );
+
+  app.post("/api/employee/reset-password",
+    validate_token("employee.update"),
+    resetAccountPassword
   );
 
 

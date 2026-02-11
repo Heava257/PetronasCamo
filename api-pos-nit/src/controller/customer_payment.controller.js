@@ -246,7 +246,8 @@ exports.getLedger = async (req, res) => {
         CAST(o.id AS CHAR) as original_id,
         NULL as bank_name,
         NULL as slip_image,
-        NULL as bank_ref
+        NULL as bank_ref,
+        o.create_at as created_at
       FROM \`order\` o
       WHERE o.customer_id = :customer_id
     `;
@@ -284,7 +285,8 @@ exports.getLedger = async (req, res) => {
         CAST(p.id AS CHAR) as original_id,
         p.bank_name,
         p.slip_image,
-        p.bank_ref
+        p.bank_ref,
+        p.created_at as created_at
       FROM payments p
       LEFT JOIN \`order\` o ON p.order_id = o.id
       WHERE p.customer_id = :customer_id
@@ -303,7 +305,7 @@ exports.getLedger = async (req, res) => {
       (${orderSql})
       UNION ALL
       (${paymentSql})
-      ORDER BY transaction_date ASC, original_id ASC
+      ORDER BY transaction_date ASC, reference ASC, created_at ASC
     `;
 
         const [transactions] = await db.query(combinedSql, params);
@@ -395,7 +397,8 @@ exports.delete = async (req, res) => {
             });
         }
 
-        const order_id = payment[0].order_id;
+        let order_id = payment[0].order_id;
+        if (order_id == 0) order_id = null; // Normalize 0 to null
 
         // Delete payment
         await db.query(`DELETE FROM payments WHERE id = :id`, { id });

@@ -43,21 +43,21 @@ export default defineConfig({
         background_color: "#F5F5F5",
         icons: [
           {
-            src: "/cropped.jpg",
+            src: "/favicon.png",
             sizes: "192x192",
-            type: "image/jpeg",
+            type: "image/png",
             purpose: "any"
           },
           {
-            src: "/cropped.jpg",
+            src: "/favicon.png",
             sizes: "512x512",
-            type: "image/jpeg",
+            type: "image/png",
             purpose: "any"
           },
           {
-            src: "/cropped.jpg",
+            src: "/favicon.png",
             sizes: "512x512",
-            type: "image/jpeg",
+            type: "image/png",
             purpose: "maskable"
           }
         ],

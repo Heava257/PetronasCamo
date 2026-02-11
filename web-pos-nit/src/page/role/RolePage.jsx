@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { isPermission, request } from "../../util/helper";
-import { Button, Form, Input, message, Modal, Space, Table, Tag, Result } from "antd";
+import { Button, Form, Input, Modal, Space, Table, Tag, Result } from "antd";
 import { useTranslation } from "../../locales/TranslationContext";
 import { configStore } from "../../store/configStore";
 import { getProfile } from "../../store/profile.store";
+import Swal from "sweetalert2";
 
 function RolePage() {
   const { t } = useTranslation();
@@ -58,22 +59,41 @@ function RolePage() {
   };
 
   const clickBtnDelete = (item) => {
-    Modal.confirm({
+    Swal.fire({
       title: t("delete"),
-      content: t("delete_confirm"),
-      onOk: async () => {
+      text: t("delete_confirm"),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: t("yes"),
+      cancelButtonText: t("no")
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         const res = await request("role", "delete", {
           id: item.id,
         });
         if (res && !res.error) {
-          message.success(res.message);
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: res.message,
+            timer: 1500,
+            showConfirmButton: false
+          });
           const newList = state.list.filter((item1) => item1.id != item.id);
           setState((pre) => ({
             ...pre,
             list: newList,
           }));
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: res.message || 'Failed to delete role',
+          });
         }
-      },
+      }
     });
   };
 
@@ -89,11 +109,21 @@ function RolePage() {
     }
     const res = await request("role", method, data);
     if (res && !res.error) {
-      message.success(res.message);
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: res.message,
+        timer: 1500,
+        showConfirmButton: false
+      });
       getList();
       handleCloseModal();
     } else {
-      message.warning(res.error);
+      Swal.fire({
+        icon: 'warning',
+        title: 'Warning',
+        text: res.error,
+      });
     }
   };
 

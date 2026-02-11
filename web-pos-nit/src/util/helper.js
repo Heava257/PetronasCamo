@@ -188,13 +188,21 @@ export function formatPrice(value) {
 
   // Handle invalid numbers
   if (!isFinite(numValue)) {
-    return '$0.00';
+    return '$ 0.00';
   }
 
-  return `$${numValue.toLocaleString('en-US', {
+  return `$ ${numValue.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+export function formatRiel(value) {
+  const numValue = Math.round(Number(value || 0));
+  if (!isFinite(numValue)) {
+    return 'KH 0';
+  }
+  return `KH ${numValue.toLocaleString('en-US')}`;
 }
 
 export function formatQty(value) {

@@ -14,8 +14,8 @@ import {
   Tooltip,
   Alert,
   Tabs,
-  message,
 } from "antd";
+import Swal from "sweetalert2";
 import {
   UserOutlined,
   ClockCircleOutlined,
@@ -56,11 +56,19 @@ function InactiveAdminsReport() {
           stats: res.stats || {},
         });
       } else {
-        message.error(res.message || "Failed to load inactive admins");
+        Swal.fire({
+          icon: 'error',
+          title: 'កំហុស',
+          text: res.message || "បរាជ័យក្នុងការទាញយកបញ្ជី Admin ដែលមិនសកម្ម"
+        });
       }
     } catch (error) {
       console.error("Error loading inactive admins:", error);
-      message.error("Failed to load inactive admins");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការទាញយកបញ្ជី Admin ដែលមិនសកម្ម"
+      });
     } finally {
       setLoading(false);
     }
@@ -270,11 +278,23 @@ function InactiveAdminsReport() {
   ];
 
   const handleDeactivate = (adminId) => {
-    message.info(`Deactivating admin ${adminId}`);
+    Swal.fire({
+      icon: 'info',
+      title: 'កំពុងបិទដំណើរការ Admin',
+      text: `កំពុងបិទដំណើរការ admin ${adminId}`,
+      timer: 1500,
+      showConfirmButton: false
+    });
   };
 
   const handleNotify = (adminIds) => {
-    message.info(`Sending notification to ${adminIds.length} admin(s)`);
+    Swal.fire({
+      icon: 'info',
+      title: 'កំពុងផ្ញើការជូនដំណឹង',
+      text: `កំពុងផ្ញើការជូនដំណឹងទៅកាន់ admin ${adminIds.length} នាក់`,
+      timer: 1500,
+      showConfirmButton: false
+    });
   };
 
   const CategoryCard = ({ title, data, icon, color }) => (

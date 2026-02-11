@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Tabs, Table, Tag, Space, Button, Select, DatePicker, Input,
-  Card, Statistic, Row, Col, Modal, Tooltip, Badge, message,
-  Popconfirm
+  Card, Statistic, Row, Col, Modal, Tooltip, Badge,
 } from 'antd';
+import Swal from 'sweetalert2';
 import {
   FileTextOutlined,
   LoginOutlined,
@@ -19,6 +19,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
+import { useTranslation } from "../../../locales/TranslationContext";
 
 dayjs.extend(relativeTime);
 
@@ -41,7 +42,8 @@ const request = async (url, method = 'get', data = null) => {
 };
 
 const SystemLogsPage = () => {
-  const [activeTab, setActiveTab] = useState('system');
+  const { t } = useTranslation();
+  const [activeTab, setActiveTab] = useState("logs");
   const [loading, setLoading] = useState(false);
   const [systemLogs, setSystemLogs] = useState([]);
   const [loginHistory, setLoginHistory] = useState([]);
@@ -91,7 +93,11 @@ const SystemLogsPage = () => {
         setPagination(res.pagination);
       }
     } catch (error) {
-      message.error('មិនអាចទាញ system logs បានទេ');
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_load_system_logs')
+      });
     } finally {
       setLoading(false);
     }
@@ -116,7 +122,11 @@ const SystemLogsPage = () => {
         setPagination(res.pagination);
       }
     } catch (error) {
-      message.error('មិនអាចទាញ login history បានទេ');
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: 'មិនអាចទាញ login history បានទេ'
+      });
     } finally {
       setLoading(false);
     }
@@ -140,7 +150,11 @@ const SystemLogsPage = () => {
         setPagination(res.pagination);
       }
     } catch (error) {
-      message.error('មិនអាចទាញ user activity បានទេ');
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: 'មិនអាចទាញ user activity បានទេ'
+      });
     } finally {
       setLoading(false);
     }
@@ -154,22 +168,49 @@ const SystemLogsPage = () => {
         setStats(res.stats);
       }
     } catch (error) {
-      message.error('មិនអាចទាញ statistics បានទេ');
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: 'មិនអាចទាញ statistics បានទេ'
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCleanup = async (days) => {
-    try {
-      const res = await request('logs/cleanup', 'post', { days });
-      if (res.success) {
-        message.success(`លុប logs ចាស់ជាង ${days} ថ្ងៃបានជោគជ័យ`);
-        if (activeTab === 'system') fetchSystemLogs();
+    Swal.fire({
+      title: "លុប logs ចាស់?",
+      text: `តើអ្នកចង់លុប logs ចាស់ជាង ${days} ថ្ងៃមែនទេ?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "យល់ព្រម",
+      cancelButtonText: "បោះបង់"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request('logs/cleanup', 'post', { days });
+          if (res.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'ជោគជ័យ',
+              text: `លុប logs ចាស់ជាង ${days} ថ្ងៃបានជោគជ័យ`,
+              timer: 1500,
+              showConfirmButton: false
+            });
+            if (activeTab === 'system') fetchSystemLogs();
+          }
+        } catch (error) {
+          Swal.fire({
+            icon: 'error',
+            title: 'កំហុស',
+            text: 'មិនអាចលុប logs បានទេ'
+          });
+        }
       }
-    } catch (error) {
-      message.error('មិនអាចលុប logs បានទេ');
-    }
+    });
   };
 
   const getSeverityTag = (severity) => {
@@ -372,39 +413,33 @@ const SystemLogsPage = () => {
   ];
 
   const showLogDetails = (log) => {
-    Modal.info({
+    Swal.fire({
       title: 'ព័ត៌មានលម្អិត Log',
       width: 700,
-      content: (
-        <div style={{ maxHeight: '60vh', overflow: 'auto' }}>
-          <p><strong>Log Type:</strong> {log.log_type}</p>
-          <p><strong>Severity:</strong> {getSeverityTag(log.severity)}</p>
-          <p><strong>អ្នកប្រើប្រាស់:</strong> {log.username || 'System'}</p>
-          <p><strong>សកម្មភាព:</strong> {log.action}</p>
-          <p><strong>ការពិពណ៌នា:</strong> {log.description || 'N/A'}</p>
-          <p><strong>IP Address:</strong> {log.ip_address || 'N/A'}</p>
-          <p><strong>Status:</strong> {getStatusTag(log.status)}</p>
-          <p><strong>ពេលវេលា:</strong> {dayjs(log.created_at).format('YYYY-MM-DD HH:mm:ss')}</p>
+      html: `
+        <div style="text-align: left; max-height: 60vh; overflow: auto; font-family: sans-serif;">
+          <p><strong>Log Type:</strong> ${log.log_type}</p>
+          <p><strong>Severity:</strong> ${log.severity?.toUpperCase()}</p>
+          <p><strong>អ្នកប្រើប្រាស់:</strong> ${log.username || 'System'}</p>
+          <p><strong>សកម្មភាព:</strong> ${log.action}</p>
+          <p><strong>ការពិពណ៌នា:</strong> ${log.description || 'N/A'}</p>
+          <p><strong>IP Address:</strong> ${log.ip_address || 'N/A'}</p>
+          <p><strong>Status:</strong> ${log.status}</p>
+          <p><strong>ពេលវេលា:</strong> ${dayjs(log.created_at).format('YYYY-MM-DD HH:mm:ss')}</p>
           
-          {log.device_info && (
-            <>
-              <p><strong>Device Info:</strong></p>
-              <pre style={{ background: '#f5f5f5', padding: 10, borderRadius: 4 }}>
-                {JSON.stringify(log.device_info, null, 2)}
-              </pre>
-            </>
-          )}
+          ${log.device_info ? `
+            <p><strong>Device Info:</strong></p>
+            <pre style="background: #f5f5f5; padding: 10px; border-radius: 4px; font-size: 12px;">${JSON.stringify(log.device_info, null, 2)}</pre>
+          ` : ''}
           
-          {log.error_message && (
-            <>
-              <p><strong>Error Message:</strong></p>
-              <pre style={{ background: '#fff1f0', padding: 10, borderRadius: 4, color: 'red' }}>
-                {log.error_message}
-              </pre>
-            </>
-          )}
+          ${log.error_message ? `
+            <p><strong>Error Message:</strong></p>
+            <pre style="background: #fff1f0; padding: 10px; border-radius: 4px; color: #f5222d; font-size: 12px; white-space: pre-wrap;">${log.error_message}</pre>
+          ` : ''}
         </div>
-      )
+      `,
+      showCloseButton: true,
+      confirmButtonText: 'បិទ'
     });
   };
 
@@ -469,17 +504,9 @@ const SystemLogsPage = () => {
                 Refresh
               </Button>
 
-              <Popconfirm
-                title="លុប logs ចាស់?"
-                description="តើអ្នកចង់លុប logs ចាស់ជាង 90 ថ្ងៃមែនទេ?"
-                onConfirm={() => handleCleanup(90)}
-                okText="យល់ព្រម"
-                cancelText="បោះបង់"
-              >
-                <Button icon={<DeleteOutlined />} danger>
-                  លុប Logs ចាស់
-                </Button>
-              </Popconfirm>
+              <Button icon={<DeleteOutlined />} danger onClick={() => handleCleanup(90)}>
+                លុប Logs ចាស់
+              </Button>
             </Space>
 
             <Table
@@ -613,12 +640,12 @@ const SystemLogsPage = () => {
                         <Statistic
                           title={item.severity.toUpperCase()}
                           value={item.count}
-                          valueStyle={{ 
-                            color: item.severity === 'error' || item.severity === 'critical' 
-                              ? '#cf1322' 
-                              : item.severity === 'warning' 
-                              ? '#fa8c16' 
-                              : '#3f8600' 
+                          valueStyle={{
+                            color: item.severity === 'error' || item.severity === 'critical'
+                              ? '#cf1322'
+                              : item.severity === 'warning'
+                                ? '#fa8c16'
+                                : '#3f8600'
                           }}
                           prefix={<ExclamationCircleOutlined />}
                         />

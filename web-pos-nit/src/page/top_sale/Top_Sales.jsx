@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useTranslation } from 'react-i18next';
 import { Button, Image, Space, Table, Tag, Typography, Card, Row, Col, Statistic, message } from "antd";
+import Swal from "sweetalert2";
 import { request } from "../../util/helper";
 import { MdRefresh, MdFileDownload, MdPrint, MdTrendingUp } from "react-icons/md";
 import { TrophyOutlined, DollarOutlined, ShoppingOutlined } from '@ant-design/icons';
@@ -193,18 +194,28 @@ function Top_Sales() {
     doc.text('© Top Sales System - Confidential Report', pageWidth / 2, footerY, { align: 'center' });
 
     doc.save(`Top_Sales_Report_${new Date().toISOString().split('T')[0]}.pdf`);
-    message.success('PDF downloaded successfully!');
+    Swal.fire({
+      icon: 'success',
+      title: 'Success',
+      text: 'PDF downloaded successfully!',
+      showConfirmButton: false,
+      timer: 1500
+    });
   };
 
   // Print handler using html2canvas
   const handlePrint = async () => {
     try {
       setLoading(true);
-      message.info('Preparing document for printing...');
+      // message.info('Preparing document for printing...'); // Skip this one for cleaner UX or replace with toast if needed
 
       const printContent = printRef.current;
       if (!printContent) {
-        message.error('Print content not found');
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Print content not found',
+        });
         setLoading(false);
         return;
       }
@@ -378,12 +389,22 @@ function Top_Sales() {
         printWindow.print();
         printWindow.close();
         setLoading(false);
-        message.success('Print dialog opened!');
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: 'Print dialog opened!',
+          showConfirmButton: false,
+          timer: 1500
+        });
       }, 500);
 
     } catch (error) {
       console.error('Print error:', error);
-      message.error('Failed to print. Please try again.');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'Failed to print. Please try again.',
+      });
       setLoading(false);
     }
   };

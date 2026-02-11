@@ -460,7 +460,7 @@ exports.getOnlineUsers = async (req, res) => {
         r.name AS role_name, r.code AS role_code,
         TIMESTAMPDIFF(MINUTE, u.last_activity, NOW()) AS minutes_since_activity
       FROM user u
-      INNER JOIN role r ON u.role_id = r.id
+      LEFT JOIN role r ON u.role_id = r.id
       WHERE u.is_active = 1 AND u.is_online = 1 
         AND u.last_activity >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
       ORDER BY u.last_activity DESC

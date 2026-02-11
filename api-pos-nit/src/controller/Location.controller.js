@@ -11,23 +11,21 @@ exports.getCustomerLocations = async (req, res) => {
   try {
     const { customer_id } = req.params;
 
-    const sql = `
+    const user = req.auth;
+    const isSuperAdmin = user.role_id === 29;
+
+    let sql = `
       SELECT 
         cl.*,
         u.name as created_by_name
       FROM customer_locations cl
-      LEFT JOIN user u ON cl.created_by = u.id
       INNER JOIN customer c ON cl.customer_id = c.id
-      INNER JOIN user cu ON c.user_id = cu.id
+      LEFT JOIN user u ON cl.created_by = u.id
       WHERE cl.customer_id = :customer_id
-        AND cu.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
       ORDER BY cl.is_default DESC, cl.location_name ASC
     `;
 
-    const [locations] = await db.query(sql, {
-      customer_id,
-      current_user_id: req.current_id
-    });
+    const [locations] = await db.query(sql, { customer_id });
 
     res.json({
       success: true,
@@ -45,6 +43,9 @@ exports.getList = async (req, res) => {
   try {
     const { customer_id, status, search } = req.query;
 
+    const user = req.auth;
+    const isSuperAdmin = user.role_id === 29;
+
     let sql = `
       SELECT 
         cl.*,
@@ -53,12 +54,11 @@ exports.getList = async (req, res) => {
         u.name as created_by_name
       FROM customer_locations cl
       INNER JOIN customer c ON cl.customer_id = c.id
-      INNER JOIN user cu ON c.user_id = cu.id
       LEFT JOIN user u ON cl.created_by = u.id
-      WHERE cu.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
+      WHERE 1=1
     `;
 
-    const params = { current_user_id: req.current_id };
+    const params = {};
 
     if (customer_id) {
       sql += ` AND cl.customer_id = :customer_id`;
@@ -95,27 +95,26 @@ exports.getOne = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const sql = `
+    const user = req.auth;
+    const isSuperAdmin = user.role_id === 29;
+
+    let sql = `
       SELECT 
         cl.*,
         c.name as customer_name,
         c.tel as customer_tel
       FROM customer_locations cl
       INNER JOIN customer c ON cl.customer_id = c.id
-      INNER JOIN user cu ON c.user_id = cu.id
       WHERE cl.id = :id
-        AND cu.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
     `;
 
-    const [rows] = await db.query(sql, {
-      id,
-      current_user_id: req.current_id
-    });
+    const [rows] = await db.query(sql, { id });
 
     if (rows.length === 0) {
       return res.status(404).json({
         error: true,
-        message: "Location not found"
+        message: "Location not found",
+        message_kh: "រកមិនឃើញទីតាំង"
       });
     }
 
@@ -145,24 +144,26 @@ exports.create = async (req, res) => {
       notes
     } = req.body;
 
-    // Verify customer access
-    const checkSql = `
-      SELECT c.id 
-      FROM customer c
-      INNER JOIN user u ON c.user_id = u.id
-      WHERE c.id = :customer_id
-        AND u.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
-    `;
+    if (!customer_id) {
+      return res.status(400).json({
+        error: true,
+        message: "customer_id is required",
+        message_kh: "ត្រូវការព័ត៌មានអតិថិជន"
+      });
+    }
 
-    const [customerCheck] = await db.query(checkSql, {
-      customer_id,
-      current_user_id: req.current_id
-    });
+    const user = req.auth;
+
+    // Verify customer access - Using direct check without branch restriction as customers are shared
+    let checkSql = `SELECT id FROM customer WHERE id = :customer_id`;
+    const [customerCheck] = await db.query(checkSql, { customer_id });
 
     if (customerCheck.length === 0) {
-      return res.status(403).json({
+      console.log(`[Customer Not Found] Target Customer: ${customer_id}`);
+      return res.status(404).json({
         error: true,
-        message: "No permission to add location for this customer"
+        message: "Customer not found",
+        message_kh: "រកមិនឃើញអតិថិជននេះទេ"
       });
     }
 
@@ -245,25 +246,20 @@ exports.update = async (req, res) => {
       notes
     } = req.body;
 
-    // Check permission
-    const checkSql = `
+    // Check existence
+    let checkSql = `
       SELECT cl.id, cl.customer_id
       FROM customer_locations cl
-      INNER JOIN customer c ON cl.customer_id = c.id
-      INNER JOIN user u ON c.user_id = u.id
       WHERE cl.id = :id
-        AND u.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
     `;
 
-    const [checkResult] = await db.query(checkSql, {
-      id,
-      current_user_id: req.current_id
-    });
+    const [checkResult] = await db.query(checkSql, { id });
 
     if (checkResult.length === 0) {
       return res.status(404).json({
         error: true,
-        message: "Location not found or no permission"
+        message: "Location not found",
+        message_kh: "រកមិនឃើញទីតាំង"
       });
     }
 
@@ -326,25 +322,20 @@ exports.remove = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check permission
-    const checkSql = `
+    // Check existence
+    let checkSql = `
       SELECT cl.id
       FROM customer_locations cl
-      INNER JOIN customer c ON cl.customer_id = c.id
-      INNER JOIN user u ON c.user_id = u.id
       WHERE cl.id = :id
-        AND u.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
     `;
 
-    const [checkResult] = await db.query(checkSql, {
-      id,
-      current_user_id: req.current_id
-    });
+    const [checkResult] = await db.query(checkSql, { id });
 
     if (checkResult.length === 0) {
       return res.status(404).json({
         error: true,
-        message: "Location not found or no permission"
+        message: "Location not found",
+        message_kh: "រកមិនឃើញទីតាំង"
       });
     }
 
@@ -357,7 +348,8 @@ exports.remove = async (req, res) => {
     if (usageCheck[0].count > 0) {
       return res.status(400).json({
         error: true,
-        message: "Cannot delete location that is being used in orders"
+        message: "Cannot delete location that is being used in orders",
+        message_kh: "មិនអាចលុបទីតាំងដែលកំពុងប្រើប្រាស់ក្នុងការបញ្ជាទិញបានទេ"
       });
     }
 
@@ -382,25 +374,20 @@ exports.setDefault = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Check permission and get customer_id
-    const checkSql = `
+    // Check existence
+    let checkSql = `
       SELECT cl.id, cl.customer_id
       FROM customer_locations cl
-      INNER JOIN customer c ON cl.customer_id = c.id
-      INNER JOIN user u ON c.user_id = u.id
       WHERE cl.id = :id
-        AND u.branch_id = (SELECT branch_id FROM user WHERE id = :current_user_id)
     `;
 
-    const [checkResult] = await db.query(checkSql, {
-      id,
-      current_user_id: req.current_id
-    });
+    const [checkResult] = await db.query(checkSql, { id });
 
     if (checkResult.length === 0) {
       return res.status(404).json({
         error: true,
-        message: "Location not found or no permission"
+        message: "Location not found",
+        message_kh: "រកមិនឃើញទីតាំង"
       });
     }
 
@@ -474,11 +461,10 @@ exports.getOrdersWithLocations = async (req, res) => {
       LEFT JOIN customer_locations cl ON o.location_id = cl.id
       LEFT JOIN trucks t ON o.truck_id = t.id
       LEFT JOIN user u ON o.user_id = u.id
-      INNER JOIN user cu ON cu.branch_id = u.branch_id
-      WHERE cu.id = :current_user_id
+      WHERE 1=1
     `;
 
-    const params = { current_user_id: req.current_id };
+    const params = {};
 
     // Filter by search
     if (search) {
@@ -515,7 +501,7 @@ exports.getOrderDetailsForMap = async (req, res) => {
     const { id } = req.params;
 
     // Get order basic info
-    const orderSql = `
+    let orderSql = `
       SELECT 
         o.*,
         c.name as customer_name,
@@ -525,14 +511,10 @@ exports.getOrderDetailsForMap = async (req, res) => {
       FROM \`order\` o
       LEFT JOIN customer c ON o.customer_id = c.id
       LEFT JOIN user u ON o.user_id = u.id
-      INNER JOIN user cu ON cu.branch_id = u.branch_id
-      WHERE o.id = :id AND cu.id = :current_user_id
+      WHERE o.id = :id
     `;
 
-    const [orderRows] = await db.query(orderSql, {
-      id,
-      current_user_id: req.current_id
-    });
+    const [orderRows] = await db.query(orderSql, { id });
 
     if (orderRows.length === 0) {
       return res.status(404).json({
@@ -627,19 +609,14 @@ exports.updateDeliveryLocation = async (req, res) => {
   try {
     const { order_id, latitude, longitude, status, notes } = req.body;
 
-    // Verify order access
-    const checkSql = `
+    // Verify order existence
+    let checkSql = `
       SELECT o.id 
       FROM \`order\` o
-      INNER JOIN user u ON o.user_id = u.id
-      INNER JOIN user cu ON u.branch_id = cu.branch_id
-      WHERE o.id = :order_id AND cu.id = :current_user_id
+      WHERE o.id = :order_id
     `;
 
-    const [checkRows] = await db.query(checkSql, {
-      order_id,
-      current_user_id: req.current_id
-    });
+    const [checkRows] = await db.query(checkSql, { order_id });
 
     if (checkRows.length === 0) {
       return res.status(404).json({

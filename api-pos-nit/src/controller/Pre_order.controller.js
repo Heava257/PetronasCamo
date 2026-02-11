@@ -74,7 +74,7 @@ exports.createPreOrder = async (req, res) => {
     }
 
     const [userInfo] = await db.query(
-      "SELECT id, name, branch_id, branch_name FROM user WHERE id = :user_id",
+      "SELECT u.id, u.name, u.branch_id, b.name as branch_name FROM user u LEFT JOIN branch b ON u.branch_id = b.id WHERE u.id = :user_id",
       { user_id: req.auth?.id || 1 }
     );
 
@@ -121,13 +121,13 @@ exports.createPreOrder = async (req, res) => {
         order_date, delivery_date, delivery_time,
         delivery_address, special_instructions,
         total_amount, deposit_amount, remaining_amount,
-        payment_status, status, created_by, location_name, branch_id, branch_name, created_at
+        payment_status, status, created_by, location_name, branch_id, created_at
       ) VALUES (
         :pre_order_no, :customer_id, :customer_name, :customer_tel,
         :order_date, :delivery_date, :delivery_time,
         :delivery_address, :special_instructions,
         :total_amount, :deposit_amount, :remaining_amount,
-        :payment_status, :status, :created_by, :location_name, :branch_id, :branch_name, NOW()
+        :payment_status, :status, :created_by, :location_name, :branch_id, NOW()
       )
     `;
 
@@ -154,8 +154,7 @@ exports.createPreOrder = async (req, res) => {
       status: status_value,
       created_by: req.auth?.id,
       location_name: location_name || null,
-      branch_id,
-      branch_name
+      branch_id
     });
 
     const pre_order_id = resultPreOrder.insertId;
@@ -409,7 +408,7 @@ exports.getPreOrderList = async (req, res) => {
     const user_id = req.auth?.id;
 
     const [currentUser] = await db.query(
-      "SELECT role_id, branch_id, branch_name FROM user WHERE id = :user_id",
+      "SELECT u.role_id, u.branch_id, b.name as branch_name FROM user u LEFT JOIN branch b ON u.branch_id = b.id WHERE u.id = :user_id",
       { user_id }
     );
 
@@ -427,11 +426,12 @@ exports.getPreOrderList = async (req, res) => {
         DATE_FORMAT(po.actual_delivery_date, '%Y-%m-%d %H:%i:%s') as actual_delivery_date_formatted,
         (SELECT COUNT(*) FROM pre_order_detail WHERE pre_order_id = po.id) as item_count,
         u_creator.name as creator_name,
-        u_creator.branch_name as creator_branch,
+        b.name as creator_branch,
         u_confirmed.name as confirmed_by_name
       FROM pre_order po
       LEFT JOIN user u_creator ON po.created_by = u_creator.id
       LEFT JOIN user u_confirmed ON po.confirmed_by = u_confirmed.id
+      LEFT JOIN branch b ON po.branch_id = b.id
       WHERE 1=1
     `;
 

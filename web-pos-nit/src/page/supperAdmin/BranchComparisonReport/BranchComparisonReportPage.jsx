@@ -12,12 +12,12 @@ import {
   DatePicker,
   Space,
   Spin,
-  message,
   Progress,
   Badge,
   Alert,
   Empty
 } from "antd";
+import Swal from "sweetalert2";
 import {
   ShopOutlined,
   DollarOutlined,
@@ -39,10 +39,12 @@ import dayjs from "dayjs";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { request, formatPrice } from "../../../util/helper";
+import { useTranslation } from "../../../locales/TranslationContext";
 
 const { RangePicker } = DatePicker;
 
 function BranchComparisonReport() {
+  const { t } = useTranslation();
   const reportRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -147,7 +149,11 @@ function BranchComparisonReport() {
       }
     } catch (error) {
       console.error("Error fetching branch data:", error);
-      message.error("Failed to load branch data");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_load_branch_data')
+      });
     } finally {
       setLoading(false);
       setInitialLoading(false);
@@ -165,7 +171,15 @@ function BranchComparisonReport() {
   const handleDownloadPDF = async () => {
     if (!reportRef.current) return;
     try {
-      message.loading('Generating PDF...', 0);
+      Swal.fire({
+        title: t('generating_pdf'),
+        html: t('generating_pdf_wait'),
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
       const canvas = await html2canvas(reportRef.current, {
         scale: 2,
         useCORS: true,
@@ -181,12 +195,21 @@ function BranchComparisonReport() {
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       pdf.addImage(imgData, 'PNG', 10, 10, imgWidth, imgHeight);
       pdf.save(`Branch_Comparison_${dayjs().format('YYYY-MM-DD')}.pdf`);
-      message.destroy();
-      message.success('PDF downloaded successfully!');
+
+      Swal.fire({
+        icon: 'success',
+        title: t('success'),
+        text: t('pdf_download_success'),
+        timer: 1500,
+        showConfirmButton: false
+      });
     } catch (error) {
       console.error("Error generating PDF:", error);
-      message.destroy();
-      message.error('Failed to generate PDF');
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('pdf_generation_failed')
+      });
     }
   };
 

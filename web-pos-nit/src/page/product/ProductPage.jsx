@@ -24,6 +24,7 @@ import { configStore } from "../../store/configStore";
 import "./product.css";
 import { getProfile } from "../../store/profile.store";
 import { useTranslation } from "../../locales/TranslationContext";
+import Swal from "sweetalert2";
 
 const { Title } = Typography;
 
@@ -68,7 +69,11 @@ function ProductPage() {
         setList(res.list || []);
       }
     } catch (error) {
-      message.error(t("Error loading products"));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: t("Error loading products"),
+      });
     } finally {
       setLoading(false);
     }
@@ -98,22 +103,33 @@ function ProductPage() {
       return;
     }
 
-    Modal.confirm({
+    Swal.fire({
       title: t("delete"),
-      content: t("Are you sure you want to remove this product?"),
-      okText: t("confirm"),
-      cancelText: t("cancel"),
-      onOk: async () => {
+      text: t("Are you sure you want to remove this product?"),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t("confirm") || "Confirm",
+      cancelButtonText: t("cancel") || "Cancel"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
         const { id: user_id } = getProfile();
         const res = await request(`product/${data.id}`, "delete", {
           id: data.id,
           user_id: user_id
         });
         if (res && !res.error) {
-          message.success(res.message);
+          Swal.fire({
+            icon: 'success',
+            title: 'Deleted!',
+            text: res.message,
+            showConfirmButton: false,
+            timer: 1500
+          });
           getList();
         }
-      },
+      }
     });
   };
 
@@ -163,7 +179,13 @@ function ProductPage() {
 
     const res = await request(url, method, data);
     if (res && !res.error) {
-      message.success(res.message);
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: res.message,
+        showConfirmButton: false,
+        timer: 1500
+      });
       getList();
       onCloseModal();
     }
@@ -222,7 +244,7 @@ function ProductPage() {
       width: 120,
       align: "left",
     },
-  
+
     {
       key: "status",
       title: <div className="khmer-text1">{t("status")}</div>,
@@ -284,7 +306,7 @@ function ProductPage() {
         </div>
 
         <div className="flex items-center gap-4">
-           {isPermission("product.create") && (
+          {isPermission("product.create") && (
             <Button
               type="primary"
               onClick={onClickAddBtn}
@@ -312,7 +334,7 @@ function ProductPage() {
             <Radio.Button value="group"><span className="khmer-title1">{t("group")}</span></Radio.Button>
           </Radio.Group>
 
-         
+
         </div>
       </div>
 
@@ -351,7 +373,6 @@ function ProductPage() {
         dataSource={filteredList}
         columns={columns}
         rowKey="id"
-        loading={loading}
         pagination={{ pageSize: 15 }}
         className="product-table-custom shadow-sm rounded-lg"
       />

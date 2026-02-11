@@ -6,8 +6,6 @@ import {
   Table,
   Space,
   Tag,
-  Popconfirm,
-  message,
   Badge,
   Row,
   Col,
@@ -21,6 +19,7 @@ import {
   Spin,
   Modal
 } from "antd";
+import Swal from "sweetalert2";
 import {
   PlusOutlined,
   DeleteOutlined,
@@ -32,6 +31,7 @@ import {
   ReloadOutlined,
 } from "@ant-design/icons";
 import { request } from "../../../util/helper";
+import { useTranslation } from "../../../locales/TranslationContext";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -40,6 +40,7 @@ const { TextArea } = Input;
  * Standalone Branch Permission Override Page
  */
 function BranchPermissionOverridePage({ isIntegrated = false, initialBranch = null }) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [branches, setBranches] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -107,7 +108,11 @@ function BranchPermissionOverridePage({ isIntegrated = false, initialBranch = nu
 
     } catch (error) {
       console.error("❌ Error loading initial data:", error);
-      message.error("Failed to load data: " + error.message);
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('cannot_load_data') + ": " + error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -137,11 +142,19 @@ function BranchPermissionOverridePage({ isIntegrated = false, initialBranch = nu
         });
       } else {
         console.error('❌ Failed to load overrides:', res);
-        message.error(res?.message || "Failed to load overrides");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res?.message || t('failed_to_load_overrides')
+        });
       }
     } catch (error) {
       console.error("❌ Error loading overrides:", error);
-      message.error("Failed to load overrides");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_load_overrides')
+      });
     } finally {
       setLoading(false);
     }
@@ -160,42 +173,83 @@ function BranchPermissionOverridePage({ isIntegrated = false, initialBranch = nu
       });
 
       if (res && res.success) {
-        message.success(res.message || "Override added successfully");
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: res.message || t('override_added_success'),
+          timer: 1500,
+          showConfirmButton: false
+        });
         setAddModalVisible(false);
         form.resetFields();
         loadOverrides();
       } else {
-        message.error(res?.message || "Failed to add override");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res?.message || t('failed_to_add_override')
+        });
       }
     } catch (error) {
       console.error("❌ Error adding override:", error);
-      message.error("Failed to add override");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_add_override')
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteOverride = async (overrideId) => {
-    try {
-      setLoading(true);
+    Swal.fire({
+      title: "លុបសិទ្ធិពិសេសនេះ?",
+      text: "សិទ្ធិនឹងត្រូវត្រលប់ទៅតាមតួនាទីដើមវិញ។",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "លុប",
+      cancelButtonText: "បោះបង់"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setLoading(true);
 
-      const res = await request(
-        `branch-permissions/overrides/${overrideId}`,
-        "delete"
-      );
+          const res = await request(
+            `branch-permissions/overrides/${overrideId}`,
+            "delete"
+          );
 
-      if (res && res.success) {
-        message.success(res.message || "Override deleted successfully");
-        loadOverrides();
-      } else {
-        message.error("Failed to delete override");
+          if (res && res.success) {
+            Swal.fire({
+              icon: 'success',
+              title: 'បានលុប!',
+              text: res.message || "បានលុបសិទ្ធិពិសេសដោយជោគជ័យ",
+              timer: 1500,
+              showConfirmButton: false
+            });
+            loadOverrides();
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'កំហុស',
+              text: "បរាជ័យក្នុងការលុបសិទ្ធិពិសេស"
+            });
+          }
+        } catch (error) {
+          console.error("❌ Error deleting override:", error);
+          Swal.fire({
+            icon: 'error',
+            title: 'កំហុស',
+            text: "បរាជ័យក្នុងការលុបសិទ្ធិពិសេស"
+          });
+        } finally {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error("❌ Error deleting override:", error);
-      message.error("Failed to delete override");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const columns = [
@@ -255,22 +309,14 @@ function BranchPermissionOverridePage({ isIntegrated = false, initialBranch = nu
       width: 100,
       fixed: "right",
       render: (_, record) => (
-        <Popconfirm
-          title="Delete this override?"
-          description="The permission will revert to the base role setting."
-          onConfirm={() => handleDeleteOverride(record.id)}
-          okText="Delete"
-          cancelText="Cancel"
-          okButtonProps={{ danger: true }}
+        <Button
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => handleDeleteOverride(record.id)}
         >
-          <Button
-            danger
-            size="small"
-            icon={<DeleteOutlined />}
-          >
-            <span className="hidden sm:inline">Delete</span>
-          </Button>
-        </Popconfirm>
+          <span className="hidden sm:inline">Delete</span>
+        </Button>
       ),
     },
   ];
@@ -317,23 +363,15 @@ function BranchPermissionOverridePage({ isIntegrated = false, initialBranch = nu
         </div>
 
         <div className="pt-2 border-t">
-          <Popconfirm
-            title="Delete this override?"
-            description="The permission will revert to the base role setting."
-            onConfirm={() => handleDeleteOverride(override.id)}
-            okText="Delete"
-            cancelText="Cancel"
-            okButtonProps={{ danger: true }}
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            block
+            onClick={() => handleDeleteOverride(override.id)}
           >
-            <Button
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              block
-            >
-              Delete Override
-            </Button>
-          </Popconfirm>
+            Delete Override
+          </Button>
         </div>
       </div>
     </Card>

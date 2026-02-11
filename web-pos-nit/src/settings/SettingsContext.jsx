@@ -19,7 +19,7 @@ const defaultSettings = {
     compactTables: false,
     faceLogin: false,
     passwordComplexity: 'standard', // standard, high
-    menuItemTemplate: 'modern' // modern, classic
+    menuItemTemplate: 'tree' // modern, classic, tree
 };
 
 /**
@@ -208,6 +208,12 @@ export const SettingsProvider = ({ children }) => {
         };
 
         fetchSystemSettings();
+
+        // One-time migration to 'tree' style for the user who requested it
+        if (localStorage.getItem('menu_style_migrated') !== 'true') {
+            setSettings(prev => ({ ...prev, menuItemTemplate: 'tree' }));
+            localStorage.setItem('menu_style_migrated', 'true');
+        }
     }, []);
 
     // Get current template
@@ -232,7 +238,8 @@ export const SettingsProvider = ({ children }) => {
             'menu-style-minimal',
             'menu-style-rounded',
             'menu-style-glass',
-            'menu-style-neon'
+            'menu-style-neon',
+            'menu-style-tree'
         );
         document.documentElement.classList.add(`menu-style-${settings.menuItemTemplate}`);
 

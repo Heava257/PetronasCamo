@@ -14,6 +14,7 @@ import { useSettings } from "../../settings";
 import styles from "./ProfilePage.module.css";
 import FaceEnrollment from "../../component/auth/FaceEnrollment";
 import { ScanOutlined } from '@ant-design/icons';
+import Swal from "sweetalert2";
 
 const ProfilePage = () => {
   const { isDarkMode, toggleDarkMode } = useSettings();
@@ -43,7 +44,11 @@ const ProfilePage = () => {
   // Fetch user profile data
   const fetchProfile = async () => {
     if (!currentUser?.id) {
-      message.error("រកមិនឃើញអ្នកប្រើប្រាស់");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "រកមិនឃើញអ្នកប្រើប្រាស់",
+      });
       navigate("/login");
       return;
     }
@@ -77,7 +82,11 @@ const ProfilePage = () => {
         setIsInfoChanged(false);
       }
     } catch (error) {
-      message.error("មានបញ្ហាក្នុងការទាញយកព័ត៌មាន");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "មានបញ្ហាក្នុងការទាញយកព័ត៌មាន",
+      });
       console.error("Error fetching profile:", error);
     }
   };
@@ -103,7 +112,11 @@ const ProfilePage = () => {
   // Save Personal Information
   const onSavePersonalInfo = async (values) => {
     if (!currentUser?.id) {
-      message.error("ព័ត៌មានអ្នកប្រើប្រាស់បាត់");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "ព័ត៌មានអ្នកប្រើប្រាស់បាត់",
+      });
       return;
     }
 
@@ -122,7 +135,13 @@ const ProfilePage = () => {
       const res = await request(`user/profile/${currentUser.id}`, "put", formData);
 
       if (res?.success) {
-        message.success("បានរក្សាទុកព័ត៌មានដោយជោគជ័យ!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: "បានរក្សាទុកព័ត៌មានដោយជោគជ័យ!",
+          showConfirmButton: false,
+          timer: 1500
+        });
 
         // ✅ Update global profile state
         if (res.profile) {
@@ -141,10 +160,18 @@ const ProfilePage = () => {
         setIsInfoChanged(false);
         // Removed forced logout and redirect
       } else {
-        message.error(res.message || "មិនអាចរក្សាទុកបានទេ");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || "មិនអាចរក្សាទុកបានទេ",
+        });
       }
     } catch (error) {
-      message.error("មិនអាចរក្សាទុកបានទេ សូមព្យាយាមម្តងទៀត");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "មិនអាចរក្សាទុកបានទេ សូមព្យាយាមម្តងទៀត",
+      });
       console.error("Error updating profile:", error);
     } finally {
       setLoading(false);
@@ -154,7 +181,11 @@ const ProfilePage = () => {
   // Update Password
   const onUpdatePassword = async (values) => {
     if (!currentUser?.id) {
-      message.error("ព័ត៌មានអ្នកប្រើប្រាស់បាត់");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "ព័ត៌មានអ្នកប្រើប្រាស់បាត់",
+      });
       return;
     }
 
@@ -167,7 +198,13 @@ const ProfilePage = () => {
       });
 
       if (res?.success) {
-        message.success("បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Success',
+          text: "បានផ្លាស់ប្តូរពាក្យសម្ងាត់ដោយជោគជ័យ!",
+          showConfirmButton: false,
+          timer: 1500
+        });
         // ✅ UPDATE TOKEN: Since password change increments token_version
         if (res.access_token) {
           localStorage.setItem("access_token", res.access_token);
@@ -176,10 +213,18 @@ const ProfilePage = () => {
         passwordForm.resetFields();
         // Removed forced logout and redirect to maintain seamless session
       } else {
-        message.error(res.message || res.message_kh || "មិនអាចផ្លាស់ប្តូរពាក្យសម្ងាត់បានទេ");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: res.message || res.message_kh || "មិនអាចផ្លាស់ប្តូរពាក្យសម្ងាត់បានទេ",
+        });
       }
     } catch (error) {
-      message.error("មិនអាចផ្លាស់ប្តូរពាក្យសម្ងាត់បានទេ");
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: "មិនអាចផ្លាស់ប្តូរពាក្យសម្ងាត់បានទេ",
+      });
       console.error("Error updating password:", error);
     } finally {
       setPasswordLoading(false);
@@ -203,13 +248,21 @@ const ProfilePage = () => {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith('image/');
     if (!isImage) {
-      message.error('អ្នកអាចបញ្ចូលតែឯកសាររូបភាពប៉ុណ្ណោះ!');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'អ្នកអាចបញ្ចូលតែឯកសាររូបភាពប៉ុណ្ណោះ!',
+      });
       return Upload.LIST_IGNORE;
     }
 
     const isLt5M = file.size / 1024 / 1024 < 5;
     if (!isLt5M) {
-      message.error('រូបភាពត្រូវតែតូចជាង 5MB!');
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: 'រូបភាពត្រូវតែតូចជាង 5MB!',
+      });
       return Upload.LIST_IGNORE;
     }
 

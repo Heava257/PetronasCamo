@@ -7,8 +7,6 @@ import {
   Input,
   Select,
   Space,
-  message,
-  Popconfirm,
   Tag,
   Badge,
   Card,
@@ -17,6 +15,7 @@ import {
   Switch,
   Tooltip,
 } from "antd";
+import Swal from "sweetalert2";
 import {
   PlusOutlined,
   EditOutlined,
@@ -27,11 +26,13 @@ import {
   LinkOutlined,
 } from "@ant-design/icons";
 import { request } from "../../../util/helper";
+import { useTranslation } from "../../../locales/TranslationContext";
 
 const { Option } = Select;
 const { TextArea } = Input;
 
 function PermissionCRUD() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [permissions, setPermissions] = useState([]);
   const [groups, setGroups] = useState([]);
@@ -53,7 +54,11 @@ function PermissionCRUD() {
       }
     } catch (error) {
       console.error("Error loading permissions:", error);
-      message.error("Failed to load permissions");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_load_permissions')
+      });
     } finally {
       setLoading(false);
     }
@@ -89,29 +94,64 @@ function PermissionCRUD() {
   };
 
   const handleDelete = async (permissionId, permissionName) => {
-    try {
-      setLoading(true);
-      const res = await request(`permissions/${permissionId}`, "delete");
+    Swal.fire({
+      title: t('delete_permission_confirmation_title'),
+      html: `
+        <div style="text-align: left;">
+          <p>${t('delete_permission_confirmation_text').replace('{name}', `<strong>${permissionName}</strong>`)}</p>
+          <p style="color: #d46b08; font-size: 13px; margin-top: 10px;">
+            ${t('delete_permission_warning')}
+          </p>
+        </div>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: t('delete'),
+      cancelButtonText: t('cancel')
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          setLoading(true);
+          const res = await request(`permissions/${permissionId}`, "delete");
 
-      if (res && res.success) {
-        message.success(res.message);
-        loadPermissions();
+          if (res && res.success) {
+            Swal.fire({
+              icon: 'success',
+              title: t('success'),
+              text: res.message || t('deleted_successfully'),
+              timer: 1500,
+              showConfirmButton: false
+            });
+            loadPermissions();
 
-        if (res.affected_roles > 0) {
-          message.warning(
-            `${res.affected_roles} roles were affected by this deletion`,
-            5
-          );
+            if (res.affected_roles > 0) {
+              Swal.fire({
+                icon: 'warning',
+                title: t('attention'),
+                text: t('roles_affected').replace('{count}', res.affected_roles)
+              });
+            }
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: t('error'),
+              text: t('failed_to_delete_permission')
+            });
+          }
+        } catch (error) {
+          console.error("Error deleting permission:", error);
+          Swal.fire({
+            icon: 'error',
+            title: t('error'),
+            text: t('failed_to_delete_permission')
+          });
+        } finally {
+          setLoading(false);
         }
-      } else {
-        message.error("Failed to delete permission");
       }
-    } catch (error) {
-      console.error("Error deleting permission:", error);
-      message.error("Failed to delete permission");
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   const handleSubmit = async (values) => {
@@ -134,17 +174,31 @@ function PermissionCRUD() {
       }
 
       if (res && res.success) {
-        message.success(res.message);
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: res.message,
+          timer: 1500,
+          showConfirmButton: false
+        });
         setModalVisible(false);
         form.resetFields();
         loadPermissions();
         loadGroups();
       } else {
-        message.error(res?.message || "Operation failed");
+        Swal.fire({
+          icon: 'error',
+          title: t('error'),
+          text: res?.message || t('failed_to_save')
+        });
       }
     } catch (error) {
       console.error("Error saving permission:", error);
-      message.error("Failed to save permission");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការរក្សាទុកសិទ្ធិ"
+      });
     } finally {
       setLoading(false);
     }
@@ -229,29 +283,14 @@ function PermissionCRUD() {
               onClick={() => handleEdit(record)}
             />
           </Tooltip>
-          <Popconfirm
-            title="លុបសិទ្ធិនេះ?"
-            description={
-              <div className="max-w-xs">
-                <p className="text-xs sm:text-sm">តើអ្នកប្រាកដថាចង់លុបសិទ្ធិ <strong>{record.name}</strong>?</p>
-                <p className="text-orange-600 text-xs mt-2">
-                  ⚠️ សិទ្ធិនេះនឹងត្រូវបានដកចេញពីតួនាទីទាំងអស់
-                </p>
-              </div>
-            }
-            onConfirm={() => handleDelete(record.id, record.name)}
-            okText="លុប"
-            cancelText="បោះបង់"
-            okButtonProps={{ danger: true }}
-          >
-            <Tooltip title="លុប">
-              <Button
-                danger
-                size="small"
-                icon={<DeleteOutlined />}
-              />
-            </Tooltip>
-          </Popconfirm>
+          <Tooltip title="លុប">
+            <Button
+              danger
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.id, record.name)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -301,30 +340,15 @@ function PermissionCRUD() {
           >
             កែប្រែ
           </Button>
-          <Popconfirm
-            title="លុបសិទ្ធិនេះ?"
-            description={
-              <div className="max-w-xs">
-                <p className="text-xs">តើអ្នកប្រាកដថាចង់លុបសិទ្ធិ <strong>{permission.name}</strong>?</p>
-                <p className="text-orange-600 text-xs mt-2">
-                  ⚠️ សិទ្ធិនេះនឹងត្រូវបានដកចេញពីតួនាទីទាំងអស់
-                </p>
-              </div>
-            }
-            onConfirm={() => handleDelete(permission.id, permission.name)}
-            okText="លុប"
-            cancelText="បោះបង់"
-            okButtonProps={{ danger: true }}
+          <Button
+            danger
+            size="small"
+            icon={<DeleteOutlined />}
+            className="flex-1"
+            onClick={() => handleDelete(permission.id, permission.name)}
           >
-            <Button
-              danger
-              size="small"
-              icon={<DeleteOutlined />}
-              className="flex-1"
-            >
-              លុប
-            </Button>
-          </Popconfirm>
+            លុប
+          </Button>
         </div>
       </div>
     </Card>

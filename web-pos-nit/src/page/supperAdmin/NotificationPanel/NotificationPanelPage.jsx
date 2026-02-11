@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Badge, Empty, Spin, message, Input } from "antd";
-import { 
-  BellOutlined, 
-  CloseOutlined, 
-  CheckOutlined, 
+import { Badge, Empty, Spin, Input } from "antd";
+import Swal from "sweetalert2";
+import {
+  BellOutlined,
+  CloseOutlined,
+  CheckOutlined,
   DeleteOutlined,
   SendOutlined,
   ClockCircleOutlined,
   CommentOutlined
 } from "@ant-design/icons";
 import { request } from "../../../util/helper";
+import { useTranslation } from "../../../locales/TranslationContext";
 import { Config } from "../../../util/config";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
@@ -20,6 +22,7 @@ dayjs.extend(relativeTime);
 const { TextArea } = Input;
 
 const NotificationPanel = () => {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -76,16 +79,16 @@ const NotificationPanel = () => {
   };
 
   const fetchNotifications = async () => {
-  try {
-    setLoading(true);
-    
-    const res = await request("notification/my-notifications?limit=50", "get");
-    
-    
-    if (res && res.success) {
-      setNotifications(res.notifications || []);
-      setUnreadCount(res.unread_count || 0);
-      // ... rest of the code
+    try {
+      setLoading(true);
+
+      const res = await request("notification/my-notifications?limit=50", "get");
+
+
+      if (res && res.success) {
+        setNotifications(res.notifications || []);
+        setUnreadCount(res.unread_count || 0);
+        // ... rest of the code
 
         // ✅ Setup auto-delete timers for notifications with auto_delete_at
         res.notifications.forEach(notif => {
@@ -96,7 +99,11 @@ const NotificationPanel = () => {
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);
-      message.error("Failed to load notifications");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_load_notifications')
+      });
     } finally {
       setLoading(false);
     }
@@ -128,14 +135,14 @@ const NotificationPanel = () => {
 
         setNotifications((prev) =>
           prev.map((n) =>
-            n.id === notificationId 
-              ? { 
-                  ...n, 
-                  is_read: 1, 
-                  read_at: new Date(),
-                  auto_delete_at: res.auto_delete_at,
-                  seconds_until_delete: res.auto_delete_in
-                } 
+            n.id === notificationId
+              ? {
+                ...n,
+                is_read: 1,
+                read_at: new Date(),
+                auto_delete_at: res.auto_delete_at,
+                seconds_until_delete: res.auto_delete_in
+              }
               : n
           )
         );
@@ -147,12 +154,28 @@ const NotificationPanel = () => {
         // ✅ Setup auto-delete timer (5 minutes)
         if (res.auto_delete_in) {
           setupAutoDeleteTimer(notificationId, res.auto_delete_in);
-          message.success("សម្គាល់ថាបានអានហើយ - នឹងលុបស្វ័យប្រវត្តិក្នុង 5 នាទី", 3);
+          Swal.fire({
+            icon: 'success',
+            title: t('mark_as_read_success'),
+            text: t('deleted_auto_5min'),
+            timer: 3000,
+            showConfirmButton: false,
+            toast: true,
+            position: 'top-end'
+          });
         }
       }
     } catch (error) {
       console.error("Error marking as read:", error);
-      message.error("Failed to mark as read");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_mark_as_read'),
+        toast: true,
+        position: 'top-end',
+        timer: 3000,
+        showConfirmButton: false
+      });
     }
   };
 
@@ -182,11 +205,27 @@ const NotificationPanel = () => {
         });
 
         setUnreadCount(0);
-        message.success("សម្គាល់ទាំងអស់ថាបានអានហើយ - នឹងលុបស្វ័យប្រវត្តិក្នុង 5 នាទី", 3);
+        Swal.fire({
+          icon: 'success',
+          title: t('mark_all_as_read_success'),
+          text: t('deleted_auto_5min'),
+          timer: 3000,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
       }
     } catch (error) {
       console.error("Error marking all as read:", error);
-      message.error("Failed to mark all as read");
+      Swal.fire({
+        icon: 'error',
+        title: 'កំហុស',
+        text: "បរាជ័យក្នុងការសម្គាល់ទាំងអស់ថាបានអាន",
+        toast: true,
+        position: 'top-end',
+        timer: 3000,
+        showConfirmButton: false
+      });
     }
   };
 
@@ -196,9 +235,9 @@ const NotificationPanel = () => {
 
       if (res && res.success) {
         const wasUnread = notifications.find((n) => n.id === notificationId)?.is_read === 0;
-        
+
         setNotifications((prev) => prev.filter((n) => n.id !== notificationId));
-        
+
         if (wasUnread) {
           setUnreadCount((prev) => Math.max(0, prev - 1));
         }
@@ -209,11 +248,27 @@ const NotificationPanel = () => {
           delete autoDeleteTimers.current[notificationId];
         }
 
-        message.success("Notification deleted");
+        Swal.fire({
+          icon: 'success',
+          title: 'បានលុប',
+          text: "ការជូនដំណឹងត្រូវបានលុប",
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
       }
     } catch (error) {
       console.error("Error deleting notification:", error);
-      message.error("Failed to delete notification");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_delete_notification'),
+        toast: true,
+        position: 'top-end',
+        timer: 3000,
+        showConfirmButton: false
+      });
     }
   };
 
@@ -226,7 +281,15 @@ const NotificationPanel = () => {
   // ✅ ផ្ញើ reply
   const handleSendReply = async (notificationId) => {
     if (!replyMessage.trim()) {
-      message.error("សូមបញ្ចូលសារឆ្លើយតប");
+      Swal.fire({
+        icon: 'warning',
+        title: t('attention'),
+        text: t('please_enter_reply'),
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
       return;
     }
 
@@ -238,26 +301,34 @@ const NotificationPanel = () => {
       });
 
       if (res && res.success) {
-        message.success("ផ្ញើការឆ្លើយតបបានជោគជ័យ ✅");
-        
+        Swal.fire({
+          icon: 'success',
+          title: t('success'),
+          text: t('reply_sent_success'),
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+
         // ✅ បិទ reply box
         setReplyingTo(null);
         setReplyMessage("");
-        
+
         // ✅ Update notification status
         const now = new Date();
         const deleteAt = new Date(now.getTime() + 300000);
 
         setNotifications((prev) =>
           prev.map((n) =>
-            n.id === notificationId 
-              ? { 
-                  ...n, 
-                  is_read: 1, 
-                  read_at: now,
-                  auto_delete_at: deleteAt.toISOString(),
-                  seconds_until_delete: 300
-                } 
+            n.id === notificationId
+              ? {
+                ...n,
+                is_read: 1,
+                read_at: now,
+                auto_delete_at: deleteAt.toISOString(),
+                seconds_until_delete: 300
+              }
               : n
           )
         );
@@ -277,7 +348,15 @@ const NotificationPanel = () => {
       }
     } catch (error) {
       console.error("Error sending reply:", error);
-      message.error("មិនអាចផ្ញើការឆ្លើយតបបានទេ");
+      Swal.fire({
+        icon: 'error',
+        title: t('error'),
+        text: t('failed_to_send_reply'),
+        toast: true,
+        position: 'top-end',
+        timer: 3000,
+        showConfirmButton: false
+      });
     } finally {
       setSendingReply(false);
     }
@@ -300,10 +379,10 @@ const NotificationPanel = () => {
   // ✅ Format time remaining
   const formatTimeRemaining = (seconds) => {
     if (!seconds || seconds <= 0) return null;
-    
+
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    
+
     if (minutes > 0) {
       return `${minutes}m ${secs}s`;
     }
@@ -379,13 +458,10 @@ const NotificationPanel = () => {
               notifications.map((notif) => (
                 <div key={notif.id} className="notification-item-wrapper">
                   <div
-                    className={`notification-item ${
-                      notif.is_read ? "notification-read" : "notification-unread"
-                    } ${
-                      notif.auto_delete_at ? "notification-auto-delete" : ""
-                    } ${
-                      isReplyNotification(notif) ? "notification-reply" : ""
-                    }`}
+                    className={`notification-item ${notif.is_read ? "notification-read" : "notification-unread"
+                      } ${notif.auto_delete_at ? "notification-auto-delete" : ""
+                      } ${isReplyNotification(notif) ? "notification-reply" : ""
+                      }`}
                   >
                     {/* Sender Avatar */}
                     <div className="notification-avatar">
@@ -417,7 +493,7 @@ const NotificationPanel = () => {
                         </span>
                       </div>
                       <p className="notification-message">{notif.message}</p>
-                      
+
                       {/* ✅ Auto-delete countdown */}
                       {notif.auto_delete_at && notif.seconds_until_delete > 0 && (
                         <div className="notification-auto-delete-timer">

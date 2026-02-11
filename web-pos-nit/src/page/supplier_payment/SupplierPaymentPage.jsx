@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { request, formatPrice } from "../../util/helper";
+import { request, formatPrice, formatRiel } from "../../util/helper";
 import MainPage from "../../component/layout/MainPage";
 import {
     Button,
@@ -13,7 +13,6 @@ import {
     Modal,
     Form,
     Input,
-    message,
     InputNumber,
     Space,
     Tag,
@@ -32,11 +31,11 @@ import {
     ArrowUpOutlined,
     ArrowDownOutlined,
     EyeOutlined,
-    DeleteOutlined,
-    ExclamationCircleOutlined
+    DeleteOutlined
 } from '@ant-design/icons';
 import { useTranslation } from "../../locales/TranslationContext";
 import * as XLSX from 'xlsx';
+import Swal from "sweetalert2";
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -44,21 +43,109 @@ const { RangePicker } = DatePicker;
 
 // Custom styles for supplier ledger table with Dark Mode support
 const tableStyles = `
-    .supplier-ledger-table .ant-table-thead > tr > th {
-        background-color: #d4d4d4 !important;
-        color: #1a1a1a !important;
-        font-weight: 600;
-        text-align: center;
-        border: 1px solid #b0b0b0;
-    }
-    .supplier-ledger-table .ant-table-thead > tr > th .ant-table-column-title {
-        color: #1a1a1a !important;
-    }
-    .supplier-ledger-table .ant-table-tbody > tr > td {
-        border: 1px solid #d4d4d4;
+    /* Aggressive Print Fixes */
+    @media print {
+        @page { 
+            size: landscape; 
+            margin: 10mm; 
+        }
+        html, body { 
+            width: 100% !important;
+            height: auto !important;
+            background: white !important; 
+            color: black !important; 
+            font-family: 'Kantumruy Pro', sans-serif !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+        }
+        .ant-layout-sider, .ant-layout-header, .ant-btn, .ant-picker, .ant-select, .ant-breadcrumb, .no-print, .ant-space, .ant-table-fixed-right, .ant-table-right { 
+            display: none !important; 
+        }
+        .ant-layout, .ant-layout-content { background: white !important; padding: 0 !important; margin: 0 !important; display: block !important; overflow: visible !important; }
+        .ant-card { border: none !important; box-shadow: none !important; padding: 0 !important; background: transparent !important; margin: 0 !important; }
+        .ant-card-body { padding: 0 !important; }
+        
+        .supplier-ledger-table { 
+            width: 100% !important; 
+            table-layout: auto !important;
+            margin: 0 !important;
+        }
+        .ant-table { background: transparent !important; color: black !important; width: 100% !important; }
+        .ant-table-container { width: 100% !important; overflow: visible !important; }
+        .ant-table-content { overflow: visible !important; }
+        .ant-table-body { overflow: visible !important; height: auto !important; }
+        .ant-table-wrapper { width: 100% !important; margin: 0 !important; overflow: visible !important; }
+        
+        /* Ensure headers are visible but NOT sticky in print */
+        .ant-table-header { display: block !important; overflow: visible !important; }
+        .ant-table-sticky-holder { display: none !important; }
+        .ant-table-scroll-horizontal { display: block !important; overflow: visible !important; }
+        
+        .supplier-ledger-table .ant-table-thead > tr > th { 
+            background-color: #f0f0f0 !important; 
+            color: black !important; 
+            border: 0.5px solid #000 !important;
+            font-size: 8px !important;
+            padding: 2px 1px !important;
+            text-align: center !important;
+            font-weight: bold !important;
+        }
+        .supplier-ledger-table .ant-table-tbody > tr > td { 
+            border: 0.5px solid #000 !important;
+            font-size: 8.5px !important;
+            padding: 2px 4px !important;
+            color: black !important;
+            word-break: break-all !important;
+        }
+        
+        .summary-print-container {
+            break-inside: avoid;
+            margin-top: 10px !important;
+            border: 1px solid #000 !important;
+            padding: 8px !important;
+            width: 100% !important;
+        }
+
+        .header-banner-print {
+            background-color: transparent !important;
+            color: black !important;
+            border-bottom: 2px solid #000 !important;
+            padding: 10px 0 !important;
+            margin-bottom: 15px !important;
+            text-align: center !important;
+            border-radius: 0 !important;
+        }
+        .header-banner-print h4 { color: black !important; font-size: 16pt !important; margin: 0 0 5px 0 !important; font-weight: bold !important; }
+        .header-banner-print span { color: black !important; font-size: 11pt !important; font-weight: normal !important; }
+        
+        .supplier-ledger-table { border: 1px solid #000 !important; }
+        .supplier-ledger-table .ant-table-thead > tr > th { 
+            background-color: #d4d4d4 !important; 
+            color: black !important; 
+            border: 1px solid #000 !important;
+            font-size: 9px !important;
+            padding: 4px 2px !important;
+            text-align: center !important;
+            font-weight: bold !important;
+        }
+        .supplier-ledger-table .ant-table-tbody > tr > td { 
+            border: 1px solid #000 !important;
+            font-size: 9.5px !important;
+            padding: 4px 6px !important;
+            color: black !important;
+            word-break: break-all !important;
+        }
     }
 
-    /* Dark Mode Specific Overrides - Upgraded to True Glass */
+    /* Standard Dark Mode improvements */
+    .supplier-ledger-table .ant-table-thead > tr > th {
+        background-color: #d4d4d4 !important;
+        color: #000000 !important;
+        font-weight: bold !important;
+        border: 1px solid #e5e7eb !important;
+    }
+
     .dark .ant-card {
         background: rgba(255, 255, 255, 0.03) !important;
         border-color: rgba(255, 215, 0, 0.2) !important;
@@ -290,7 +377,12 @@ function SupplierPaymentPage() {
 
     const handleExport = async () => {
         if (!state.selectedSupplier) {
-            message.error("Please select a supplier");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning',
+                text: 'Please select a supplier',
+                confirmButtonText: 'OK'
+            });
             return;
         }
 
@@ -301,7 +393,13 @@ function SupplierPaymentPage() {
         });
 
         window.open(`/api/supplier_payment/export?${params}`, '_blank');
-        message.success("Export started");
+        Swal.fire({
+            icon: 'success',
+            title: 'Success!',
+            text: 'Export started',
+            showConfirmButton: false,
+            timer: 1500
+        });
     };
 
     const handlePrint = () => {
@@ -337,10 +435,11 @@ function SupplierPaymentPage() {
 
                 if (duplicate) {
                     setState(p => ({ ...p, duplicateSlipFound: true, invalidSlipFound: false, scanning: false }));
-                    message.error({
-                        content: duplicateMessage,
-                        duration: 5,
-                        style: { marginTop: '20vh' }
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Duplicate Slip',
+                        text: duplicateMessage,
+                        confirmButtonText: 'OK'
                     });
                     // Fill form with nulls to clear previous stale data
                     form.setFieldsValue({
@@ -357,10 +456,11 @@ function SupplierPaymentPage() {
                 // New: Check if it's a valid slip
                 if (res.data.isValidSlip === false) {
                     setState(p => ({ ...p, invalidSlipFound: true, duplicateSlipFound: false, scanning: false }));
-                    message.warning({
-                        content: res.data.invalidMessage,
-                        duration: 7,
-                        style: { marginTop: '20vh' }
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Invalid Slip',
+                        text: res.data.invalidMessage,
+                        confirmButtonText: 'OK'
                     });
                     form.setFieldsValue({
                         amount: undefined,
@@ -391,13 +491,29 @@ function SupplierPaymentPage() {
                 });
 
                 const dateNotice = date ? ` (Date detected: ${date})` : "";
-                message.success(`Slip scanned successfully! Details filled.${dateNotice}`);
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: `Slip scanned successfully! Details filled.${dateNotice}`,
+                    showConfirmButton: false,
+                    timer: 1500
+                });
             } else {
-                message.warning("Could not read slip details. Please fill manually.");
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: "Could not read slip details. Please fill manually.",
+                    confirmButtonText: 'OK'
+                });
             }
         } catch (error) {
             console.error("Scan error:", error);
-            message.error("Failed to scan slip.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "Failed to scan slip.",
+                confirmButtonText: 'OK'
+            });
         } finally {
             setState(p => ({ ...p, scanning: false }));
         }
@@ -413,14 +529,17 @@ function SupplierPaymentPage() {
 
     const onClickBtnDelete = (record) => {
         const typeLabel = record.transaction_type === 'purchase' ? 'Invoice' : 'Payment';
-        Modal.confirm({
-            title: `Delete ${typeLabel}`,
-            icon: <ExclamationCircleOutlined />,
-            content: `Are you sure you want to delete this ${record.transaction_type}? This will adjust the ledger balance.`,
-            okText: 'Yes, Delete',
-            okType: 'danger',
-            cancelText: 'No',
-            onOk: async () => {
+
+        Swal.fire({
+            title: `Delete ${typeLabel}?`,
+            text: `Are you sure you want to delete this ${record.transaction_type}? This will adjust the ledger balance.`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Yes, delete it!'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
                 const realId = record.id.split('-')[1]; // Extract numeric ID from pur-123 or pay-456
                 const url = record.transaction_type === 'purchase'
                     ? `purchase/${realId}`
@@ -428,10 +547,21 @@ function SupplierPaymentPage() {
 
                 const res = await request(url, "delete");
                 if (res && !res.error) {
-                    message.success(`${typeLabel} deleted successfully`);
+                    Swal.fire({
+                        title: 'Deleted!',
+                        text: `${typeLabel} has been deleted.`,
+                        icon: 'success',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
                     loadLedger();
                 } else {
-                    message.error(res.message || `Failed to delete ${record.transaction_type}`);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: res.message || `Failed to delete ${record.transaction_type}`,
+                        confirmButtonText: 'OK'
+                    });
                 }
             }
         });
@@ -439,7 +569,12 @@ function SupplierPaymentPage() {
 
     const handlePaymentSubmit = async (values) => {
         if (state.duplicateSlipFound || state.invalidSlipFound) {
-            message.error("This payment is blocked. Please provide a valid, unique bank slip.");
+            Swal.fire({
+                icon: 'error',
+                title: 'Blocked',
+                text: "This payment is blocked. Please provide a valid, unique bank slip.",
+                confirmButtonText: 'OK'
+            });
             return;
         }
         setState(p => ({ ...p, submitting: true })); // Start submitting, keep modal open
@@ -461,17 +596,33 @@ function SupplierPaymentPage() {
             const res = await request("supplier_payment", "post", paymentData);
 
             if (res && !res.error) {
-                message.success("Payment recorded successfully");
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Payment recorded successfully',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
                 setState(p => ({ ...p, paymentModalVisible: false, slip_image: null })); // Close and clear
                 loadLedger();
                 form.resetFields();
                 form.setFieldsValue({ slip_image_url: null }); // Explicit clear
             } else {
-                message.error(res.message || "Failed to record payment");
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: res.message || "Failed to record payment",
+                    confirmButtonText: 'OK'
+                });
             }
         } catch (error) {
             const messageText = error.response?.data?.message || "Failed to record payment";
-            message.error(messageText);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: messageText,
+                confirmButtonText: 'OK'
+            });
         } finally {
             setState(p => ({ ...p, submitting: false })); // Stop loading
         }
@@ -590,163 +741,172 @@ function SupplierPaymentPage() {
 
     const columns = [
         {
-            title: "ថ្ងៃ ខែ ឆ្នាំ / Date",
+            title: "ថ្ងៃ ខែ ឆ្នាំ",
             dataIndex: "transaction_date",
             key: "date",
-            width: 100,
+            width: 80,
             render: (val) => dayjs(val).format("DD-MM-YY")
         },
         {
-            title: "លេខបំណុល / Invoice No",
+            title: "លេខវិក្កយបត្រ",
             dataIndex: "order_no",
             key: "order_no",
-            width: 120,
-            render: (val) => val || ''
+            width: 'auto',
+            render: (val) => val ? <span style={{ whiteSpace: 'nowrap' }}>{val}</span> : ''
         },
         {
-            title: "អធិប្បាយ / Description",
+            title: "អធិប្បាយ",
             dataIndex: "note",
             key: "note",
-            width: 150,
+            width: 140,
             render: (val, record) => {
-                if (record.transaction_type === 'purchase') {
-                    // Try to show first product or truck info if in note
-                    return val || 'Purchase';
-                }
-                return val;
+                if (record.transaction_type === 'purchase' && (!val || val === 'Purchase')) return '';
+                if (!val) return 'ទូទាត់ប្រាក់';
+                // Remove common English terms and any Latin letters/symbols that aren't necessary
+                let cleanVal = val.replace(/Purchase/gi, 'ទិញ')
+                    .replace(/Payment/gi, 'បង់ប្រាក់')
+                    .replace(/[A-Za-z]/g, '') // Remove all other English letters
+                    .replace(/[-_]/g, ' ') // Replace underscores/hyphens with space
+                    .replace(/\/\//g, '/') // Cleanup double slashes
+                    .replace(/\(\//g, '(') // Cleanup (/
+                    .replace(/\/+\)/g, ')') // Cleanup /)
+                    .replace(/[\/\s]+[\)]/g, ')') // Cleanup / )
+                    .replace(/\s+/g, ' ') // Cleanup spaces
+                    .trim();
+
+                // If it ends up empty, use default
+                return cleanVal;
             }
         },
         {
-            title: "កំណើនក្នុងគ្រា / Increase during the period",
+            title: "ទិញបន្ថែមក្នុងគ្រា",
             children: [
                 {
-                    title: "Extra",
-                    width: 90,
+                    title: "សាំងស៊ុបពែរ",
+                    width: 'auto',
                     dataIndex: "fuel_extra",
-                    render: (val) => val > 0 ? val.toLocaleString() : '-'
+                    align: 'left',
+                    render: (val) => val > 0 ? <span style={{ whiteSpace: 'nowrap' }}>{val.toLocaleString()}</span> : '-'
                 },
                 {
-                    title: "Super",
-                    width: 90,
+                    title: "សាំងធម្មតា",
+                    width: 'auto',
                     dataIndex: "fuel_regular",
-                    render: (val) => val > 0 ? val.toLocaleString() : '-'
+                    align: 'left',
+                    render: (val) => val > 0 ? <span style={{ whiteSpace: 'nowrap' }}>{val.toLocaleString()}</span> : '-'
                 },
                 {
-                    title: "Diesel",
-                    width: 90,
+                    title: "ម៉ាស៊ូត",
+                    width: 'auto',
                     dataIndex: "fuel_diesel",
-                    render: (val) => val > 0 ? val.toLocaleString() : '-'
+                    align: 'left',
+                    render: (val) => val > 0 ? <span style={{ whiteSpace: 'nowrap' }}>{val.toLocaleString()}</span> : '-'
                 },
                 {
-                    title: "LPG",
-                    width: 90,
+                    title: "ហ្គាស",
+                    width: 'auto',
                     dataIndex: "fuel_gas",
-                    render: (val) => val > 0 ? val.toLocaleString() : '-'
+                    align: 'left',
+                    render: (val) => val > 0 ? <span style={{ whiteSpace: 'nowrap' }}>{val.toLocaleString()}</span> : '-'
                 }
             ]
         },
         {
-            title: "តំលៃក្នុង / Unit Price",
+            title: "តម្លៃឯកតា",
             key: "unit_price",
-            width: 100,
+            width: 'auto',
+            align: 'left',
             render: (_, record) => {
                 if (record.transaction_type !== 'purchase') return '';
-                // Use specific price if we split the rows, otherwise fallback to average
-                if (record.unit_price_specific !== undefined) {
-                    return `USD ${formatPrice(record.unit_price_specific)}`;
-                }
-                try {
-                    const items = record.items ? (typeof record.items === 'string' ? JSON.parse(record.items) : record.items) : [];
-                    if (items.length > 0) {
-                        const avgPrice = items.reduce((sum, i) => sum + parseFloat(i.unit_price || i.price || 0), 0) / items.length;
-                        return `USD ${formatPrice(avgPrice)}`;
-                    }
-                    return '-';
-                } catch (e) {
-                    return '-';
-                }
+                const price = record.unit_price_specific || 0;
+                return price > 0 ? <span style={{ whiteSpace: 'nowrap' }}>{formatPrice(price)}</span> : '-';
             }
         },
         {
-            title: "ទឹកប្រាក់សរុប / Total Amount",
+            title: "ទឹកប្រាក់សរុប",
             children: [
                 {
-                    title: "Dollar",
+                    title: "ដុល្លារ ($)",
                     dataIndex: "debit",
                     key: "dollar_debit",
-                    width: 100,
-                    render: (val, record) => record.transaction_type === 'purchase' ? `USD ${formatPrice(val)}` : ''
+                    width: 'auto',
+                    align: 'left',
+                    render: (val, record) => record.transaction_type === 'purchase' ? <span style={{ whiteSpace: 'nowrap' }}>{formatPrice(val)}</span> : ''
                 },
                 {
-                    title: "Riel",
-                    width: 100,
+                    title: "រៀល (KH)",
+                    width: 'auto',
+                    align: 'left',
                     render: (_, record) => {
                         if (record.transaction_type !== 'purchase') return '';
                         const rielAmount = parseFloat(record.debit || 0) * state.exchangeRate;
-                        return `KHR ${rielAmount.toLocaleString()}`;
+                        return <span style={{ whiteSpace: 'nowrap' }}>{formatRiel(rielAmount)}</span>;
                     }
                 }
             ]
         },
         {
-            title: "សងក្នុងគ្រា / Payments during the period",
+            title: "សងក្នុងគ្រា",
             children: [
                 {
-                    title: "លេខប័ណ្ណ / Ref",
+                    title: <span style={{ whiteSpace: 'nowrap' }}>លេខប័ណ្ណ/យោង</span>,
                     dataIndex: "reference_no",
                     key: "ref",
-                    width: 150,
+                    width: 'auto',
                     render: (val, record) => {
                         if (record.transaction_type !== 'payment') return '';
                         return (
-                            <div style={{ lineHeight: '1.2' }}>
+                            <div style={{ lineHeight: '1.2', whiteSpace: 'nowrap' }}>
                                 {record.order_no && <div style={{ fontWeight: '600', color: '#1890ff' }}>{record.order_no}</div>}
-                                {val && <div style={{ fontSize: '11px', opacity: 0.8 }}>{val}</div>}
-                                {!record.order_no && !val && '-'}
+                                {val && <div style={{ fontSize: '10px', opacity: 0.8 }}>{val}</div>}
                             </div>
                         );
                     }
                 },
                 {
-                    title: "Dollar",
+                    title: "ដុល្លារ ($)",
                     dataIndex: "credit",
                     key: "dollar_credit",
-                    width: 100,
-                    render: (val, record) => record.transaction_type === 'payment' ? `USD ${formatPrice(val)}` : ''
+                    width: 'auto',
+                    align: 'left',
+                    render: (val, record) => record.transaction_type === 'payment' ? <span style={{ whiteSpace: 'nowrap' }}>{formatPrice(val)}</span> : ''
                 },
                 {
-                    title: "Riel",
-                    width: 100,
+                    title: "រៀល (KH)",
+                    width: 'auto',
+                    align: 'left',
                     render: (_, record) => {
                         if (record.transaction_type !== 'payment') return '';
                         const rielAmount = parseFloat(record.credit || 0) * state.exchangeRate;
-                        return `KHR ${rielAmount.toLocaleString()}`;
+                        return <span style={{ whiteSpace: 'nowrap' }}>{formatRiel(rielAmount)}</span>;
                     }
                 }
             ]
         },
         {
-            title: "ចុងគ្រា / Balance",
+            title: "សមតុល្យចុងគ្រា",
             children: [
                 {
-                    title: "Dollar",
+                    title: "ដុល្លារ ($)",
                     dataIndex: "running_balance",
                     key: "balance",
-                    width: 120,
+                    width: 'auto',
+                    align: 'left',
                     render: (val) => (
-                        <Text style={{ color: val > 0 ? 'red' : 'green', fontWeight: 'bold' }}>
-                            USD {formatPrice(Math.abs(val))}
+                        <Text style={{ color: val > 0 ? '#d9363e' : '#389e0d', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                            {formatPrice(Math.abs(val))}
                         </Text>
                     )
                 },
                 {
-                    title: "Riel",
-                    width: 120,
+                    title: "រៀល (KH)",
+                    width: 'auto',
+                    align: 'left',
                     render: (_, record) => {
                         const rielBalance = parseFloat(record.running_balance || 0) * state.exchangeRate;
                         return (
-                            <Text style={{ color: rielBalance > 0 ? 'red' : 'green', fontWeight: 'bold' }}>
-                                KHR {Math.abs(rielBalance).toLocaleString()}
+                            <Text style={{ color: rielBalance > 0 ? '#d9363e' : '#389e0d', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                                {formatRiel(rielBalance)}
                             </Text>
                         );
                     }
@@ -754,10 +914,11 @@ function SupplierPaymentPage() {
             ]
         },
         {
-            title: "សកម្មភាព / Action",
+            title: "សកម្មភាព",
             key: "action",
-            width: 100,
+            width: 80,
             fixed: 'right',
+            className: 'no-print',
             render: (_, record) => record.transaction_type === 'payment' ? (
                 <Space>
                     <Button
@@ -783,93 +944,96 @@ function SupplierPaymentPage() {
         <MainPage loading={state.loading}>
             <style>{tableStyles}</style>
             <div className="px-2 sm:px-4 lg:px-6">
-                {/* Header Banner */}
-                <Card className="mb-4">
+                <div className="mb-6">
                     <div
-                        className="text-center py-3 mb-4 rounded-lg"
-                        style={{ backgroundColor: '#8B4513', color: 'white' }}
+                        className="text-center py-6 px-4 rounded-xl header-banner-print shadow-sm"
+                        style={{
+                            background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+                            border: '1px solid #e5e7eb',
+                            color: '#111827'
+                        }}
                     >
-                        <Title level={4} style={{ color: 'white', marginBottom: 4 }}>
-                            របាយការណ៍សម្អិតទិញ សង នៅសល់ពីក្រុមហ៊ុនប៉េត្រូណាស់
+                        <Title level={3} style={{ color: '#111827', marginBottom: 8, fontWeight: '700' }}>
+                            របាយការណ៍សង្ខេបទិញ សង នៅសល់ពីក្រុមហ៊ុនប៉េត្រូណាស់
                         </Title>
-                        <Text style={{ color: 'white' }}>
-                            សំរាប់ថ្ងៃ {state.dateRange[0]?.format('DD.MM.YY')} ដល់ថ្ងៃ {state.dateRange[1]?.format('DD.MM.YY')}
+                        <Text style={{ color: '#6b7280', fontSize: '15px' }}>
+                            សំរាប់រយៈពេលពីថ្ងៃ {state.dateRange[0]?.format('DD/MM/YYYY')} ដល់ថ្ងៃ {state.dateRange[1]?.format('DD/MM/YYYY')}
                         </Text>
                     </div>
+                </div>
 
-                    <Row gutter={[16, 16]} align="middle" justify="space-between">
-                        <Col xs={24} sm={12} md={6}>
-                            <Select
-                                showSearch
-                                allowClear
-                                placeholder={t("select_supplier")}
+                <Row gutter={[16, 16]} align="middle" justify="space-between">
+                    <Col xs={24} sm={12} md={6}>
+                        <Select
+                            showSearch
+                            allowClear
+                            placeholder={t("select_supplier")}
+                            style={{ width: '100%' }}
+                            value={state.selectedSupplier}
+                            onChange={(val) => {
+                                console.log("Supplier selected:", val);
+                                setState(p => ({ ...p, selectedSupplier: val }));
+                            }}
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                            options={state.suppliers.map(s => ({
+                                value: s.id,
+                                label: `${s.name} (${s.code})`
+                            }))}
+                        />
+                    </Col>
+
+                    <Col xs={24} sm={12} md={6}>
+                        <RangePicker
+                            value={state.dateRange}
+                            onChange={(dates) => setState(p => ({ ...p, dateRange: dates }))}
+                            format="DD/MM/YYYY"
+                            style={{ width: '100%' }}
+                        />
+                    </Col>
+
+                    <Col xs={24} sm={12} md={4}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <Text strong style={{ whiteSpace: 'nowrap' }}>អត្រាប្តូរ:</Text>
+                            <InputNumber
+                                value={state.exchangeRate}
+                                onChange={(val) => setState(p => ({ ...p, exchangeRate: val || 4100 }))}
                                 style={{ width: '100%' }}
-                                value={state.selectedSupplier}
-                                onChange={(val) => {
-                                    console.log("Supplier selected:", val);
-                                    setState(p => ({ ...p, selectedSupplier: val }));
-                                }}
-                                filterOption={(input, option) =>
-                                    (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                                }
-                                options={state.suppliers.map(s => ({
-                                    value: s.id,
-                                    label: `${s.name} (${s.code})`
-                                }))}
+                                min={1}
+                                step={100}
+                                formatter={(value) => `KH ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                parser={(value) => value.replace(/KH\s?|(,*)/g, '')}
                             />
-                        </Col>
+                        </div>
+                    </Col>
 
-                        <Col xs={24} sm={12} md={6}>
-                            <RangePicker
-                                value={state.dateRange}
-                                onChange={(dates) => setState(p => ({ ...p, dateRange: dates }))}
-                                format="DD/MM/YYYY"
-                                style={{ width: '100%' }}
-                            />
-                        </Col>
-
-                        <Col xs={24} sm={12} md={4}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Text strong style={{ whiteSpace: 'nowrap' }}>អត្រាប្តូរ:</Text>
-                                <InputNumber
-                                    value={state.exchangeRate}
-                                    onChange={(val) => setState(p => ({ ...p, exchangeRate: val || 4100 }))}
-                                    style={{ width: '100%' }}
-                                    min={1}
-                                    step={100}
-                                    formatter={(value) => `KHR ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                    parser={(value) => value.replace(/KHR\s?|(,*)/g, '')}
-                                />
-                            </div>
-                        </Col>
-
-                        <Col xs={24} md={8}>
-                            <Space wrap>
-                                <Button
-                                    type="primary"
-                                    icon={<PlusOutlined />}
-                                    onClick={showPaymentModal}
-                                    disabled={!state.selectedSupplier}
-                                >
-                                    New Payment
-                                </Button>
-                                <Button
-                                    icon={<DownloadOutlined />}
-                                    onClick={handleExport}
-                                    disabled={!state.selectedSupplier}
-                                >
-                                    Export
-                                </Button>
-                                <Button
-                                    icon={<PrinterOutlined />}
-                                    onClick={handlePrint}
-                                >
-                                    Print
-                                </Button>
-                            </Space>
-                        </Col>
-                    </Row>
-                </Card>
+                    <Col xs={24} md={8}>
+                        <Space wrap>
+                            <Button
+                                type="primary"
+                                icon={<PlusOutlined />}
+                                onClick={showPaymentModal}
+                                disabled={!state.selectedSupplier}
+                            >
+                                ការទូទាត់ថ្មី
+                            </Button>
+                            <Button
+                                icon={<DownloadOutlined />}
+                                onClick={handleExport}
+                                disabled={!state.selectedSupplier}
+                            >
+                                ទាញយក (Excel)
+                            </Button>
+                            <Button
+                                icon={<PrinterOutlined />}
+                                onClick={handlePrint}
+                            >
+                                បោះពុម្ព
+                            </Button>
+                        </Space>
+                    </Col>
+                </Row>
 
                 {/* Main Table */}
                 <Card>
@@ -878,7 +1042,7 @@ function SupplierPaymentPage() {
                         dataSource={processedLedger}
                         rowKey={(record) => `${record.transaction_type}-${record.id}`}
                         pagination={false}
-                        scroll={{ x: 1400 }}
+                        scroll={{ x: 'max-content' }}
                         size="small"
                         bordered
                         className="supplier-ledger-table"
@@ -890,42 +1054,42 @@ function SupplierPaymentPage() {
 
                     {/* Summary Section */}
                     {state.ledger.length > 0 && (
-                        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200">
-                            <Title level={5} style={{ marginBottom: 16 }}>សេចក្តីសង្ខេបសមតុល្យ / Balance Summary</Title>
+                        <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 summary-print-container">
+                            <Title level={5} style={{ marginBottom: 16 }}>សេចក្តីសង្ខេបសមតុល្យ</Title>
                             <Row gutter={[32, 16]}>
                                 <Col xs={24} md={12}>
-                                    <div className="p-4 bg-white dark:bg-gray-800 rounded border shadow-sm">
+                                    <div className="p-4 bg-white dark:bg-gray-800 rounded border shadow-sm h-full">
                                         <Row justify="space-between" className="mb-3">
-                                            <Col><Text strong>Beginning Balance (សមតុល្យដើមគ្រា):</Text></Col>
-                                            <Col><Text>USD {formatPrice(state.summary.beginning_balance || 0)}</Text></Col>
+                                            <Col><Text strong>សមតុល្យដើមគ្រា:</Text></Col>
+                                            <Col><Text strong>{formatPrice(state.summary.beginning_balance || 0)}</Text></Col>
                                         </Row>
                                         <Row justify="space-between" className="mb-3">
                                             <Col>
-                                                <Text strong style={{ color: '#1890ff' }}>Increase (ទិញបន្ថែមក្នុងគ្រា):</Text>
-                                                <Text type="secondary" className="ml-2">({state.summary.increase_count || 0} times)</Text>
+                                                <Text strong style={{ color: '#1890ff' }}>ទិញបន្ថែមក្នុងគ្រា:</Text>
+                                                <Text type="secondary" className="ml-2 no-print">({state.summary.increase_count || 0} ដង)</Text>
                                             </Col>
-                                            <Col><Text style={{ color: '#1890ff' }}>+ USD {formatPrice(state.summary.increase || 0)}</Text></Col>
+                                            <Col><Text strong style={{ color: '#1890ff' }}>+ {formatPrice(state.summary.increase || 0)}</Text></Col>
                                         </Row>
                                         <Row justify="space-between" className="mb-3">
                                             <Col>
-                                                <Text strong style={{ color: '#52c41a' }}>Payments (សងក្នុងគ្រា):</Text>
-                                                <Text type="secondary" className="ml-2">({state.summary.payment_count || 0} times)</Text>
+                                                <Text strong style={{ color: '#52c41a' }}>សងក្នុងគ្រា:</Text>
+                                                <Text type="secondary" className="ml-2 no-print">({state.summary.payment_count || 0} ដង)</Text>
                                             </Col>
-                                            <Col><Text style={{ color: '#52c41a' }}>- USD {formatPrice(state.summary.total_payments || 0)}</Text></Col>
+                                            <Col><Text strong style={{ color: '#52c41a' }}>- {formatPrice(state.summary.total_payments || 0)}</Text></Col>
                                         </Row>
                                         <div className="border-t my-2" />
                                         <Row justify="space-between" className="mt-2">
-                                            <Col><Title level={4}>Ending Balance (សមតុល្យចុងគ្រា):</Title></Col>
+                                            <Col><Title level={4} style={{ margin: 0 }}>សមតុល្យចុងគ្រា:</Title></Col>
                                             <Col>
-                                                <Title level={4} style={{ color: state.summary.ending_balance > 0 ? 'red' : 'green' }}>
-                                                    USD {formatPrice(Math.abs(state.summary.ending_balance || 0))}
+                                                <Title level={4} style={{ margin: 0, color: state.summary.ending_balance > 0 ? '#d9363e' : '#389e0d' }}>
+                                                    {formatPrice(Math.abs(state.summary.ending_balance || 0))}
                                                 </Title>
                                             </Col>
                                         </Row>
                                     </div>
                                 </Col>
 
-                                <Col xs={24} md={12}>
+                                <Col xs={24} md={12} className="no-print">
                                     <div className="p-4 bg-white dark:bg-gray-800 rounded border shadow-sm h-full flex flex-col justify-center">
                                         <Row justify="center" align="middle" className="text-center h-full">
                                             <Col span={24}>
@@ -933,12 +1097,12 @@ function SupplierPaymentPage() {
                                                 <Text type="secondary">ប្រៀបធៀបជាមួយដើមគ្រា</Text>
                                                 <div className="mt-4">
                                                     {state.summary.comparison > 0 ? (
-                                                        <Text strong style={{ fontSize: '24px', color: 'red' }}>
-                                                            <ArrowUpOutlined /> Increase: USD {formatPrice(state.summary.comparison)}
+                                                        <Text strong style={{ fontSize: '24px', color: '#d9363e' }}>
+                                                            <ArrowUpOutlined /> Increase: {formatPrice(state.summary.comparison)}
                                                         </Text>
                                                     ) : state.summary.comparison < 0 ? (
-                                                        <Text strong style={{ fontSize: '24px', color: 'green' }}>
-                                                            <ArrowDownOutlined /> Decrease: USD {formatPrice(Math.abs(state.summary.comparison))}
+                                                        <Text strong style={{ fontSize: '24px', color: '#389e0d' }}>
+                                                            <ArrowDownOutlined /> Decrease: {formatPrice(Math.abs(state.summary.comparison))}
                                                         </Text>
                                                     ) : (
                                                         <Text strong style={{ fontSize: '24px', color: 'gray' }}>
@@ -1080,7 +1244,7 @@ function SupplierPaymentPage() {
                                             >
                                                 {state.unpaidInvoices.map(inv => (
                                                     <Option key={inv.id} value={inv.id}>
-                                                        {inv.order_no} - {t("total")}: ${formatPrice(inv.total_amount)} ({t("remaining")}: ${formatPrice(inv.remaining_amount)})
+                                                        {inv.order_no} - {t("total")}: {formatPrice(inv.total_amount)} ({t("remaining")}: {formatPrice(inv.remaining_amount)})
                                                     </Option>
                                                 ))}
                                             </Select>
@@ -1102,15 +1266,15 @@ function SupplierPaymentPage() {
                                                             <div style={{ padding: '8px 0' }}>
                                                                 <Row justify="space-between" className="mb-1">
                                                                     <Col><Text>{t("payment.total_amount")}:</Text></Col>
-                                                                    <Col><Text strong>USD {formatPrice(invoice.total_amount)}</Text></Col>
+                                                                    <Col><Text strong>{formatPrice(invoice.total_amount)}</Text></Col>
                                                                 </Row>
                                                                 <Row justify="space-between" className="mb-1">
                                                                     <Col><Text>{t("payment.paid_amount")}:</Text></Col>
-                                                                    <Col><Text style={{ color: '#52c41a' }}>USD {formatPrice(invoice.paid_amount)}</Text></Col>
+                                                                    <Col><Text style={{ color: '#52c41a' }}>{formatPrice(invoice.paid_amount)}</Text></Col>
                                                                 </Row>
                                                                 <Row justify="space-between">
                                                                     <Col><Text strong>{t("payment.remaining_balance")}:</Text></Col>
-                                                                    <Col><Text strong style={{ color: '#ff4d4f' }}>USD {formatPrice(invoice.remaining_amount)}</Text></Col>
+                                                                    <Col><Text strong style={{ color: '#ff4d4f' }}>{formatPrice(invoice.remaining_amount)}</Text></Col>
                                                                 </Row>
                                                             </div>
                                                         }
@@ -1139,8 +1303,8 @@ function SupplierPaymentPage() {
                                                 style={{ width: '100%' }}
                                                 min={0}
                                                 precision={2}
-                                                formatter={(value) => `USD ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                                                parser={(value) => value.replace(/USD\s?|(,*)/g, '')}
+                                                formatter={(value) => `$ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                                                parser={(value) => value.replace(/\$\s?|(,*)/g, '')}
                                             />
                                         </Form.Item>
 
@@ -1241,19 +1405,19 @@ function SupplierPaymentPage() {
                                 {state.selectedRecord.transaction_type === 'purchase' ? (
                                     <>
                                         <Descriptions.Item label="Total Amount (សរុប)">
-                                            <Text strong style={{ color: 'red' }}>USD {formatPrice(state.selectedRecord.debit)}</Text>
+                                            <Text strong style={{ color: 'red' }}>{formatPrice(state.selectedRecord.debit)}</Text>
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Riel Equation">
-                                            KHR {(parseFloat(state.selectedRecord.debit || 0) * state.exchangeRate).toLocaleString()}
+                                            {formatRiel(parseFloat(state.selectedRecord.debit || 0) * state.exchangeRate)}
                                         </Descriptions.Item>
                                     </>
                                 ) : (
                                     <>
                                         <Descriptions.Item label="Payment Amount (ទឹកប្រាក់សង)">
-                                            <Text strong style={{ color: 'green' }}>USD {formatPrice(state.selectedRecord.credit)}</Text>
+                                            <Text strong style={{ color: 'green' }}>{formatPrice(state.selectedRecord.credit)}</Text>
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Riel Equation">
-                                            KHR {(parseFloat(state.selectedRecord.credit || 0) * state.exchangeRate).toLocaleString()}
+                                            {formatRiel(parseFloat(state.selectedRecord.credit || 0) * state.exchangeRate)}
                                         </Descriptions.Item>
                                         <Descriptions.Item label="Method (វិធីសាស្រ្តអនុវត្ត)">
                                             {state.selectedRecord.payment_method || 'Bank Transfer'}

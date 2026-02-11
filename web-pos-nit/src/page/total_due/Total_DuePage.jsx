@@ -37,6 +37,7 @@ import { saveAs } from 'file-saver';
 import { Upload } from "antd";
 import { InboxOutlined } from "@ant-design/icons";
 import { useTranslation } from '../../locales/TranslationContext';
+import Swal from "sweetalert2";
 
 import "./TotalDuePage.css";
 
@@ -264,18 +265,30 @@ function TotalDuePage() {
       const { id } = getProfile();
 
       if (!currentInvoice || !paymentAmount || isNaN(paymentAmount) || paymentAmount <= 0) {
-        message.error(t('invalid_amount'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('invalid_amount'),
+        });
         return;
       }
 
       const maxPayable = parseFloat(currentInvoice.due_amount) || 0;
       if (paymentAmount > maxPayable) {
-        message.error(`${t('amount_exceeds')} ${formatCurrency(maxPayable)}`);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: `${t('amount_exceeds')} ${formatCurrency(maxPayable)}`,
+        });
         return;
       }
 
       if (!paymentMethod) {
-        message.error(t('select_payment_method'));
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: t('select_payment_method'),
+        });
         return;
       }
 
@@ -305,7 +318,13 @@ function TotalDuePage() {
         throw new Error(res?.error || res?.message || t('payment_failed'));
       }
 
-      message.success(t('payment_success'));
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: t('payment_success'),
+        showConfirmButton: false,
+        timer: 1500
+      });
 
       setPaymentAmount(0);
       setPaymentMethod("cash");
@@ -351,14 +370,21 @@ function TotalDuePage() {
         }));
       }
 
-      message.success({
-        content: `${t('payment_success')} ${formatCurrency(paymentAmount)} ${t('invoice_number')}: ${currentInvoice.product_description}`,
-        duration: 5
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: `${t('payment_success')} ${formatCurrency(paymentAmount)} ${t('invoice_number')}: ${currentInvoice.product_description}`,
+        showConfirmButton: false,
+        timer: 2000
       });
 
     } catch (error) {
       console.error("Payment error:", error);
-      message.error(error.message || t('payment_failed'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.message || t('payment_failed'),
+      });
     } finally {
       setPaymentLoading(false);
     }
@@ -440,19 +466,30 @@ function TotalDuePage() {
         await request(`debt/${editInvoiceData.debt_id}`, "put", editData);
       }
 
-      message.success(t('edit_success'));
-      setEditModalVisible(false);
-      editFormRef.resetFields();
-      setEditInvoiceData(null);
-
       await getList();
       if (selectedCustomer) {
         await getList();
       }
 
+      Swal.fire({
+        icon: 'success',
+        title: 'Success',
+        text: t('edit_success'),
+        showConfirmButton: false,
+        timer: 1500
+      });
+
+      setEditModalVisible(false);
+      editFormRef.resetFields();
+      setEditInvoiceData(null);
+
     } catch (error) {
       console.error("Edit error:", error);
-      message.error(error.response?.data?.error || error.message || t('edit_failed'));
+      Swal.fire({
+        icon: 'error',
+        title: 'Error',
+        text: error.response?.data?.error || error.message || t('edit_failed'),
+      });
     } finally {
       setEditLoading(false);
     }
@@ -556,35 +593,58 @@ function TotalDuePage() {
     }
   };
 
-  const handleDeleteInvoice = async (invoice) => {
-    setDeleteLoading(true);
-    try {
-      const res = await request(`debt/${invoice.debt_id}`, "delete");
+  const handleDeleteInvoice = (invoice) => {
+    Swal.fire({
+      title: t('delete_confirm'),
+      text: t('are_you_sure_to_delete_this_debt'),
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: t('yes'),
+      cancelButtonText: t('no')
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        setDeleteLoading(true);
+        try {
+          const res = await request(`debt/${invoice.debt_id}`, "delete");
 
-      if (res && res.message) {
-        message.success(t('delete_success'));
+          if (res && res.message) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Deleted!',
+              text: t('delete_success'),
+              showConfirmButton: false,
+              timer: 1500
+            });
 
-        await getList();
+            await getList();
 
-        if (selectedCustomer) {
-          const updatedOrders = selectedCustomer.orders.filter(order => order.debt_id !== invoice.debt_id);
-          const newTotalDue = updatedOrders.reduce((sum, order) => sum + parseFloat(order.due_amount || 0), 0);
+            if (selectedCustomer) {
+              const updatedOrders = selectedCustomer.orders.filter(order => order.debt_id !== invoice.debt_id);
+              const newTotalDue = updatedOrders.reduce((sum, order) => sum + parseFloat(order.due_amount || 0), 0);
 
-          setSelectedCustomer(prev => ({
-            ...prev,
-            orders: updatedOrders,
-            total_due: newTotalDue
-          }));
+              setSelectedCustomer(prev => ({
+                ...prev,
+                orders: updatedOrders,
+                total_due: newTotalDue
+              }));
+            }
+          } else {
+            throw new Error(res?.error || t('delete_failed'));
+          }
+        } catch (error) {
+          console.error("Delete error:", error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || t('delete_failed'),
+          });
+        } finally {
+          setDeleteLoading(false);
         }
-      } else {
-        throw new Error(res?.error || t('delete_failed'));
       }
-    } catch (error) {
-      console.error("Delete error:", error);
-      message.error(error.message || t('delete_failed'));
-    } finally {
-      setDeleteLoading(false);
-    }
+    });
   };
 
   const { totalAmount, paidAmount, dueAmount } = getTotalStats();
@@ -1329,25 +1389,19 @@ function TotalDuePage() {
                             </Button>
                           )}
 
-                          <Popconfirm
-                            title={<span className="khmer-text">{t('delete_confirm')}</span>}
-                            onConfirm={() => handleDeleteInvoice(record)}
-                            okText={<span className="khmer-text">{t('yes')}</span>}
-                            cancelText={<span className="khmer-text">{t('no')}</span>}
-                            okButtonProps={{ loading: deleteLoading }}
-                          >
-                            {isPermission("customer.getone") && (
-                              <Button
-                                type="primary"
-                                danger
-                                size="small"
-                                icon={<MdDelete />}
-                                className="delete-button"
-                              >
-                                <span className="khmer-text">{t('delete')}</span>
-                              </Button>
-                            )}
-                          </Popconfirm>
+                          {isPermission("customer.getone") && (
+                            <Button
+                              type="primary"
+                              danger
+                              size="small"
+                              icon={<MdDelete />}
+                              onClick={() => handleDeleteInvoice(record)}
+                              className="delete-button"
+                              loading={deleteLoading}
+                            >
+                              <span className="khmer-text">{t('delete')}</span>
+                            </Button>
+                          )}
                         </Space>
                       ),
                       width: 200
@@ -1463,23 +1517,17 @@ function TotalDuePage() {
                           )}
 
                           {isPermission("customer.getone") && (
-                            <Popconfirm
-                              title={<span className="khmer-text">{t('delete_confirm')}</span>}
-                              onConfirm={() => handleDeleteInvoice(record)}
-                              okText={<span className="khmer-text">{t('yes')}</span>}
-                              cancelText={<span className="khmer-text">{t('no')}</span>}
-                              okButtonProps={{ loading: deleteLoading }}
+                            <Button
+                              type="primary"
+                              danger
+                              size="small"
+                              icon={<MdDelete />}
+                              onClick={() => handleDeleteInvoice(record)}
+                              className="delete-button"
+                              loading={deleteLoading}
                             >
-                              <Button
-                                type="primary"
-                                danger
-                                size="small"
-                                icon={<MdDelete />}
-                                className="delete-button"
-                              >
-                                <span className="khmer-text text-xs">{t('delete')}</span>
-                              </Button>
-                            </Popconfirm>
+                              <span className="khmer-text text-xs">{t('delete')}</span>
+                            </Button>
                           )}
                         </div>
                       </div>
@@ -2078,7 +2126,11 @@ function TotalDuePage() {
               const allOrders = customer.orders || [];
               if (allOrders.length === 0) {
                 console.error("No orders found for customer:", customer.customer_name);
-                message.warning(t('no_data_export'));
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Warning',
+                  text: t('no_data_export'),
+                });
               }
 
               allOrders.forEach(order => {
@@ -2266,10 +2318,20 @@ function TotalDuePage() {
               const buffer = await workbook.xlsx.writeBuffer();
               const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
               saveAs(blob, `Customer_${customer.customer_name.replace(/\s+/g, '_')}_Orders_${new Date().toISOString().slice(0, 10)}.xlsx`);
-              message.success(t('export_success'));
+              Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: t('export_success'),
+                showConfirmButton: false,
+                timer: 1500
+              });
             } catch (error) {
-              console.error('Error exporting to Excel:', error);
-              message.error(t('export_failed'));
+              console.error('Export error:', error);
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: t('export_failed'),
+              });
             } finally {
               setExcelExportLoading(false);
             }

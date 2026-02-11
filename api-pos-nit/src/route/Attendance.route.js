@@ -8,7 +8,8 @@ const {
   getAttendanceReport,
   getMonthlySummary,
   markAbsent,
-  getLateReport  // ✅ Add this
+  getLateReport,
+  getDashboardStats
 } = require("../controller/Attendance.controller");
 
 module.exports = (app) => {
@@ -108,6 +109,15 @@ module.exports = (app) => {
   app.get("/api/attendance/monthly-summary",
     validate_token("attendance.report"),
     getMonthlySummary
+  );
+
+  /**
+   * Get dashboard statistics for summary cards
+   * GET /api/attendance/dashboard-stats?date=YYYY-MM-DD
+   */
+  app.get("/api/attendance/dashboard-stats",
+    validate_token(),
+    getDashboardStats
   );
 
   // ==================== ADMIN OPERATIONS ====================

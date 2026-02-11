@@ -86,6 +86,7 @@ import DocuVerse from "./page/template/DocuVerse";
 import CareConcierge from "./page/template/CareConcierge";
 import CastleDashboard from "./page/template/CastleDashboard";
 import PermissionPage from "./page/employee/PermissionPage"; // ✅ Import PermissionPage
+import IPManagementPage from "./page/employee/IPManagementPage.jsx";
 
 function App() {
 
@@ -134,7 +135,7 @@ function App() {
               <Route path="/attendance" element={<AttendanceDashboard />} />
               <Route path="/fakeinvoices" element={<FakeInvoicePage />} />
               <Route path="/oauth-callback" element={<OAuthCallback />} />
-              <Route path="/ip-Management" element={<OAuthCallback />} />
+              <Route path="/ip-Management" element={<IPManagementPage />} />
 
 
               <Route path="/expanse" element={<ExpansePage />} />

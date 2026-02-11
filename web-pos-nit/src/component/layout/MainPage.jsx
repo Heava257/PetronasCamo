@@ -1,6 +1,5 @@
 import { Button, Result } from "antd";
 import React, { useEffect, useState } from "react";
-import { RingLoader } from "react-spinners";
 import { getServerStatus } from "../../store/server.store";
 import { useSettings } from "../../settings";
 
@@ -103,17 +102,22 @@ export default function MainPage({ children, loading }) {
         }`}
     >
       {loading && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-50">
+        <div className="petronas-loader-overlay">
           <div className="flex flex-col items-center">
-            <RingLoader
-              color={isDarkMode ? '#60a5fa' : '#3b82f6'}
-              loading={loading}
-              size={88}
-            />
-            <span className={`mt-4 text-lg font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'
-              }`}>
-              Loading...
-            </span>
+            <div className="petronas-loader-container">
+              <div className="ripple-effect"></div>
+              <div className="ripple-effect delay-1"></div>
+              <div className="logo-pulse">
+                <img src="/favicon.png" alt="Petronas" className="loading-logo" />
+              </div>
+            </div>
+            <div className="loading-text-container">
+              <span className="loading-text-main">PETRONAS</span>
+              <div className="loading-progress-bar">
+                <div className="loading-progress-fill"></div>
+              </div>
+              <span className="loading-text-sub">កំពុងដំណើរការ...</span>
+            </div>
           </div>
         </div>
       )}
@@ -122,29 +126,6 @@ export default function MainPage({ children, loading }) {
         }`}>
         {children}
       </div>
-
-      <style jsx>{`
-        /* Dark mode styles for Ant Design components */
-        ${isDarkMode ? `
-          :global(.ant-result) {
-            background: transparent !important;
-          }
-          
-          :global(.ant-result .ant-result-icon > .anticon) {
-            color: #ef4444 !important;
-          }
-          
-          :global(.ant-btn-primary) {
-            background: #3b82f6 !important;
-            border-color: #3b82f6 !important;
-          }
-          
-          :global(.ant-btn-primary:hover) {
-            background: #2563eb !important;
-            border-color: #2563eb !important;
-          }
-        ` : ''}
-      `}</style>
     </div>
   );
 }

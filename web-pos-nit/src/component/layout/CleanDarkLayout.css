@@ -741,14 +741,14 @@ div {
 }
 
 .header-icon.glass-pill.active {
-  background: var(--primary-color, #3b82f6);
-  color: var(--text-on-primary, white) !important;
+  background: var(--primary-light, rgba(59, 130, 246, 0.2));
+  color: var(--primary-color, #3b82f6) !important;
   border-color: var(--primary-color, #3b82f6);
-  box-shadow: 0 4px 12px var(--primary-light, rgba(59, 130, 246, 0.3));
+  box-shadow: 0 4px 15px var(--primary-light, rgba(59, 130, 246, 0.2));
 }
 
 .header-icon.glass-pill.active .pill-label {
-  color: white !important;
+  color: var(--primary-color, #3b82f6) !important;
 }
 
 .header-icon:hover {
@@ -1054,4 +1054,208 @@ html.template-acledagold .ant-modal-title,
 html.template-acledagold .ant-modal-close,
 .template-acledagold .ant-modal-close {
   color: #ffffff !important;
+}
+
+
+/* =========================================================================
+   7. TREE VIEW MENU STYLE (Diagram/Plus Style)
+   ========================================================================= */
+
+/* Root container - Enable Scrolling */
+.menu-style-tree .menu-container {
+  padding-left: 10px !important;
+  padding-right: 15px !important;
+  padding-top: 15px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.menu-style-tree .menu-category {
+  margin-bottom: 25px;
+  padding-left: 12px;
+}
+
+/* Individual node container */
+.menu-style-tree .tree-node {
+  position: relative !important;
+}
+
+/* Tree Line Logic - Solid Enhanced Style */
+.menu-style-tree .tree-node {
+  display: block !important;
+  width: 100% !important;
+  position: relative !important;
+}
+
+/* 1. Connector (Top-half vertical stem + Horizontal branch) */
+.menu-style-tree .tree-node:not(.level-0)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -12.5px;
+  /* Aligns with parent trunk (18px indent - 5.5px center) */
+  width: 32px;
+  /* Firmly touches and underlines the text label */
+  height: 16px;
+  /* Middle of 32px item */
+  border-left: 1.2px solid #aaa !important;
+  border-bottom: 1.2px solid #aaa !important;
+  z-index: 1;
+}
+
+/* 2. Vertical Continuation (Drawn by current node to reach NEXT sibling) */
+.menu-style-tree .tree-node:not(.level-0):not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -12.5px;
+  border-left: 1.2px solid #aaa !important;
+  z-index: 1;
+}
+
+/* 3. Attachment Trunk (Drawn by Parent Toggle to meet the first child) */
+.menu-style-tree .has-children.is-expanded::after {
+  display: block !important;
+  content: "";
+  position: absolute;
+  top: 16px;
+  /* Toggle center */
+  height: 17px !important;
+  /* Overlaps slightly (16 + 1) to meet first child's trunk perfectly */
+  left: 5.5px !important;
+  border-left: 1.2px solid #aaa !important;
+  z-index: 1;
+}
+
+/* Removal of cleanup that caused disconnects */
+.menu-style-tree .tree-node:not(.level-0):first-child::before {
+  border-left-color: #aaa !important;
+  /* Ensure connection to parent is visible */
+}
+
+/* Dark mode adjustment for lines */
+.dark .menu-style-tree .tree-node:not(.level-0)::before,
+.dark .menu-style-tree .tree-node:not(.level-0)::after,
+.dark .menu-style-tree .has-children.is-expanded:not(.level-0)::after {
+  border-color: #666 !important;
+}
+
+/* ✅ Minimalist Clean Menu Items */
+.menu-style-tree .hierarchical-menu-item {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 8px 0 22px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  gap: 4px !important;
+  font-size: 13px !important;
+  color: var(--text-primary);
+  position: relative !important;
+  z-index: 2;
+  cursor: pointer;
+  border-radius: 4px !important;
+}
+
+.menu-style-tree .hierarchical-menu-item .menu-icon {
+  display: none !important;
+}
+
+.menu-style-tree .menu-label {
+  padding: 2px 6px;
+  white-space: nowrap;
+  border-radius: 4px;
+}
+
+/* Clean Toggle Box (+/-) */
+.menu-style-tree .tree-toggle-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 11px !important;
+  height: 11px !important;
+  border: 1px solid #aaa !important;
+  background: #fff !important;
+  color: #666 !important;
+  font-family: Arial, sans-serif !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  border-radius: 1px !important;
+  position: relative;
+  z-index: 10;
+}
+
+.dark .menu-style-tree .tree-toggle-box {
+  background: #1e293b !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+/* Indentation & Alignment Reset */
+.menu-style-tree .submenu {
+  display: none !important;
+  margin-left: 18px !important;
+  padding-left: 0 !important;
+  border-left: none !important;
+  overflow: visible !important;
+}
+
+.menu-style-tree .submenu.expanded {
+  display: block !important;
+}
+
+/* Selection & Hover */
+.menu-style-tree .hierarchical-menu-item:hover .menu-label {
+  background: rgba(0, 120, 215, 0.05);
+  color: #0078d7;
+}
+
+.menu-style-tree .hierarchical-menu-item.selected {
+  background: rgba(0, 120, 215, 0.08) !important;
+}
+
+.menu-style-tree .hierarchical-menu-item.selected .menu-label {
+  color: #0078d7 !important;
+  font-weight: 600 !important;
+}
+
+/* Toggle Box Position Fix */
+.menu-style-tree .expand-icon {
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 10 !important;
+  display: flex;
+  align-items: center;
+}
+
+/* Branch piece after toggle box */
+.menu-style-tree .tree-toggle-box::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 12px;
+  /* Reaches labels */
+  border-top: 1.2px solid #aaa !important;
+}
+
+.menu-style-tree .leaf-node.tree-node::before {
+  width: 32px !important;
+  /* Reaches labels */
+}
+
+/* Clean Category Headers */
+.menu-style-tree .category-header {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-top: 20px;
+  margin-bottom: 12px;
+  padding: 4px 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
