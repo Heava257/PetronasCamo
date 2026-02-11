@@ -28,20 +28,20 @@ const getDbConfig = () => {
   }
 
   // 2. Optimized Variable Selection
-  const host = process.env.MYSQLHOST || process.env.DB_HOST || "mysql.railway.internal";
+  const host = process.env.MYSQLHOST || process.env.DB_HOST;
   const port = process.env.MYSQLPORT || process.env.DB_PORT || 3306;
-  let user = process.env.MYSQLUSER || process.env.DB_USER || "root";
+  const user = process.env.MYSQLUSER || process.env.DB_USER || "root";
+  const database = process.env.MYSQLDATABASE || process.env.DB_DATABASE || "railway";
 
-  // Anti-placeholder logic for Railway
-  if (user === "appuser" && !process.env.MYSQLUSER) {
-    user = "root";
+  if (!process.env.MYSQLHOST && !process.env.DB_HOST) {
+    console.warn("⚠️ WARNING: MYSQLHOST is missing. If you are on Railway, make sure to CONNECT the Backend to the Database service in the dashboard.");
   }
 
   return {
-    HOST: host,
+    HOST: host || "database.railway.internal", // Default to 'database' as service name matches your screenshot
     USER: user,
     PASSWORD: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
-    DATABASE: process.env.MYSQLDATABASE || process.env.DB_DATABASE || "petronas_last4_full",
+    DATABASE: database,
     PORT: port,
     namedPlaceholders: true, // ✅ CRITICAL for :user_id syntax
   };
