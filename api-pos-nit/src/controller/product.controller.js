@@ -860,9 +860,8 @@ exports.getListByCurrentUserGroup = async (req, res) => {
       ORDER BY p.customer_id, p.id DESC
     `;
 
-    // Clean up params if super admin
-    const finalParams = isSuperAdmin ? [] : [userBranchId];
-    var [data] = await db.query(sql, finalParams);
+    // Use the correctly populated sqlParams
+    var [data] = await db.query(sql, sqlParams);
 
     res.json({
       list: data,
