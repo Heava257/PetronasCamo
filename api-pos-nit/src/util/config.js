@@ -28,7 +28,10 @@ const getDbConfig = () => {
   }
 
   // 2. Optimized Variable Selection
-  const host = process.env.MYSQLHOST || process.env.DB_HOST || "database.railway.internal";
+  // If user provided 'mysql.railway.internal' but their service is named 'Database', we try to be smart.
+  const rawHost = process.env.MYSQLHOST || process.env.DB_HOST;
+  const host = (rawHost === "mysql.railway.internal") ? "database.railway.internal" : (rawHost || "database.railway.internal");
+
   const port = process.env.MYSQLPORT || process.env.DB_PORT || 3306;
   const user = process.env.MYSQLUSER || process.env.DB_USER || "root";
   const database = process.env.MYSQLDATABASE || process.env.DB_DATABASE || "railway";
