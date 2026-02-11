@@ -29,6 +29,7 @@ const getDbConfig = () => {
 
   // 2. Optimized Variable Selection
   const host = process.env.MYSQLHOST || process.env.DB_HOST || "mysql.railway.internal";
+  const port = process.env.MYSQLPORT || process.env.DB_PORT || 3306;
   let user = process.env.MYSQLUSER || process.env.DB_USER || "root";
 
   // Anti-placeholder logic for Railway
@@ -41,7 +42,7 @@ const getDbConfig = () => {
     USER: user,
     PASSWORD: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
     DATABASE: process.env.MYSQLDATABASE || process.env.DB_DATABASE || "petronas_last4_full",
-    PORT: process.env.MYSQLPORT || process.env.DB_PORT || 3306,
+    PORT: port,
     namedPlaceholders: true, // ✅ CRITICAL for :user_id syntax
   };
 };

@@ -179,11 +179,14 @@ app.listen(PORT, async () => {
 
   // ✅ Test Database Connection on Startup
   try {
+    const dbConfig = require("./src/util/config").config.db;
+    console.log(`🔍 Connecting to Database: ${dbConfig.DATABASE} @ ${dbConfig.HOST}:${dbConfig.PORT}...`);
     const { db } = require("./src/util/helper");
     await db.query("SELECT 1");
-    console.log(`✅ Connected to Database: ${require("./src/util/config").config.db.DATABASE} @ ${require("./src/util/config").config.db.HOST}`);
+    console.log(`✅ Connected to Database: ${dbConfig.DATABASE} @ ${dbConfig.HOST}`);
   } catch (dbErr) {
-    console.error("❌ Database Connection Failed!");
+    const dbConfig = require("./src/util/config").config.db;
+    console.error(`❌ Database Connection Failed to ${dbConfig.HOST}:${dbConfig.PORT}!`);
     console.error("Error Code:", dbErr.code);
     console.error("Error Details:", dbErr.message);
 
