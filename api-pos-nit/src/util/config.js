@@ -28,7 +28,7 @@ const getDbConfig = () => {
   }
 
   // 2. Optimized Variable Selection
-  const host = process.env.MYSQLHOST || process.env.DB_HOST || "mysql.railway.internal";
+  const host = process.env.MYSQLHOST || process.env.DB_HOST || "database.railway.internal";
   const port = process.env.MYSQLPORT || process.env.DB_PORT || 3306;
   const user = process.env.MYSQLUSER || process.env.DB_USER || "root";
   const database = process.env.MYSQLDATABASE || process.env.DB_DATABASE || "railway";
