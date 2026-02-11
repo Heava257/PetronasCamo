@@ -1,0 +1,11 @@
+node_modules
+database.db
+*.db
+.env
+.git
+.gitignore
+ghp_*
+*.rpm
+logs/
+public/uploads/*
+!public/uploads/.gitkeep
