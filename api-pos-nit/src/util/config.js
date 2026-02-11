@@ -28,17 +28,17 @@ const getDbConfig = () => {
   }
 
   // 2. Optimized Variable Selection
-  const host = process.env.MYSQLHOST || process.env.DB_HOST;
+  const host = process.env.MYSQLHOST || process.env.DB_HOST || "mysql.railway.internal";
   const port = process.env.MYSQLPORT || process.env.DB_PORT || 3306;
   const user = process.env.MYSQLUSER || process.env.DB_USER || "root";
   const database = process.env.MYSQLDATABASE || process.env.DB_DATABASE || "railway";
 
-  if (!process.env.MYSQLHOST && !process.env.DB_HOST) {
-    console.warn("⚠️ WARNING: MYSQLHOST is missing. If you are on Railway, make sure to CONNECT the Backend to the Database service in the dashboard.");
+  if (!process.env.MYSQL_URL && !process.env.MYSQLHOST) {
+    console.warn("💡 Railway Tip: Connect your Backend to the Database in the dashboard to automatically set MYSQLHOST/MYSQLPASSWORD.");
   }
 
   return {
-    HOST: host || "database.railway.internal", // Default to 'database' as service name matches your screenshot
+    HOST: host,
     USER: user,
     PASSWORD: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD,
     DATABASE: database,
