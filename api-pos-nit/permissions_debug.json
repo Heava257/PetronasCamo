@@ -1,0 +1,1402 @@
+[
+  {
+    "id": 359,
+    "name": ":notification_id.create",
+    "group": ":notification_id",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 357,
+    "name": ":notification_id.getlist",
+    "group": ":notification_id",
+    "is_menu_web": "1",
+    "web_route_key": "/:notification_id"
+  },
+  {
+    "id": 358,
+    "name": ":notification_id.getone",
+    "group": ":notification_id",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 361,
+    "name": ":notification_id.remove",
+    "group": ":notification_id",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 360,
+    "name": ":notification_id.update",
+    "group": ":notification_id",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 391,
+    "name": ":super-TelegramConfiguration.create",
+    "group": ":super-TelegramConfiguration",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 389,
+    "name": ":super-TelegramConfiguration.getlist",
+    "group": ":super-TelegramConfiguration",
+    "is_menu_web": "1",
+    "web_route_key": "/super-TelegramConfiguration"
+  },
+  {
+    "id": 390,
+    "name": ":super-TelegramConfiguration.getone",
+    "group": ":super-TelegramConfiguration",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 393,
+    "name": ":super-TelegramConfiguration.remove",
+    "group": ":super-TelegramConfiguration",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 392,
+    "name": ":super-TelegramConfiguration.update",
+    "group": ":super-TelegramConfiguration",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 434,
+    "name": "active-deliveries.create",
+    "group": "active-deliveries",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 432,
+    "name": "active-deliveries.getlist",
+    "group": "active-deliveries",
+    "is_menu_web": "1",
+    "web_route_key": "/active-deliveries"
+  },
+  {
+    "id": 433,
+    "name": "active-deliveries.getone",
+    "group": "active-deliveries",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 436,
+    "name": "active-deliveries.remove",
+    "group": "active-deliveries",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 435,
+    "name": "active-deliveries.update",
+    "group": "active-deliveries",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 480,
+    "name": "admin-DailyClosing.create",
+    "group": "admin-DailyClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 478,
+    "name": "admin-DailyClosing.getlist",
+    "group": "admin-DailyClosing",
+    "is_menu_web": "1",
+    "web_route_key": "/admin-DailyClosing"
+  },
+  {
+    "id": 479,
+    "name": "admin-DailyClosing.getone",
+    "group": "admin-DailyClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 482,
+    "name": "admin-DailyClosing.remove",
+    "group": "admin-DailyClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 481,
+    "name": "admin-DailyClosing.update",
+    "group": "admin-DailyClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 475,
+    "name": "admin-ShiftClosing.create",
+    "group": "admin-ShiftClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 473,
+    "name": "admin-ShiftClosing.getlist",
+    "group": "admin-ShiftClosing",
+    "is_menu_web": "1",
+    "web_route_key": "/admin-ShiftClosing"
+  },
+  {
+    "id": 474,
+    "name": "admin-ShiftClosing.getone",
+    "group": "admin-ShiftClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 477,
+    "name": "admin-ShiftClosing.remove",
+    "group": "admin-ShiftClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 476,
+    "name": "admin-ShiftClosing.update",
+    "group": "admin-ShiftClosing",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 485,
+    "name": "admin-ShiftClosingChecklist.create",
+    "group": "admin-ShiftClosingChecklist",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 483,
+    "name": "admin-ShiftClosingChecklist.getlist",
+    "group": "admin-ShiftClosingChecklist",
+    "is_menu_web": "1",
+    "web_route_key": "/admin-ShiftClosingChecklist"
+  },
+  {
+    "id": 484,
+    "name": "admin-ShiftClosingChecklist.getone",
+    "group": "admin-ShiftClosingChecklist",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 487,
+    "name": "admin-ShiftClosingChecklist.remove",
+    "group": "admin-ShiftClosingChecklist",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 486,
+    "name": "admin-ShiftClosingChecklist.update",
+    "group": "admin-ShiftClosingChecklist",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 490,
+    "name": "admin-StockReconciliation.create",
+    "group": "admin-StockReconciliation",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 488,
+    "name": "admin-StockReconciliation.getlist",
+    "group": "admin-StockReconciliation",
+    "is_menu_web": "1",
+    "web_route_key": "/admin-StockReconciliation"
+  },
+  {
+    "id": 489,
+    "name": "admin-StockReconciliation.getone",
+    "group": "admin-StockReconciliation",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 492,
+    "name": "admin-StockReconciliation.remove",
+    "group": "admin-StockReconciliation",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 491,
+    "name": "admin-StockReconciliation.update",
+    "group": "admin-StockReconciliation",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 327,
+    "name": "admin_management.create",
+    "group": "admin_management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 329,
+    "name": "admin_management.deactivate",
+    "group": "admin_management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 331,
+    "name": "admin_management.details",
+    "group": "admin_management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 326,
+    "name": "admin_management.list",
+    "group": "admin_management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 330,
+    "name": "admin_management.reactivate",
+    "group": "admin_management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 328,
+    "name": "admin_management.transfer",
+    "group": "admin_management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 325,
+    "name": "admin_management.view",
+    "group": "admin_management",
+    "is_menu_web": "1",
+    "web_route_key": "/admin-management"
+  },
+  {
+    "id": 454,
+    "name": "attendance.create",
+    "group": "attendance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 452,
+    "name": "attendance.getlist",
+    "group": "attendance",
+    "is_menu_web": "1",
+    "web_route_key": "/attendance"
+  },
+  {
+    "id": 453,
+    "name": "attendance.getone",
+    "group": "attendance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 456,
+    "name": "attendance.remove",
+    "group": "attendance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 455,
+    "name": "attendance.update",
+    "group": "attendance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 562,
+    "name": "branch-permission.create",
+    "group": "branch-permission",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 560,
+    "name": "branch-permission.getlist",
+    "group": "branch-permission",
+    "is_menu_web": "1",
+    "web_route_key": "/branch-permission"
+  },
+  {
+    "id": 561,
+    "name": "branch-permission.getone",
+    "group": "branch-permission",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 564,
+    "name": "branch-permission.remove",
+    "group": "branch-permission",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 563,
+    "name": "branch-permission.update",
+    "group": "branch-permission",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 174,
+    "name": "category.create",
+    "group": "category",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 172,
+    "name": "category.getlist",
+    "group": "category",
+    "is_menu_web": "1",
+    "web_route_key": "/category"
+  },
+  {
+    "id": 173,
+    "name": "category.getone",
+    "group": "category",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 176,
+    "name": "category.remove",
+    "group": "category",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 175,
+    "name": "category.update",
+    "group": "category",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 519,
+    "name": "category.view",
+    "group": "Inventory",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 381,
+    "name": "company-payment-management.create",
+    "group": "company-payment-management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 379,
+    "name": "company-payment-management.getlist",
+    "group": "company-payment-management",
+    "is_menu_web": "1",
+    "web_route_key": "/company-payment-management"
+  },
+  {
+    "id": 380,
+    "name": "company-payment-management.getone",
+    "group": "company-payment-management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 383,
+    "name": "company-payment-management.remove",
+    "group": "company-payment-management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 382,
+    "name": "company-payment-management.update",
+    "group": "company-payment-management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 386,
+    "name": "company-payment.create",
+    "group": "company-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 384,
+    "name": "company-payment.getlist",
+    "group": "company-payment",
+    "is_menu_web": "1",
+    "web_route_key": "/company-payment"
+  },
+  {
+    "id": 385,
+    "name": "company-payment.getone",
+    "group": "company-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 388,
+    "name": "company-payment.remove",
+    "group": "company-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 387,
+    "name": "company-payment.update",
+    "group": "company-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 307,
+    "name": "create.create",
+    "group": "create",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 305,
+    "name": "create.getcreate",
+    "group": "create",
+    "is_menu_web": "1",
+    "web_route_key": "/create"
+  },
+  {
+    "id": 306,
+    "name": "create.getone",
+    "group": "create",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 309,
+    "name": "create.remove",
+    "group": "create",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 308,
+    "name": "create.update",
+    "group": "create",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 510,
+    "name": "customer-payment.create",
+    "group": "customer-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 508,
+    "name": "customer-payment.getlist",
+    "group": "customer-payment",
+    "is_menu_web": "1",
+    "web_route_key": "/customer-payment"
+  },
+  {
+    "id": 509,
+    "name": "customer-payment.getone",
+    "group": "customer-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 512,
+    "name": "customer-payment.remove",
+    "group": "customer-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 511,
+    "name": "customer-payment.update",
+    "group": "customer-payment",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 169,
+    "name": "customer.create",
+    "group": "customer",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 167,
+    "name": "customer.getlist",
+    "group": "customer",
+    "is_menu_web": "1",
+    "web_route_key": "/customer"
+  },
+  {
+    "id": 168,
+    "name": "customer.getone",
+    "group": "customer",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 171,
+    "name": "customer.remove",
+    "group": "customer",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 170,
+    "name": "customer.update",
+    "group": "customer",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 520,
+    "name": "customer.view",
+    "group": "Sales",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 535,
+    "name": "customer_payment.create",
+    "group": "Finance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 537,
+    "name": "customer_payment.remove",
+    "group": "Finance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 536,
+    "name": "customer_payment.update",
+    "group": "Finance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 534,
+    "name": "customer_payment.view",
+    "group": "Finance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 543,
+    "name": "daily_closing.create",
+    "group": "Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 545,
+    "name": "daily_closing.remove",
+    "group": "Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 544,
+    "name": "daily_closing.update",
+    "group": "Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 542,
+    "name": "daily_closing.view",
+    "group": "Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 165,
+    "name": "dashboard.getlist",
+    "group": "dashboard",
+    "is_menu_web": "1",
+    "web_route_key": "/"
+  },
+  {
+    "id": 312,
+    "name": "deactivate.deactivate",
+    "group": "deactivate",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 310,
+    "name": "deactivate.getdeactivate",
+    "group": "deactivate",
+    "is_menu_web": "1",
+    "web_route_key": "/deactivate"
+  },
+  {
+    "id": 311,
+    "name": "deactivate.getone",
+    "group": "deactivate",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 314,
+    "name": "deactivate.remove",
+    "group": "deactivate",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 313,
+    "name": "deactivate.update",
+    "group": "deactivate",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 424,
+    "name": "delivery-map.create",
+    "group": "delivery-map",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 422,
+    "name": "delivery-map.getdelivery-map",
+    "group": "delivery-map",
+    "is_menu_web": "1",
+    "web_route_key": "/delivery-map"
+  },
+  {
+    "id": 423,
+    "name": "delivery-map.getone",
+    "group": "delivery-map",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 426,
+    "name": "delivery-map.remove",
+    "group": "delivery-map",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 425,
+    "name": "delivery-map.update",
+    "group": "delivery-map",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 252,
+    "name": "delivery-note.create",
+    "group": "delivery-note",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 250,
+    "name": "delivery-note.getlist",
+    "group": "deliverynote",
+    "is_menu_web": "1",
+    "web_route_key": "/deliverynote"
+  },
+  {
+    "id": 251,
+    "name": "delivery-note.getone",
+    "group": "delivery-note",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 254,
+    "name": "delivery-note.remove",
+    "group": "delivery-note",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 253,
+    "name": "delivery-note.update",
+    "group": "delivery-note",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 429,
+    "name": "DeliveryReports.create",
+    "group": "DeliveryReports",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 427,
+    "name": "DeliveryReports.getlist",
+    "group": "DeliveryReports",
+    "is_menu_web": "1",
+    "web_route_key": "/DeliveryReports"
+  },
+  {
+    "id": 428,
+    "name": "DeliveryReports.getone",
+    "group": "DeliveryReports",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 431,
+    "name": "DeliveryReports.remove",
+    "group": "DeliveryReports",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 430,
+    "name": "DeliveryReports.update",
+    "group": "DeliveryReports",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 322,
+    "name": "details.details",
+    "group": "details",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 320,
+    "name": "details.getdetails",
+    "group": "details",
+    "is_menu_web": "1",
+    "web_route_key": "/details"
+  },
+  {
+    "id": 321,
+    "name": "details.getone",
+    "group": "details",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 324,
+    "name": "details.remove",
+    "group": "details",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 323,
+    "name": "details.update",
+    "group": "details",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 439,
+    "name": "driver-auth.create",
+    "group": "driver-auth",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 437,
+    "name": "driver-auth.getlist",
+    "group": "driver-auth",
+    "is_menu_web": "1",
+    "web_route_key": "/driver-auth"
+  },
+  {
+    "id": 438,
+    "name": "driver-auth.getone",
+    "group": "driver-auth",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 441,
+    "name": "driver-auth.remove",
+    "group": "driver-auth",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 440,
+    "name": "driver-auth.update",
+    "group": "driver-auth",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 444,
+    "name": "driver.create",
+    "group": "driver",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 442,
+    "name": "driver.getlist",
+    "group": "driver",
+    "is_menu_web": "1",
+    "web_route_key": "/driver"
+  },
+  {
+    "id": 443,
+    "name": "driver.getone",
+    "group": "driver",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 446,
+    "name": "driver.remove",
+    "group": "driver",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 445,
+    "name": "driver.update",
+    "group": "driver",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 209,
+    "name": "employee.create",
+    "group": "employee",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 207,
+    "name": "employee.getlist",
+    "group": "employee",
+    "is_menu_web": "1",
+    "web_route_key": "/employee"
+  },
+  {
+    "id": 208,
+    "name": "employee.getone",
+    "group": "employee",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 211,
+    "name": "employee.remove",
+    "group": "employee",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 210,
+    "name": "employee.update",
+    "group": "employee",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 521,
+    "name": "employee.view",
+    "group": "Human Resources",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 495,
+    "name": "EnhancedPOSOrder.create",
+    "group": "EnhancedPOSOrder",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 493,
+    "name": "EnhancedPOSOrder.getlist",
+    "group": "EnhancedPOSOrder",
+    "is_menu_web": "1",
+    "web_route_key": "/pre-order-management"
+  },
+  {
+    "id": 494,
+    "name": "EnhancedPOSOrder.getone",
+    "group": "EnhancedPOSOrder",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 497,
+    "name": "EnhancedPOSOrder.remove",
+    "group": "EnhancedPOSOrder",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 496,
+    "name": "EnhancedPOSOrder.update",
+    "group": "EnhancedPOSOrder",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 219,
+    "name": "expanse.create",
+    "group": "expanse",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 217,
+    "name": "expanse.getlist",
+    "group": "expanse",
+    "is_menu_web": "1",
+    "web_route_key": "/expanse"
+  },
+  {
+    "id": 218,
+    "name": "expanse.getone",
+    "group": "expanse",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 221,
+    "name": "expanse.remove",
+    "group": "expanse",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 220,
+    "name": "expanse.update",
+    "group": "expanse",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 525,
+    "name": "expanse.view",
+    "group": "Finance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 214,
+    "name": "expanse_type.create",
+    "group": "expanse_type",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 212,
+    "name": "expanse_type.getlist",
+    "group": "expanse_type",
+    "is_menu_web": "1",
+    "web_route_key": "/expanse_type"
+  },
+  {
+    "id": 213,
+    "name": "expanse_type.getone",
+    "group": "expanse_type",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 216,
+    "name": "expanse_type.remove",
+    "group": "expanse_type",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 215,
+    "name": "expanse_type.update",
+    "group": "expanse_type",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 526,
+    "name": "expanse_type.view",
+    "group": "Finance",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 262,
+    "name": "fakeinvoices.create",
+    "group": "fakeinvoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 260,
+    "name": "fakeinvoices.getlist",
+    "group": "fakeinvoices",
+    "is_menu_web": "1",
+    "web_route_key": "/fakeinvoices"
+  },
+  {
+    "id": 261,
+    "name": "fakeinvoices.getone",
+    "group": "fakeinvoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 264,
+    "name": "fakeinvoices.remove",
+    "group": "fakeinvoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 263,
+    "name": "fakeinvoices.update",
+    "group": "fakeinvoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 376,
+    "name": "inactive_admins.create",
+    "group": "inactive_admins",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 374,
+    "name": "inactive_admins.getlist",
+    "group": "inactive_admins",
+    "is_menu_web": "1",
+    "web_route_key": "/inactive_admins"
+  },
+  {
+    "id": 375,
+    "name": "inactive_admins.getone",
+    "group": "inactive_admins",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 378,
+    "name": "inactive_admins.remove",
+    "group": "inactive_admins",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 377,
+    "name": "inactive_admins.update",
+    "group": "inactive_admins",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 470,
+    "name": "inventory-transactions.create",
+    "group": "inventory-transactions",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 468,
+    "name": "inventory-transactions.getlist",
+    "group": "inventory-transactions",
+    "is_menu_web": "1",
+    "web_route_key": "/inventory-transactions"
+  },
+  {
+    "id": 469,
+    "name": "inventory-transactions.getone",
+    "group": "inventory-transactions",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 472,
+    "name": "inventory-transactions.remove",
+    "group": "inventory-transactions",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 471,
+    "name": "inventory-transactions.update",
+    "group": "inventory-transactions",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 256,
+    "name": "invoices.create",
+    "group": "invoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 166,
+    "name": "invoices.getlist",
+    "group": "invoices",
+    "is_menu_web": "1",
+    "web_route_key": "/invoices"
+  },
+  {
+    "id": 255,
+    "name": "invoices.getone",
+    "group": "invoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 258,
+    "name": "invoices.remove",
+    "group": "invoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 257,
+    "name": "invoices.update",
+    "group": "invoices",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 459,
+    "name": "ip-Management.create",
+    "group": "ip-Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 457,
+    "name": "ip-Management.getlist",
+    "group": "ip-Management",
+    "is_menu_web": "1",
+    "web_route_key": "/ip-Management"
+  },
+  {
+    "id": 458,
+    "name": "ip-Management.getone",
+    "group": "ip-Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 461,
+    "name": "ip-Management.remove",
+    "group": "ip-Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 460,
+    "name": "ip-Management.update",
+    "group": "ip-Management",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 302,
+    "name": "list.create",
+    "group": "list",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 300,
+    "name": "list.getlist",
+    "group": "list",
+    "is_menu_web": "1",
+    "web_route_key": "/list"
+  },
+  {
+    "id": 301,
+    "name": "list.getone",
+    "group": "list",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 304,
+    "name": "list.remove",
+    "group": "list",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 303,
+    "name": "list.update",
+    "group": "list",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 354,
+    "name": "mark-all-read.create",
+    "group": "mark-all-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 352,
+    "name": "mark-all-read.getlist",
+    "group": "mark-all-read",
+    "is_menu_web": "1",
+    "web_route_key": "/mark-all-read"
+  },
+  {
+    "id": 353,
+    "name": "mark-all-read.getone",
+    "group": "mark-all-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 356,
+    "name": "mark-all-read.remove",
+    "group": "mark-all-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 355,
+    "name": "mark-all-read.update",
+    "group": "mark-all-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 349,
+    "name": "mark-read.create",
+    "group": "mark-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 347,
+    "name": "mark-read.getlist",
+    "group": "mark-read",
+    "is_menu_web": "1",
+    "web_route_key": "/mark-read"
+  },
+  {
+    "id": 348,
+    "name": "mark-read.getone",
+    "group": "mark-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 351,
+    "name": "mark-read.remove",
+    "group": "mark-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 350,
+    "name": "mark-read.update",
+    "group": "mark-read",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 339,
+    "name": "my-notifications.create",
+    "group": "my-notifications",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 337,
+    "name": "my-notifications.getlist",
+    "group": "my-notifications",
+    "is_menu_web": "1",
+    "web_route_key": "/my-notifications"
+  },
+  {
+    "id": 338,
+    "name": "my-notifications.getone",
+    "group": "my-notifications",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 341,
+    "name": "my-notifications.remove",
+    "group": "my-notifications",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 340,
+    "name": "my-notifications.update",
+    "group": "my-notifications",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 414,
+    "name": "notifications.create",
+    "group": "notifications",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 412,
+    "name": "notifications.getlist",
+    "group": "notifications",
+    "is_menu_web": "1",
+    "web_route_key": "/notifications"
+  },
+  {
+    "id": 413,
+    "name": "notifications.getone",
+    "group": "notifications",
+    "is_menu_web": null,
+    "web_route_key": null
+  },
+  {
+    "id": 416,
+    "name": "notifications.remove",
+    "group": "notifications",
+    "is_menu_web": null,
+    "web_route_key": null
+  }
+]

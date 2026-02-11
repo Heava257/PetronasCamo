@@ -61,7 +61,7 @@ exports.getBranchOverrides = async (req, res) => {
 
     // ✅ Get base role permissions
     const [basePermissions] = await db.query(`
-      SELECT 
+      SELECT DISTINCT
         p.id, 
         p.name, 
         p.\`group\` as category

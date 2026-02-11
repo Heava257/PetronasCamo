@@ -25,6 +25,7 @@ exports.getList = async (req, res) => {
       sql += " AND name NOT LIKE 'report.%' ";
     }
 
+    sql += " ORDER BY `group`, name ASC";
     const [list] = await db.query(sql, params);
 
     // Group permissions by category

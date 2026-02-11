@@ -30,8 +30,8 @@ module.exports = (app) => {
   app.post("/api/order", validate_token("order.create"), create);
   app.put("/api/order/:id", validate_token("order.update"), updateInvoice);
   app.delete("/api/order/:id", validate_token("order.remove"), deleteInvoice);
-  app.get("/api/order_detail/:id", getone);
-  app.get("/api/order_detail/:orderId", getOrderDetail);
+  app.get("/api/order_detail/:id", validate_token(), getone);
+  app.get("/api/order_detail/:orderId", validate_token(), getOrderDetail);
   app.get("/api/payment/history/my-group", validate_token(), getPaymentHistory);
   app.put("/api/payment/:id", validate_token("order.update"), updatePayment);
   app.put("/api/payment/:id/void", validate_token("order.remove"), voidPayment);

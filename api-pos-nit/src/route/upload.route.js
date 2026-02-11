@@ -1,10 +1,11 @@
 // api-pos-nit/src/route/upload.route.js
 const multer = require('multer');
+const { validate_token } = require("../controller/auth.controller");
 const { storage, deleteImage } = require('../config/cloudinary');
 
 module.exports = (app) => {
   // Configure multer with Cloudinary storage
-  const upload = multer({ 
+  const upload = multer({
     storage: storage,
     limits: {
       fileSize: 5 * 1024 * 1024 // 5MB limit
@@ -19,7 +20,7 @@ module.exports = (app) => {
   });
 
   // Upload single image
-  app.post('/api/upload', upload.single('image'), (req, res) => {
+  app.post('/api/upload', validate_token(), upload.single('image'), (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -51,7 +52,7 @@ module.exports = (app) => {
   });
 
   // Upload multiple images
-  app.post('/api/upload-multiple', upload.array('images', 10), (req, res) => {
+  app.post('/api/upload-multiple', validate_token(), upload.array('images', 10), (req, res) => {
     try {
       if (!req.files || req.files.length === 0) {
         return res.status(400).json({
@@ -85,13 +86,13 @@ module.exports = (app) => {
   });
 
   // Delete image
-  app.delete('/api/upload/:publicId', async (req, res) => {
+  app.delete('/api/upload/:publicId', validate_token(), async (req, res) => {
     try {
       const { publicId } = req.params;
-      
+
       // Decode publicId (it might be URL encoded)
       const decodedPublicId = decodeURIComponent(publicId);
-      
+
       const result = await deleteImage(decodedPublicId);
 
       if (result.result === 'ok') {
@@ -118,7 +119,7 @@ module.exports = (app) => {
   });
 
   // Get image URL with transformations
-  app.get('/api/image/:publicId', (req, res) => {
+  app.get('/api/image/:publicId', validate_token(), (req, res) => {
     try {
       const { publicId } = req.params;
       const { width, height, crop } = req.query;
