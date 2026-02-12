@@ -48,7 +48,7 @@ exports.getListByCurrentUserGroup = async (req, res) => {
       FROM customer c
       LEFT JOIN user u ON c.user_id = u.id
       ${whereClause}
-      ORDER BY c.create_at DESC
+      ORDER BY c.code ASC
     `;
 
     const [list] = await db.query(sql, params);
