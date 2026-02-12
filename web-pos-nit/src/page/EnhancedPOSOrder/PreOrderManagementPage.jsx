@@ -229,8 +229,8 @@ function PreOrderManagementPage() {
 
       const res = await request("customer/my-group", "get");
       if (res && res.list) {
-        setCustomers(res.list.map(c => ({
-          label: `${c.name} (${c.tel})`,
+        setCustomers(res.list.map((c, index) => ({
+          label: `${index + 1}. ${c.name} (${c.tel})`,
           value: c.id,
           ...c
         })));

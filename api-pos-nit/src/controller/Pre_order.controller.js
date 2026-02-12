@@ -423,7 +423,9 @@ exports.getPreOrderList = async (req, res) => {
     let sql = `
       SELECT
         po.*,
-        DATE_FORMAT(po.actual_delivery_date, '%Y-%m-%d %H:%i:%s') as actual_delivery_date_formatted,
+        DATE_FORMAT(DATE_ADD(po.order_date, INTERVAL 7 HOUR), '%Y-%m-%d') as fixed_order_date,
+        DATE_FORMAT(DATE_ADD(po.delivery_date, INTERVAL 7 HOUR), '%Y-%m-%d') as fixed_delivery_date,
+        DATE_FORMAT(DATE_ADD(po.actual_delivery_date, INTERVAL 7 HOUR), '%Y-%m-%d %H:%i:%s') as actual_delivery_date_formatted,
         (SELECT COUNT(*) FROM pre_order_detail WHERE pre_order_id = po.id) as item_count,
         u_creator.name as creator_name,
         b.name as creator_branch,
@@ -563,7 +565,7 @@ exports.getPreOrderById = async (req, res) => {
     const { id } = req.params;
 
     const [preOrder] = await db.query(
-      "SELECT * FROM pre_order WHERE id = :id",
+      "SELECT *, DATE_FORMAT(DATE_ADD(order_date, INTERVAL 7 HOUR), '%Y-%m-%d') as fixed_order_date, DATE_FORMAT(DATE_ADD(delivery_date, INTERVAL 7 HOUR), '%Y-%m-%d') as fixed_delivery_date FROM pre_order WHERE id = :id",
       { id }
     );
 
@@ -713,6 +715,7 @@ exports.updatePreOrder = async (req, res) => {
   try {
     const { id } = req.params;
     const {
+      order_date,
       delivery_date,
       delivery_time,
       delivery_address,
@@ -810,6 +813,7 @@ exports.updatePreOrder = async (req, res) => {
 
     await db.query(`
       UPDATE pre_order SET
+        order_date = :order_date,
         delivery_date = :delivery_date,
         delivery_time = :delivery_time,
         delivery_address = :delivery_address,
@@ -823,6 +827,7 @@ exports.updatePreOrder = async (req, res) => {
       WHERE id = :id
     `, {
       id,
+      order_date: order_date || null,
       delivery_date: delivery_date || null,
       delivery_time: delivery_time || null,
       delivery_address: delivery_address || null,

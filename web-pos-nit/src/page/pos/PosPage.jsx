@@ -40,7 +40,7 @@ function PosPage() {
 
       if (res && !res.error) {
         const customers = (res.list || []).map((customer, i) => ({
-          label: `${i + 1}. ${customer.name}`,
+          label: `${i + 1}. ${customer.name} (${customer.tel})`,
           value: customer.id,
           name: customer.name,
           address: customer.address,

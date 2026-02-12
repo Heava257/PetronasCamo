@@ -133,7 +133,7 @@ function CustomerPaymentPage() {
     const loadCustomers = async () => {
         const res = await request("customer/my-group", "get"); // Using correct endpoint
         if (res && !res.error) {
-            setState(p => ({ ...p, customers: res.list || [] }));
+            setState(p => ({ ...p, customers: (res.list || []).map((c, i) => ({ ...c, label: `${i + 1}. ${c.name} (${c.tel})` })) }));
         }
     };
 
@@ -850,8 +850,8 @@ function CustomerPaymentPage() {
                                 }
                             >
                                 {state.customers.map(c => (
-                                    <Option key={c.id} value={c.id} label={`${c.name} (${c.tel})`}>
-                                        {c.name} ({c.tel})
+                                    <Option key={c.id} value={c.id} label={c.label}>
+                                        {c.label}
                                     </Option>
                                 ))}
                             </Select>
