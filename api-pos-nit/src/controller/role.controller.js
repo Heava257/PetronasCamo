@@ -2,7 +2,15 @@ const { db, isArray, isEmpty, logError } = require("../util/helper");
 
 exports.getList = async (req, res) => {
   try {
-    const [list] = await db.query("SELECT * FROM role");
+    const userRoleId = req.auth?.role_id;
+    let sql = "SELECT * FROM role";
+
+    // ✅ Hide High-level Roles and Unused Default Roles from Admin & Regular Users
+    if (Number(userRoleId) !== 29) { // 29 = Super Admin
+      sql += " WHERE code NOT IN ('SUPER_ADMIN', 'MANAGER', 'CASHIER', 'STOCK_KEEPER', 'SALE')";
+    }
+
+    const [list] = await db.query(sql);
     res.json({
       i_know_you_are_id: req.current_id,
       list: list,

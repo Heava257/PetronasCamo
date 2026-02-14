@@ -774,3 +774,210 @@ exports.getEventTypesList = async (req, res) => {
     });
   }
 };
+
+const fs = require('fs');
+const path = require('path');
+
+/**
+ * Handle Webhook from Telegram
+ */
+exports.handleWebhook = async (req, res) => {
+  const logFile = path.join(__dirname, '../../debug_telegram.log');
+  try {
+    const { message, callback_query } = req.body;
+    const bot_token = req.params.bot_token;
+
+    // Log incoming update
+    fs.appendFileSync(logFile, `[${new Date().toISOString()}] Incoming update for bot ${bot_token.substring(0, 5)}...: ${JSON.stringify(req.body)}\n`);
+
+    // 1. Handle Messages
+    if (message && message.text) {
+      const chatId = message.chat.id;
+      const text = message.text.toLowerCase();
+
+      if (text === '/start' || text === 'menu' || text === 'មឺនុយ') {
+        await sendMainMenu(bot_token, chatId);
+      }
+    }
+
+    // 2. Handle Callback Queries (Button Clicks)
+    if (callback_query) {
+      const chatId = callback_query.message.chat.id;
+      const messageId = callback_query.message.message_id;
+      const action = callback_query.data;
+
+      if (action === 'main_menu') {
+        await editToMainMenu(bot_token, chatId, messageId);
+      } else if (action === 'report_menu') {
+        await sendReportMenu(bot_token, chatId, messageId);
+      } else if (action === 'stock_report') {
+        await handleStockReport(bot_token, chatId, messageId);
+      } else if (action.startsWith('sale_report_')) {
+        const period = action.replace('sale_report_', '');
+        await handleSaleReport(bot_token, chatId, messageId, period);
+      } else if (action.startsWith('payment_report_')) {
+        const period = action.replace('payment_report_', '');
+        await handlePaymentReport(bot_token, chatId, messageId, period);
+      }
+
+      // Answer callback query to stop loading state
+      try {
+        await axios.post(`https://api.telegram.org/bot${bot_token}/answerCallbackQuery`, {
+          callback_query_id: callback_query.id
+        });
+      } catch (e) { }
+    }
+
+    return res.status(200).send('OK');
+  } catch (error) {
+    console.error('Webhook Error:', error.message);
+    return res.status(200).send('OK'); // Always return 200 to Telegram
+  }
+};
+
+// --- Helper Functions for Telegram UI ---
+
+async function sendMainMenu(token, chatId) {
+  const text = `👋 <b>សួស្តី! ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រង PETRONAS</b>\nសូមជ្រើសរើសមុខងារខាងក្រោម៖`;
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: "📊 របាយការណ៍សរុប", callback_data: "report_menu" }],
+      [{ text: "📦 ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }],
+      [{ text: "🔄 ធ្វើបច្ចុប្បន្នភាព", callback_data: "main_menu" }]
+    ]
+  };
+  await sendTelegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard });
+}
+
+async function editToMainMenu(token, chatId, messageId) {
+  const text = `👋 <b>ស្វាគមន៍មកកាន់ប្រព័ន្ធគ្រប់គ្រង PETRONAS</b>\nសូមជ្រើសរើសមុខងារខាងក្រោម៖`;
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: "📊 របាយការណ៍សរុប", callback_data: "report_menu" }],
+      [{ text: "📦 ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }]
+    ]
+  };
+  await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: keyboard });
+}
+
+async function sendReportMenu(token, chatId, messageId) {
+  const text = `📊 <b>ជ្រើសរើសប្រភេទរបាយការណ៍៖</b>`;
+  const keyboard = {
+    inline_keyboard: [
+      [{ text: "💰 លក់ (ថ្ងៃនេះ)", callback_data: "sale_report_today" }, { text: "💰 លក់ (ម្សិលមិញ)", callback_data: "sale_report_yesterday" }],
+      [{ text: "💰 លក់ (សប្តាហ៍នេះ)", callback_data: "sale_report_week" }],
+      [{ text: "💳 ការបង់ប្រាក់ (ថ្ងៃនេះ)", callback_data: "payment_report_today" }],
+      [{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "main_menu" }]
+    ]
+  };
+  await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: keyboard });
+}
+
+async function handleStockReport(token, chatId, messageId) {
+  try {
+    const [rows] = await db.query(`
+      SELECT p.name, SUM(it.quantity) as qty, p.unit
+      FROM product p
+      JOIN inventory_transaction it ON p.id = it.product_id
+      GROUP BY p.id, p.name, p.unit
+      HAVING qty > 1
+    `);
+
+    let msg = `📦 <b>ស្ថានភាពស្តុកបច្ចុប្បន្ន៖</b>\n━━━━━━━━━━━━━━━\n`;
+    rows.forEach((r, i) => {
+      msg += `${i + 1}. ${r.name}: <b>${parseFloat(r.qty).toLocaleString()} ${r.unit || 'L'}</b>\n`;
+    });
+    msg += `━━━━━━━━━━━━━━━\n<i>Update at: ${new Date().toLocaleString()}</i>`;
+
+    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "main_menu" }]] };
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handleSaleReport(token, chatId, messageId, period) {
+  try {
+    let dateFilter = "DATE(o.order_date) = CURDATE()";
+    let title = "ថ្ងៃនេះ";
+
+    if (period === 'yesterday') {
+      dateFilter = "DATE(o.order_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+      title = "ម្សិលមិញ";
+    } else if (period === 'week') {
+      dateFilter = "YEARWEEK(o.order_date, 1) = YEARWEEK(CURDATE(), 1)";
+      title = "សប្តាហ៍នេះ";
+    }
+
+    const [sales] = await db.query(`
+      SELECT 
+        u.branch_name,
+        SUM(cd.total_amount) as total
+      FROM customer_debt cd
+      JOIN \`order\` o ON cd.order_id = o.id
+      JOIN user u ON o.user_id = u.id
+      WHERE ${dateFilter}
+      GROUP BY u.branch_name
+    `);
+
+    let msg = `💰 <b>របាយការណ៍លក់ (${title})</b>\n━━━━━━━━━━━━━━━\n`;
+    let grandTotal = 0;
+    if (sales.length === 0) {
+      msg += `<i>(មិនទាន់មានទិន្នន័យ)</i>\n`;
+    } else {
+      sales.forEach(s => {
+        msg += `📍 ${s.branch_name || 'HO'}: <b>$${parseFloat(s.total).toLocaleString()}</b>\n`;
+        grandTotal += parseFloat(s.total);
+      });
+    }
+    msg += `━━━━━━━━━━━━━━━\n💵 <b>សរុបរួម: $${grandTotal.toLocaleString()}</b>`;
+
+    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function handlePaymentReport(token, chatId, messageId, period) {
+  try {
+    let dateFilter = "DATE(pay.payment_date) = CURDATE()";
+    let title = "ថ្ងៃនេះ";
+
+    const [payments] = await db.query(`
+      SELECT 
+        u.branch_name,
+        SUM(pay.amount) as total
+      FROM payments pay
+      JOIN \`order\` o ON pay.order_id = o.id
+      JOIN user u ON o.user_id = u.id
+      WHERE ${dateFilter}
+      GROUP BY u.branch_name
+    `);
+
+    let msg = `💳 <b>របាយការណ៍បង់ប្រាក់ (${title})</b>\n━━━━━━━━━━━━━━━\n`;
+    let grandTotal = 0;
+    if (payments.length === 0) {
+      msg += `<i>(មិនទាន់មានទិន្នន័យ)</i>\n`;
+    } else {
+      payments.forEach(p => {
+        msg += `📍 ${p.branch_name || 'HO'}: <b>$${parseFloat(p.total).toLocaleString()}</b>\n`;
+        grandTotal += parseFloat(p.total);
+      });
+    }
+    msg += `━━━━━━━━━━━━━━━\n💵 <b>សរុបរួម: $${grandTotal.toLocaleString()}</b>`;
+
+    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function sendTelegram(token, method, data) {
+  try {
+    await axios.post(`https://api.telegram.org/bot${token}/${method}`, data);
+  } catch (err) {
+    console.error(`Telegram Error (${method}):`, err.response?.data || err.message);
+  }
+}
