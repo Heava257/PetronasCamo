@@ -288,7 +288,7 @@ function ReportPaymentHistory() {
 
   return (
     <MainPage loading={loading}>
-      <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="report-payment-history-container px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Header */}
         <Card
           className="mb-6 shadow-lg border-0 bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-800 dark:to-emerald-800"
@@ -400,10 +400,14 @@ function ReportPaymentHistory() {
                 height="400px"
                 data={state.chartData}
                 options={{
-                  legend: { position: "bottom" },
+                  legend: {
+                    position: "bottom",
+                    textStyle: { color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333" }
+                  },
                   colors: ["#10b981", "#3b82f6", "#8b5cf6", "#f59e0b"],
                   chartArea: { width: "90%", height: "80%" },
-                  pieHole: 0.4
+                  pieHole: 0.4,
+                  backgroundColor: "transparent"
                 }}
               />
             </Card>
@@ -482,7 +486,7 @@ function ReportPaymentHistory() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .ant-table-thead > tr > th {
           background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
           color: #ffffff !important;

@@ -13,6 +13,8 @@ import {
   UserOutlined,
   SettingOutlined,
   ClockCircleOutlined,
+  SunOutlined,
+  MoonOutlined,
 } from "@ant-design/icons";
 import {
   LayoutDashboard,
@@ -176,12 +178,12 @@ const menuItems = [
       { key: "role", label: "menu.role" },
     ]
   },
-  {
-    key: "admin-management",
-    icon: Users,
-    label: "menu.admin_management",
-    category: "MANAGEMENT",
-  },
+  // {
+  //   key: "admin-management",
+  //   icon: Users,
+  //   label: "menu.admin_management",
+  //   category: "MANAGEMENT",
+  // },
   {
     key: "supperadmin-management",
     icon: Shield,
@@ -189,11 +191,17 @@ const menuItems = [
     category: "MANAGEMENT",
   },
   {
-    key: "inactive_admins",
-    icon: User,
-    label: "menu.inactive_admins",
+    key: "system-logs",
+    icon: FileText,
+    label: "menu.system_logs",
     category: "MANAGEMENT",
   },
+  // {
+  //   key: "inactive_admins",
+  //   icon: User,
+  //   label: "menu.inactive_admins",
+  //   category: "MANAGEMENT",
+  // },
   {
     key: "closing-group",
     icon: AlignJustify,
@@ -250,7 +258,8 @@ const menuItems = [
 const CleanDarkLayout = () => {
   /* Dark Mode & Theme - Replaced with SettingsContext */
   /* Dark Mode & Theme - Replaced with SettingsContext */
-  const { isSettingsOpen, isDarkMode, currentTemplate, settings } = useSettings();
+  /* Dark Mode & Theme - Replaced with SettingsContext */
+  const { isSettingsOpen, isDarkMode, toggleDarkMode, currentTemplate, settings } = useSettings();
   // ... (lines 356-847 remain same, I will use multiple replace chunks or just update the useSettings line and the Layout line separate if they are far apart)
 
   // Actually, useSettings is around line 355. Layout is line 848. I should use separate chunks.
@@ -313,26 +322,30 @@ const CleanDarkLayout = () => {
         'products', 'purchase', 'admin-StockReconciliation',
         'delivery', 'finance', 'customer-payment', 'supplier-payment',
         'expense', 'customer', 'admin-ShiftClosing', 'admin-DailyClosing',
-        'admin-ShiftClosingChecklist', 'employee-management'
+        'admin-ShiftClosingChecklist', 'employee-management', 'closing-group'
       ];
 
       items = menuItems.filter(item => {
-        // Hide standard operations and reports
-        if (item.category === 'OPERATIONS' ||
-          item.category === 'FINANCE' ||
-          item.category === 'REPORTS') {
+        // ✅ Hide root dashboard link for Super Admin
+        if (item.key === "") {
           return false;
         }
 
-        // Specifically blacklist certain keys if they are in other categories
+        // ✅ Hide operator-specific categories
+        if (item.category === 'OPERATIONS' ||
+          item.category === 'FINANCE' ||
+          item.category === 'REPORTS' ||
+          item.category === 'MAIN') {
+          return false;
+        }
+
+        // Hide blacklisted specific keys
         if (blacklistedKeys.includes(item.key)) {
           return false;
         }
 
         return true;
-      }).map(item => {
-        return item;
-      }).filter(Boolean);
+      });
     } else {
       if (!permision || permision.length === 0) return [];
 
@@ -384,7 +397,8 @@ const CleanDarkLayout = () => {
     }
 
     return items;
-  }, [permision, searchValue, t, profile]);
+    // ✅ Fixed: Use profile?.id instead of profile object to avoid infinite loop
+  }, [permision, searchValue, t, profile?.id]);
 
   // ✅ AUTO-EXPAND parent menu on path change
   useEffect(() => {
@@ -434,6 +448,50 @@ const CleanDarkLayout = () => {
       navigate("/login");
     }
   }, [profile, navigate]);
+
+  // ✅ GLOBAL ROUTE PERMISSION GUARD
+  useEffect(() => {
+    if (!profile || !configLoaded || !permision) return;
+
+    const isSuperAdmin = profile && (Number(profile.role_id) === 29 || profile.role_code === 'SUPER_ADMIN');
+    if (isSuperAdmin) return;
+
+    // List of paths that are always accessible to authenticated users
+    const publicPaths = ['/profile', '/settings', '/login', '/logout', '/about', '/oauth-callback', '/ip-Management'];
+
+    // Check if the current path is in the exclusion list
+    if (publicPaths.some(path => location.pathname === path || location.pathname.startsWith(path + '/'))) {
+      return;
+    }
+
+    // Match current path against user permissions (Improved with prefix matching)
+    const hasAccess = Array.isArray(permision) && permision.some(p => {
+      if (!p.web_route_key) return false;
+
+      const routeKey = p.web_route_key;
+      const currentPath = location.pathname;
+
+      // Exact match
+      if (routeKey === currentPath) return true;
+
+      // Handle root dashboard
+      if (currentPath === '/' && routeKey === '/') return true;
+
+      // Prefix match for sub-routes/parameters (e.g., /employee -> /employee/123)
+      if (routeKey !== '/' && currentPath.startsWith(routeKey)) {
+        // Ensure it matches at a path boundary (/employee/123 matches /employee, but /employee-old wouldn't)
+        const nextChar = currentPath.slice(routeKey.length)[0];
+        if (!nextChar || nextChar === '/') return true;
+      }
+
+      return false;
+    });
+
+    if (!hasAccess) {
+      console.warn(`🛑 Access Denied: User does not have permission for ${location.pathname}. Redirecting to profile.`);
+      navigate("/profile");
+    }
+  }, [location.pathname, permision, profile, configLoaded, navigate]);
 
   // Apply dark mode
   useEffect(() => {
@@ -634,6 +692,18 @@ const CleanDarkLayout = () => {
       <div key={item.key} className={`menu-item-container level-${level} ${settings.menuItemTemplate === 'tree' ? 'tree-node' : ''} ${hasChildren ? 'has-children' : 'leaf-node'} ${isExpanded ? 'is-expanded' : ''}`}>
         <button
           onClick={() => {
+            if (collapsed) {
+              setCollapsed(false);
+              // If it's a parent item, make sure it expands
+              if (hasChildren && !expandedKeys.includes(item.key)) {
+                // Determine expanded keys - similar to toggle logic but forcing open
+                toggleExpanded(item.key, level, siblings);
+              } else if (!hasChildren) {
+                handleMenuClick(item.key);
+              }
+              return;
+            }
+
             if (hasChildren) {
               toggleExpanded(item.key, level, siblings);
             } else {
@@ -643,7 +713,7 @@ const CleanDarkLayout = () => {
           className={`hierarchical-menu-item ${isSelected ? "selected" : ""} ${collapsed && level === 0 ? "collapsed" : ""} ${hasChildren ? "has-children" : ""}`}
           style={settings.menuItemTemplate === 'tree' ? {} : { paddingLeft: `${12 + level * 16}px` }}
         >
-          {Icon && settings.menuItemTemplate !== 'tree' && <Icon size={18} className="menu-icon" />}
+          {Icon && <Icon size={18} className="menu-icon" />}
           {!collapsed && (
             <>
               <span className="menu-label">{t(item.label)}</span>
@@ -859,17 +929,54 @@ const CleanDarkLayout = () => {
           </div>
 
           <div className="header-right">
-            {/* <Dropdown menu={languageMenu} placement="bottomRight">
-              <div className="header-icon glass-pill">
-                <GlobalOutlined />
-                {!isMobile && <span className="pill-label">{i18n.language === 'km' ? 'ភាសាខ្មែរ' : 'English'}</span>}
+            <div className="lang-toggle-wrapper" title={i18n.language === 'km' ? "Switch to English" : "ប្តូរទៅភាសាខ្មែរ"}>
+              <div
+                className={`lang-toggle-switch ${i18n.language === 'km' ? 'km' : ''}`}
+                onClick={() => {
+                  const l = i18n.language === 'km' ? 'en' : 'km';
+                  i18n.changeLanguage(l);
+                  changeCustomLanguage(l);
+                }}
+              >
+                <div className="lang-toggle-text left" style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                  ខ្មែរ
+                </div>
+                <div className="lang-toggle-text right" style={{ fontSize: '12px', fontWeight: 'bold' }}>
+                  EN
+                </div>
+                <div className="lang-toggle-knob">
+                  <span className="lang-flag" style={{ fontSize: '20px' }}>{i18n.language === 'km' ? '🇰🇭' : '🇬🇧'}</span>
+                </div>
               </div>
-            </Dropdown> */}
+            </div>
 
+            {/* Settings Button */}
+            <div
+              className="header-icon glass-pill"
+              onClick={() => navigate('/settings')}
+              title={t('menu.settings')}
+            >
+              <SettingOutlined />
+            </div>
 
+            {/* Notification Bell */}
+            <NotificationBell />
+
+            {/* CANOT USE GLASS PILL CLASS HERE - CUSTOM SWITCH */}
+            <div className="theme-toggle-wrapper" title={isDarkMode ? "Dark Mode" : "Light Mode"}>
+              <div className={`theme-toggle-switch ${isDarkMode ? 'dark' : ''}`} onClick={toggleDarkMode}>
+                <div className="theme-toggle-icon moon">
+                  <MoonOutlined />
+                </div>
+                <div className="theme-toggle-icon sun">
+                  <SunOutlined />
+                </div>
+                <div className="theme-toggle-knob"></div>
+              </div>
+            </div>
 
             {/* Attendance Quick Access */}
-            {(profile?.role_code === 'SUPER_ADMIN' || permision?.some(p => p.web_route_key === '/attendance')) && (
+            {/* {(profile?.role_code === 'SUPER_ADMIN' || permision?.some(p => p.web_route_key === '/attendance')) && (
               <div
                 className={`header-icon glass-pill ${location.pathname === '/attendance' ? 'active' : ''}`}
                 onClick={() => navigate('/attendance')}
@@ -877,16 +984,16 @@ const CleanDarkLayout = () => {
                 <ClockCircleOutlined />
                 {!isMobile && <span className="pill-label">{t('menu.attendance')}</span>}
               </div>
-            )}
+            )} */}
 
             {/* <TemplateSelector isMobile={isMobile} /> */}
-            <div
+            {/* <div
               className={`header-icon glass-pill ${isFullScreen ? "active" : ""}`}
               onClick={toggleFullScreen}
             >
               {isFullScreen ? <FullscreenExitOutlined /> : <FullscreenOutlined />}
               {!isMobile && <span className="pill-label">{isFullScreen ? 'Exit' : 'Full'}</span>}
-            </div>
+            </div> */}
 
 
             {/* <NotificationBell /> */}

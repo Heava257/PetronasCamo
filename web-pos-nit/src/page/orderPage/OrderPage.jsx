@@ -310,7 +310,7 @@ function OrderPage() {
       key: "product_name",
       title: (
         <div className="table-header">
-          <div className="khmer-text">{t('ផលិតផល')}</div>  {/* ✅ Changed from Category */}
+          <div className="khmer-text">{t('order.products')}</div>  {/* ✅ Changed from Category */}
         </div>
       ),
       render: (_, record) => (
@@ -344,7 +344,7 @@ function OrderPage() {
       key: "supplier",
       title: (
         <div className="khmer-text">
-          <div>{t("ក្រុមហ៊ុនផ្គត់ផ្គង់")}</div>
+          <div>{t("order.supplier")}</div>
         </div>
       ),
       dataIndex: "supplier_name",
@@ -371,7 +371,7 @@ function OrderPage() {
     //   width: 100
     // },
     {
-      title: <div className="khmer-text">{t("លេខប័ណ្ណ")}</div>,
+      title: <div className="khmer-text">{t("order.invoice_no")}</div>,
       dataIndex: "pre_order_no",
       key: "pre_order_no",
       render: (no) => (
@@ -447,7 +447,7 @@ function OrderPage() {
     },
     {
       key: "total",
-      title: <div className="khmer-text">{t("សរុប")}</div>,
+      title: <div className="khmer-text">{t("order.total")}</div>,
       dataIndex: "grand_total",
       render: (value) => (
         <div style={{ fontWeight: 'bold', color: '#1890ff' }}>

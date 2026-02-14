@@ -278,7 +278,6 @@
 // //       }
 // //     }
 
-// //     console.log("Using user ID:", userId);
 
 // //     // Insert into user_roles table
 // //     let rolesSql = `

@@ -20,6 +20,7 @@ import {
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { useTranslation } from "../../../locales/TranslationContext";
+import { request } from "../../../util/helper";
 
 dayjs.extend(relativeTime);
 
@@ -27,23 +28,9 @@ const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 
-// Mock request function - replace with your actual API helper
-const request = async (url, method = 'get', data = null) => {
-  // Replace this with your actual API request function
-  const response = await fetch(`/api/${url}`, {
-    method: method.toUpperCase(),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
-    body: data ? JSON.stringify(data) : null
-  });
-  return response.json();
-};
-
 const SystemLogsPage = () => {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("logs");
+  const [activeTab, setActiveTab] = useState("system"); // Default to system logs
   const [loading, setLoading] = useState(false);
   const [systemLogs, setSystemLogs] = useState([]);
   const [loginHistory, setLoginHistory] = useState([]);

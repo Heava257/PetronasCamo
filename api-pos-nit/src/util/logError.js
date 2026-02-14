@@ -8,9 +8,9 @@ exports.logError = async (controller, error, res) => {
     // ===================================
     // ✅ IMPROVED CONSOLE ERROR LOGGING
     // ===================================
-    console.log("\n" + "=".repeat(80));
+
     console.error(`❌ ERROR OCCURRED`);
-    console.log("=".repeat(80));
+
     console.error(`📍 Function: ${controller}`);
     console.error(`⏰ Time: ${timestamp}`);
     console.error(`🔴 Error Type: ${error.name || 'Error'}`);
@@ -27,10 +27,10 @@ exports.logError = async (controller, error, res) => {
     const errorLine = error.stack?.split('\n')[1]?.trim() || 'Unknown location';
     console.error(`📌 Location: ${errorLine}`);
 
-    console.log("-".repeat(80));
+
     console.error(`📚 Stack Trace:`);
     console.error(error.stack || 'No stack trace available');
-    console.log("=".repeat(80) + "\n");
+
 
     // ===================================
     // File Logging
@@ -63,7 +63,7 @@ ${"=".repeat(80)}
     const path = `${logDir}/${controller}_errors.log`;
     await fs.appendFile(path, logMessage);
 
-    console.log(`📝 Error logged to: ${path}`);
+
 
   } catch (loggingError) {
     console.error("⚠️  Failed to write error log:", loggingError);

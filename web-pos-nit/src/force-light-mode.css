@@ -1,0 +1,40 @@
+/* 🔥🔥🔥 NUCLEAR FORCE LIGHT MODE - REMOVE ALL DARK BACKGROUNDS 🔥🔥🔥 */
+
+/* Force ALL table rows to be transparent */
+table tbody tr,
+.ant-table tbody tr,
+.ant-table-tbody tr,
+.ant-table-tbody>tr,
+.ant-table-row,
+div table tbody tr,
+div .ant-table tbody tr,
+div .ant-table-tbody>tr {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+/* Force ALL table cells to be transparent */
+table tbody tr td,
+.ant-table tbody tr td,
+.ant-table-tbody>tr>td {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* Force table headers to be light */
+.ant-table-thead>tr>th {
+    background: rgba(255, 215, 0, 0.15) !important;
+    background-color: rgba(255, 215, 0, 0.15) !important;
+}
+
+/* Override ANY dark backgrounds globally */
+[style*="background: rgb(30"],
+[style*="background: rgb(15"],
+[style*="background: rgb(17"],
+[style*="background-color: rgb(30"],
+[style*="background-color: rgb(15"],
+[style*="background-color: rgb(17"] {
+    background: transparent !important;
+    background-color: transparent !important;
+}

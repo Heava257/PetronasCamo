@@ -854,3 +854,184 @@ html.template-acledagold .item-preorder-context {
     margin-top: 4px;
     font-weight: 600;
 }
+
+/* DARK MODE OVERRIDES For Integrated Sidebar (via Modal wrapper) */
+.dark-mode-modal .invoice-sidebar-no-scroll {
+    background: #0f172a;
+    color: #f1f5f9;
+}
+
+.dark-mode-modal .grid-column,
+.dark-mode-modal .cart-column,
+.dark-mode-modal .info-column,
+.dark-mode-modal .summary-column {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+.dark-mode-modal .column-title {
+    color: #e2e8f0;
+    border-bottom: 2px solid #6366f1;
+}
+
+.dark-mode-modal .cart-item-compact {
+    background: #334155;
+    border-color: #475569;
+}
+
+.dark-mode-modal .item-name,
+.dark-mode-modal .item-number {
+    color: #f1f5f9;
+}
+
+.dark-mode-modal .empty-cart-message {
+    color: #94a3b8;
+}
+
+.dark-mode-modal .stock-label,
+.dark-mode-modal .form-label-compact,
+.dark-mode-modal .stat-label {
+    color: #cbd5e1;
+}
+
+.dark-mode-modal .stock-value,
+.dark-mode-modal .stat-value,
+.dark-mode-modal .breakdown-value {
+    color: #f1f5f9;
+}
+
+.dark-mode-modal .ant-select:not(.ant-select-disabled):not(.ant-select-customize-input) .ant-select-selector,
+.dark-mode-modal .ant-picker,
+.dark-mode-modal .ant-input,
+.dark-mode-modal input.qty-input-compact {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: white !important;
+}
+
+.dark-mode-modal .ant-select-arrow,
+.dark-mode-modal .ant-picker-suffix {
+    color: #94a3b8;
+}
+
+.dark-mode-modal .selected-info-display {
+    background: #334155;
+    border-color: #475569;
+}
+
+.dark-mode-modal .info-name {
+    color: #f1f5f9;
+}
+
+.dark-mode-modal .info-address {
+    color: #cbd5e1;
+}
+
+.dark-mode-modal .stat-card {
+    background: #334155;
+    border: 1px solid #475569;
+}
+
+.dark-mode-modal .breakdown-label {
+    color: #e2e8f0;
+}
+
+.dark-mode-modal .validation-note {
+    background: rgba(5, 150, 105, 0.2);
+    color: #34d399;
+    border: 1px solid rgba(5, 150, 105, 0.3);
+}
+
+.dark-mode-modal .item-skipped-style {
+    background: #334155 !important;
+    border-color: #475569 !important;
+}
+
+/* Color Fixes for Modal Content */
+.dark-mode-modal .item-preorder-context {
+    background: #451a03 !important;
+    /* Dark Amber */
+    border: 1px dashed #f59e0b !important;
+    color: #fbbf24 !important;
+}
+
+.dark-mode-modal .item-preorder-context .text-gray-500,
+.dark-mode-modal .item-preorder-context span {
+    color: #fcd34d !important;
+}
+
+.dark-mode-modal .item-preorder-context .text-orange-600 {
+    color: #ffff00 !important;
+    /* Bright Yellow for emphasis */
+}
+
+.dark-mode-modal .text-orange-600 {
+    color: #fbbf24 !important;
+}
+
+/* Price Box */
+.dark-mode-modal .item-price-display {
+    background: #022c22 !important;
+    /* Very Dark Green */
+    border: 1px solid #059669 !important;
+}
+
+.dark-mode-modal .price-label {
+    color: #6ee7b7 !important;
+}
+
+.dark-mode-modal .price-value {
+    color: #34d399 !important;
+}
+
+.dark-mode-modal .item-row-total {
+    color: #a7f3d0 !important;
+}
+
+.dark-mode-modal .item-calc-formula {
+    color: #94a3b8 !important;
+}
+
+/* Summary Box Breakdown */
+.dark-mode-modal .summary-breakdown {
+    background: #1e293b !important;
+    border: 2px solid #334155 !important;
+}
+
+.dark-mode-modal .total-row {
+    border-top: 2px solid #334155 !important;
+    padding-top: 10px;
+    margin-top: 6px;
+    background: transparent !important;
+    /* Ensure no white bg */
+}
+
+.dark-mode-modal .total-value {
+    color: #34d399 !important;
+}
+
+/* Button Refinement */
+.dark-mode-modal .btn-preview-compact {
+    background: transparent !important;
+    border: 2px solid #6366f1 !important;
+    color: #818cf8 !important;
+}
+
+.dark-mode-modal .btn-preview-compact:hover:not(:disabled) {
+    background: #4338ca !important;
+    color: white !important;
+}
+
+.dark-mode-modal .btn-checkout-compact {
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+}
+
+.dark-mode-modal .btn-clear-compact {
+    background: transparent !important;
+    border: 1px solid #ef4444 !important;
+    color: #ef4444 !important;
+}
+
+.dark-mode-modal .btn-clear-compact:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+}

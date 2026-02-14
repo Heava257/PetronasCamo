@@ -1,0 +1,4 @@
+--- Checking c:\Users\pongc\Desktop\PO_System\family_finances\web-pos-nit\src\locales\en\translation.json ---
+Found duplicates: ['reports', 'status', 'female', 'sales', 'total_customers', 'customer', 'expense_type', 'category', 'no', 'male', 'supplier']
+--- Checking c:\Users\pongc\Desktop\PO_System\family_finances\web-pos-nit\src\locales\km\translation.json ---
+Found duplicates: ['remaining_balance', 'status', 'invoice_summary', 'total_purchases', 'customer', 'no', 'role', 'select_product', 'remaining', 'payment', 'inventory_transactions', 'expense_type', 'supplier', 'actions', 'upload', 'amount', 'user', 'total_amount', 'payment_method', 'search', 'pending', 'reports', 'total_sales', 'paid_amount', 'product_name', 'sales', 'selling_price', 'total_customers', 'total_stock_value']

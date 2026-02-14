@@ -159,7 +159,7 @@ exports.create = async (req, res) => {
     const [customerCheck] = await db.query(checkSql, { customer_id });
 
     if (customerCheck.length === 0) {
-      console.log(`[Customer Not Found] Target Customer: ${customer_id}`);
+
       return res.status(404).json({
         error: true,
         message: "Customer not found",

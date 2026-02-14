@@ -15,20 +15,24 @@ import {
   Tag,
   Tooltip,
 } from "antd";
-import { 
-  MdAdd, 
-  MdDelete, 
-  MdEdit, 
-  MdLocationOn, 
-  MdStar, 
+import {
+  MdAdd,
+  MdDelete,
+  MdEdit,
+  MdLocationOn,
+  MdStar,
   MdStarOutline,
-  MdContentPaste 
+  MdContentPaste
 } from "react-icons/md";
 import { request } from "../../util/helper";
 import { useTranslation } from "../../locales/TranslationContext";
+import { useSettings } from "../../settings";
+
 
 function CustomerLocationsModal({ visible, onClose, customerId, customerName }) {
   const { t } = useTranslation();
+  const { isDarkMode } = useSettings();
+
   const [form] = Form.useForm();
   const [locations, setLocations] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -53,29 +57,29 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
     try {
       // ជម្រះអក្សរ និងចន្លោះទំនេរ
       const cleaned = input.trim();
-      
+
       // បំបែកតាមសញ្ញាក្បៀស
       const parts = cleaned.split(',').map(part => part.trim());
-      
+
       if (parts.length >= 2) {
         const lat = parseFloat(parts[0]);
         const lng = parseFloat(parts[1]);
-        
+
         if (!isNaN(lat) && !isNaN(lng)) {
           // ដាក់តម្លៃទៅក្នុង Form
           form.setFieldsValue({
             latitude: lat,
             longitude: lng
           });
-          
+
           // ជម្រះស៊ុមបញ្ចូល
           setCoordinateInput("");
-          
+
           message.success(t("coordinates_parsed_successfully"));
           return;
         }
       }
-      
+
       message.error(t("invalid_coordinate_format"));
     } catch (error) {
       console.error("Parse coordinate error:", error);
@@ -107,7 +111,7 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
           lng: parseFloat(qParamMatch[2])
         };
       }
-      
+
       // Pattern 2: https://www.google.com/maps/@11.58799,104.93009,15z
       const atParamMatch = url.match(/@([\d\.-]+),([\d\.-]+)/);
       if (atParamMatch) {
@@ -116,7 +120,7 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
           lng: parseFloat(atParamMatch[2])
         };
       }
-      
+
       // Pattern 3: /@11.58799,104.93009,15z
       const directMatch = url.match(/([\d\.-]+),([\d\.-]+)/);
       if (directMatch) {
@@ -125,7 +129,7 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
           lng: parseFloat(directMatch[2])
         };
       }
-      
+
       return null;
     } catch (error) {
       console.error("Extract from URL error:", error);
@@ -227,9 +231,9 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
   const handleModalSubmit = async () => {
     try {
       const values = await form.validateFields();
-      
+
       const { isEditing, currentLocation } = modalState;
-      
+
       if (isEditing) {
         const res = await request(`locations/${currentLocation.id}`, "put", values);
         if (res && res.success) {
@@ -273,10 +277,11 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
       key: "location_name",
       render: (text, record) => (
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <MdLocationOn style={{ color: record.is_default ? '#faad14' : '#1890ff', fontSize: '18px' }} />
-          <span style={{ fontWeight: record.is_default ? '600' : '400' }}>
+          <MdLocationOn style={{ color: record.is_default ? '#eab308' : '#3b82f6', fontSize: '18px' }} />
+          <span style={{ fontWeight: record.is_default ? '600' : '400', color: isDarkMode ? '#f8fafc' : 'inherit' }}>
             {text}
           </span>
+
           {record.is_default && (
             <Tag color="gold" style={{ marginLeft: '8px' }}>
               {t("default")}
@@ -397,12 +402,13 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <MdLocationOn style={{ fontSize: '24px', color: '#1890ff' }} />
             <div>
-              <div style={{ fontSize: '18px', fontWeight: '600' }}>
+              <div style={{ fontSize: '18px', fontWeight: '600', color: isDarkMode ? '#f1f5f9' : '#111827' }}>
                 {t("manage_locations")}
               </div>
-              <div style={{ fontSize: '14px', fontWeight: '400', color: '#888' }}>
+              <div style={{ fontSize: '14px', fontWeight: '400', color: isDarkMode ? '#94a3b8' : '#888' }}>
                 {customerName}
               </div>
+
             </div>
           </div>
         }
@@ -504,7 +510,7 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
                 onPressEnter={() => parseCoordinates(coordinateInput)}
               />
               <Tooltip title={t("paste_from_clipboard")}>
-                <Button 
+                <Button
                   icon={<MdContentPaste />}
                   onClick={handlePasteCoordinates}
                 />
@@ -516,9 +522,10 @@ function CustomerLocationsModal({ visible, onClose, customerId, customerName }) 
                 {t("parse")}
               </Button>
             </div>
-            <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+            <div style={{ fontSize: '12px', color: isDarkMode ? '#94a3b8' : '#666', marginTop: '4px' }}>
               {t("coordinate_format_hint")}
             </div>
+
           </Form.Item>
 
           <Row gutter={16}>

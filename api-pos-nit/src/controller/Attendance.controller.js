@@ -71,7 +71,7 @@ exports.checkIP = async (req, res) => {
       fsSync.appendFileSync(path.join(__dirname, "../../ip_debug.log"), logMsg);
     } catch (e) { }
 
-    console.log(`IP Check: [${sanitizedIp}] - Allowed: ${result.length > 0}`);
+
 
     res.json({
       error: false,

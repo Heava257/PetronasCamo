@@ -1,4 +1,17 @@
-/* @import './styles/antd-dark-mode.css'; */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Khmer:wght@100..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+    --font-khmer: 'Noto Serif Khmer', serif;
+}
+
+* {
+    font-family: 'Noto Serif Khmer', serif !important;
+}
+
+body {
+    font-family: 'Noto Serif Khmer', serif !important;
+}

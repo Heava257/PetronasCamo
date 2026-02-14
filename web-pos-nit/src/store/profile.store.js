@@ -10,7 +10,7 @@ export const getAcccessToken = () => {
 };
 export const setProfile = (value) => {
   if (value) {
-    localStorage.setItem("profile", value);
+    localStorage.setItem("profile", JSON.stringify(value));
   } else {
     localStorage.removeItem("profile");
   }
@@ -19,7 +19,11 @@ export const getProfile = () => {
   try {
     var profile = localStorage.getItem("profile");
     if (profile !== "" && profile !== null && profile !== undefined && profile !== "null") {
-      return JSON.parse(profile);
+      let data = JSON.parse(profile);
+      if (typeof data === 'string') {
+        return JSON.parse(data);
+      }
+      return data;
     }
     return null;
   } catch (err) {
@@ -28,7 +32,7 @@ export const getProfile = () => {
 };
 export const setPermission = (array) => {
   if (array) {
-    localStorage.setItem("permission", array);
+    localStorage.setItem("permission", JSON.stringify(array));
   } else {
     localStorage.removeItem("permission");
   }
@@ -37,7 +41,11 @@ export const getPermission = () => {
   try {
     var permission = localStorage.getItem("permission");
     if (permission !== "" && permission !== null && permission !== undefined && permission !== "null") {
-      return JSON.parse(permission);
+      let data = JSON.parse(permission);
+      if (typeof data === 'string') {
+        return JSON.parse(data);
+      }
+      return data;
     }
     return null;
   } catch (err) {

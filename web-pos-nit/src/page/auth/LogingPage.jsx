@@ -4,7 +4,7 @@ import { request } from "../../util/helper";
 import { setAcccessToken, setPermission, setProfile } from "../../store/profile.store";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/petronas_header.png";
-import WelcomeAnimation3D from "../../component/layout/WelcomeAnimation ";
+import WelcomeAnimation3D from "../../component/layout/WelcomeAnimation";
 import { UserOutlined, LockOutlined, ArrowRightOutlined, CustomerServiceOutlined, ClockCircleOutlined, InfoCircleOutlined, CloseOutlined, ScanOutlined, CameraOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
 import { FaTelegramPlane, FaGoogle, FaApple } from "react-icons/fa";
 import { ScanFace, ShieldCheck } from "lucide-react";
@@ -103,8 +103,8 @@ function LoginPage() {
 
         // ✅ Save tokens and profile
         setAcccessToken(res.access_token);
-        setProfile(JSON.stringify(res.profile));
-        setPermission(JSON.stringify(res.permission));
+        setProfile(res.profile);
+        setPermission(res.permission);
         if (res.profile?.user_id) {
           localStorage.setItem("user_id", res.profile.user_id);
         }
@@ -369,11 +369,19 @@ function LoginPage() {
                 setTimeout(() => {
                   setFaceLoginVisible(false);
                   navigate("/");
-                }, 500); // Fast redirect
+                }, 800);
                 return; // Stop loop
               } else {
-                // Only show error if explicitly failed multiple times or just silent retry?
-                // For banking feel, silent retry is better until timeout
+                setScanStatus('failed');
+                // Give user 2 seconds to see failure, then reset to scanning
+                setTimeout(() => {
+                  if (isMounted && faceLoginVisible) {
+                    setScanStatus('scanning');
+                    setIsScanning(true);
+                    detectLoop(); // Resume loop
+                  }
+                }, 2000);
+                return; // Stop current loop to show error
               }
             }
           } catch (err) {
@@ -388,8 +396,7 @@ function LoginPage() {
 
       } catch (err) {
         console.error("Camera Error", err);
-        // Don't show error immediately on auto-login to avoid annoyance
-        // message.error("Camera access denied"); 
+        message.error("មិនអាចបើកកាមេរ៉ាបានទេ! សូមពិនិត្យមើលការអនុញ្ញាត (Camera Access)");
         setFaceLoginVisible(false);
       }
     };
@@ -706,121 +713,167 @@ function LoginPage() {
         </div>
 
         <Modal
-          title={
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <ShieldCheck size={24} color="#1e3a8a" />
-              <span style={{ fontSize: '18px', fontWeight: '600', color: '#1e3a8a' }}>Secure Identity Verification</span>
-            </div>
-          }
           open={faceLoginVisible}
           onCancel={cancelFaceLogin}
           footer={null}
           width={400}
           centered
+          className="face-id-modal"
+          modalRender={(modal) => (
+            <div style={{ borderRadius: 24, overflow: 'hidden', backgroundColor: 'transparent' }}>{modal}</div>
+          )}
         >
-          <div style={{ textAlign: 'center', padding: '20px 0' }}>
-            <div style={{
-              width: '100%',
-              height: '300px',
-              backgroundColor: '#000',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              position: 'relative',
-              marginBottom: '20px'
-            }}>
-              {/* Hidden Video for API */}
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                  transform: 'scaleX(-1)', // Mirror effect
-                  borderRadius: '12px'
-                }}
-              />
-
-              {/* Scanning Animation UI - Transparent Overlay */}
-              <div style={{
+          <div style={{ textAlign: 'center', position: 'relative', height: '400px' }}>
+            {/* Hidden Video for Detection (Full size but hidden) */}
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
-                right: 0,
-                bottom: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                opacity: 0,
+                zIndex: 0
+              }}
+            />
+
+            {/* Premium Glass Privacy Layer (No solid black) */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              zIndex: 1
+            }} />
+
+            {/* Banking Style Overlay */}
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10
+            }}>
+              {/* Central Scanner Frame */}
+              <div className={`face-id-frame ${scanStatus === 'failed' ? 'error-shake' : ''}`} style={{
+                width: '180px',
+                height: '180px',
+                border: `3px solid ${scanStatus === 'success' ? '#4ade80' : scanStatus === 'failed' ? '#ef4444' : 'rgba(255,255,255,0.4)'}`,
+                borderRadius: '40px',
+                position: 'relative',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'rgba(0,0,0,0.1)', // Slight dark tint for contrast
-                zIndex: 10
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+                transition: 'all 0.3s ease'
               }}>
-                {/* Viewfinder Corners */}
-                <div style={{ position: 'absolute', top: 20, left: 20, width: 40, height: 40, borderTop: '4px solid #1e3a8a', borderLeft: '4px solid #1e3a8a', borderTopLeftRadius: 12 }}></div>
-                <div style={{ position: 'absolute', top: 20, right: 20, width: 40, height: 40, borderTop: '4px solid #1e3a8a', borderRight: '4px solid #1e3a8a', borderTopRightRadius: 12 }}></div>
-                <div style={{ position: 'absolute', bottom: 20, left: 20, width: 40, height: 40, borderBottom: '4px solid #1e3a8a', borderLeft: '4px solid #1e3a8a', borderBottomLeftRadius: 12 }}></div>
-                <div style={{ position: 'absolute', bottom: 20, right: 20, width: 40, height: 40, borderBottom: '4px solid #1e3a8a', borderRight: '4px solid #1e3a8a', borderBottomRightRadius: 12 }}></div>
+                {/* Scanner corners */}
+                <div style={{ position: 'absolute', top: -3, left: -3, width: 30, height: 30, borderTop: '6px solid #4f46e5', borderLeft: '6px solid #4f46e5', borderTopLeftRadius: 40, opacity: scanStatus === 'scanning' ? 1 : 0 }}></div>
+                <div style={{ position: 'absolute', top: -3, right: -3, width: 30, height: 30, borderTop: '6px solid #4f46e5', borderRight: '6px solid #4f46e5', borderTopRightRadius: 40, opacity: scanStatus === 'scanning' ? 1 : 0 }}></div>
+                <div style={{ position: 'absolute', bottom: -3, left: -3, width: 30, height: 30, borderBottom: '6px solid #4f46e5', borderLeft: '6px solid #4f46e5', borderBottomLeftRadius: 40, opacity: scanStatus === 'scanning' ? 1 : 0 }}></div>
+                <div style={{ position: 'absolute', bottom: -3, right: -3, width: 30, height: 30, borderBottom: '6px solid #4f46e5', borderRight: '6px solid #4f46e5', borderBottomRightRadius: 40, opacity: scanStatus === 'scanning' ? 1 : 0 }}></div>
 
-                {/* Scanning Line Animation */}
-                {isScanning && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '10%',
-                    left: '10%',
-                    right: '10%',
-                    height: '2px',
-                    background: '#00ff00',
-                    boxShadow: '0 0 10px #00ff00',
-                    animation: 'scanLine 2s infinite linear'
-                  }}></div>
-                )}
+                {/* Animated Scan Line */}
+                {scanStatus === 'scanning' && <div className="scanner-line"></div>}
 
-                {isScanning ? (
-                  <>
-                    <div className="face-scan-pulse">
-                      <ScanOutlined style={{ fontSize: '60px', color: '#1890ff' }} />
-                    </div>
-                    <p style={{ marginTop: 20, fontSize: '16px', color: '#666' }}>Scanning...</p>
-                  </>
-                ) : scanStatus === 'success' ? (
-                  <>
-                    <SafetyCertificateOutlined style={{ fontSize: '60px', color: '#52c41a' }} />
-                    <p style={{ marginTop: 20, fontSize: '18px', color: '#52c41a', fontWeight: 'bold' }}>Verified</p>
-                  </>
+                {/* Displaying Icons based on Status */}
+                {scanStatus === 'success' ? (
+                  <ShieldCheck size={80} color="#4ade80" className="success-pop" />
+                ) : scanStatus === 'failed' ? (
+                  <ScanFace size={80} color="#ef4444" />
                 ) : (
-                  <p>Initializing Camera...</p>
+                  <ScanFace size={80} color="#fff" />
                 )}
               </div>
-            </div>
 
-            <style>{`
-            .face-scan-pulse {
-               width: 100px;
-               height: 100px;
-               border-radius: 50%;
-               background: rgba(30, 58, 138, 0.2);
-               display: flex;
-               alignItems: center;
-               justifyContent: center;
-               border: 1px solid rgba(30, 58, 138, 0.5);
-               backdrop-filter: blur(4px);
+              {/* Status Message */}
+              <div style={{ marginTop: '30px' }}>
+                <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: 0 }}>
+                  {scanStatus === 'success' ? 'Verified' : scanStatus === 'failed' ? 'Verification Failed' : 'Face ID'}
+                </h3>
+                <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', marginTop: '5px' }}>
+                  {scanStatus === 'scanning' ? 'Scanning face...' : scanStatus === 'verifying' ? 'Checking processing...' : scanStatus === 'failed' ? 'Not recognized, please try again' : 'Logged in successfully'}
+                </p>
+              </div>
+
+              {/* Retry Button for Failed State */}
+              {scanStatus === 'failed' && (
+                <Button
+                  type="primary"
+                  danger
+                  shape="round"
+                  size="large"
+                  onClick={() => {
+                    setScanStatus('scanning');
+                    setIsScanning(true);
+                  }}
+                  style={{ marginTop: 20 }}
+                >
+                  Try Again
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <style>{`
+            .scanner-line {
+              position: absolute;
+              top: 0;
+              left: 20px;
+              right: 20px;
+              height: 4px;
+              background: linear-gradient(90deg, transparent, #4f46e5, transparent);
+              box-shadow: 0 0 15px #4f46e5;
+              animation: scanMove 2s infinite linear;
+              z-index: 5;
             }
-            @keyframes scanLine {
-              0% { top: 10%; opacity: 0; }
-              5% { opacity: 1; }
-              95% { opacity: 1; }
-              100% { top: 90%; opacity: 0; }
+            @keyframes scanMove {
+              0% { top: 10%; }
+              50% { top: 85%; }
+              100% { top: 10%; }
             }
-            @keyframes pulse {
-              0% { box-shadow: 0 0 0 0 rgba(30, 58, 138, 0.4); }
-              70% { box-shadow: 0 0 0 20px rgba(24, 144, 255, 0); }
-              100% { box-shadow: 0 0 0 0 rgba(24, 144, 255, 0); }
+            .error-shake {
+              animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+            }
+            @keyframes shake {
+              10%, 90% { transform: translate3d(-1px, 0, 0); }
+              20%, 80% { transform: translate3d(2px, 0, 0); }
+              30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+              40%, 60% { transform: translate3d(4px, 0, 0); }
+            }
+            .success-pop {
+              animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            }
+            @keyframes pop {
+              0% { transform: scale(0.5); opacity: 0; }
+              100% { transform: scale(1); opacity: 1; }
+            }
+            .face-id-modal .ant-modal-content {
+              padding: 0 !important;
+              background: transparent !important;
+              box-shadow: none !important;
+            }
+            .face-id-modal .ant-modal-close {
+              color: white !important;
+              top: 15px;
+              right: 15px;
+              z-index: 100;
             }
           `}</style>
-          </div>
         </Modal>
       </div >
     </ConfigProvider>

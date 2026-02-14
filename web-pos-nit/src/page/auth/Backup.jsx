@@ -4,7 +4,7 @@ import { request } from "../../util/helper";
 import { setAcccessToken, setPermission, setProfile } from "../../store/profile.store";
 import { useNavigate } from "react-router-dom";
 import logo from "../../assets/petronas.png";
-import WelcomeAnimation from "../../component/layout/WelcomeAnimation ";
+import WelcomeAnimationfrom "../../component/layout/WelcomeAnimation";
 import { UserOutlined, LockOutlined, ArrowRightOutlined, CustomerServiceOutlined } from '@ant-design/icons';
 import { FaTelegramPlane } from "react-icons/fa";
 
@@ -24,8 +24,8 @@ function LoginPage() {
       const res = await request("auth/login", "post", param);
       if (res && !res.error) {
         setAcccessToken(res.access_token);
-        setProfile(JSON.stringify(res.profile));
-        setPermission(JSON.stringify(res.permission));
+        setProfile(res.profile);
+        setPermission(res.permission);
         if (res.profile?.user_id) {
           localStorage.setItem("user_id", res.profile.user_id);
         }
@@ -59,12 +59,12 @@ function LoginPage() {
 
   // Show welcome animation if login is successful
   if (showWelcome) {
-    return <WelcomeAnimation />;
+    return <WelcomeAnimation/>;
   }
 
   return (
     <>
-      <style jsx>{`
+      <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         
         .login-container {

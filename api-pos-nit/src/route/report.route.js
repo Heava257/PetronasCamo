@@ -14,11 +14,11 @@ module.exports = (app) => {
   app.get("/api/report_Profit_Loss", validate_token("report_Profit_Loss.getlist"), report.report_Profit_Loss);
   // routes/report.route.js
 
-  app.get('/api/report_Expense_Category', validate_token(), report.report_Expense_Category); // ✅ Route verified
-  app.get('/api/report_Income_vs_Expense', validate_token(), report.report_Income_vs_Expense);
-  app.get('/api/report_Expense_Details', validate_token(), report.report_Expense_Details);
+  app.get('/api/report_Expense_Category', validate_token("report_Expense_Summary.getlist"), report.report_Expense_Category); // ✅ Route verified
+  app.get('/api/report_Income_vs_Expense', validate_token("report_Profit_Loss.getlist"), report.report_Income_vs_Expense);
+  app.get('/api/report_Expense_Details', validate_token("report_Expense_Summary.getlist"), report.report_Expense_Details);
 
 
 
-  app.get('/api/report/branch-comparison', validate_token(), report.branchComparison);
+  app.get('/api/report/branch-comparison', validate_token("report_BranchComparison.getlist"), report.branchComparison);
 };

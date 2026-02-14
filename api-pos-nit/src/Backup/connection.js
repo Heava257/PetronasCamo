@@ -12,7 +12,7 @@
 
 // pool.getConnection()
 //   .then(connection => {
-//     console.log("MySQL connected successfully");
+
 //     connection.release();  
 //   })
 //   .catch(error => {
@@ -20,11 +20,11 @@
 //   });
 
 // pool.on('acquire', (connection) => {
-//   console.log(`Connection ${connection.threadId} acquired`);
+
 // });
 
 // pool.on('release', (connection) => {
-//   console.log(`Connection ${connection.threadId} released`);
+
 // });
 
 // module.exports = pool;

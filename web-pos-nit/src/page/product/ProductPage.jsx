@@ -290,154 +290,156 @@ function ProductPage() {
 
   return (
     <MainPage loading={loading}>
-      {/* Dynamic Header Bar */}
-      <div className="pageHeader" style={{
-        background: 'linear-gradient(135deg, #4e54c8, #8f94fb)',
-        padding: '16px 24px',
-        borderRadius: '12px',
-        marginBottom: '24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
-      }}>
-        <div className="flex items-center gap-4">
-          <div className="khmer-title1" style={{ color: 'white', fontSize: '26px' }}>{t("products")}</div>
-        </div>
+      <div className="product-page-container">
+        {/* Dynamic Header Bar */}
+        <div className="pageHeader" style={{
+          background: 'linear-gradient(135deg, #4e54c8, #8f94fb)',
+          padding: '16px 24px',
+          borderRadius: '12px',
+          marginBottom: '24px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+        }}>
+          <div className="flex items-center gap-4">
+            <div className="khmer-title1" style={{ color: 'white', fontSize: '26px' }}>{t("products")}</div>
+          </div>
 
-        <div className="flex items-center gap-4">
-          {isPermission("product.create") && (
-            <Button
-              type="primary"
-              onClick={onClickAddBtn}
-              icon={<MdOutlineCreateNewFolder />}
+          <div className="flex items-center gap-4">
+            {isPermission("product.create") && (
+              <Button
+                type="primary"
+                onClick={onClickAddBtn}
+                icon={<MdOutlineCreateNewFolder />}
+                size="large"
+                style={{
+                  height: '45px',
+                  padding: '0 25px',
+                  fontSize: '16px',
+                  fontWeight: 'bold',
+                  background: '#3b82f6',
+                  borderColor: '#3b82f6'
+                }}
+              >
+                {t("new")}
+              </Button>
+            )}
+            <Radio.Group
+              value={viewMode}
+              onChange={(e) => setViewMode(e.target.value)}
+              buttonStyle="solid"
               size="large"
-              style={{
-                height: '45px',
-                padding: '0 25px',
-                fontSize: '16px',
-                fontWeight: 'bold',
-                background: '#3b82f6',
-                borderColor: '#3b82f6'
-              }}
             >
-              {t("new")}
-            </Button>
-          )}
-          <Radio.Group
-            value={viewMode}
-            onChange={(e) => setViewMode(e.target.value)}
-            buttonStyle="solid"
-            size="large"
-          >
-            <Radio.Button value="my"><span className="khmer-title1">{t("my_items")}</span></Radio.Button>
-            <Radio.Button value="group"><span className="khmer-title1">{t("group")}</span></Radio.Button>
-          </Radio.Group>
+              <Radio.Button value="my"><span className="khmer-title1">{t("my_items")}</span></Radio.Button>
+              <Radio.Button value="group"><span className="khmer-title1">{t("group")}</span></Radio.Button>
+            </Radio.Group>
 
 
+          </div>
         </div>
-      </div>
 
-      {/* Statistics and Search Row (Placed in the same row as cards) */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6 border border-gray-100 dark:border-gray-700">
-        <Row gutter={[16, 16]} align="middle">
-          <Col xs={12} sm={6} md={4}>
-            <div className="text-center">
-              <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{list.length}</div>
-              <div className="text-xs text-gray-400 mt-1 uppercase tracking-wider font-bold">{t("Total")}</div>
-            </div>
-          </Col>
-          <Col xs={12} sm={6} md={4}>
-            <div className="text-center border-l border-gray-100 dark:border-gray-700">
-              <div className="text-2xl font-black text-green-600 dark:text-green-400">
-                {list.filter(item => item.user_id === getProfile().id).length}
+        {/* Statistics and Search Row (Placed in the same row as cards) */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-6 border border-gray-100 dark:border-gray-700">
+          <Row gutter={[16, 16]} align="middle">
+            <Col xs={12} sm={6} md={4}>
+              <div className="text-center">
+                <div className="text-2xl font-black text-blue-600 dark:text-blue-400">{list.length}</div>
+                <div className="text-xs text-gray-400 mt-1 uppercase tracking-wider font-bold">{t("Total")}</div>
               </div>
-              <div className="text-xs text-gray-400 mt-1 uppercase tracking-wider font-bold">{t("my_items")}</div>
+            </Col>
+            <Col xs={12} sm={6} md={4}>
+              <div className="text-center border-l border-gray-100 dark:border-gray-700">
+                <div className="text-2xl font-black text-green-600 dark:text-green-400">
+                  {list.filter(item => item.user_id === getProfile().id).length}
+                </div>
+                <div className="text-xs text-gray-400 mt-1 uppercase tracking-wider font-bold">{t("my_items")}</div>
+              </div>
+            </Col>
+            <Col xs={24} sm={12} md={16} className="flex sm:justify-end items-center">
+              <Input.Search
+                onChange={(e) => setState((prev) => ({ ...prev, txtSearch: e.target.value }))}
+                allowClear
+                onSearch={getList}
+                placeholder={t("search")}
+                size="large"
+                style={{ maxWidth: 450, width: '100%', borderRadius: '8px' }}
+                prefix={<SearchOutlined />}
+              />
+            </Col>
+          </Row>
+        </div>
+
+        <Table
+          dataSource={filteredList}
+          columns={columns}
+          rowKey="id"
+          pagination={{ pageSize: 15 }}
+          className="product-table-custom shadow-sm rounded-lg"
+        />
+
+        <Modal
+          open={state.visibleModal}
+          title={
+            <div className="khmer-title1" style={{ color: '#e8c12f', fontSize: '20px' }}>
+              {state.id ? t("edit_product") : t("new_product")}
             </div>
-          </Col>
-          <Col xs={24} sm={12} md={16} className="flex sm:justify-end items-center">
-            <Input.Search
-              onChange={(e) => setState((prev) => ({ ...prev, txtSearch: e.target.value }))}
-              allowClear
-              onSearch={getList}
-              placeholder={t("search")}
-              size="large"
-              style={{ maxWidth: 450, width: '100%', borderRadius: '8px' }}
-              prefix={<SearchOutlined />}
-            />
-          </Col>
-        </Row>
-      </div>
+          }
+          footer={null}
+          onCancel={onCloseModal}
+          width={600}
+          centered
+        >
+          <Form layout="vertical" onFinish={onFinish} form={form}>
+            <Form.Item name="name" label={<div className="khmer-title1">{t("product_name")}</div>} rules={[{ required: true }]}>
+              <Input placeholder={t("product_name")} size="large" />
+            </Form.Item>
 
-      <Table
-        dataSource={filteredList}
-        columns={columns}
-        rowKey="id"
-        pagination={{ pageSize: 15 }}
-        className="product-table-custom shadow-sm rounded-lg"
-      />
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="category_id" label={<div className="khmer-title1">{t("category")}</div>} rules={[{ required: true }]}>
+                  <Select placeholder={t("Select category")} options={config?.category} size="large" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="unit" label={<div className="khmer-title1">{t("unit")}</div>} rules={[{ required: true }]}>
+                  <Select placeholder={t("Select unit")} options={config?.unit} size="large" />
+                </Form.Item>
+              </Col>
+            </Row>
 
-      <Modal
-        open={state.visibleModal}
-        title={
-          <div className="khmer-title1" style={{ color: '#e8c12f', fontSize: '20px' }}>
-            {state.id ? t("edit_product") : t("new_product")}
-          </div>
-        }
-        footer={null}
-        onCancel={onCloseModal}
-        width={600}
-        centered
-      >
-        <Form layout="vertical" onFinish={onFinish} form={form}>
-          <Form.Item name="name" label={<div className="khmer-title1">{t("product_name")}</div>} rules={[{ required: true }]}>
-            <Input placeholder={t("product_name")} size="large" />
-          </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="actual_price" label={<div className="khmer-title1">{t("actual_price_label")}</div>} rules={[{ required: true }]}>
+                  <Input type="number" step="0.01" prefix="$" size="large" />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="size" label={<div className="khmer-title1">{t("size")}</div>}>
+                  <Input placeholder="e.g. 1L, 5L, Small" size="large" />
+                </Form.Item>
+              </Col>
+            </Row>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="category_id" label={<div className="khmer-title1">{t("category")}</div>} rules={[{ required: true }]}>
-                <Select placeholder={t("Select category")} options={config?.category} size="large" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="unit" label={<div className="khmer-title1">{t("unit")}</div>} rules={[{ required: true }]}>
-                <Select placeholder={t("Select unit")} options={config?.unit} size="large" />
-              </Form.Item>
-            </Col>
-          </Row>
+            <Form.Item name="status" label={<div className="khmer-title1">{t("status")}</div>}>
+              <Select size="large" options={[{ label: t('active'), value: 1 }, { label: t('inactive'), value: 0 }]} />
+            </Form.Item>
 
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item name="actual_price" label={<div className="khmer-title1">{t("actual_price_label")}</div>} rules={[{ required: true }]}>
-                <Input type="number" step="0.01" prefix="$" size="large" />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item name="size" label={<div className="khmer-title1">{t("size")}</div>}>
-                <Input placeholder="e.g. 1L, 5L, Small" size="large" />
-              </Form.Item>
-            </Col>
-          </Row>
+            <div className="flex justify-end gap-3 mt-4">
+              <Button onClick={onCloseModal} size="large">{t("cancel")}</Button>
+              <Button type="primary" htmlType="submit" size="large" className="bg-blue-600">{t("save")}</Button>
+            </div>
+          </Form>
+        </Modal>
 
-          <Form.Item name="status" label={<div className="khmer-title1">{t("status")}</div>}>
-            <Select size="large" options={[{ label: t('active'), value: 1 }, { label: t('inactive'), value: 0 }]} />
-          </Form.Item>
-
-          <div className="flex justify-end gap-3 mt-4">
-            <Button onClick={onCloseModal} size="large">{t("cancel")}</Button>
-            <Button type="primary" htmlType="submit" size="large" className="bg-blue-600">{t("save")}</Button>
-          </div>
-        </Form>
-      </Modal>
-
-      {/* Mobile Card View (Hidden by default, used for small screens) */}
-      <style>{`
+        {/* Mobile Card View (Hidden by default, used for small screens) */}
+        <style>{`
         @media (max-width: 1024px) {
           .hidden.lg\\:block { display: none !important; }
           .block.lg\\:hidden { display: block !important; }
         }
       `}</style>
+      </div>
     </MainPage>
   );
 }

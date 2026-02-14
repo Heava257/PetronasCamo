@@ -36,6 +36,8 @@ import {
 import { useTranslation } from "../../locales/TranslationContext";
 import * as XLSX from 'xlsx';
 import Swal from "sweetalert2";
+import { useSettings } from "../../settings";
+
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -296,6 +298,8 @@ const tableStyles = `
 
 function SupplierPaymentPage() {
     const { t } = useTranslation();
+    const { isDarkMode } = useSettings();
+
     const [form] = Form.useForm();
 
     const [state, setState] = useState({
@@ -899,7 +903,8 @@ function SupplierPaymentPage() {
                     )
                 },
                 {
-                    title: "រៀល (KH)",
+                    title: t("riel_kh"),
+
                     width: 'auto',
                     align: 'left',
                     render: (_, record) => {
@@ -914,7 +919,8 @@ function SupplierPaymentPage() {
             ]
         },
         {
-            title: "សកម្មភាព",
+            title: t("action"),
+
             key: "action",
             width: 80,
             fixed: 'right',
@@ -926,15 +932,17 @@ function SupplierPaymentPage() {
                         size="small"
                         icon={<EyeOutlined />}
                         onClick={() => onClickBtnView(record)}
-                        title="View Details"
+                        title={t("view_details")}
                     />
+
                     <Button
                         danger
                         size="small"
                         icon={<DeleteOutlined />}
                         onClick={() => onClickBtnDelete(record)}
-                        title="Delete"
+                        title={t("delete")}
                     />
+
                 </Space>
             ) : null
         }
@@ -948,18 +956,22 @@ function SupplierPaymentPage() {
                     <div
                         className="text-center py-6 px-4 rounded-xl header-banner-print shadow-sm"
                         style={{
-                            background: 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
-                            border: '1px solid #e5e7eb',
-                            color: '#111827'
+                            background: isDarkMode
+                                ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
+                                : 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)',
+                            border: isDarkMode ? '1px solid #334155' : '1px solid #e5e7eb',
+                            color: isDarkMode ? '#f8fafc' : '#111827'
                         }}
                     >
-                        <Title level={3} style={{ color: '#111827', marginBottom: 8, fontWeight: '700' }}>
-                            របាយការណ៍សង្ខេបទិញ សង នៅសល់ពីក្រុមហ៊ុនប៉េត្រូណាស់
+                        <Title level={3} style={{ color: isDarkMode ? '#f8fafc' : '#111827', marginBottom: 8, fontWeight: '700' }}>
+                            {t("supplier_report_title")}
                         </Title>
-                        <Text style={{ color: '#6b7280', fontSize: '15px' }}>
-                            សំរាប់រយៈពេលពីថ្ងៃ {state.dateRange[0]?.format('DD/MM/YYYY')} ដល់ថ្ងៃ {state.dateRange[1]?.format('DD/MM/YYYY')}
+                        <Text style={{ color: isDarkMode ? '#94a3b8' : '#6b7280', fontSize: '15px' }}>
+                            {t("period_from")} {state.dateRange[0]?.format('DD/MM/YYYY')} {t("to_date_label")} {state.dateRange[1]?.format('DD/MM/YYYY')}
                         </Text>
+
                     </div>
+
                 </div>
 
                 <Row gutter={[16, 16]} align="middle" justify="space-between">
@@ -995,7 +1007,8 @@ function SupplierPaymentPage() {
 
                     <Col xs={24} sm={12} md={4}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Text strong style={{ whiteSpace: 'nowrap' }}>អត្រាប្តូរ:</Text>
+                            <Text strong style={{ whiteSpace: 'nowrap' }}>{t("exchange_rate")}</Text>
+
                             <InputNumber
                                 value={state.exchangeRate}
                                 onChange={(val) => setState(p => ({ ...p, exchangeRate: val || 4100 }))}
@@ -1016,21 +1029,24 @@ function SupplierPaymentPage() {
                                 onClick={showPaymentModal}
                                 disabled={!state.selectedSupplier}
                             >
-                                ការទូទាត់ថ្មី
+                                {t("new_payment")}
                             </Button>
+
                             <Button
                                 icon={<DownloadOutlined />}
                                 onClick={handleExport}
                                 disabled={!state.selectedSupplier}
                             >
-                                ទាញយក (Excel)
+                                {t("download_excel")}
                             </Button>
+
                             <Button
                                 icon={<PrinterOutlined />}
                                 onClick={handlePrint}
                             >
-                                បោះពុម្ព
+                                {t("print")}
                             </Button>
+
                         </Space>
                     </Col>
                 </Row>
@@ -1047,45 +1063,51 @@ function SupplierPaymentPage() {
                         bordered
                         className="supplier-ledger-table"
                         style={{
-                            '--ant-table-header-bg': '#d4d4d4',
-                            '--ant-table-header-color': '#1a1a1a'
+                            '--ant-table-header-bg': isDarkMode ? '#1e293b' : '#d4d4d4',
+                            '--ant-table-header-color': isDarkMode ? '#f8fafc' : '#1a1a1a'
                         }}
+
                     />
 
                     {/* Summary Section */}
                     {state.ledger.length > 0 && (
                         <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 summary-print-container">
-                            <Title level={5} style={{ marginBottom: 16 }}>សេចក្តីសង្ខេបសមតុល្យ</Title>
+                            <Title level={5} style={{ marginBottom: 16 }}>{t("balance_summary")}</Title>
+
                             <Row gutter={[32, 16]}>
                                 <Col xs={24} md={12}>
                                     <div className="p-4 bg-white dark:bg-gray-800 rounded border shadow-sm h-full">
                                         <Row justify="space-between" className="mb-3">
-                                            <Col><Text strong>សមតុល្យដើមគ្រា:</Text></Col>
+                                            <Col><Text strong>{t("beginning_balance")}</Text></Col>
                                             <Col><Text strong>{formatPrice(state.summary.beginning_balance || 0)}</Text></Col>
                                         </Row>
+
                                         <Row justify="space-between" className="mb-3">
                                             <Col>
-                                                <Text strong style={{ color: '#1890ff' }}>ទិញបន្ថែមក្នុងគ្រា:</Text>
+                                                <Text strong style={{ color: '#1890ff' }}>{t("period_purchase")}</Text>
                                                 <Text type="secondary" className="ml-2 no-print">({state.summary.increase_count || 0} ដង)</Text>
                                             </Col>
                                             <Col><Text strong style={{ color: '#1890ff' }}>+ {formatPrice(state.summary.increase || 0)}</Text></Col>
                                         </Row>
+
                                         <Row justify="space-between" className="mb-3">
                                             <Col>
-                                                <Text strong style={{ color: '#52c41a' }}>សងក្នុងគ្រា:</Text>
+                                                <Text strong style={{ color: '#52c41a' }}>{t("period_payment")}</Text>
                                                 <Text type="secondary" className="ml-2 no-print">({state.summary.payment_count || 0} ដង)</Text>
                                             </Col>
                                             <Col><Text strong style={{ color: '#52c41a' }}>- {formatPrice(state.summary.total_payments || 0)}</Text></Col>
                                         </Row>
+
                                         <div className="border-t my-2" />
                                         <Row justify="space-between" className="mt-2">
-                                            <Col><Title level={4} style={{ margin: 0 }}>សមតុល្យចុងគ្រា:</Title></Col>
+                                            <Col><Title level={4} style={{ margin: 0 }}>{t("ending_balance")}</Title></Col>
                                             <Col>
                                                 <Title level={4} style={{ margin: 0, color: state.summary.ending_balance > 0 ? '#d9363e' : '#389e0d' }}>
                                                     {formatPrice(Math.abs(state.summary.ending_balance || 0))}
                                                 </Title>
                                             </Col>
                                         </Row>
+
                                     </div>
                                 </Col>
 
@@ -1093,7 +1115,8 @@ function SupplierPaymentPage() {
                                     <div className="p-4 bg-white dark:bg-gray-800 rounded border shadow-sm h-full flex flex-col justify-center">
                                         <Row justify="center" align="middle" className="text-center h-full">
                                             <Col span={24}>
-                                                <Title level={5}>ការប្រៀបធៀប (Comparison)</Title>
+                                                <Title level={5}>{t("comparison")}</Title>
+
                                                 <Text type="secondary">ប្រៀបធៀបជាមួយដើមគ្រា</Text>
                                                 <div className="mt-4">
                                                     {state.summary.comparison > 0 ? (
@@ -1121,8 +1144,9 @@ function SupplierPaymentPage() {
 
                 {/* Payment Modal */}
                 <Modal
-                    title="Record New Payment"
+                    title={t("record_new_payment")}
                     open={state.paymentModalVisible}
+
                     onCancel={() => {
                         form.resetFields();
                         form.setFieldsValue({ slip_image_url: null, bank_ref: null });
@@ -1142,9 +1166,10 @@ function SupplierPaymentPage() {
                     >
                         <Form.Item
                             name="payment_method"
-                            label="Payment Method"
+                            label={t("payment_method")}
                             rules={[{ required: true }]}
                         >
+
                             {state.duplicateSlipFound && (
                                 <Alert
                                     message="Submission Blocked"
@@ -1191,9 +1216,10 @@ function SupplierPaymentPage() {
                                         {isBank && (
                                             <Form.Item
                                                 name="slip_image"
-                                                label="Upload Slip"
+                                                label={t("upload_slip")}
                                                 valuePropName="file"
                                             >
+
                                                 <Upload
                                                     beforeUpload={() => false}
                                                     maxCount={1}
@@ -1218,8 +1244,9 @@ function SupplierPaymentPage() {
                                                     }}
                                                 >
                                                     <Button icon={<PlusOutlined />} loading={state.scanning}>
-                                                        {state.scanning ? 'Scanning...' : 'Click to Upload Slip'}
+                                                        {state.scanning ? t("scanning") : t("click_to_upload_slip")}
                                                     </Button>
+
                                                 </Upload>
                                             </Form.Item>
                                         )}
@@ -1288,17 +1315,19 @@ function SupplierPaymentPage() {
 
                                         <Form.Item
                                             name="payment_date"
-                                            label="Payment Date"
+                                            label={t("payment_date")}
                                             rules={[{ required: true }]}
                                         >
+
                                             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
                                         </Form.Item>
 
                                         <Form.Item
                                             name="amount"
-                                            label="Amount (USD)"
+                                            label={t("amount_usd")}
                                             rules={[{ required: true }]}
                                         >
+
                                             <InputNumber
                                                 style={{ width: '100%' }}
                                                 min={0}
@@ -1310,17 +1339,19 @@ function SupplierPaymentPage() {
 
                                         <Form.Item
                                             name="reference_no"
-                                            label="Reference Number"
+                                            label={t("reference_number")}
                                         >
+
                                             <Input placeholder="e.g., Acleda5337..." />
                                         </Form.Item>
 
                                         {isBank && (
                                             <Form.Item
                                                 name="bank_name"
-                                                label="Bank Name"
+                                                label={t("bank_name")}
                                                 rules={[{ required: true, message: 'Please select a bank' }]}
                                             >
+
                                                 <Select placeholder="Select Bank">
                                                     <Option value="ABA Bank">ABA Bank</Option>
                                                     <Option value="ACLEDA Bank">ACLEDA Bank</Option>
@@ -1334,8 +1365,9 @@ function SupplierPaymentPage() {
 
                                         <Form.Item
                                             name="note"
-                                            label="Note"
+                                            label={t("note")}
                                         >
+
                                             <Input.TextArea rows={3} />
                                         </Form.Item>
                                     </>
@@ -1355,7 +1387,7 @@ function SupplierPaymentPage() {
                                 }}
                                 style={{ marginRight: 8 }}
                             >
-                                Cancel
+                                {t("cancel")}
                             </Button>
                             <Button
                                 type="primary"
@@ -1367,10 +1399,11 @@ function SupplierPaymentPage() {
                                     borderColor: (state.duplicateSlipFound || state.invalidSlipFound) ? '#ff4d4f' : undefined
                                 }}
                             >
-                                {state.duplicateSlipFound ? 'BLOCKED: Duplicate Slip' :
-                                    state.invalidSlipFound ? 'BLOCKED: Invalid Slip' :
-                                        'Save Payment'}
+                                {state.duplicateSlipFound ? t("duplicate_slip") :
+                                    state.invalidSlipFound ? t("invalid_slip") :
+                                        t("save_payment")}
                             </Button>
+
                         </div>
                     </Form>
                 </Modal>

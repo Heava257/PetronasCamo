@@ -48,19 +48,117 @@ import { FaTruck } from "react-icons/fa";
 import { useTranslation } from "../../locales/TranslationContext";
 import { configStore } from "../../store/configStore";
 import { useNavigate } from "react-router-dom";
+import { useSettings } from "../../settings";
+
 
 const { Text, Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 // ✅ Add Global Style Override for Purchase Page
-const purchaseStyles = ``;
+const purchaseStyles = `
+  /* Dark Mode Overrides for Purchase Page */
+  .dark .ant-table {
+    background: transparent !important;
+    color: #e2e8f0 !important;
+  }
+  .dark .ant-table-thead > tr > th {
+    background: #1e293b !important;
+    color: #f8fafc !important;
+    border-bottom: 1px solid #334155 !important;
+  }
+  .dark .ant-table-tbody > tr > td {
+    background: #0f172a !important;
+    color: #cbd5e1 !important;
+    border-bottom: 1px solid #1e293b !important;
+  }
+  .dark .ant-table-tbody > tr:hover > td {
+    background: #1e293b !important;
+  }
+  
+  .dark .ant-card {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f8fafc !important;
+  }
+
+  .dark .ant-modal-content,
+  .dark .ant-modal-header {
+    background-color: #1e293b !important;
+    color: #f8fafc !important;
+    border-bottom-color: #334155 !important;
+  }
+  .dark .ant-modal-title {
+    color: #f8fafc !important;
+  }
+  
+  /* Form Labels */
+  .dark .ant-form-item-label > label {
+    color: #e2e8f0 !important;
+  }
+  
+  /* Inputs, Selects, DatePickers */
+  .dark .ant-input,
+  .dark .ant-input-number,
+  .dark .ant-input-number-input,
+  .dark .ant-select:not(.ant-select-customize-input) .ant-select-selector,
+  .dark .ant-picker {
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #ffffff !important;
+  }
+  
+  .dark .ant-select-arrow,
+  .dark .ant-picker-suffix {
+    color: #94a3b8 !important;
+  }
+  
+  /* Table Summary/Footer in Dark Mode */
+  .dark .ant-table-summary {
+    background-color: #1e293b !important;
+  }
+  
+  /* Pagination */
+  .dark .ant-pagination-item a {
+    color: #e2e8f0 !important;
+  }
+  .dark .ant-pagination-item-active {
+    background: #334155 !important;
+    border-color: #475569 !important;
+  }
+  .dark .ant-pagination-prev .ant-pagination-item-link,
+  .dark .ant-pagination-next .ant-pagination-item-link {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+  }
+
+  /* Adjust placeholder colors */
+  .dark .ant-input::placeholder,
+  .dark .ant-select-selection-placeholder {
+    color: #64748b !important;
+  }
+  
+  /* Custom purchase total card */
+  .dark .purchase-total-card {
+     background: #1e293b !important;
+     border: 1px solid #334155 !important;
+  }
+
+  /* Autofill override */
+  .dark input:-webkit-autofill {
+      -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
+      -webkit-text-fill-color: white !important;
+  }
+`;
 
 function PurchasePage() {
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { config } = configStore();
+  const { isDarkMode } = useSettings();
+
 
   // 🔒 Permission Check - FIXED: Use reliable profile data
   const profile = getProfile();
@@ -1450,6 +1548,7 @@ function PurchasePage() {
               <MdReceipt className="text-blue-500" />
               {t("purchase_order_details")}
             </span>
+
           }
           onCancel={handleDetailModalClose}
           footer={null}
@@ -1463,30 +1562,34 @@ function PurchasePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Order Number")}
+                        {t("order_no")}
                       </Text>
                       <Text className="text-base font-semibold text-gray-900 dark:text-white block">
                         {selectedPurchase.order_no}
                       </Text>
+
                     </div>
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Status")}
+                        {t("status")}
                       </Text>
+
                       {getStatusBadge(selectedPurchase.status)}
                     </div>
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Supplier")}
+                        {t("supplier")}
                       </Text>
+
                       <Text className="text-base font-semibold text-gray-900 dark:text-white block">
                         {selectedPurchase.supplier_name}
                       </Text>
                     </div>
                     <div>
                       <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                        {t("Order Date")}
+                        {t("order_date")}
                       </Text>
+
                       <Text className="text-base text-gray-900 dark:text-white block">
                         {dayjs(selectedPurchase.order_date).format("DD/MM/YYYY")}
                       </Text>
@@ -1496,8 +1599,9 @@ function PurchasePage() {
 
                 <div>
                   <Text className="text-sm font-semibold text-gray-700 dark:text-gray-300 block mb-2">
-                    {t("Order Items")}
+                    {t("order_items")}
                   </Text>
+
                   <div className="space-y-2">
                     {selectedPurchase.items?.map((item, index) => (
                       <div key={index} className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded">
@@ -1517,7 +1621,8 @@ function PurchasePage() {
 
                 <div className="border-t pt-3 bg-blue-50 dark:bg-blue-900 p-3 rounded">
                   <div className="flex justify-between items-center">
-                    <Text className="text-lg font-semibold">{t("Total Amount")}</Text>
+                    <Text className="text-lg font-semibold">{t("total_amount")}</Text>
+
                     <Text className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                       ${Number(selectedPurchase.total_amount || 0).toFixed(2)}
                     </Text>
@@ -1527,8 +1632,9 @@ function PurchasePage() {
                 {selectedPurchase.notes && (
                   <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded">
                     <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                      {t("Notes")}
+                      {t("notes")}
                     </Text>
+
                     <Text className="text-sm text-gray-700 dark:text-gray-300 block">
                       {selectedPurchase.notes}
                     </Text>
@@ -1537,8 +1643,9 @@ function PurchasePage() {
 
                 <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                   <Text className="text-xs text-gray-500 dark:text-gray-400 block mb-1">
-                    {t("Created At")}
+                    {t("create_at")}
                   </Text>
+
                   <Text className="text-sm font-medium text-gray-900 dark:text-white block">
                     {dayjs(selectedPurchase.created_at || selectedPurchase.create_at).format("DD/MM/YYYY HH:mm")}
                   </Text>
@@ -1621,10 +1728,11 @@ function PurchasePage() {
           <div className="flex items-center gap-2">
             <FaTruck className="text-orange-500" size={24} />
             <div>
-              <div className="text-lg font-bold">{t("distribute_stock") || "Distribute Stock"}</div>
+              <div className="text-lg font-bold">{t("distribute_stock")}</div>
               <div className="text-xs text-gray-500">{t("PO")} #{distributeModal.purchase?.order_no}</div>
             </div>
           </div>
+
         }
         onCancel={() => setDistributeModal(p => ({ ...p, visible: false }))}
         width={800}
@@ -1634,16 +1742,18 @@ function PurchasePage() {
               {t("cancel")}
             </Button>,
             <Button key="submit" type="primary" onClick={handleDistributeSubmit} className="bg-orange-500 hover:bg-orange-600">
-              {t("distribute_now") || "Distribute Now"}
+              {t("distribute_now")}
             </Button>
+
           ]}
       >
         <div className="space-y-4 pt-4">
           {/* Branch Selection */}
           <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {t("select_destination_branch") || "Select Destination Branch"} <span className="text-red-500">*</span>
+              {t("select_destination_branch")} <span className="text-red-500">*</span>
             </label>
+
             <Select
               showSearch
               placeholder={t("select_branch")}
@@ -1706,8 +1816,9 @@ function PurchasePage() {
           </div>
 
           <div className="text-xs text-gray-500 italic mt-2">
-            * {t("distribute_note") || "Only items with 'Qty to Send' > 0 will be distributed."}
+            * {t("distribute_note")}
           </div>
+
         </div>
       </Modal>
 

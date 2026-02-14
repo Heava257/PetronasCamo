@@ -704,6 +704,7 @@ function FakeInvoicePage() {
         onCancel={onCloseModal}
         width={1000}
         destroyOnClose
+        className={isDarkMode ? 'dark-mode-modal' : ''}
       >
         <Form layout="vertical" onFinish={onFinish} form={form}>
           <Form.Item name="id" hidden>

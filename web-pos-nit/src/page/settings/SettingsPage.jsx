@@ -180,27 +180,7 @@ function SettingsPage() {
                     </div>
 
                     <Row gutter={[24, 24]}>
-                        <Col xs={24} lg={12}>
-                            <Card className="setting-card">
-                                <div className="setting-card-header">
-                                    <LayoutOutlined className="setting-icon" />
-                                    <h3>Theme Mode</h3>
-                                </div>
-                                <div className="setting-item">
-                                    <div className="setting-info">
-                                        <span className="setting-label">Dark Mode</span>
-                                        <span className="setting-description">Switch between light and dark theme</span>
-                                    </div>
-                                    <Switch
-                                        checked={isDarkMode}
-                                        onChange={toggleDarkMode}
-                                        checkedChildren="🌙"
-                                        unCheckedChildren="☀️"
-                                        size="large"
-                                    />
-                                </div>
-                            </Card>
-                        </Col>
+
 
                         <Col xs={24} lg={12}>
                             <Card className="setting-card">

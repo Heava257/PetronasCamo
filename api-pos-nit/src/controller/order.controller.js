@@ -180,7 +180,7 @@ exports.getone = async (req, res) => {
 //         severity: order.total_amount > 5000 ? 'critical' : 'normal'
 //       });
 
-//       console.log(`✅ Order notification sent to branch: ${branch_name || 'N/A'}`);
+
 //     } catch (notifError) {
 //       console.error('❌ Failed to send order notification:', notifError);
 //       // Don't fail the order creation if notification fails

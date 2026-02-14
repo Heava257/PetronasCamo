@@ -18,7 +18,7 @@
 }
 
 /* 2. Ant Design Card Overrides */
-:global(.dark) .ant-card {
+:global(.dark-DISABLED) .ant-card {
     background: var(--glass-bg-color) !important;
     border: 1px solid var(--glass-border-color) !important;
     backdrop-filter: blur(12px) !important;
@@ -26,124 +26,134 @@
     color: var(--glass-text-primary) !important;
 }
 
-:global(.dark) .ant-card-head {
+:global(.dark-DISABLED) .ant-card-head {
     border-bottom: 1px solid var(--glass-border-color) !important;
     color: var(--glass-text-primary) !important;
 }
 
-:global(.dark) .ant-card-head-title {
+:global(.dark-DISABLED) .ant-card-head-title {
     color: var(--glass-text-primary) !important;
 }
 
-:global(.dark) .ant-card-body {
+:global(.dark-DISABLED) .ant-card-body {
     color: var(--glass-text-primary) !important;
 }
 
 /* 3. Ant Design Table Overrides */
-:global(.dark) .ant-table {
+:global(.dark-DISABLED) .ant-table {
     background: transparent !important;
     color: var(--glass-text-secondary) !important;
 }
 
-:global(.dark) .ant-table-thead>tr>th {
+:global(.dark-DISABLED) .ant-table-thead>tr>th {
     background: rgba(30, 41, 59, 0.8) !important;
     color: var(--glass-text-primary) !important;
     border-bottom: 1px solid var(--glass-border-color) !important;
     font-weight: 600 !important;
 }
 
-:global(.dark) .ant-table-tbody>tr>td {
+:global(.dark-DISABLED) .ant-table-tbody>tr>td {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
     color: var(--glass-text-primary) !important;
 }
 
-:global(.dark) .ant-table-tbody>tr:hover>td {
+:global(.dark-DISABLED) .ant-table-tbody>tr:hover>td {
     background: rgba(59, 130, 246, 0.2) !important;
 }
 
 /* 4. Text and Headings Overrides */
-:global(.dark) h1,
-:global(.dark) h2,
-:global(.dark) h3,
-:global(.dark) h4,
-:global(.dark) h5,
-:global(.dark) h6 {
+:global(.dark-DISABLED) h1,
+:global(.dark-DISABLED) h2,
+:global(.dark-DISABLED) h3,
+:global(.dark-DISABLED) h4,
+:global(.dark-DISABLED) h5,
+:global(.dark-DISABLED) h6 {
     color: var(--glass-text-primary) !important;
 }
 
-:global(.dark) .ant-typography {
+:global(.dark-DISABLED) .ant-typography {
     color: var(--glass-text-primary) !important;
 }
 
 /* 5. Pagination */
-:global(.dark) .ant-pagination-item a {
+:global(.dark-DISABLED) .ant-pagination-item a {
     color: var(--glass-text-primary) !important;
 }
 
-:global(.dark) .ant-pagination-item-active {
+:global(.dark-DISABLED) .ant-pagination-item-active {
     background: transparent !important;
     border-color: #3b82f6 !important;
 }
 
-:global(.dark) .ant-pagination-item-active a {
+:global(.dark-DISABLED) .ant-pagination-item-active a {
     color: #3b82f6 !important;
 }
 
 /* 6. Inputs and Selects (Glass Style) */
-:global(.dark) .ant-input,
-:global(.dark) .ant-input-password,
-:global(.dark) .ant-input-affix-wrapper,
-:global(.dark) .ant-input-number,
-:global(.dark) .ant-picker,
-:global(.dark) .ant-select-selector {
+:global(.dark-DISABLED) .ant-input,
+:global(.dark-DISABLED) .ant-input-password,
+:global(.dark-DISABLED) .ant-input-affix-wrapper,
+:global(.dark-DISABLED) .ant-input-number,
+:global(.dark-DISABLED) .ant-picker,
+:global(.dark-DISABLED) .ant-select-selector {
     background: rgba(30, 41, 59, 0.75) !important;
     border-color: rgba(255, 255, 255, 0.15) !important;
     color: #f8fafc !important;
 }
 
-:global(.dark) .ant-input-affix-wrapper>input.ant-input {
+:global(.dark-DISABLED) .ant-input-affix-wrapper>input.ant-input {
     background: transparent !important;
 }
 
-:global(.dark) .ant-input::placeholder {
+:global(.dark-DISABLED) .ant-input::placeholder {
     color: #94a3b8 !important;
 }
 
 /* 7. Modal & Drawer Overrides */
-:global(.dark) .ant-modal-content,
-:global(.dark) .ant-drawer-content {
+:global(.dark-DISABLED) .ant-modal-content,
+:global(.dark-DISABLED) .ant-drawer-content {
     background: var(--glass-bg-color) !important;
     backdrop-filter: blur(16px) !important;
     color: var(--glass-text-primary) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-:global(.dark) .ant-modal-header,
-:global(.dark) .ant-drawer-header {
+:global(.dark-DISABLED) .ant-modal-header,
+:global(.dark-DISABLED) .ant-drawer-header {
     background: transparent !important;
     border-bottom: 1px solid var(--glass-border-color) !important;
 }
 
-:global(.dark) .ant-modal-title,
-:global(.dark) .ant-drawer-title {
+:global(.dark-DISABLED) .ant-modal-title,
+:global(.dark-DISABLED) .ant-drawer-title {
     color: var(--glass-text-primary) !important;
 }
 
-:global(.dark) .ant-modal-close {
+:global(.dark-DISABLED) .ant-modal-close {
     color: var(--glass-text-primary) !important;
 }
 
 /* 8. FORM LABELS - CRITICAL FIX FOR VISIBILITY */
-:global(.dark) .ant-form-item-label>label {
+:global(.dark-DISABLED) .ant-form-item-label>label {
     color: #f8fafc !important;
     /* Force nearly white color for visibility */
     font-weight: 500 !important;
 }
 
-:global(.dark) .ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+:global(.dark-DISABLED) .ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
     color: #ef4444 !important;
 }/* descriptions and help text */
-:global(.dark) .ant-form-item-extra,
-:global(.dark) .ant-form-item-explain {
+:global(.dark-DISABLED) .ant-form-item-extra,
+:global(.dark-DISABLED) .ant-form-item-explain {
     color: #cbd5e1 !important;
+}
+
+/* 🔥 FORCE TABLE ROWS TO BE TRANSPARENT - NO DARK BACKGROUNDS 🔥 */
+:global(.dark-DISABLED) .ant-table-tbody > tr,
+:global(.dark-DISABLED) .ant-table tbody tr,
+:global(.dark-DISABLED) table tbody tr,
+:global(.dark-DISABLED) .ant-table-row {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
 }

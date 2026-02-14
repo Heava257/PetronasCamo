@@ -709,7 +709,7 @@ function Top_Sales() {
       </div>
 
       {/* Custom Styles */}
-      <style jsx global>{`
+      <style>{`
         .table-row-light {
           background-color: #ffffff;
           transition: all 0.3s ease;

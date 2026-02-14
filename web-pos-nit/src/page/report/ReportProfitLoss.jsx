@@ -104,7 +104,7 @@ function ReportProfitLoss() {
   };
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="report-profit-loss-container p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <Card
         className="mb-6 shadow-lg"

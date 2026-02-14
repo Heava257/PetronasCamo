@@ -129,8 +129,8 @@ function ReportStockMovement() {
   const MovementMobileCard = ({ item, index }) => (
     <Card
       className={`mb-3 shadow-sm hover:shadow-md transition-shadow duration-200 border ${item.movement_type === 'Purchase'
-          ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
-          : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
+        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+        : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
         }`}
       bodyStyle={{ padding: '16px' }}
     >
@@ -156,13 +156,13 @@ function ReportStockMovement() {
 
         <div className="grid grid-cols-2 gap-3">
           <div className={`rounded-lg p-3 ${item.movement_type === 'Purchase'
-              ? 'bg-green-100 dark:bg-green-900/40'
-              : 'bg-red-100 dark:bg-red-900/40'
+            ? 'bg-green-100 dark:bg-green-900/40'
+            : 'bg-red-100 dark:bg-red-900/40'
             }`}>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">{t('report.amount')}</p>
             <p className={`text-lg font-bold ${item.movement_type === 'Purchase'
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
+              ? 'text-green-600 dark:text-green-400'
+              : 'text-red-600 dark:text-red-400'
               }`}>
               {formatCurrency(item.amount)}
             </p>
@@ -221,8 +221,8 @@ function ReportStockMovement() {
       dataIndex: "amount",
       render: (amount, record) => (
         <span className={`font-bold ${record.movement_type === 'Purchase'
-            ? 'text-green-600 dark:text-green-400'
-            : 'text-red-600 dark:text-red-400'
+          ? 'text-green-600 dark:text-green-400'
+          : 'text-red-600 dark:text-red-400'
           }`}>
           {formatCurrency(amount)}
         </span>
@@ -243,7 +243,7 @@ function ReportStockMovement() {
 
   return (
     <MainPage loading={loading}>
-      <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="report-stock-movement-container px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-teal-50 via-cyan-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Header */}
         <Card
           className="mb-6 shadow-lg border-0 bg-gradient-to-r from-teal-600 to-cyan-600 dark:from-teal-800 dark:to-cyan-800"
@@ -365,9 +365,19 @@ function ReportStockMovement() {
                 data={state.chartData}
                 options={{
                   curveType: "function",
-                  legend: { position: "bottom" },
+                  legend: {
+                    position: "bottom",
+                    textStyle: { color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333" }
+                  },
                   colors: ["#10b981", "#ef4444"],
-                  chartArea: { width: "85%", height: "70%" }
+                  chartArea: { width: "85%", height: "70%" },
+                  backgroundColor: "transparent",
+                  hAxis: {
+                    textStyle: { color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333" }
+                  },
+                  vAxis: {
+                    textStyle: { color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333" }
+                  }
                 }}
               />
             </Card>
@@ -414,7 +424,7 @@ function ReportStockMovement() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .ant-table-thead > tr > th {
           background: linear-gradient(135deg, #14b8a6 0%, #06b6d4 100%) !important;
           color: #ffffff !important;

@@ -676,7 +676,7 @@
 //         )}
 //       </Spin>
 
-//       <style jsx>{`
+//       <style>{`
 //         .custom-table-row:hover {
 //           background-color: #f0f9ff !important;
 //           transform: translateY(-1px);

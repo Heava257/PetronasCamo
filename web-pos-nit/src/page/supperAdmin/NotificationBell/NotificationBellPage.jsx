@@ -37,32 +37,32 @@ function NotificationBell() {
 
   useEffect(() => {
     fetchRecentNotifications();
-    
+
     // Poll every 30 seconds
     const interval = setInterval(fetchRecentNotifications, 30000);
-    
+
     return () => clearInterval(interval);
   }, []);
 
   const fetchRecentNotifications = async () => {
     try {
-      
+
       // ✅ Use request() helper with GET method and params
       const response = await request('notifications/recent', 'get', { limit: 10 });
-      
-      
+
+
       if (response && response.success) {
         // Backend returns { success: true, data: [...] }
         // request() already extracts response.data, so we get the full object
         const notificationData = response.data || [];
-        
-        
+
+
         setNotifications(notificationData);
-        
+
         // Count unread (handle both 0/1 and true/false)
         const unread = notificationData.filter(n => !n.is_read && n.is_read !== 1).length;
         setUnreadCount(unread);
-        
+
       } else {
         console.warn('⚠️ Response not successful:', response);
         setNotifications([]);
@@ -77,11 +77,11 @@ function NotificationBell() {
 
   const handleMarkAsRead = async (id, event) => {
     event.stopPropagation();
-    
+
     try {
       // ✅ Use request() helper with PUT method
       const response = await request(`notifications/${id}/read`, 'put');
-      
+
       if (response && response.success) {
         fetchRecentNotifications();
       }
@@ -139,9 +139,8 @@ function NotificationBell() {
 
     return (
       <div
-        className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-          isUnread ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-        }`}
+        className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${isUnread ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+          }`}
         onClick={() => {
           navigate('/notifications');
           setVisible(false);
@@ -159,7 +158,7 @@ function NotificationBell() {
               <div className="font-semibold text-sm truncate flex-1">
                 {notification.title}
               </div>
-              
+
               {isUnread && (
                 <Tooltip title="សម្គាល់ថាបានអាន">
                   <Button
@@ -290,16 +289,16 @@ function NotificationBell() {
                           notification={notification}
                         />
                       ))}
-                    
+
                     {/* Show message if no unread in unread tab */}
-                    {activeTab === 'unread' && 
-                     notifications.filter(n => !n.is_read && n.is_read !== 1).length === 0 && (
-                      <Empty
-                        description="No unread notifications"
-                        image={Empty.PRESENTED_IMAGE_SIMPLE}
-                        className="py-8"
-                      />
-                    )}
+                    {activeTab === 'unread' &&
+                      notifications.filter(n => !n.is_read && n.is_read !== 1).length === 0 && (
+                        <Empty
+                          description="No unread notifications"
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          className="py-8"
+                        />
+                      )}
                   </div>
                 )}
               </>
@@ -404,32 +403,24 @@ function NotificationBell() {
   );
 
   return (
-    <Dropdown
-      overlay={dropdownContent}
-      trigger={['click']}
-      open={visible}
-      onOpenChange={setVisible}
-      placement="bottomRight"
-    >
-      <div className="relative cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors">
-        <Badge
-          count={unreadCount}
-          overflowCount={99}
-          offset={[-5, 5]}
-          className={unreadCount > 0 ? 'animate-pulse' : ''}
-        >
-          <BellOutlined className="text-xl text-gray-700" />
-        </Badge>
-        
-        {/* Animated ring for critical notifications */}
-        {notifications.some(n => (!n.is_read && n.is_read !== 1) && n.priority === 'critical') && (
-          <span className="absolute top-1 right-1">
-            <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
-          </span>
-        )}
-      </div>
-    </Dropdown>
+    <div className="header-icon glass-pill relative cursor-not-allowed opacity-60">
+      <Badge
+        count={unreadCount}
+        overflowCount={99}
+        offset={[-5, 5]}
+        className={unreadCount > 0 ? 'animate-pulse' : ''}
+      >
+        <BellOutlined className="text-xl" />
+      </Badge>
+
+      {/* Animated ring for critical notifications */}
+      {notifications.some(n => (!n.is_read && n.is_read !== 1) && n.priority === 'critical') && (
+        <span className="absolute top-1 right-1">
+          <span className="animate-ping absolute inline-flex h-3 w-3 rounded-full bg-red-400 opacity-75" />
+          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+        </span>
+      )}
+    </div>
   );
 }
 

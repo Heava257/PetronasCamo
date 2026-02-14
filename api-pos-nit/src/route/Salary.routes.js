@@ -5,7 +5,7 @@ const {
 } = require("../controller/Salaryreport.controller");
 
 module.exports = (app) => {
-  
+
   /**
    * Get Salary Report with Deductions
    * GET /api/attendance/salary-report
@@ -22,11 +22,11 @@ module.exports = (app) => {
    * 
    * Access: Managers, HR, Super Admin
    */
-  app.get("/api/attendance/salary-report", 
-    validate_token(), 
+  app.get("/api/attendance/salary-report",
+    validate_token("employee.view"),
     getSalaryReport
   );
-  
+
   /**
    * Get Individual Employee Salary Detail
    * GET /api/attendance/salary-detail
@@ -43,9 +43,9 @@ module.exports = (app) => {
    * 
    * Access: Employee (own data), Managers, HR, Super Admin
    */
-  app.get("/api/attendance/salary-detail", 
-    validate_token(), 
+  app.get("/api/attendance/salary-detail",
+    validate_token(),
     getSalaryDetail
   );
-  
+
 };

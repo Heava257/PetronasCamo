@@ -57,7 +57,7 @@ const KhmerTimeGreeting = () => {
         </span>
       </span>
       
-      <style jsx>{`
+      <style>{`
         .khmer-greeting-container {
           display: flex;
           align-items: center;

@@ -149,13 +149,13 @@ const IntegratedInvoiceSidebar = ({
                 {/* LEFT COLUMN - Cart Items */}
                 <div className="grid-column cart-column">
                     <div className="column-title">
-                        <ShoppingCartOutlined /> បញ្ជីផលិតផល
+                        <ShoppingCartOutlined /> {t('pos.product_list')}
                     </div>
 
                     <div className="cart-items-compact">
                         {cartItems.length === 0 ? (
                             <div className="empty-cart-message">
-                                មិនមានផលិតផល
+                                {t('pos.no_products')}
                             </div>
                         ) : (
                             cartItems.map((item, idx) => {
@@ -185,7 +185,7 @@ const IntegratedInvoiceSidebar = ({
                                                     <span className="font-bold text-orange-600">{formatQty(item.pre_order_remaining)}L</span>
                                                     <span className="text-[10px] text-gray-400 ml-1">(Orig: {formatQty(item.pre_order_original)}L)</span>
                                                 </div>
-                                                <label>បរិមាណដឹកជាក់ស្តែង:</label>
+                                                <label>{t('pos.actual_delivery_qty')}</label>
                                                 <input
                                                     type="number"
                                                     value={item.cart_qty}
@@ -222,7 +222,7 @@ const IntegratedInvoiceSidebar = ({
                                         </div>
 
                                         <div className="item-stock-row">
-                                            <span className="stock-label">ស្តុកមាន:</span>
+                                            <span className="stock-label">{t('pos.available_stock')}</span>
                                             <span className="stock-value">{formatQty(item.available_qty)}L</span>
                                         </div>
 
@@ -239,13 +239,13 @@ const IntegratedInvoiceSidebar = ({
                 {/* MIDDLE COLUMN - Customer & Delivery Info */}
                 <div className="grid-column info-column">
                     <div className="column-title">
-                        <UserOutlined /> ព័ត៌មានអតិថិជន
+                        <UserOutlined /> {t('pos.customer_info')}
                     </div>
 
                     <div className="info-form-compact">
                         <div className="form-group-compact">
                             <label className="form-label-compact">
-                                <UserOutlined /> អតិថិជន
+                                <UserOutlined /> {t('pos.customer')}
                             </label>
                             <Select
                                 value={objSummary.customer_id}
@@ -274,7 +274,7 @@ const IntegratedInvoiceSidebar = ({
 
                         <div className="form-group-compact">
                             <label className="form-label-compact">
-                                <EnvironmentOutlined /> ទីតាំងដឹក *
+                                <EnvironmentOutlined /> {t('pos.delivery_location')} *
                             </label>
                             <Select
                                 value={selectedLocation}
@@ -290,7 +290,7 @@ const IntegratedInvoiceSidebar = ({
                                     }
                                 }}
                                 className="select-compact"
-                                placeholder="ជ្រើសរើសទីតាំង"
+                                placeholder={t('pos.select_location')}
                                 loading={loadingLocations}
                             >
                                 {locations.map(loc => (
@@ -309,13 +309,13 @@ const IntegratedInvoiceSidebar = ({
 
                         <div className="form-group-compact">
                             <label className="form-label-compact">
-                                <CarOutlined /> ឡានដឹកជញ្ជូន
+                                <CarOutlined /> {t('pos.delivery_truck')}
                             </label>
                             <Select
                                 value={selectedTruck}
                                 onChange={setSelectedTruck}
                                 className="select-compact"
-                                placeholder="ជ្រើសរើសឡាន"
+                                placeholder={t('pos.select_truck')}
                                 allowClear
                             >
                                 {trucks.map(truck => (
@@ -327,7 +327,7 @@ const IntegratedInvoiceSidebar = ({
                             {selectedTruckData && (
                                 <div className="selected-info-display">
                                     <div className="info-name">{selectedTruckData.plate_number}</div>
-                                    <div className="info-address">ប្រគល់: {selectedTruckData.driver_name}</div>
+                                    <div className="info-address">{t('pos.driver')} {selectedTruckData.driver_name}</div>
                                 </div>
                             )}
                         </div>
@@ -335,7 +335,7 @@ const IntegratedInvoiceSidebar = ({
                         <div className="form-row-compact">
                             <div className="form-group-compact half-width">
                                 <label className="form-label-compact">
-                                    <CalendarOutlined /> កាលបរិច្ឆេទបញ្ជាទិញ
+                                    <CalendarOutlined /> {t('pos.order_date')}
                                 </label>
                                 <DatePicker
                                     value={objSummary.order_date ? dayjs(objSummary.order_date) : null}
@@ -350,7 +350,7 @@ const IntegratedInvoiceSidebar = ({
 
                             <div className="form-group-compact half-width">
                                 <label className="form-label-compact">
-                                    <CalendarOutlined /> កាលបរិច្ឆេទដឹកជញ្ជូន
+                                    <CalendarOutlined /> {t('pos.delivery_date')}
                                 </label>
                                 <DatePicker
                                     value={objSummary.delivery_date ? dayjs(objSummary.delivery_date) : null}
@@ -366,7 +366,7 @@ const IntegratedInvoiceSidebar = ({
 
                         <div className="form-group-compact">
                             <label className="form-label-compact">
-                                <FileTextOutlined /> កំណត់សម្គាល់
+                                <FileTextOutlined /> {t('pos.remark')}
                             </label>
                             <TextArea
                                 value={objSummary.remark}
@@ -374,7 +374,7 @@ const IntegratedInvoiceSidebar = ({
                                     ...prev,
                                     remark: e.target.value
                                 }))}
-                                placeholder="បញ្ចូលកំណត់សម្គាល់..."
+                                placeholder={t('pos.enter_remark')}
                                 rows={3}
                                 className="textarea-compact"
                             />
@@ -385,26 +385,26 @@ const IntegratedInvoiceSidebar = ({
                 {/* RIGHT COLUMN - Summary & Actions */}
                 <div className="grid-column summary-column">
                     <div className="column-title">
-                        <DollarOutlined /> សង្ខេបការបញ្ជាទិញ
+                        <DollarOutlined /> {t('pos.order_summary')}
                     </div>
 
                     <div className="summary-content">
                         {objSummary.pre_order_no && (
                             <div className="summary-po-info">
                                 <div className="po-badge">
-                                    <ContainerOutlined /> កម្មង់ជាមុន #{objSummary.pre_order_no}
+                                    <ContainerOutlined /> {t('pos.pre_order')} #{objSummary.pre_order_no}
                                 </div>
                             </div>
                         )}
 
                         <div className="summary-stats-grid">
                             <div className="stat-card">
-                                <div className="stat-label">បរិមាណសរុប</div>
+                                <div className="stat-label">{t('pos.total_qty_label')}</div>
                                 <div className="stat-value">{totals.totalQty} L</div>
                             </div>
 
                             <div className="stat-card">
-                                <div className="stat-label">ចំនួនផលិតផល</div>
+                                <div className="stat-label">{t('pos.total_products_label')}</div>
                                 <div className="stat-value">{cartItems.length}</div>
                             </div>
                         </div>
@@ -412,7 +412,7 @@ const IntegratedInvoiceSidebar = ({
                         <div className="summary-breakdown">
 
                             <div className="breakdown-row total-row">
-                                <span className="breakdown-label">សរុបត្រូវបង់:</span>
+                                <span className="breakdown-label">{t('pos.total_to_pay')}</span>
                                 <span className="breakdown-value total-value">{totals.total}</span>
                             </div>
                         </div>
@@ -428,7 +428,7 @@ const IntegratedInvoiceSidebar = ({
                                 className="btn-checkout-compact"
                                 block
                             >
-                                គិតលុយ
+                                {t('pos.checkout')}
                             </Button>
 
                             <Button
@@ -439,7 +439,7 @@ const IntegratedInvoiceSidebar = ({
                                 className="btn-preview-compact"
                                 block
                             >
-                                ត្រួតពិនិត្យ
+                                {t('pos.preview')}
                             </Button>
 
                             <Button
@@ -451,13 +451,13 @@ const IntegratedInvoiceSidebar = ({
                                 className="btn-clear-compact"
                                 block
                             >
-                                សម្អាត
+                                {t('pos.clear')}
                             </Button>
                         </div>
 
                         {selectedLocation && (
                             <div className="validation-note">
-                                ✅ ទីតាំងដឹកជញ្ជូនត្រូវបានជ្រើសរើស
+                                ✅ {t('pos.delivery_location_selected')}
                             </div>
                         )}
                     </div>

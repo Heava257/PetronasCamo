@@ -1389,7 +1389,7 @@ function AttendanceManagement() {
         </Row>
 
         {/* Global Styles */}
-        <style jsx global>{`
+        <style>{`
         .ant-table {
           background: transparent !important;
         }

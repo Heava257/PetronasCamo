@@ -199,9 +199,69 @@ html.template-acledagold .pre-order-modal .ant-input-number,
 html.template-acledagold .pre-order-modal .ant-picker,
 html.template-acledagold .pre-order-modal .ant-select-selector {
   background: rgba(0, 0, 0, 0.4) !important;
-  border-color: rgba(255, 215, 0, 0.25) !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
   color: white !important;
 }
+
+/* =========================================
+   GENERIC DARK MODE OVERRIDES
+   ========================================= */
+
+/* Statistics Cards Title Visibility */
+.dark .ant-statistic-title {
+  color: #94a3b8 !important;
+}
+
+.dark .ant-statistic-content {
+  color: white !important;
+}
+
+/* Ensure Cards are Dark */
+.dark .pre-order-management-container .ant-card,
+.dark .pre-order-modal .ant-modal-content {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* Table in Dark Mode */
+.dark .ant-table-thead>tr>th {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .ant-table-tbody>tr>td {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.dark .ant-table-tbody>tr:hover>td {
+  background: #1e293b !important;
+}
+
+/* Inputs in Dark Mode */
+.dark .ant-input,
+.dark .ant-picker,
+.dark .ant-select-selector,
+.dark .ant-input-number-input {
+  background-color: #0f172a !important;
+  color: white !important;
+  border-color: #334155 !important;
+}
+
+/* Autofill Fix */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+
 
 html.template-acledagold .pre-order-modal .ant-btn-primary {
   background: linear-gradient(135deg, #B8860B 0%, #FFD700 100%) !important;

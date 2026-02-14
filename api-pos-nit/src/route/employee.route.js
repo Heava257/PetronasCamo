@@ -21,12 +21,12 @@ const {
 module.exports = (app) => {
 
   app.get("/api/employee",
-    validate_token(),
+    validate_token("employee.view"),
     getList
   );
 
   app.get("/api/employee/:id",
-    validate_token(),
+    validate_token("employee.view"),
     getById
   );
 
@@ -46,12 +46,12 @@ module.exports = (app) => {
   );
 
   app.get("/api/employee/:id/schedule",
-    validate_token(),
+    validate_token("employee.view"),
     getSchedule
   );
 
   app.get("/api/employee/statistics/late",
-    validate_token(),
+    validate_token("employee.view"),
     getLateStatistics
   );
 
@@ -61,7 +61,7 @@ module.exports = (app) => {
   );
 
   app.get("/api/employee/:id/has-account",
-    validate_token(),
+    validate_token("employee.view"),
     checkHasAccount
   );
 
@@ -72,13 +72,11 @@ module.exports = (app) => {
 
 
   // app.get('/attendance/check-ip', checkIP);
-  app.get('/api/attendance/allowed-ips', getAllowedIPs);
-  app.get('/api/attendance/get-my-ip', getMyIP);
-  app.post('/api/attendance/allowed-ips', addAllowedIP);
-  app.put('/api/attendance/allowed-ips', updateAllowedIP);
-  app.delete('/api/attendance/allowed-ips', deleteAllowedIP);
-  app.get('/api/attendance/diagnose-ip', diagnoseIP);
+  app.get('/api/attendance/allowed-ips', validate_token("employee.view"), getAllowedIPs);
+  app.get('/api/attendance/get-my-ip', validate_token(), getMyIP);
+  app.post('/api/attendance/allowed-ips', validate_token("employee.update"), addAllowedIP);
+  app.put('/api/attendance/allowed-ips', validate_token("employee.update"), updateAllowedIP);
+  app.delete('/api/attendance/allowed-ips', validate_token("employee.update"), deleteAllowedIP);
+  app.get('/api/attendance/diagnose-ip', validate_token("employee.view"), diagnoseIP);
 
 };
-
-

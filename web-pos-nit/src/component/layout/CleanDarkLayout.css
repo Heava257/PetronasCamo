@@ -140,7 +140,7 @@ div {
   opacity: 1;
 }
 
-.dark .hierarchical-sidebar {
+.dark-DISABLED .hierarchical-sidebar {
   background: var(--sidebar-bg, #051e12);
   border: 1px solid rgba(255, 255, 255, 0.05);
   color: var(--sidebar-text, #94a3b8);
@@ -218,7 +218,7 @@ div {
   padding: 8px 12px;
 }
 
-.dark .sidebar-search .ant-input-affix-wrapper {
+.dark-DISABLED .sidebar-search .ant-input-affix-wrapper {
   background: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
@@ -260,7 +260,7 @@ div {
   letter-spacing: 1.2px;
 }
 
-.dark .category-header {
+.dark-DISABLED .category-header {
   color: rgba(255, 255, 255, 0.3);
   font-weight: 600;
 }
@@ -295,7 +295,7 @@ div {
   box-shadow: none !important;
 }
 
-.dark .hierarchical-menu-item {
+.dark-DISABLED .hierarchical-menu-item {
   color: rgba(255, 255, 255, 0.75);
 }
 
@@ -304,7 +304,7 @@ div {
   color: var(--primary-color, #3b82f6);
 }
 
-.dark .hierarchical-menu-item:hover {
+.dark-DISABLED .hierarchical-menu-item:hover {
   background: rgba(255, 255, 255, 0.05);
   color: #ffffff;
 }
@@ -517,7 +517,7 @@ div {
   flex-shrink: 0;
 }
 
-.dark .menu-icon {
+.dark-DISABLED .menu-icon {
   color: #64748b;
 }
 
@@ -525,7 +525,7 @@ div {
   color: var(--primary-color, #3b82f6);
 }
 
-.dark .hierarchical-menu-item:hover .menu-icon {
+.dark-DISABLED .hierarchical-menu-item:hover .menu-icon {
   color: white;
 }
 
@@ -548,7 +548,7 @@ div {
   transition: transform 0.2s ease;
 }
 
-.dark .expand-icon {
+.dark-DISABLED .expand-icon {
   color: rgba(255, 255, 255, 0.3);
 }
 
@@ -567,7 +567,7 @@ div {
   padding-left: 12px;
 }
 
-.dark .submenu {
+.dark-DISABLED .submenu {
   border-left-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -624,7 +624,7 @@ div {
   margin-top: auto;
 }
 
-.dark .sidebar-footer {
+.dark-DISABLED .sidebar-footer {
   border-top-color: rgba(255, 255, 255, 0.06);
 }
 
@@ -637,7 +637,7 @@ div {
   margin-bottom: 4px;
 }
 
-.dark .footer-content {
+.dark-DISABLED .footer-content {
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -647,7 +647,7 @@ div {
   margin: 0;
 }
 
-.dark .footer-copyright {
+.dark-DISABLED .footer-copyright {
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -668,7 +668,7 @@ div {
   z-index: 999;
 }
 
-.dark .clean-dark-header {
+.dark-DISABLED .clean-dark-header {
   background: var(--bg-header, rgba(17, 24, 39, 0.7));
   border: var(--glass-border-dark);
 }
@@ -698,7 +698,7 @@ div {
   color: rgba(0, 0, 0, 0.7);
 }
 
-.dark .trigger-button {
+.dark-DISABLED .trigger-button {
   background: rgba(255, 255, 255, 0.06);
   color: rgba(255, 255, 255, 0.8);
 }
@@ -721,7 +721,7 @@ div {
   color: rgba(0, 0, 0, 0.7);
 }
 
-.dark .header-icon {
+.dark-DISABLED .header-icon {
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -731,13 +731,18 @@ div {
   width: auto;
   border-radius: var(--radius-pill);
   gap: 10px;
-  background: rgba(255, 255, 255, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(226, 232, 240, 0.95);
+  /* Light gray/slate */
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.dark .header-icon.glass-pill {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.dark-DISABLED .header-icon.glass-pill {
+  background: rgba(255, 255, 255, 0.25);
+  /* Much more visible in dark mode */
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .header-icon.glass-pill.active {
@@ -786,7 +791,7 @@ div {
   color: var(--text-primary, #1e293b);
 }
 
-.dark .profile-name {
+.dark-DISABLED .profile-name {
   color: var(--text-primary, #f1f5f9);
 }
 
@@ -812,7 +817,7 @@ div {
   border-radius: var(--radius-xl);
 }
 
-.dark .clean-dark-footer {
+.dark-DISABLED .clean-dark-footer {
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -829,7 +834,7 @@ div {
   overflow: hidden;
 }
 
-.dark .ant-modal .ant-modal-content {
+.dark-DISABLED .ant-modal .ant-modal-content {
   background: var(--sidebar-bg-dark);
   border: var(--glass-border-dark);
 }
@@ -840,7 +845,7 @@ div {
   padding: 20px 24px;
 }
 
-.dark .ant-modal .ant-modal-header {
+.dark-DISABLED .ant-modal .ant-modal-header {
   border-bottom-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -858,7 +863,7 @@ div {
   margin: 0;
 }
 
-.dark .ant-modal .ant-modal-footer {
+.dark-DISABLED .ant-modal .ant-modal-footer {
   background: rgba(255, 255, 255, 0.02);
   border-top-color: rgba(255, 255, 255, 0.1);
 }
@@ -876,7 +881,7 @@ div {
   border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.dark .ant-modal .ant-table {
+.dark-DISABLED .ant-modal .ant-table {
   border-color: rgba(255, 255, 255, 0.1);
 }
 
@@ -935,7 +940,7 @@ div {
   backdrop-filter: blur(20px);
 }
 
-.dark .mobile-sidebar-drawer .ant-drawer-content {
+.dark-DISABLED .mobile-sidebar-drawer .ant-drawer-content {
   background: var(--sidebar-bg-dark) !important;
 }
 
@@ -1135,9 +1140,9 @@ html.template-acledagold .ant-modal-close,
 }
 
 /* Dark mode adjustment for lines */
-.dark .menu-style-tree .tree-node:not(.level-0)::before,
-.dark .menu-style-tree .tree-node:not(.level-0)::after,
-.dark .menu-style-tree .has-children.is-expanded:not(.level-0)::after {
+.dark-DISABLED .menu-style-tree .tree-node:not(.level-0)::before,
+.dark-DISABLED .menu-style-tree .tree-node:not(.level-0)::after,
+.dark-DISABLED .menu-style-tree .has-children.is-expanded:not(.level-0)::after {
   border-color: #666 !important;
 }
 
@@ -1187,7 +1192,7 @@ html.template-acledagold .ant-modal-close,
   z-index: 10;
 }
 
-.dark .menu-style-tree .tree-toggle-box {
+.dark-DISABLED .menu-style-tree .tree-toggle-box {
   background: #1e293b !important;
   color: #fff !important;
   border-color: #555 !important;
@@ -1258,4 +1263,1124 @@ html.template-acledagold .ant-modal-close,
   padding: 4px 0;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+/* =========================================
+   CUSTOM THEME TOGGLE (User Request)
+   ========================================= */
+.theme-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.theme-toggle-switch {
+  width: 70px;
+  height: 36px;
+  background-color: #e2e8f0;
+  /* Light Mode BG */
+  border-radius: 50px;
+  position: relative;
+  cursor: pointer;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 -1px 2px rgba(255, 255, 255, 0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.theme-toggle-switch.dark {
+  background-color: #334155;
+  /* Dark Mode BG */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Icons styling */
+.theme-toggle-icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  transition: all 0.4s ease;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  /* Let clicks pass through */
+}
+
+.theme-toggle-icon.sun {
+  right: 12px;
+  color: #fbbf24;
+  /* Amber Sun */
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+.theme-toggle-switch.dark .theme-toggle-icon.sun {
+  opacity: 0;
+  transform: translateY(-50%) translateX(20px) scale(0.5);
+}
+
+.theme-toggle-icon.moon {
+  left: 12px;
+  color: #9ca3af;
+  /* Grey Moon */
+  opacity: 0;
+  transform: translateY(-50%) translateX(-20px) scale(0.5);
+}
+
+.theme-toggle-switch.dark .theme-toggle-icon.moon {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0) scale(1);
+  color: #e2e8f0;
+  /* Light Grey Moon */
+}
+
+/* The Knob */
+.theme-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 30px;
+  height: 30px;
+  background: white;
+  background: linear-gradient(145deg, #ffffff, #f1f5f9);
+  border-radius: 50%;
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 1);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Bouncy spring effect */
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Orange Dot Detail */
+.theme-toggle-knob::after {
+  content: '';
+  width: 12px;
+  height: 12px;
+  background-color: #f97316;
+  /* Orange Primary */
+  border-radius: 50%;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* Dark Mode State for Knob */
+.theme-toggle-switch.dark .theme-toggle-knob {
+  transform: translateX(34px);
+  background: linear-gradient(145deg, #ffffff, #e2e8f0);
+}
+
+/* =========================================
+   CUSTOM LANGUAGE TOGGLE (User Request)
+   ========================================= */
+.lang-toggle-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+}
+
+.lang-toggle-switch {
+  width: 86px;
+  height: 36px;
+  background-color: #e2e8f0;
+  border-radius: 50px;
+  position: relative;
+  cursor: pointer;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1), inset 0 -1px 2px rgba(255, 255, 255, 0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+html.dark .lang-toggle-switch {
+  background-color: #334155;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 -1px 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lang-toggle-text {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  font-weight: 800;
+  color: #64748b;
+  transition: all 0.4s ease;
+  user-select: none;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+html.dark .lang-toggle-text {
+  color: #94a3b8;
+}
+
+.lang-toggle-text.left {
+  left: 14px;
+  opacity: 0;
+  transform: translateY(-50%) translateX(-10px);
+}
+
+.lang-toggle-text.right {
+  right: 14px;
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* KM Active State (Right Position) */
+.lang-toggle-switch.km .lang-toggle-text.left {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+.lang-toggle-switch.km .lang-toggle-text.right {
+  opacity: 0;
+  transform: translateY(-50%) translateX(10px);
+}
+
+/* Knob */
+.lang-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 30px;
+  height: 30px;
+  background: white;
+  background: linear-gradient(145deg, #ffffff, #f1f5f9);
+  border-radius: 50%;
+  box-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.2),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 1);
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+html.dark .lang-toggle-knob {
+  background: linear-gradient(145deg, #ffffff, #e2e8f0);
+}
+
+.lang-toggle-switch.km .lang-toggle-knob {
+  transform: translateX(50px);
+}
+
+.lang-flag {
+  line-height: 1;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.2));
+}
+
+
+/* ========================================================= */
+/* OVERRIDE: Selected Item Style (Background Container + Circle) */
+/* ========================================================= */
+.menu-style-tree .hierarchical-menu-item.selected {
+  background: var(--primary-light, rgba(59, 130, 246, 0.15)) !important;
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  position: relative !important;
+  overflow: visible !important;
+  border-radius: 8px !important;
+}
+
+.menu-style-tree .hierarchical-menu-item.selected .menu-label {
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 700 !important;
+}
+
+/* Circle Indicator */
+.menu-style-tree .hierarchical-menu-item.selected::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 6px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background-color: var(--primary-color, #3b82f6) !important;
+  box-shadow: 0 0 0 2px var(--sidebar-bg, #ffffff) !important;
+  z-index: 5 !important;
+  display: block !important;
+}
+
+
+/* ========================================================= */
+/* OVERRIDE: Refined Tree Active Style (Pill Shape + Dot)    */
+/* ========================================================= */
+
+/* 1. The Container - Pill Shape */
+.menu-style-tree .hierarchical-menu-item.selected {
+  background: var(--primary-light, rgba(59, 130, 246, 0.15)) !important;
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 700 !important;
+  border-radius: 50px !important;
+  /* Circle/Pill Style */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05) !important;
+  position: relative !important;
+  overflow: visible !important;
+  padding-left: 32px !important;
+  /* Space for the dot */
+}
+
+/* 2. The Text */
+.menu-style-tree .hierarchical-menu-item.selected .menu-label {
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 700 !important;
+}
+
+/* 3. The Circle (Dot) Indicator */
+.menu-style-tree .hierarchical-menu-item.selected::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background-color: var(--primary-color, #3b82f6) !important;
+  box-shadow: 0 0 0 3px var(--sidebar-bg, #ffffff) !important;
+  z-index: 10 !important;
+  display: block !important;
+}
+
+/* Force hidden icon in tree view to avoid clutter if dot is used */
+.menu-style-tree .hierarchical-menu-item .menu-icon {
+  /* display: none !important; DISABLED */
+}
+
+
+/* ========================================================= */
+/* OVERRIDE: Curved Tree Lines & Glassy Active Item          */
+/* ========================================================= */
+
+/* 1. Curve the Tree Connector Lines (L-Shape to Curve) */
+.menu-style-tree .tree-node:not(.level-0)::before {
+  border-bottom-left-radius: 12px !important;
+  /* Curve the corner */
+}
+
+/* 2. Make Active Item See-Through (Glass Effect) */
+.menu-style-tree .hierarchical-menu-item.selected {
+  background: rgba(59, 130, 246, 0.08) !important;
+  /* More transparent */
+  backdrop-filter: blur(4px);
+  /* Glassy blur */
+  border: 1px solid rgba(59, 130, 246, 0.15) !important;
+  /* Subtle border */
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Keep the dot/circle */
+.menu-style-tree .hierarchical-menu-item.selected::after {
+  content: '' !important;
+  display: block !important;
+  background-color: var(--primary-color, #3b82f6) !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.8) !important;
+  /* Semi-transparent ring */
+}
+
+/* Ensure text remains visible and sharp */
+.menu-style-tree .hierarchical-menu-item.selected .menu-label {
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 1px rgba(59, 130, 246, 0.1);
+}
+
+
+/* ========================================================= */
+/* OVERRIDE: FLUID CURVED MENU ITEM (Round Left, Connected Right) */
+/* ========================================================= */
+
+/* 1. Item Container Shape (Round Left, Flat Right) */
+.menu-style-tree .hierarchical-menu-item.selected {
+  /* Use a lighter background Color */
+  background: var(--primary-light, #e0f2fe) !important;
+  color: var(--primary-color, #3b82f6) !important;
+
+  /* Round Start, Flat End */
+  border-top-left-radius: 40px !important;
+  border-bottom-left-radius: 40px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+
+  /* Extend to the right edge to connect with curves */
+  margin-right: -15px !important;
+  padding-right: 20px !important;
+
+  /* Ensure visibility */
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 10 !important;
+  box-shadow: none !important;
+  /* Clean flat look or update if needed */
+  opacity: 1 !important;
+  backdrop-filter: blur(5px);
+}
+
+/* 2. Top "Inverted" Curve */
+.menu-style-tree .hierarchical-menu-item.selected::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -20px !important;
+  right: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important;
+  border-bottom-right-radius: 20px !important;
+  /* Shadow color must match the item background */
+  box-shadow: 10px 10px 0 10px var(--primary-light, #e0f2fe) !important;
+  z-index: -1 !important;
+  display: block !important;
+  left: auto !important;
+  /* Reset any previous positioning */
+  border: none !important;
+}
+
+/* 3. Bottom "Inverted" Curve (Replaces the Dot) */
+.menu-style-tree .hierarchical-menu-item.selected::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -20px !important;
+  right: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important;
+  border-top-right-radius: 20px !important;
+  /* Shadow color must match the item background */
+  box-shadow: 10px -10px 0 10px var(--primary-light, #e0f2fe) !important;
+  z-index: -1 !important;
+  display: block !important;
+  left: auto !important;
+  /* Reset any previous positioning */
+  top: auto !important;
+  transform: none !important;
+  /* Remove center transform from Dot */
+  border-radius: 0 !important;
+  /* Reset dot radius */
+  border: none !important;
+}
+
+/* Restore Menu Icon Visibility (was hidden for dot) */
+.menu-style-tree .hierarchical-menu-item .menu-icon {
+  display: block !important;
+  color: inherit !important;
+  margin-right: 8px;
+}
+
+/* Ensure Label Color */
+.menu-style-tree .hierarchical-menu-item.selected .menu-label {
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 700 !important;
+}
+
+/* Force padding adjustment in container to allow negative margin overlap */
+.menu-style-tree .menu-container {
+  overflow-x: hidden !important;
+  /* Allow the 'stick out' visual without scrollbar */
+}
+
+
+/* ========================================================= */
+/* OVERRIDE: PERFECT SMOOTH CURVE CONNECTION (FIXED)         */
+/* ========================================================= */
+
+.menu-style-tree .hierarchical-menu-item.selected {
+  background: var(--primary-light, #e0f2fe) !important;
+  color: var(--primary-color, #3b82f6) !important;
+  border-top-left-radius: 50px !important;
+  border-bottom-left-radius: 50px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  margin-right: -24px !important;
+  /* Force overlap with container edge */
+  padding-right: 40px !important;
+  position: relative !important;
+  z-index: 10 !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+/* 2. Top "Inverted" Curve - Using Box Shadow Trick */
+.menu-style-tree .hierarchical-menu-item.selected::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -20px !important;
+  right: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important;
+  border-radius: 0 0 20px 0 !important;
+  /* Bottom-Right Curve */
+  box-shadow: 8px 8px 0 8px var(--primary-light, #e0f2fe) !important;
+  z-index: 1 !important;
+  display: block !important;
+  border: none !important;
+  left: auto !important;
+}
+
+/* 3. Bottom "Inverted" Curve - Using Box Shadow Trick */
+.menu-style-tree .hierarchical-menu-item.selected::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -20px !important;
+  right: 0 !important;
+  width: 20px !important;
+  height: 20px !important;
+  background: transparent !important;
+  border-radius: 0 20px 0 0 !important;
+  /* Top-Right Curve */
+  box-shadow: 8px -8px 0 8px var(--primary-light, #e0f2fe) !important;
+  z-index: 1 !important;
+  display: block !important;
+  left: auto !important;
+  top: auto !important;
+  transform: none !important;
+  border: none !important;
+}
+
+/* 4. Fix Dark Mode Colors */
+html.dark .menu-style-tree .hierarchical-menu-item.selected {
+  background: rgba(59, 130, 246, 0.2) !important;
+  color: #60a5fa !important;
+}
+
+html.dark .menu-style-tree .hierarchical-menu-item.selected::before {
+  box-shadow: 8px 8px 0 8px rgba(59, 130, 246, 0.2) !important;
+}
+
+html.dark .menu-style-tree .hierarchical-menu-item.selected::after {
+  box-shadow: 8px -8px 0 8px rgba(59, 130, 246, 0.2) !important;
+}
+
+/* 5. Ensure Container doesn't clip the curve sticking out */
+.menu-style-tree .menu-container {
+  padding-right: 24px !important;
+  /* Add space for the extended item */
+  overflow: visible !important;
+}
+
+.hierarchical-sidebar {
+  overflow: visible !important;
+}
+
+.hierarchical-sidebar-content {
+  overflow: visible !important;
+}
+
+
+/* ========================================================= */
+/* OVERRIDE: PREMIUM GLASS PILL (Clean, Contained, Beautiful) */
+/* ========================================================= */
+
+/* 1. Reset & Container Style */
+.menu-style-tree .hierarchical-menu-item.selected {
+  /* Margin & Padding Reset - Keep it INSIDE the sideboard */
+  margin-right: 8px !important;
+  margin-left: 8px !important;
+  padding-right: 16px !important;
+
+  /* Shape: Fully Rounded Floating Pill */
+  border-radius: 16px !important;
+  /* Modern soft curve, not full pill, distinct from buttons */
+
+  /* Glass Effect */
+  background: rgba(59, 130, 246, 0.1) !important;
+  /* Subtle tint */
+  backdrop-filter: blur(12px) !important;
+  /* distinct glass blur */
+  -webkit-backdrop-filter: blur(12px) !important;
+
+  /* Border & Glow */
+  border: 1px solid rgba(59, 130, 246, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15) !important;
+  /* Premium Glow */
+
+  /* Layout */
+  position: relative !important;
+  overflow: hidden !important;
+  /* Contain inner effects */
+  z-index: 1 !important;
+
+  width: auto !important;
+  /* Let it fit the container */
+}
+
+/* 2. Remove the "Ears" (Curve Hacks) which were breaking layout */
+.menu-style-tree .hierarchical-menu-item.selected::before {
+  display: none !important;
+}
+
+/* 3. Redesign the Indicator (Glowing Vertical Bar or Dot) */
+/* Let's stick to a premium glowing bar on the left for this "Glass" look, or a Dot if preferred.
+   The user liked the "Curve", so let's simulate curve with a gradient background potentially.
+   Let's use a nice gradient background for the item itself.
+*/
+
+.menu-style-tree .hierarchical-menu-item.selected {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.05) 100%) !important;
+}
+
+/* Re-add the Dot, but cleaner */
+.menu-style-tree .hierarchical-menu-item.selected::after {
+  content: '' !important;
+  position: absolute !important;
+  left: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background-color: var(--primary-color, #3b82f6) !important;
+  box-shadow: 0 0 10px var(--primary-color, #3b82f6) !important;
+  /* Glowing Dot */
+  z-index: 2 !important;
+  display: block !important;
+  bottom: auto !important;
+  right: auto !important;
+}
+
+/* Text Style */
+.menu-style-tree .hierarchical-menu-item.selected .menu-label {
+  color: var(--primary-color, #3b82f6) !important;
+  font-weight: 700 !important;
+  text-shadow: none !important;
+  padding-left: 4px;
+  /* Space from dot */
+}
+
+/* Icon Style - Ensure Visible */
+.menu-style-tree .hierarchical-menu-item .menu-icon {
+  display: block !important;
+  opacity: 0.7;
+}
+
+.menu-style-tree .hierarchical-menu-item.selected .menu-icon {
+  color: var(--primary-color, #3b82f6) !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4));
+}
+
+
+/* ========================================================= */
+/* FIX: RESTORE SCROLLING (Critical)                         */
+/* ========================================================= */
+
+.hierarchical-sidebar {
+  overflow: hidden !important;
+  /* Restore border radius clipping */
+}
+
+.hierarchical-sidebar-content {
+  overflow: hidden !important;
+  /* Ensure content stays within sidebar */
+}
+
+/* Enable scrolling on the menu text container */
+.menu-style-tree .menu-container,
+.menu-container {
+  overflow-y: auto !important;
+  /* FORCE SCROLLING */
+  overflow-x: hidden !important;
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  /* Flexbox scroll fix */
+  overscroll-behavior: contain;
+}
+
+/* Ensure the selected item fits comfortably without triggering horiz scroll */
+.menu-style-tree .hierarchical-menu-item.selected {
+  margin-right: 12px !important;
+  margin-left: 8px !important;
+  width: auto !important;
+  max-width: 100% !important;
+}
+
+
+/* ========================================================= */
+/* FIX: ICON VISIBILITY & COLLAPSED STATE                    */
+/* ========================================================= */
+
+/* 1. RESTORE MENU ICONS (The "Real" Icons) */
+.menu-style-tree .hierarchical-menu-item .menu-icon {
+  display: block !important;
+  /* Force icons to appear */
+  width: 20px !important;
+  height: 20px !important;
+  min-width: 20px !important;
+  margin-right: 12px !important;
+  /* Space between icon and text */
+  opacity: 0.5;
+}
+
+/* Selected State Icon */
+.menu-style-tree .hierarchical-menu-item.selected .menu-icon {
+  opacity: 1 !important;
+  color: var(--primary-color, #3b82f6) !important;
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+}
+
+/* 2. REMOVE THE "DOT" (Since we are using real icons now) */
+.menu-style-tree .hierarchical-menu-item.selected::after {
+  display: none !important;
+}
+
+/* 3. FIX COLLAPSED STATE (Sidebar Closed) */
+.hierarchical-sidebar.collapsed .menu-style-tree .hierarchical-menu-item {
+  justify-content: center !important;
+  padding: 0 !important;
+  width: 44px !important;
+  /* Fixed width square/circle */
+  height: 44px !important;
+  margin: 0 auto 4px auto !important;
+  /* Center in sidebar */
+  border-radius: 12px !important;
+  /* Soft square */
+}
+
+/* Collapsed Selected State */
+.hierarchical-sidebar.collapsed .menu-style-tree .hierarchical-menu-item.selected {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  margin: 0 auto 4px auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.hierarchical-sidebar.collapsed .menu-style-tree .hierarchical-menu-item .menu-icon {
+  margin-right: 0 !important;
+  /* Remove margin when icons are alone */
+}
+
+/* Hide text in collapsed state (just to be safe) */
+.hierarchical-sidebar.collapsed .menu-style-tree .menu-label {
+  display: none !important;
+}
+
+/* 4. ADJUST EXPANDED SELECTED STATE */
+.menu-style-tree .hierarchical-menu-item.selected {
+  /* Restore padding for expanded state */
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+}
+
+
+/* ========================================================= */
+/* CRITICAL FIX: COLLAPSED STATE CLEANUP & INTERACTION       */
+/* ========================================================= */
+
+/* 1. DISABLE TREE LINES IN COLLAPSED MODE (Fixes "Can't Click" & Artifacts) */
+.hierarchical-sidebar.collapsed .menu-style-tree .tree-node::before,
+.hierarchical-sidebar.collapsed .menu-style-tree .tree-node::after,
+.hierarchical-sidebar.collapsed .menu-style-tree .has-children::after {
+  display: none !important;
+  /* underlying lines block clicks */
+}
+
+/* 2. HIDE TEXT & EXPANDERS COMPLETELY */
+.hierarchical-sidebar.collapsed .menu-style-tree .menu-label,
+.hierarchical-sidebar.collapsed .menu-style-tree .expand-icon,
+.hierarchical-sidebar.collapsed .menu-style-tree .tree-toggle-box {
+  display: none !important;
+}
+
+/* 3. RESET ITEM LAYOUT FOR CLICKABILITY */
+.hierarchical-sidebar.collapsed .menu-style-tree .hierarchical-menu-item {
+  width: 48px !important;
+  /* Larger touch target */
+  height: 48px !important;
+  margin: 4px auto !important;
+  /* Center horizontally */
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 12px !important;
+
+  /* Reset backgrounds */
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+
+  /* Ensure it's on top */
+  position: relative !important;
+  z-index: 100 !important;
+  cursor: pointer !important;
+}
+
+/* 4. ACTIVE STATE IN COLLAPSED MODE (Make it distinct) */
+.hierarchical-sidebar.collapsed .menu-style-tree .hierarchical-menu-item.selected {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: var(--primary-color, #3b82f6) !important;
+}
+
+.hierarchical-sidebar.collapsed .menu-style-tree .hierarchical-menu-item.selected .menu-icon {
+  color: var(--primary-color, #3b82f6) !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.3));
+}
+
+/* 5. HOVER EFFECT */
+.hierarchical-sidebar.collapsed .menu-style-tree .hierarchical-menu-item:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 6. FIX ICON POSITIONING */
+.hierarchical-sidebar.collapsed .menu-style-tree .menu-icon {
+  margin: 0 !important;
+  /* No margin when alone */
+  font-size: 20px !important;
+  width: auto !important;
+  height: auto !important;
+  display: block !important;
+}
+
+/* 7. RESET CONTAINER OVERFLOW TO ALLOW CLICKS */
+.hierarchical-sidebar.collapsed .menu-container {
+  overflow-x: hidden !important;
+  padding: 0 !important;
+}
+
+/* 8. REMOVE CATEGORY HEADERS IN COLLAPSED */
+.hierarchical-sidebar.collapsed .category-header {
+  display: none !important;
+}
+
+
+/* ========================================================= */
+/* CRITICAL FIX 2: CORRECT SELECTORS FOR COLLAPSED STATE      */
+/* ========================================================= */
+
+/* Note: .menu-style-tree is typically on the ROOT (html), so it must be 
+   ROOT .sidebar, not .sidebar .ROOT */
+
+/* 1. DISABLE TREE LINES (Blocking Clicks) - CORRECTED SELECTOR */
+:root.menu-style-tree .hierarchical-sidebar.collapsed .tree-node::before,
+:root.menu-style-tree .hierarchical-sidebar.collapsed .tree-node::after,
+:root.menu-style-tree .hierarchical-sidebar.collapsed .has-children::after {
+  display: none !important;
+  pointer-events: none !important;
+  content: none !important;
+}
+
+/* 2. RESET ITEM LAYOUT & CLICKABILITY - CORRECTED SELECTOR */
+:root.menu-style-tree .hierarchical-sidebar.collapsed .hierarchical-menu-item {
+  width: 44px !important;
+  height: 44px !important;
+  margin: 4px auto !important;
+  padding: 0 !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  /* Force Clickable */
+
+  position: relative !important;
+  z-index: 1000 !important;
+  /* Lift above everything */
+
+  /* Reset Glass/Tree Styles for Icon View */
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  backdrop-filter: none !important;
+}
+
+/* 3. ACTIVE STATE (Collapsed) */
+:root.menu-style-tree .hierarchical-sidebar.collapsed .hierarchical-menu-item.selected {
+  background: rgba(59, 130, 246, 0.2) !important;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2) !important;
+}
+
+:root.menu-style-tree .hierarchical-sidebar.collapsed .hierarchical-menu-item.selected .menu-icon {
+  color: #3b82f6 !important;
+  opacity: 1 !important;
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.4));
+}
+
+/* 4. HIDE TEXT/EXPANDERS in Collapsed */
+:root.menu-style-tree .hierarchical-sidebar.collapsed .menu-label,
+:root.menu-style-tree .hierarchical-sidebar.collapsed .expand-icon,
+:root.menu-style-tree .hierarchical-sidebar.collapsed .tree-toggle-box {
+  display: none !important;
+}
+
+/* 5. FIX ICON POSITIONING */
+:root.menu-style-tree .hierarchical-sidebar.collapsed .menu-icon {
+  display: block !important;
+  margin: 0 !important;
+  opacity: 0.6;
+  font-size: 20px !important;
+}
+
+/* 6. GLOBAL CLEANUP FOR COLLAPSED SIDEBAR */
+.hierarchical-sidebar.collapsed {
+  overflow: visible !important;
+  /* Allow tooltips if we had them, but standard prevents clipping */
+}
+
+.hierarchical-sidebar.collapsed .menu-container {
+  overflow: visible !important;
+  width: 100% !important;
+  padding: 8px 0 !important;
+}
+
+/* 7. REMOVE ANY "DOT" INDICATORS IN COLLAPSED MODE */
+:root.menu-style-tree .hierarchical-sidebar.collapsed .hierarchical-menu-item::after,
+:root.menu-style-tree .hierarchical-sidebar.collapsed .hierarchical-menu-item::before {
+  display: none !important;
+}
+
+
+/* ========================================================= */
+/* FIX: COMPANY NAME VISIBILITY (CONTRAST ISSUE)             */
+/* ========================================================= */
+
+.sidebar-header .logo-text {
+  display: flex;
+  flex-direction: column;
+  margin-left: 12px;
+}
+
+.sidebar-header .company-name {
+  font-family: 'Playfair Display', serif;
+  /* Luxurious font */
+  font-weight: 700;
+  font-size: 16px;
+  color: #ffffff !important;
+  /* White for visibility on dark background */
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.sidebar-header .company-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7) !important;
+  /* Light white/gray for subtitle */
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-top: 2px;
+}
+
+/* Template-specific overrides for light templates */
+.template-modern .sidebar-header .company-name,
+.template-castle .sidebar-header .company-name,
+.template-acleda .sidebar-header .company-name {
+  color: #1e293b !important;
+  /* Dark color for light backgrounds */
+}
+
+.template-modern .sidebar-header .company-subtitle,
+.template-castle .sidebar-header .company-subtitle,
+.template-acleda .sidebar-header .company-subtitle {
+  color: #64748b !important;
+  /* Muted dark color for light backgrounds */
+}
+
+/* Ensure Logo Section Layout */
+.sidebar-header .logo-section {
+  display: flex;
+  align-items: center;
+  padding: 20px 24px;
+}
+
+.sidebar-header .logo-icon-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  /* Add subtle shadow to logo */
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+}
+
+/* DIFFERENT STYLES FOR COLLAPSED STATE */
+.hierarchical-sidebar.collapsed .sidebar-header {
+  padding: 12px 0;
+  justify-content: center;
+}
+
+.hierarchical-sidebar.collapsed .logo-section {
+  padding: 0;
+  justify-content: center;
+  width: 100%;
+}
+
+.hierarchical-sidebar.collapsed .logo-text {
+  display: none !important;
+  /* Hide text when collapsed */
+}
+
+.hierarchical-sidebar.collapsed .logo-icon-img {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto;
+}
+
+
+/* ========================================================= */
+/* POLISH: CATEGORY HEADERS & MENU ITEM REFINEMENTS         */
+/* ========================================================= */
+
+/* Category Headers - Make them more visible and professional */
+.menu-category .category-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #64748b !important;
+  /* Muted slate for contrast */
+  padding: 16px 24px 8px 24px;
+  margin-top: 8px;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.1);
+  margin-bottom: 4px;
+}
+
+/* First category shouldn't have top margin */
+.menu-category:first-child .category-header {
+  margin-top: 0;
+}
+
+/* ========================================================= */
+/* POLISH: MENU ITEM HOVER STATES                           */
+/* ========================================================= */
+
+/* Hover effect for non-selected items */
+.menu-style-tree .hierarchical-menu-item:not(.selected):hover {
+  background: rgba(100, 116, 139, 0.05) !important;
+  transition: background 0.2s ease;
+}
+
+/* Improve icon visibility on hover */
+.menu-style-tree .hierarchical-menu-item:hover .menu-icon {
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease;
+}
+
+/* ========================================================= */
+/* POLISH: SUBMENU STYLING                                  */
+/* ========================================================= */
+
+/* Submenu container */
+.menu-style-tree .submenu {
+  margin-left: 12px;
+  border-left: 1px solid rgba(100, 116, 139, 0.15);
+  padding-left: 8px;
+}
+
+/* Submenu items */
+.menu-style-tree .submenu .hierarchical-menu-item {
+  font-size: 13px;
+  padding: 8px 12px !important;
+  margin: 2px 0 !important;
+}
+
+/* ========================================================= */
+/* POLISH: SCROLLBAR STYLING                                */
+/* ========================================================= */
+
+/* Custom scrollbar for menu container */
+.menu-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.menu-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu-container::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 3px;
+}
+
+.menu-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.3);
+}
+
+/* ========================================================= */
+/* POLISH: ACTIVE ITEM REFINEMENTS                          */
+/* ========================================================= */
+
+/* Ensure active item text is bold and readable */
+.menu-style-tree .hierarchical-menu-item.selected .menu-label {
+  font-weight: 700 !important;
+  color: var(--primary-color, #3b82f6) !important;
+}
+
+/* Active item should have smooth transitions */
+.menu-style-tree .hierarchical-menu-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================================= */
+/* POLISH: FOOTER PROFILE SECTION                           */
+/* ========================================================= */
+
+.sidebar-footer {
+  background: rgba(248, 250, 252, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.sidebar-profile-info:hover {
+  background: rgba(100, 116, 139, 0.05) !important;
+  transition: background 0.2s ease;
+}
+
+.profile-logout-text:hover {
+  color: var(--primary-color, #3b82f6) !important;
+  transition: color 0.2s ease;
+}
+
+/* ========================================================= */
+/* POLISH: TREE TOGGLE BOX                                  */
+/* ========================================================= */
+
+.tree-toggle-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  background: rgba(100, 116, 139, 0.1);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.hierarchical-menu-item:hover .tree-toggle-box {
+  background: rgba(100, 116, 139, 0.15);
+  color: #475569;
+}
+
+.hierarchical-menu-item.selected .tree-toggle-box {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary-color, #3b82f6);
 }

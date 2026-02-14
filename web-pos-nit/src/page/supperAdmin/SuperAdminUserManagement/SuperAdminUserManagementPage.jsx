@@ -17,36 +17,48 @@ import {
   Badge,
   Tabs,
   Divider,
+  Progress,
+  Empty,
   Form,
   Drawer,
-  Result // ✅ Import Result
+  Result
 } from "antd";
 import Swal from "sweetalert2";
 import {
   UserOutlined,
   PlusOutlined,
-  // ... (keep imports)
+  EditOutlined,
+  DeleteOutlined,
+  SwapOutlined,
   StopOutlined,
+  ClockCircleOutlined,
   SafetyCertificateOutlined,
-  ReloadOutlined,
+  WarningOutlined,
+  MailOutlined,
+  FireOutlined,
+  ExclamationCircleOutlined,
+  ArrowRightOutlined,
+  BarChartOutlined,
+  DashboardOutlined,
   CrownOutlined,
   CheckCircleOutlined,
   BranchesOutlined,
   TeamOutlined,
   FilterOutlined,
-  DashboardOutlined,
-  BarChartOutlined,
   UploadOutlined,
-  EditOutlined,
-  DeleteOutlined,
+  ReloadOutlined,
 } from "@ant-design/icons";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { Config } from "../../../util/config";
 import { formatDateServer, request } from "../../../util/helper";
 import { configStore } from "../../../store/configStore";
 import { useTranslation } from "../../../locales/TranslationContext";
-import { getProfile } from "../../../store/profile.store"; // ✅ Import getProfile
+import { getProfile } from "../../../store/profile.store";
 import OnlineStatusAvatar from '../OnlineStatus/OnlineStatusAvatar';
+import { useOnlineStatus } from "../../supperAdmin/OnlineStatus/useOnlineStatus.hook";
+
+dayjs.extend(relativeTime);
 
 const { TabPane } = Tabs;
 const { Option } = Select;
@@ -108,19 +120,46 @@ function SuperAdminUserManagementPage() {
     branches: [],
     roles: [],
     systemStats: {},
+    inactiveAdmins: [],
+    categories: {
+      never_logged_in: [],
+      inactive_90_plus: [],
+      inactive_60_to_89: [],
+      inactive_30_to_59: [],
+      inactive_14_to_29: [],
+      inactive_7_to_13: [],
+    },
+    activityStats: {
+      activity_breakdown: [],
+      overall: {},
+    },
     filters: {
       branch_name: 'all',
       role_code: 'all',
       is_active: 'all',
-      search: ''
+      search: '',
+      min_days: 7,
     }
   });
   const [fileList, setFileList] = useState([]);
+  const { stats: onlineStats, loading: statsLoading, refresh: refreshStats } = useOnlineStatus(30000); // 30s refresh
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [transferMode, setTransferMode] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     loadUserData();
     if (activeTab === "statistics") {
       loadSystemStatistics();
+    }
+    if (activeTab === "activity") {
+      loadActivityData();
     }
   }, [activeTab]);
 
@@ -179,6 +218,72 @@ function SuperAdminUserManagementPage() {
     }
   };
 
+  const loadActivityData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        getInactiveAdmins(state.filters.min_days),
+        getActivityStats(),
+      ]);
+    } catch (error) {
+      console.error("Error loading activity data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getInactiveAdmins = async (days = 7) => {
+    try {
+      const res = await request(`admin/inactive?days=${days}`, "get");
+      if (res && res.success) {
+        setState((prev) => ({
+          ...prev,
+          inactiveAdmins: res.inactive_admins || [],
+          categories: res.categories || {},
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading inactive admins:", error);
+    }
+  };
+
+  const getActivityStats = async () => {
+    try {
+      const res = await request("admin/activity-stats", "get");
+      if (res && res.success) {
+        setState((prev) => ({
+          ...prev,
+          activityStats: {
+            activity_breakdown: res.activity_breakdown || [],
+            overall: res.overall || {},
+          },
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading activity stats:", error);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    const colors = {
+      "Never Logged In": "red",
+      "Inactive 90+ Days": "volcano",
+      "Inactive 60-89 Days": "orange",
+      "Inactive 30-59 Days": "gold",
+      "Inactive 14-29 Days": "lime",
+      "Inactive 7-13 Days": "cyan",
+      "Active (< 7 days)": "green",
+    };
+    return colors[status] || "default";
+  };
+
+  const getActivityIcon = (days) => {
+    if (days >= 90) return <FireOutlined style={{ color: "#ff4d4f" }} />;
+    if (days >= 60) return <WarningOutlined style={{ color: "#ff7a45" }} />;
+    if (days >= 30) return <ExclamationCircleOutlined style={{ color: "#ffa940" }} />;
+    return <ClockCircleOutlined style={{ color: "#52c41a" }} />;
+  };
+
   const handleFilterChange = (key, value) => {
     const newFilters = { ...state.filters, [key]: value };
     setState((prev) => ({ ...prev, filters: newFilters }));
@@ -191,13 +296,62 @@ function SuperAdminUserManagementPage() {
     setFileList([]);
   };
 
-  const handleCreateUser = () => {
+  const handleTransfer = (user) => {
+    setTransferMode(true);
+    setSelectedUser(user);
+    form.setFieldsValue({
+      branch_name: user.branch_name,
+      role_id: user.role_id,
+      name: '',
+      username: '',
+      password: '',
+      email: '',
+      tel: '',
+      address: ''
+    });
     setModalVisible(true);
-    form.resetFields();
     setFileList([]);
   };
 
+  const handleDeactivate = async (userId) => {
+    Swal.fire({
+      title: "បិទគណនីអ្នកប្រើប្រាស់នេះ?",
+      text: "តើអ្នកប្រាកដថាចង់បិទគណនីនេះ?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      confirmButtonText: "បាទ/ចាស",
+      cancelButtonText: "បោះបង់"
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await request("admin/deactivate", "post", { admin_id: userId });
+          if (res && res.success) {
+            Swal.fire({ icon: 'success', title: t('success'), timer: 1500, showConfirmButton: false });
+            loadUserData();
+          }
+        } catch (error) {
+          console.error("Error deactivating user:", error);
+        }
+      }
+    });
+  };
+
+  const handleReactivate = async (userId) => {
+    try {
+      const res = await request("admin/reactivate", "post", { admin_id: userId });
+      if (res && res.success) {
+        Swal.fire({ icon: 'success', title: t('success'), timer: 1500, showConfirmButton: false });
+        loadUserData();
+      }
+    } catch (error) {
+      console.error("Error reactivating user:", error);
+    }
+  };
+
   const handleEdit = (user) => {
+    setTransferMode(false);
+    setSelectedUser(user);
     form.setFieldsValue({
       ...user,
       password: '' // Don't populate password
@@ -256,47 +410,140 @@ function SuperAdminUserManagementPage() {
     });
   };
 
+  const handleNotify = async (admins) => {
+    const adminList = Array.isArray(admins) ? admins : [admins];
+    const { value: text } = await Swal.fire({
+      title: t('send_notification'),
+      input: 'textarea',
+      inputLabel: t('message'),
+      inputPlaceholder: t('type_your_message'),
+      showCancelButton: true
+    });
+
+    if (text) {
+      try {
+        const adminIds = adminList.map(a => a.id);
+        const res = await request("admin/notify-inactive", "post", {
+          admin_ids: adminIds,
+          message_text: text,
+        });
+        if (res && res.success) {
+          Swal.fire({ icon: 'success', title: t('success'), timer: 1500, showConfirmButton: false });
+        }
+      } catch (error) {
+        console.error("Error sending notification:", error);
+      }
+    }
+  };
+
+  const renderCategoryCard = (title, data, icon, color) => (
+    <Card
+      className="shadow-md mb-4"
+      title={
+        <Space>
+          <span style={{ color }}>{icon}</span>
+          <span>{title}</span>
+          <Badge count={data?.length || 0} style={{ backgroundColor: color }} />
+        </Space>
+      }
+      extra={
+        <Button
+          type="link"
+          icon={<MailOutlined />}
+          onClick={() => handleNotify(data)}
+          disabled={!data || data.length === 0}
+        >
+          ជូនដំណឹងទាំងអស់
+        </Button>
+      }
+    >
+      <Table
+        dataSource={data}
+        rowKey="id"
+        size="small"
+        pagination={{ pageSize: 5 }}
+        columns={[
+          {
+            title: "អ្នកប្រើប្រាស់",
+            key: "user",
+            render: (_, r) => (
+              <Space>
+                <OnlineStatusAvatar user={r} size={30} />
+                <div>
+                  <div className="font-semibold text-xs">{r.name}</div>
+                  <div className="text-gray-400" style={{ fontSize: '10px' }}>{r.username}</div>
+                </div>
+              </Space>
+            )
+          },
+          {
+            title: "ចូលចុងក្រោយ",
+            key: "last",
+            render: (_, r) => <span className="text-xs">{r.last_activity ? dayjs(r.last_activity).fromNow() : 'Never'}</span>
+          },
+          {
+            title: "សកម្មភាព",
+            key: "action",
+            align: "center",
+            render: (_, r) => <Button type="text" icon={<MailOutlined />} onClick={() => handleNotify(r)} />
+          }
+        ]}
+      />
+    </Card>
+  );
+
+  const renderActivityChart = () => {
+    const { activity_breakdown } = state.activityStats;
+    if (!activity_breakdown || activity_breakdown.length === 0) return <Empty />;
+    const total = activity_breakdown.reduce((sum, item) => sum + item.count, 0);
+
+    return (
+      <div className="space-y-4">
+        {activity_breakdown.map((item, index) => {
+          const percentage = total > 0 ? ((item.count / total) * 100).toFixed(1) : 0;
+          return (
+            <div key={index} className="p-3 bg-gray-50 rounded-lg">
+              <div className="flex justify-between mb-1 text-sm">
+                <span>{item.period}</span>
+                <span className="font-bold">{item.count} Users</span>
+              </div>
+              <Progress percent={parseFloat(percentage)} strokeColor={getStatusColor(item.period)} />
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
+  const handleCreateUser = () => {
+    setTransferMode(false);
+    setSelectedUser(null);
+    form.resetFields();
+    setFileList([]);
+    setModalVisible(true);
+  };
+
   const handleSubmitSuperAdmin = async (values) => {
     try {
       setLoading(true);
       const formData = new FormData();
-
       Object.keys(values).forEach(key => {
-        if (values[key] !== undefined && values[key] !== null) {
-          formData.append(key, values[key]);
-        }
+        if (values[key] !== undefined && values[key] !== null) formData.append(key, values[key]);
       });
-
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append("upload_image", fileList[0].originFileObj);
       }
 
       const res = await request("superadmin/create-superadmin", "post", formData);
-
       if (res && res.success) {
-        Swal.fire({
-          icon: 'success',
-          title: t('success'),
-          text: res.message || t('created_successfully'),
-          timer: 1500,
-          showConfirmButton: false
-        });
+        Swal.fire({ icon: 'success', title: t('success'), timer: 1500, showConfirmButton: false });
         setSuperAdminModalVisible(false);
         loadUserData();
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: t('error'),
-          text: res.message || t('super_admin_create_failed')
-        });
+        Swal.fire({ icon: 'error', title: t('error'), text: res.message });
       }
     } catch (error) {
-      console.error("Error creating Super Admin:", error);
-      Swal.fire({
-        icon: 'error',
-        title: t('error'),
-        text: t('super_admin_create_failed')
-      });
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -306,47 +553,42 @@ function SuperAdminUserManagementPage() {
     try {
       setLoading(true);
       const formData = new FormData();
-      const userId = form.getFieldValue("id");
+      const userId = selectedUser?.id;
 
       Object.keys(values).forEach(key => {
-        if (values[key] !== undefined && values[key] !== null) {
-          formData.append(key, values[key]);
-        }
+        if (values[key] !== undefined && values[key] !== null) formData.append(key, values[key]);
       });
 
       if (fileList.length > 0 && fileList[0].originFileObj) {
         formData.append("upload_image", fileList[0].originFileObj);
       }
 
-      const method = userId ? "put" : "post";
-      const url = userId ? `superadmin/users/${userId}` : "auth/register";
+      let url = "";
+      let method = "";
+
+      if (transferMode) {
+        url = "admin/create";
+        method = "post";
+        formData.append("old_admin_id", userId);
+        formData.append("transfer_permissions", "true");
+      } else if (userId) {
+        url = `superadmin/users/${userId}`;
+        method = "put";
+      } else {
+        url = "auth/register";
+        method = "post";
+      }
 
       const res = await request(url, method, formData);
-
       if (res && res.success) {
-        Swal.fire({
-          icon: 'success',
-          title: t('success'),
-          text: res.message || t('saved_successfully'),
-          timer: 1500,
-          showConfirmButton: false
-        });
+        Swal.fire({ icon: 'success', title: t('success'), timer: 1500, showConfirmButton: false });
         setModalVisible(false);
         loadUserData();
       } else {
-        Swal.fire({
-          icon: 'error',
-          title: t('error'),
-          text: res.message || t('failed_to_save_user')
-        });
+        Swal.fire({ icon: 'error', title: t('error'), text: res.message });
       }
     } catch (error) {
-      console.error("Error saving user:", error);
-      Swal.fire({
-        icon: 'error',
-        title: t('error'),
-        text: t('failed_to_delete')
-      });
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -359,20 +601,12 @@ function SuperAdminUserManagementPage() {
   const beforeUpload = (file) => {
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      Swal.fire({
-        icon: 'error',
-        title: t('error'),
-        text: t('invalid_file_image')
-      });
+      Swal.fire({ icon: 'error', title: t('error'), text: t('invalid_file_image') });
       return false;
     }
     const isLt2M = file.size / 1024 / 1024 < 2;
     if (!isLt2M) {
-      Swal.fire({
-        icon: 'error',
-        title: t('error'),
-        text: t('file_too_large')
-      });
+      Swal.fire({ icon: 'error', title: t('error'), text: t('file_too_large') });
       return false;
     }
     return false;
@@ -385,9 +619,7 @@ function SuperAdminUserManagementPage() {
       key: "profile_image",
       width: 80,
       align: "center",
-      render: (image, record) => (
-        <OnlineStatusAvatar user={record} size={50} />
-      ),
+      render: (image, record) => <OnlineStatusAvatar user={record} size={50} />,
     },
     {
       title: "ព័ត៌មានអ្នកប្រើប្រាស់",
@@ -412,7 +644,7 @@ function SuperAdminUserManagementPage() {
       width: 200,
       render: (_, record) => (
         <div className="text-sm">
-          <div>📱 {"tel:" + record.tel || "N/A"}</div>
+          <div>📱 {record.tel || "N/A"}</div>
           <div className="text-gray-500">📧 {record.email || record.username}</div>
         </div>
       ),
@@ -422,11 +654,7 @@ function SuperAdminUserManagementPage() {
       dataIndex: "branch_name",
       key: "branch_name",
       width: 120,
-      render: (text) => (
-        <Tag color="purple" className="font-semibold">
-          {text || "N/A"}
-        </Tag>
-      ),
+      render: (text) => <Tag color="purple" className="font-semibold">{text || "N/A"}</Tag>,
     },
     {
       title: "អ្នកប្រើប្រាស់គ្រប់គ្រង",
@@ -453,49 +681,30 @@ function SuperAdminUserManagementPage() {
       key: "is_active",
       width: 100,
       align: "center",
-      render: (_, record) => (
-        <Tag color={record.is_active ? "green" : "red"} className="px-3 py-1">
-          {record.is_active ? "សកម្ម" : "អសកម្ម"}
-        </Tag>
-      ),
+      render: (_, record) => <Tag color={record.is_active ? "green" : "red"} className="px-3 py-1">{record.is_active ? "សកម្ម" : "អសកម្ម"}</Tag>,
     },
     {
       title: "សកម្មភាព",
       key: "action",
-      width: 180,
+      width: 220,
       fixed: "right",
       render: (_, record) => {
-        if (record.role_code === "SUPER_ADMIN") {
-          return (
-            <Space size="small">
-              <Button
-                type="primary"
-                icon={<EditOutlined />}
-                size="small"
-                onClick={() => handleEdit(record)}
-              >
-                កែប្រែ
-              </Button>
-              <Tag color="gold">
-                <CrownOutlined /> Protected
-              </Tag>
-            </Space>
-          );
-        }
-
+        const isSuper = record.role_code === "SUPER_ADMIN";
         return (
           <Space size="small">
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              size="small"
-              onClick={() => handleEdit(record)}
-            >
-              កែប្រែ
-            </Button>
-            <Button danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record.id)}>
-              លុប
-            </Button>
+            <Tooltip title="កែប្រែ"><Button type="primary" icon={<EditOutlined />} size="small" onClick={() => handleEdit(record)} /></Tooltip>
+            {!isSuper && (
+              <>
+                <Tooltip title="ផ្ទេរសិទ្ធិ"><Button icon={<SwapOutlined />} size="small" className="bg-orange-500 text-white hover:bg-orange-600 border-0" onClick={() => handleTransfer(record)} /></Tooltip>
+                {record.is_active ? (
+                  <Tooltip title="បិទគណនី"><Button danger icon={<StopOutlined />} size="small" onClick={() => handleDeactivate(record.id)} /></Tooltip>
+                ) : (
+                  <Tooltip title="បើកគណនី"><Button icon={<CheckCircleOutlined />} size="small" className="bg-green-500 text-white hover:bg-green-600 border-0" onClick={() => handleReactivate(record.id)} /></Tooltip>
+                )}
+                <Tooltip title="លុប"><Button danger icon={<DeleteOutlined />} size="small" onClick={() => handleDelete(record.id)} /></Tooltip>
+              </>
+            )}
+            {isSuper && <Tag color="gold"><CrownOutlined /> Protected</Tag>}
           </Space>
         );
       },
@@ -678,6 +887,74 @@ function SuperAdminUserManagementPage() {
           <TabPane
             tab={
               <span>
+                <ClockCircleOutlined /> សកម្មភាពអ្នកប្រើប្រាស់ (Activity)
+              </span>
+            }
+            key="activity"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+              <Card className="shadow-md">
+                <Statistic
+                  title="មិនទាន់ចូលប្រើ"
+                  value={state.categories.never_logged_in?.length || 0}
+                  prefix={<ExclamationCircleOutlined />}
+                  valueStyle={{ color: '#ff4d4f' }}
+                />
+              </Card>
+              <Card className="shadow-md">
+                <Statistic
+                  title="Inactive 90+ ថ្ងៃ"
+                  value={state.categories.inactive_90_plus?.length || 0}
+                  prefix={<FireOutlined />}
+                  valueStyle={{ color: '#fa8c16' }}
+                />
+              </Card>
+              <Card className="shadow-md">
+                <Statistic
+                  title="Inactive 30-89 ថ្ងៃ"
+                  value={(state.categories.inactive_60_to_89?.length || 0) + (state.categories.inactive_30_to_59?.length || 0)}
+                  prefix={<WarningOutlined />}
+                  valueStyle={{ color: '#faad14' }}
+                />
+              </Card>
+              <Card className="shadow-md">
+                <Statistic
+                  title="អ្នកប្រើប្រាស់សរុប"
+                  value={state.users.length}
+                  prefix={<UserOutlined />}
+                />
+              </Card>
+            </div>
+
+            <Row gutter={[16, 16]}>
+              <Col xs={24} lg={16}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {renderCategoryCard("មិនទាន់ចូលប្រើប្រាស់", state.categories.never_logged_in, <ExclamationCircleOutlined />, "#ff4d4f")}
+                  {renderCategoryCard("Inactive 90+ ថ្ងៃ", state.categories.inactive_90_plus, <FireOutlined />, "#ff7a45")}
+                  {renderCategoryCard("Inactive 60-89 ថ្ងៃ", state.categories.inactive_60_to_89, <WarningOutlined />, "#ffa940")}
+                  {renderCategoryCard("Inactive 30-59 ថ្ងៃ", state.categories.inactive_30_to_59, <ClockCircleOutlined />, "#ffc53d")}
+                </div>
+              </Col>
+              <Col xs={24} lg={8}>
+                <Card title="ការបែងចែកសកម្មភាព (Distribution)" className="shadow-md h-full">
+                  {renderActivityChart()}
+                  <Divider />
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="flex items-center gap-2 mb-2 font-bold text-blue-800">
+                      <ArrowRightOutlined /> ចំណាំ / Note
+                    </h4>
+                    <p className="text-xs text-blue-600">
+                      ស្ថិតិនេះបង្ហាញពីការប្រើប្រាស់របស់ Admin និងអ្នកគ្រប់គ្រងសាខា។ អ្នកអាចផ្ញើសារជូនដំណឹងទៅកាន់ពួកគេដើម្បីរំលឹកពីការចូលប្រើប្រាស់ប្រព័ន្ធ។
+                    </p>
+                  </div>
+                </Card>
+              </Col>
+            </Row>
+          </TabPane>
+
+          <TabPane
+            tab={
+              <span>
                 <BarChartOutlined /> ស្ថិតិប្រព័ន្ធ
               </span>
             }
@@ -816,7 +1093,11 @@ function SuperAdminUserManagementPage() {
         width={800}
         title={
           <div className="text-xl font-bold">
-            {form.getFieldValue("id") ? (
+            {transferMode ? (
+              <>
+                <SwapOutlined className="text-orange-600" /> ផ្ទេរសិទ្ធិអ្នកប្រើប្រាស់ (Transfer Permissions)
+              </>
+            ) : form.getFieldValue("id") ? (
               <>
                 <EditOutlined className="text-blue-600" /> កែប្រែអ្នកប្រើប្រាស់
               </>
@@ -829,6 +1110,15 @@ function SuperAdminUserManagementPage() {
         }
       >
         <Form form={form} layout="vertical" onFinish={handleSubmitUser}>
+          {transferMode && (
+            <Alert
+              message={`ផ្ទេរសិទ្ធិពី: ${selectedUser?.name}`}
+              description="នេះនឹងបង្កើតគណនីអ្នកគ្រប់គ្រងថ្មីដែលមានសាខា និងសិទ្ធិតួនាទីដូចគ្នាទៅនឹងអ្នកគ្រប់គ្រងបច្ចុប្បន្ន។"
+              type="info"
+              showIcon
+              className="mb-4"
+            />
+          )}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item name="name" label="ឈ្មោះពេញ" rules={[{ required: true }]}>

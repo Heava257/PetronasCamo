@@ -6,6 +6,6 @@ module.exports = (app) => {
     // Public route to get settings (needed for login page checks)
     app.get("/api/settings", controller.getSettings);
     // Protected routes for updating
-    app.post("/api/settings", validate_token(), controller.updateSetting);
-    app.put("/api/settings/bulk", validate_token(), controller.updateSettingsBulk);
+    app.post("/api/settings", validate_token("setting.update"), controller.updateSetting);
+    app.put("/api/settings/bulk", validate_token("setting.update"), controller.updateSettingsBulk);
 };

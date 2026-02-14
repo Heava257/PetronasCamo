@@ -426,7 +426,7 @@ function ReportPurchase_Summary() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         @media print {
           body * {
             visibility: hidden;

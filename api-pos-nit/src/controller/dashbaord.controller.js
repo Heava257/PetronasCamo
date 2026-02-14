@@ -245,26 +245,22 @@ exports.getList = async (req, res) => {
     const [sale] = await db.query(saleQuery);
 
     // ✅✅✅ SALE SUMMARY BY MONTH ✅✅✅
+    // Return Money (Currency) instead of Liters for comparable analysis
     const saleSummaryQuery = `
       SELECT 
         DATE_FORMAT(o.order_date, '%M') AS title, 
         MONTH(o.order_date) as month_num,
-        SUM(
-          (od.qty * od.price) / NULLIF(COALESCE(p.actual_price, c.actual_price, 1), 0)
-        ) AS total 
+        SUM(od.qty * od.price) AS total 
       FROM \`order\` o
       JOIN order_detail od ON o.id = od.order_id
-      JOIN product p ON od.product_id = p.id
-      LEFT JOIN category c ON p.category_id = c.id
       WHERE 1=1
       ${branchFilterOrder}
-      ${from_date && to_date ? `AND DATE(o.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(o.order_date, '%M'), MONTH(o.order_date)
       ORDER BY MONTH(o.order_date)
     `;
-    const [Sale_Summary_By_Month] = await db.query(saleSummaryQuery);
+    const [Sale_Summary_Results] = await db.query(saleSummaryQuery);
 
-    // ✅✅✅ EXPENSE SUMMARY BY MONTH (OPEX + COGS) - FIXED ✅✅✅
+    // ✅✅✅ EXPENSE SUMMARY BY MONTH (OPEX + COGS) ✅✅✅
     const opexByMonthQuery = `
       SELECT 
         DATE_FORMAT(e.expense_date, '%M') AS title, 
@@ -274,7 +270,6 @@ exports.getList = async (req, res) => {
       INNER JOIN user u ON e.user_id = u.id
       WHERE 1=1
       ${getFilter('u')}
-      ${from_date && to_date ? `AND DATE(e.expense_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(e.expense_date, '%M'), MONTH(e.expense_date)
     `;
     const [opexByMonth] = await db.query(opexByMonthQuery);
@@ -288,36 +283,41 @@ exports.getList = async (req, res) => {
       INNER JOIN user u ON p.user_id = u.id
       WHERE p.status IN ('confirmed', 'shipped', 'delivered')
       ${getFilter('u')}
-      ${from_date && to_date ? `AND DATE(p.order_date) BETWEEN '${from_date}' AND '${to_date}'` : ''}
       GROUP BY DATE_FORMAT(p.order_date, '%M'), MONTH(p.order_date)
     `;
     const [cogsByMonth] = await db.query(cogsByMonthQuery);
 
-    // ✅ Merge monthly expense data
-    const monthlyExpenseMap = {};
+    // ✅ Helper to fill gaps for all 12 months
+    const fullMonths = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
 
-    opexByMonth.forEach(item => {
-      if (!monthlyExpenseMap[item.title]) {
-        monthlyExpenseMap[item.title] = { total: 0, month_num: item.month_num };
-      }
-      monthlyExpenseMap[item.title].total += parseFloat(item.total);
-    });
+    const fillGaps = (data) => {
+      return fullMonths.map((m, index) => {
+        const found = data.find(d => d.title === m);
+        return {
+          title: m,
+          month_num: index + 1,
+          total: found ? parseFloat(found.total) : 0
+        };
+      });
+    };
 
-    cogsByMonth.forEach(item => {
-      if (!monthlyExpenseMap[item.title]) {
-        monthlyExpenseMap[item.title] = { total: 0, month_num: item.month_num };
-      }
-      monthlyExpenseMap[item.title].total += parseFloat(item.total);
-    });
+    const Sale_Summary_By_Month = fillGaps(Sale_Summary_Results);
 
-    const Expense_Summary_By_Month = Object.keys(monthlyExpenseMap).map(key => ({
-      title: key,
-      total: monthlyExpenseMap[key].total
-    })).sort((a, b) => {
-      const monthA = monthlyExpenseMap[a.title].month_num;
-      const monthB = monthlyExpenseMap[b.title].month_num;
-      return monthA - monthB;
+    // Merge opex and cogs
+    const mergedExpenses = [];
+    fullMonths.forEach((m, idx) => {
+      const op = opexByMonth.find(o => o.title === m);
+      const cg = cogsByMonth.find(c => c.title === m);
+      mergedExpenses.push({
+        title: m,
+        month_num: idx + 1,
+        total: (op ? parseFloat(op.total) : 0) + (cg ? parseFloat(cg.total) : 0)
+      });
     });
+    const Expense_Summary_By_Month = mergedExpenses;
 
     // ✅✅✅ CALCULATE PROFIT BY MONTH ✅✅✅
     const Profit_Summary_By_Month = Sale_Summary_By_Month.map(saleMonth => {
@@ -491,12 +491,12 @@ exports.getList = async (req, res) => {
     // ✅ Send response
     res.json({
       dashboard: dashboardData,
-      Sale_Summary_By_Month: isSuperAdmin ? [] : Sale_Summary_By_Month,
-      Expense_Summary_By_Month: isSuperAdmin ? [] : Expense_Summary_By_Month,
-      Profit_Summary_By_Month: isSuperAdmin ? [] : Profit_Summary_By_Month,
-      Product_Summary_By_Month: isSuperAdmin ? [] : Product_Summary_By_Month,
-      Top_Sale: isSuperAdmin ? [] : Top_Sale,
-      financial_summary: isSuperAdmin ? {} : {
+      Sale_Summary_By_Month: Sale_Summary_By_Month,
+      Expense_Summary_By_Month: Expense_Summary_By_Month,
+      Profit_Summary_By_Month: Profit_Summary_By_Month,
+      Product_Summary_By_Month: Product_Summary_By_Month,
+      Top_Sale: Top_Sale,
+      financial_summary: {
         total_revenue: parseFloat(totalRevenue.toFixed(2)),
         total_expense: parseFloat(totalExpense.toFixed(2)),
         total_profit: parseFloat(totalProfit.toFixed(2)),

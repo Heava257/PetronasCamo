@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { setAcccessToken, setPermission, setProfile } from '../store/profile.store';
 import { message, Spin } from 'antd';
 import { LoadingOutlined } from '@ant-design/icons';
-import WelcomeAnimation3D from '../component/layout/WelcomeAnimation ';
+import WelcomeAnimation3D from '../component/layout/WelcomeAnimation';
 
 function OAuthCallback() {
   const navigate = useNavigate();
@@ -42,17 +42,17 @@ function OAuthCallback() {
             .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
             .join('')
         );
-        
+
         const decoded = JSON.parse(jsonPayload);
-        
+
         // Store tokens and profile data
         setAcccessToken(accessToken);
         localStorage.setItem('refresh_token', refreshToken);
-        
+
         if (decoded.data) {
-          setProfile(JSON.stringify(decoded.data.profile));
-          setPermission(JSON.stringify(decoded.data.permission));
-          
+          setProfile(decoded.data.profile);
+          setPermission(decoded.data.permission);
+
           if (decoded.data.profile?.id) {
             localStorage.setItem('user_id', decoded.data.profile.id);
           }
@@ -93,8 +93,8 @@ function OAuthCallback() {
       height: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     }}>
-      <Spin 
-        indicator={<LoadingOutlined style={{ fontSize: 48, color: '#fff' }} spin />} 
+      <Spin
+        indicator={<LoadingOutlined style={{ fontSize: 48, color: '#fff' }} spin />}
         size="large"
       />
       <h2 style={{ color: '#fff', marginTop: '20px', fontSize: '24px' }}>

@@ -118,141 +118,146 @@
   }
 }
 
-/* ============ DARK MODE STYLES ============ */
-/* NOTE: We are using "Glass" style for Dark Mode when Sunset Glow template is active, 
-   so we override the dark backgrounds to be semi-transparent white/light to match Home Page */
-
-/* Summary Cards - Dark Mode */
-:global(.dark) .summaryCard {
-  background: rgba(255, 255, 255, 0.85) !important;
-  /* White glass */
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(12px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-:global(.dark) .summaryCard:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-  transform: translateY(-5px);
-}
-
-:global(.dark) .summaryIcon {
-  color: #1890ff !important;
-  /* Keep blue like light mode */
-}
-
-:global(.dark) .summaryTitle {
-  color: #666 !important;
-  /* Keep grey like light mode */
-}
-
-:global(.dark) .summaryValue {
-  color: #333 !important;
-  /* Dark text on white card */
-}
-
-:global(.dark) .summaryPositive {
-  color: #52c41a !important;
-}
-
-:global(.dark) .summaryNegative {
-  color: #f5222d !important;
-}
-
-:global(.dark) .summaryNeutral {
-  color: #1890ff !important;
-}
-
-/* Customer Cell - Dark Mode */
-:global(.dark) .customerCell {
-  color: #333 !important;
-}
-
-:global(.dark) .customerName {
-  color: #333 !important;
-}
-
-:global(.dark) .customerTel,
-:global(.dark) .customerAddress {
-  color: #666 !important;
-}
-
-/* Khmer Text - Dark Mode */
-:global(.dark) .khmerText {
-  color: #555 !important;
-}
-
-:global(.dark) .englishText {
-  color: #888 !important;
-}
-
-/* Table Content - Dark Mode */
-:global(.dark) .tableContent {
-  background: transparent !important;
-}
-
-/* Table Header Group - Dark Mode */
-:global(.dark) .tableHeaderGroup {
-  color: #333 !important;
-}
-
-/* ============ GLOBAL TABLE STYLES - DARK MODE ============ */
-
-/* Table Headers */
-:global(.dark) .table-header,
-:global(.dark) .column-header-product {
-  color: #333 !important;
-  background: rgba(255, 255, 255, 0.9) !important;
-}
-
-:global(.dark) .khmer-text,
-:global(.dark) .khmer-text1,
-:global(.dark) .khmer-text-product {
-  color: #333 !important;
-}
-
-/* Table Cell Text */
-:global(.dark) .custom-cell-text,
-:global(.dark) .english-company-product {
-  color: #444 !important;
-}
-
-/* Table Rows */
-:global(.dark) .even-row {
-  background: rgba(255, 255, 255, 0.6) !important;
-}
-
-:global(.dark) .odd-row {
-  background: rgba(255, 255, 255, 0.4) !important;
-}
-
-/* Checked Row - Light Mode */
-.checked-row {
-  background: rgba(255, 235, 59, 0.3) !important;
-  /* Yellow background */
-  border-left: 3px solid #fbbf24 !important;
-}
-
-.checked-row:hover {
-  background: rgba(255, 235, 59, 0.4) !important;
-}
-
-/* Checked Row - Light Mode */
+/* Checked Row - Light Mode Styles */
+.checked-row,
 .checkedRow {
-  background: rgba(201, 185, 47, 0.3) !important;
-  /* Yellow background */
+  background: rgba(255, 235, 59, 0.3) !important;
   border-left: 3px solid #fbbf24 !important;
 }
 
+.checked-row:hover,
 .checkedRow:hover {
   background: rgba(255, 235, 59, 0.4) !important;
 }
 
-:global(.dark) .checkedRow {
-  background: rgba(255, 235, 59, 0.3) !important;
-  border-left: 3px solid #fbbf24 !important;
+/* ============ DARK MODE STYLES ============ */
+
+/* Summary Cards - Dark Mode */
+:global(.dark) .summaryCard {
+  background: #1e293b !important;
+  /* Dark Slate */
+  border: 1px solid #334155 !important;
+  backdrop-filter: none;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
 }
 
-:global(.dark) .checkedRow:hover {
-  background: rgba(255, 235, 59, 0.4) !important;
+:global(.dark) .summaryCard:hover {
+  background: #334155 !important;
+  /* Lighter Slate on hover */
+  transform: translateY(-5px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+:global(.dark) .summaryIcon {
+  color: #60a5fa !important;
+  /* Blue 400 */
+}
+
+:global(.dark) .summaryTitle {
+  color: #94a3b8 !important;
+  /* Slate 400 */
+}
+
+:global(.dark) .summaryValue {
+  color: #f8fafc !important;
+  /* Slate 50 */
+}
+
+/* Summary Value Colors in Dark Mode */
+:global(.dark) .summaryPositive {
+  color: #4ade80 !important;
+}
+
+:global(.dark) .summaryNegative {
+  color: #f87171 !important;
+}
+
+:global(.dark) .summaryNeutral {
+  color: #60a5fa !important;
+}
+
+/* Table Content Wrapper */
+:global(.dark) .tableContent {
+  background: transparent !important;
+}
+
+/* Table Headers */
+:global(.dark) .ant-table-thead>tr>th,
+:global(.dark) .ant-table-thead>tr>td,
+:global(.dark) .table-header,
+:global(.dark) .column-header-product,
+:global(.dark) .khmer-text,
+:global(.dark) .khmer-text1,
+:global(.dark) th {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+/* Remove white gradients/backgrounds from custom classes */
+:global(.dark) .table-header {
+  background: transparent !important;
+}
+
+/* Table Rows */
+:global(.dark) .ant-table-tbody>tr>td {
+  background: #0f172a !important;
+  /* Darker bg for rows */
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+:global(.dark) .ant-table-tbody>tr:hover>td {
+  background: #1e293b !important;
+  /* Hover state */
+}
+
+:global(.dark) .even-row,
+:global(.dark) .odd-row {
+  background: #0f172a !important;
+}
+
+/* Customer Cell Text */
+:global(.dark) .customerCell,
+:global(.dark) .customerName,
+:global(.dark) .customerTel,
+:global(.dark) .customerAddress {
+  color: #cbd5e1 !important;
+}
+
+/* Checked Row Override for Dark Mode */
+:global(.dark) .checkedRow,
+:global(.dark) .checked-row {
+  background: #451a03 !important;
+  /* Dark Amber */
+  border-left: 3px solid #f59e0b !important;
+}
+
+:global(.dark) .checkedRow:hover,
+:global(.dark) .checked-row:hover {
+  background: #78350f !important;
+}
+
+/* Pagination */
+:global(.dark) .ant-pagination-item a {
+  color: #cbd5e1 !important;
+}
+
+:global(.dark) .ant-pagination-item-active {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+
+/* Input Fields in Dark Mode overrides */
+:global(.dark) .ant-picker,
+:global(.dark) .ant-input,
+:global(.dark) .ant-select-selector {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: white !important;
+}
+
+:global(.dark) .ant-picker-input>input,
+:global(.dark) .ant-select-selection-item {
+  color: white !important;
 }

@@ -4,7 +4,7 @@ const {
   getCustomerReport,
 } = require("../controller/dashbaord.controller");
 module.exports = (app) => {
-  app.get("/api/dashbaord", validate_token(),getList);
-  app.get("/api/customer-report", validate_token(), getCustomerReport);
+  app.get("/api/dashbaord", validate_token("dashboard.getlist"), getList);
+  app.get("/api/customer-report", validate_token("dashboard.getlist"), getCustomerReport);
 };
 

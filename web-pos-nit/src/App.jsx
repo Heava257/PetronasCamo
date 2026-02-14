@@ -1,6 +1,7 @@
 
 import "./App.css";
 import "./styles/glass-theme.css"; /* Global Glass Theme for Dark Mode */
+import "./force-light-mode.css"; /* 🔥 FORCE LIGHT MODE - REMOVE ALL DARK BACKGROUNDS 🔥 */
 import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
 import HomePage from "./page/home/HomePage";
 import LogingPage from "./page/auth/LogingPage";
@@ -48,9 +49,8 @@ import ReportPurchaseHistory from "./page/report/ReportPurchaseHistory.jsx";
 import ReportPaymentHistory from "./page/report/ReportPaymentHistory.jsx";
 import ReportProfitLoss from "./page/report/ReportProfitLoss.jsx";
 import BranchComparisonReport from "./page/supperAdmin/BranchComparisonReport/BranchComparisonReportPage.jsx";
-import AdminManagement from "./page/supperAdmin/AdminManagement/AdminManagementPage.jsx";
-import InactiveAdminsReport from "./page/supperAdmin/InactiveAdminsReport/InactiveAdminsReportPage.jsx";
 import NotificationPanel from "./page/supperAdmin/NotificationPanel/NotificationPanelPage.jsx";
+import SystemLogsPage from "./page/supperAdmin/SystemLogs/SystemLogsPage.jsx";
 import SuperAdminUserManagement from "./page/supperAdmin/SuperAdminUserManagement/SuperAdminUserManagementPage.jsx";
 import PermissionManagement from "./page/supperAdmin/PermissionManagement/PermissionManagement.jsx";
 
@@ -153,9 +153,10 @@ function App() {
               <Route path="/report_Profit_Loss" element={<ReportProfitLoss />} />
 
               <Route path="/report_BranchComparison" element={<BranchComparisonReport />} />
-              <Route path="/admin-management" element={<AdminManagement />} />
-              <Route path="/inactive_admins" element={<InactiveAdminsReport />} />
+              <Route path="/admin-management" element={<SuperAdminUserManagement />} />
+              <Route path="/inactive_admins" element={<SuperAdminUserManagement />} />
               <Route path="/supperadmin-management" element={<SuperAdminUserManagement />} />
+              <Route path="/system-logs" element={<SystemLogsPage />} />
               <Route path="/permission-management" element={<PermissionManagement />} />
               <Route path="/notify-inactive" element={<NotificationPanel />} />
               <Route path="/super-TelegramConfiguration" element={<TelegramConfiguration />} />

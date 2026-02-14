@@ -31,15 +31,15 @@ module.exports = (app) => {
   app.get("/api/auth/google/callback", googleOAuthCallback);
   app.get("/api/auth/apple", appleOAuth);
   app.post("/api/auth/apple/callback", appleOAuthCallback);
-  app.get("/api/auth/user-profile/:userId", validate_token(), getuserProfile);
+  app.get("/api/auth/user-profile/:userId", validate_token("user.view"), getuserProfile);
   app.put(
     "/api/user/profile/:userId",
     validate_token("user.update"),
     uploadFile.single("upload_image"),
     updateuserProfile
   );
-  app.get("/api/groups/get-list", validate_token(), getList);
-  app.post("/api/auth/new_barcode", validate_token(), newBarcode);
+  app.get("/api/groups/get-list", validate_token("user.view"), getList);
+  app.post("/api/auth/new_barcode", validate_token("user.update"), newBarcode);
   app.post(
     "/api/auth/register",
     validate_token("user.create"),

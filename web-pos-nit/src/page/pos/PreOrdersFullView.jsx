@@ -20,9 +20,11 @@ import dayjs from 'dayjs';
 import { useTranslation } from "../../locales/TranslationContext";
 import './PreOrdersFullView.css';
 import PrintInvoice from "../../component/pos/PrintInvoice";
+import { useSettings } from "../../settings";
 
 const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => {
     const { t } = useTranslation();
+    const { isDarkMode } = useSettings();
     const [messageApi, contextHolder] = message.useMessage();
     const [preOrders, setPreOrders] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -403,7 +405,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: "មិនអាចបង្កើត Order បានទេ",
+                text: t("pos.cannot_create_order"),
             });
         } finally {
             setTimeout(() => {
@@ -487,16 +489,16 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
 
                 if (status === 'ready') {
                     statusClass = 'status-tag-ready';
-                    statusText = 'រៀបចំរួច';
+                    statusText = t('pos.status_ready');
                 } else if (status === 'confirmed') {
                     statusClass = 'status-tag-confirmed';
-                    statusText = 'បានបញ្ជាក់';
+                    statusText = t('pos.status_confirmed');
                 } else if (status === 'pending') {
                     statusClass = 'status-tag-pending';
-                    statusText = 'រង់ចាំ';
+                    statusText = t('pos.status_pending');
                 } else if (status === 'in_progress') {
                     statusClass = 'status-tag-preparing';
-                    statusText = 'កំពុងរៀបចំ';
+                    statusText = t('pos.status_in_progress');
                 }
 
                 return (
@@ -545,7 +547,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
     return (
         <App>
             {contextHolder}
-            <div className="pre-orders-full-view">
+            <div className={`pre-orders-full-view ${isDarkMode ? 'dark-mode' : ''}`}>
                 {/* Header Section */}
                 <div className="page-header">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -563,7 +565,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                                 style={{ width: 300 }}
                                 onChange={(e) => setFilter(p => ({ ...p, txt_search: e.target.value }))}
                                 allowClear
-                                placeholder={t('ស្វែងរកតាមឈ្មោះ ឬ លេខប័ណ្ណ #...')}
+                                placeholder={t('pos.search_placeholder')}
                                 size="large"
                             />
                             <Button
@@ -621,7 +623,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                                         </div>
                                         {isLow && (
                                             <div className="stock-card-low-label">
-                                                ⚠️ ស្តុកទាប
+                                                ⚠️ {t('Low Stock')}
                                             </div>
                                         )}
                                     </div>
@@ -640,7 +642,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                         pagination={{
                             pageSize: 10,
                             showSizeChanger: true,
-                            showTotal: (total) => `សរុប ${total} ប័ណ្ណ`
+                            showTotal: (total) => t('pos.total_records', { count: total })
                         }}
                         rowKey="id"
                         scroll={{ x: 1400 }}
@@ -665,6 +667,7 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                     style={{ top: 20, maxWidth: 1700 }}
                     styles={{ body: { padding: 0 } }}
                     closeIcon={<FaTimes style={{ fontSize: '20px', color: '#ff4d4f' }} />}
+                    className={isDarkMode ? 'dark-mode-modal' : ''}
                 >
                     <div className="modal-custom-header">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -731,7 +734,8 @@ const PreOrdersFullView = ({ categories = [], customers = [], trucks = [] }) => 
                         </Button>
                     ]}
                     width={1000}
-                    styles={{ body: { padding: '20px', backgroundColor: '#f5f5f5' } }}
+                    styles={{ body: { padding: '20px', backgroundColor: isDarkMode ? '#1e293b' : '#f5f5f5' } }}
+                    className={isDarkMode ? 'dark-mode-modal' : ''}
                 >
                     <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
                         <PrintInvoice

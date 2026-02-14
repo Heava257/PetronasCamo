@@ -722,7 +722,7 @@ function InactiveAdminsReport() {
         </Row>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .ant-table-thead > tr > th {
           font-size: 12px !important;
           padding: 8px !important;

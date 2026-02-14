@@ -11,12 +11,12 @@ const {
 module.exports = (app) => {
   app.get(
     "/api/companies",
-    validate_token(),
+    validate_token("company.getlist"),
     getCompanies
   );
   app.get(
     "/api/companies/:id",
-    validate_token(),
+    validate_token("company.view"),
     getCompanyById
   );
   app.post(
@@ -36,7 +36,7 @@ module.exports = (app) => {
   );
   app.get(
     "/api/companies/:id/financial-summary",
-    validate_token(),
+    validate_token("company.view"),
     getCompanyFinancialSummary
   );
 };

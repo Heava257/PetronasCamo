@@ -36,14 +36,14 @@ const DeliveryReports = () => {
     moment().subtract(30, 'days'),
     moment()
   ]);
-  
+
   // Performance Report
   const [performanceData, setPerformanceData] = useState([]);
   const [performanceSummary, setPerformanceSummary] = useState({});
-  
+
   // Vehicle Report
   const [vehicleData, setVehicleData] = useState([]);
-  
+
   // Driver Report
   const [driverData, setDriverData] = useState([]);
 
@@ -74,7 +74,7 @@ const DeliveryReports = () => {
         `reports/delivery-performance?start_date=${start.format('YYYY-MM-DD')}&end_date=${end.format('YYYY-MM-DD')}`,
         'get'
       );
-      
+
       if (res && res.success) {
         setPerformanceData(res.performance || []);
         setPerformanceSummary(res.summary || {});
@@ -91,7 +91,7 @@ const DeliveryReports = () => {
         `reports/vehicle-utilization?start_date=${start.format('YYYY-MM-DD')}&end_date=${end.format('YYYY-MM-DD')}`,
         'get'
       );
-      
+
       if (res && res.success) {
         setVehicleData(res.vehicles || []);
       }
@@ -107,7 +107,7 @@ const DeliveryReports = () => {
         `reports/driver-performance?start_date=${start.format('YYYY-MM-DD')}&end_date=${end.format('YYYY-MM-DD')}`,
         'get'
       );
-      
+
       if (res && res.success) {
         setDriverData(res.drivers || []);
       }
@@ -117,7 +117,7 @@ const DeliveryReports = () => {
   };
 
   const handleExport = (reportType) => {
-    message.info(`${t('exporting')} ${reportType} ${t('report')}...`);
+    message.info(`${t('exporting')} ${reportType} ${t('report_label')}...`);
     // Implement export functionality
   };
 
@@ -283,7 +283,7 @@ const DeliveryReports = () => {
           <h1 className="text-2xl font-bold">{t('delivery_reports')}</h1>
           <p className="text-gray-500">{t('performance_analytics_insights')}</p>
         </div>
-        
+
         <Space>
           <RangePicker
             value={dateRange}
@@ -356,30 +356,30 @@ const DeliveryReports = () => {
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={performanceData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis 
+                <XAxis
                   dataKey="delivery_date"
                   tickFormatter={(date) => moment(date).format('MMM DD')}
                 />
                 <YAxis />
-                <Tooltip 
+                <Tooltip
                   labelFormatter={(date) => moment(date).format('MMM DD, YYYY')}
                 />
                 <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="completed" 
-                  stroke="#52c41a" 
+                <Line
+                  type="monotone"
+                  dataKey="completed"
+                  stroke="#52c41a"
                   name={t('completed')}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="in_transit" 
+                <Line
+                  type="monotone"
+                  dataKey="in_transit"
                   stroke="#fa8c16"
                   name={t('in_transit')}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="pending" 
+                <Line
+                  type="monotone"
+                  dataKey="pending"
                   stroke="#1890ff"
                   name={t('pending')}
                 />
@@ -388,7 +388,7 @@ const DeliveryReports = () => {
           </Card>
 
           {/* Performance Table */}
-          <Card 
+          <Card
             title={t('daily_performance')}
             extra={
               <Button
@@ -435,7 +435,7 @@ const DeliveryReports = () => {
                 </ResponsiveContainer>
               </Card>
             </Col>
-            
+
             <Col xs={24} lg={12}>
               <Card title={t('vehicle_statistics')}>
                 <Row gutter={16}>
@@ -502,7 +502,7 @@ const DeliveryReports = () => {
                 </ResponsiveContainer>
               </Card>
             </Col>
-            
+
             <Col xs={24} lg={12}>
               <Card title={t('driver_statistics')}>
                 <Row gutter={16}>

@@ -1,645 +1,370 @@
 /* ========================================
-   HOMEPAGE DASHBOARD - DARK/LIGHT MODE SUPPORT
-======================================== */
+   PREMIUM FUEL SYSTEM DASHBOARD (FRENO STYLE)
+   Uses template variables for theming
+   ======================================== */
 
-/* ========================================
-   CSS VARIABLES - DARK MODE (DEFAULT)
-======================================== */
-.dashboard-container {
+:root {
+  /* Map freno variables to template variables */
+  --freno-bg: var(--bg-main, transparent);
+  --freno-card-bg: var(--bg-card, rgba(255, 255, 255, 0.05));
+  --freno-primary: var(--primary-color, #0f172a);
+  --freno-accent: var(--accent-color, #3b82f6);
+  --freno-success: var(--color-success, #10b981);
+  --freno-error: var(--color-error, #ef4444);
+  --freno-warning: var(--color-warning, #f59e0b);
+  --freno-text-main: var(--text-primary, #0f172a);
+  --freno-text-muted: var(--text-muted, #64748b);
+  --freno-border: var(--border-color, #e2e8f0);
+  --freno-radius: var(--border-radius, 24px);
+  --freno-shadow: var(--shadow-md, 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02));
+}
+
+.dashboard-freno-container {
+  padding: 32px;
+  background-color: var(--freno-bg);
   min-height: 100vh;
-  padding: 1rem 1.5rem;
-  font-family: 'Khmer OS', 'Khmer OS System', 'Inter', sans-serif;
-
-  /* Map local variables to global variables set by SettingsContext */
-  --bg-primary: var(--bg-main);
-  --bg-secondary: var(--bg-main);
-  /* or a slightly different shade if available */
-  --card-bg: var(--bg-card);
-  --card-hover: var(--bg-card);
-  /* Could add a brightness filter if needed */
-  --text-primary: var(--text-primary);
-  --text-secondary: var(--text-secondary);
-  --border-color: var(--border-color);
-  --primary-color: var(--primary-color);
-  --success-color: var(--color-success, #10b981);
-  --danger-color: var(--color-error, #ef4444);
-  --warning-color: var(--color-warning, #f59e0b);
+  font-family: 'Inter', 'Khmer OS System', sans-serif;
+  color: var(--freno-text-main);
 }
 
-.dashboard-container {
-  background: var(--bg-primary);
+/* --- GRID ALIGNMENT --- */
+.freno-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: stretch !important;
+  /* Force equal height for all columns */
 }
 
-/* ========================================
-   HEADER CARD
-======================================== */
-.dashboard-header-card {
-  margin-bottom: 1.5rem;
-  background: var(--card-bg) !important;
+.freno-col {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.freno-col>.ant-card,
+.freno-col>.freno-main-card,
+.freno-col>.freno-side-card,
+.freno-col>.freno-kpi-card {
+  flex: 1 !important;
+  height: auto !important;
+  /* Remove height: 100% which can conflict with flex: 1 */
+  margin-bottom: 0 !important;
+  /* Remove margin as gutter handles it */
+}
+
+/* --- HEADER --- */
+.freno-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 32px;
+  animation: fadeInDown 0.6s ease-out;
+}
+
+.freno-header-title {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--freno-text-main);
+  margin: 0 !important;
+  letter-spacing: -1px;
+}
+
+.freno-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.freno-icon-btn {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: white;
+  border: 1px solid var(--freno-border);
+  color: var(--freno-text-muted);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 20px;
+}
+
+.freno-icon-btn:hover {
+  transform: translateY(-2px);
+  background: white;
+  color: var(--freno-accent);
+  border-color: var(--freno-accent);
+  box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1);
+}
+
+.freno-create-btn {
+  background: var(--freno-accent) !important;
+  color: white !important;
   border: none !important;
   border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  height: 48px !important;
+  font-weight: 700 !important;
+  padding: 0 28px !important;
+  font-size: 15px !important;
+  box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.3) !important;
 }
 
-.dashboard-header-card .ant-card-body {
-  padding: 16px;
+/* --- MODERN KPI CARDS (Reference Design) --- */
+.freno-kpi-card-modern {
+  background: var(--freno-card-bg);
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.5) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 140px;
 }
 
-.header-title-section {
+.freno-kpi-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+
+.freno-kpi-card-modern .ant-card-body {
+  padding: 0 !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  position: relative;
+}
+
+/* Background Chart */
+.freno-card-bg-chart {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 60%;
+  height: 80px;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Content Layer */
+.freno-card-content {
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.freno-card-header-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.freno-card-title-modern {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--freno-text-muted);
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.freno-card-value-section {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.header-icon-wrapper {
-  padding: 12px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
+.freno-card-main-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--freno-text-main);
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.freno-card-trend-badge {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-}
-
-.header-icon {
-  font-size: 24px;
-  color: white;
-}
-
-.header-title {
-  color: var(--text-primary) !important;
-  margin: 0 !important;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-
-.header-subtitle {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-/* Date Picker */
-.dashboard-date-picker {
-  width: 100%;
-  background: var(--card-bg);
-  border-color: var(--border-color);
-}
-
-.dashboard-date-picker input {
-  background: var(--card-bg);
-  color: var(--text-primary);
-}
-
-/* Buttons */
-.filter-button {
-  width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  border: none !important;
-  border-radius: 8px;
-  height: 32px;
-}
-
-.refresh-button {
-  width: 100%;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  border-color: var(--border-color);
-  height: 32px;
-}
-
-/* Filter Info Banner */
-.filter-info-banner {
-  margin-top: 12px;
-  padding: 8px;
-  border-radius: 8px;
-  background: rgba(59, 130, 246, 0.1);
-  border-left: 3px solid var(--primary-color);
-}
-
-.filter-info-text {
-  color: var(--text-primary);
-  font-size: 12px;
-}
-
-.admin-badge {
-  margin-left: 8px;
-  background: var(--warning-color);
-  font-size: 10px;
-}
-
-/* ========================================
-   LOADING STATE
-======================================== */
-.loading-container {
-  text-align: center;
-  padding: 80px 20px;
-}
-
-.loading-text {
-  color: var(--text-secondary);
-  margin-top: 16px;
-  font-family: 'Khmer OS', sans-serif;
-}
-
-/* ========================================
-   METRICS CARDS - EQUAL HEIGHT & CLICKABLE
-======================================== */
-.metrics-row {
-  margin-bottom: 1.5rem;
-  display: flex !important;
-  flex-wrap: wrap !important;
-  align-items: stretch !important;
-}
-
-.metrics-row .ant-col {
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.metric-card {
-  flex: 1 !important;
-  height: 100% !important;
-  width: 100% !important;
-  min-height: 280px !important;
-  /* Cleaner, tighter height */
-  background: var(--card-bg) !important;
-  border: none !important;
-  border-radius: 16px !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  cursor: pointer;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden;
-}
-
-
-
-.metric-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
-.metric-card .ant-card-body {
-  padding: 24px !important;
-  flex: 1 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-between !important;
-  /* Space content and footer */
-}
-
-.metric-value-section {
-  flex: 1;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 12px 0;
-  width: 100%;
-}
-
-.metric-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  flex-shrink: 0;
-  width: 100%;
-}
-
-.metric-label {
-  color: var(--text-secondary);
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
   font-size: 13px;
-  display: block;
-  min-height: 20px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
 }
 
-.metric-value {
-  color: var(--text-primary) !important;
-  margin: 0 !important;
-  font-size: 32px !important;
-  /* Slightly smaller for cleaner look */
-  font-weight: 700 !important;
-  text-align: center;
-  width: 100%;
-}
-
-.metric-icon-wrapper {
-  padding: 8px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.metric-card-footer {
-  margin-top: auto;
-  /* Push the footer to the bottom */
-  padding-top: 8px;
-  border-top: 1px solid var(--border-color);
-}
-
-.detail-toggle-section {
-  text-align: center;
-  margin-bottom: 4px;
-}
-
-.detail-toggle-btn {
-  font-size: 11px !important;
-  color: var(--text-secondary) !important;
-  height: auto !important;
-  padding: 0 !important;
-}
-
-.detail-toggle-btn:hover {
-  color: var(--primary-color) !important;
-}
-
-.metric-details-wrapper {
-  margin-top: 8px;
-  max-height: 200px;
-  overflow-y: auto;
-  padding-right: 4px;
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* Custom scrollbar for details */
-.metric-details-wrapper::-webkit-scrollbar {
-  width: 4px;
-}
-
-.metric-details-wrapper::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 10px;
-}
-
-.metric-detail-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-}
-
-.metric-detail-label {
-  color: var(--text-secondary);
-  font-size: 11px;
-}
-
-.metric-detail-value {
-  color: var(--text-primary);
+.freno-card-subtitle {
   font-size: 12px;
+  color: var(--freno-text-muted);
   font-weight: 500;
 }
 
-/* ========================================
-   WELCOME ROW
-======================================== */
-.welcome-row {
-  margin-bottom: 1.5rem;
-}
-
-/* Welcome Card */
-.welcome-card {
-  background: var(--card-bg) !important;
-  border: none !important;
-  border-radius: 20px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+/* --- MAIN CHARTS --- */
+.freno-main-card {
+  background: var(--freno-card-bg);
+  border-radius: 32px;
+  border: 1px solid rgba(226, 232, 240, 0.6) !important;
+  box-shadow: var(--freno-shadow);
+  display: flex !important;
+  flex-direction: column !important;
   overflow: hidden;
-  position: relative;
-  min-height: 260px;
-  height: 100%;
 }
 
-.welcome-card .ant-card-body {
-  padding: 32px;
+.freno-main-card .ant-card-body {
+  padding: 0 !important;
 }
 
-.welcome-bg-gradient {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 60%;
-  height: 100%;
-  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
-  filter: blur(40px);
-  pointer-events: none;
+.freno-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.welcome-content {
-  position: relative;
-  z-index: 1;
+.freno-card-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--freno-text-main);
+  margin: 0 !important;
+  letter-spacing: -0.5px;
 }
 
-.welcome-greeting {
-  color: var(--text-secondary);
+.freno-card-subtitle {
   font-size: 14px;
-}
-
-.welcome-name {
-  color: var(--text-primary) !important;
-  margin: 8px 0 16px 0 !important;
-  font-size: 32px !important;
-  font-weight: 700 !important;
-}
-
-.welcome-message {
-  color: var(--text-secondary);
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.welcome-stats {
-  margin-top: 16px;
-  padding: 12px;
-  border-radius: 12px;
-  background: rgba(59, 130, 246, 0.1);
-}
-
-.welcome-stat-label {
-  color: var(--text-secondary);
-  font-size: 11px;
-  display: block;
-}
-
-.welcome-stat-value {
-  font-size: 18px;
-  font-weight: 700;
+  color: var(--freno-text-muted);
   margin-top: 4px;
 }
 
-.welcome-stat-value.primary {
-  color: var(--primary-color);
+.freno-chart-container {
+  padding: 24px 32px;
+  flex: 1 !important;
 }
 
-.welcome-stat-value.success {
-  color: var(--success-color);
+/* --- SIDE PANEL --- */
+.freno-side-card {
+  background: var(--freno-card-bg);
+  border-radius: 32px;
+  border: 1px solid rgba(226, 232, 240, 0.6) !important;
+  box-shadow: var(--freno-shadow);
+  padding: 20px 24px;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
-/* ========================================
-   GAUGE CARDS - EQUAL HEIGHT
-======================================== */
-.gauge-card {
-  background: var(--card-bg) !important;
-  border: none !important;
-  border-radius: 20px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  height: 100%;
-  min-height: 260px;
-  /* ← EQUAL HEIGHT! */
+.freno-active-users-count {
+  font-size: 32px;
+  font-weight: 900;
+  color: var(--freno-text-main);
+  margin-bottom: 8px;
+  letter-spacing: -1.5px;
 }
 
-.gauge-card .ant-card-body {
-  padding: 24px;
+.freno-page-list {
+  flex: 1 !important;
+  overflow-y: auto;
 }
 
-.gauge-title {
-  color: var(--text-primary) !important;
-  margin-bottom: 8px !important;
-}
-
-.gauge-subtitle {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.gauge-chart-container {
-  position: relative;
-  margin-top: 20px;
+.freno-page-item {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-.gauge-value-overlay {
+.freno-page-item:last-child {
+  border-bottom: none;
+}
+
+/* --- BOTTOM ANALYTICS --- */
+.freno-donut-wrapper {
+  position: relative;
+  height: 220px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.freno-donut-center {
   position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+  width: 120px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
 
-.gauge-percentage {
-  color: var(--text-primary) !important;
-  margin: 0 !important;
-  font-size: 40px !important;
-  font-weight: 700 !important;
+.freno-donut-val {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--freno-text-main);
+  line-height: 1.1;
+  margin-bottom: 2px;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.gauge-score {
-  color: var(--text-primary) !important;
-  margin: 0 !important;
-  font-size: 36px !important;
-  font-weight: 700 !important;
+.freno-donut-label {
+  font-size: 12px;
+  color: var(--freno-text-muted);
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
-.gauge-score-divider {
-  color: var(--text-secondary);
-  font-size: 11px;
-  display: block;
-  text-align: center;
-  margin-top: 4px;
+.freno-channel-list {
+  margin-top: 16px;
 }
 
-.gauge-info {
-  text-align: center;
-  margin-top: 12px;
-}
-
-.gauge-info-text {
-  color: var(--text-secondary);
-  font-size: 11px;
-}
-
-/* ========================================
-   CHARTS ROW
-======================================== */
-.charts-row {
-  margin-bottom: 1.5rem;
-}
-
-.chart-card {
-  background: var(--card-bg) !important;
-  border: none !important;
-  border-radius: 20px !important;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
-
-.chart-card .ant-card-body {
-  padding: 24px;
-}
-
-.chart-header {
+.freno-channel-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  padding: 8px 0;
 }
 
-.chart-title {
-  color: var(--text-primary) !important;
-  margin: 0 !important;
+/* --- PROGRESS BARS --- */
+.freno-product-item {
+  margin-bottom: 20px;
 }
 
-.chart-subtitle {
-  color: var(--text-secondary);
-  font-size: 13px;
+.freno-product-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
-.chart-badge {
-  background: var(--primary-color);
+.freno-progress-wrapper {
+  height: 10px;
+  background: #f1f5f9;
+  border-radius: 5px;
+  overflow: hidden;
 }
 
-.chart-badge.success {
-  background: var(--success-color);
+.freno-progress-bar {
+  height: 100%;
+  border-radius: 5px;
 }
 
-/* Chart Elements */
-.chart-grid {
-  stroke: var(--border-color);
-  opacity: 0.3;
-}
-
-.chart-axis {
-  fill: var(--text-secondary);
-  font-size: 11px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 80px 20px;
-}
-
-.empty-state .ant-empty-description {
-  color: var(--text-secondary);
-}
-
-/* ========================================
-   RESPONSIVE DESIGN
-======================================== */
-
-/* Tablet */
-@media (max-width: 1024px) {
-  .dashboard-container {
-    padding: 1rem;
-  }
-
-  .header-title {
-    font-size: 1.25rem;
-  }
-
-  .metric-card {
-    min-height: 160px;
-  }
-
-  .gauge-card {
-    min-height: 240px;
-  }
-}
-
-/* Mobile */
-@media (max-width: 767px) {
-  .dashboard-container {
-    padding: 0.75rem;
-  }
-
-  .dashboard-header-card .ant-card-body {
-    padding: 12px;
-  }
-
-  .header-title {
-    font-size: 1.125rem;
-  }
-
-  .metric-card {
-    min-height: 140px;
-  }
-
-  .metric-value {
-    font-size: 24px !important;
-  }
-
-  .welcome-card .ant-card-body {
-    padding: 20px;
-  }
-
-  .welcome-name {
-    font-size: 24px !important;
-  }
-
-  .gauge-card {
-    min-height: 220px;
-  }
-
-  .gauge-percentage {
-    font-size: 32px !important;
-  }
-
-  .gauge-score {
-    font-size: 28px !important;
-  }
-
-  .chart-card .ant-card-body {
-    padding: 16px;
-  }
-}
-
-/* ========================================
-   ANT DESIGN OVERRIDES
-======================================== */
-
-/* Date Picker Dropdown */
-.ant-picker-dropdown {
-  background: var(--card-bg);
-}
-
-.ant-picker-panel {
-  background: var(--card-bg);
-  border-color: var(--border-color);
-}
-
-.ant-picker-header,
-.ant-picker-content th,
-.ant-picker-cell {
-  color: var(--text-primary);
-}
-
-.ant-picker-cell-in-view {
-  color: var(--text-primary);
-}
-
-.ant-picker-cell-disabled {
-  color: var(--text-secondary);
-}
-
-/* Spin */
-.ant-spin {
-  color: var(--primary-color);
-}
-
-/* Badge */
-.ant-badge-count {
-  background: var(--primary-color);
-  box-shadow: 0 0 0 1px var(--card-bg);
-}
-
-/* Tooltip */
-.ant-tooltip-inner {
-  background: var(--card-bg);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-}
-
-.ant-tooltip-arrow-content {
-  background: var(--card-bg);
-  border-color: var(--border-color);
-}
-
-/* ========================================
-   ANIMATIONS
-======================================== */
-@keyframes fadeIn {
+/* DARK MODE OVERRIDES removed to allow template variables to take effect */
+/* Animations */
+@keyframes fadeInDown {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(-20px);
   }
 
   to {
@@ -648,122 +373,36 @@
   }
 }
 
-.metric-card,
-.welcome-card,
-.gauge-card,
-.chart-card {
-  animation: fadeIn 0.3s ease-out;
-}
-
-/* ========================================
-   PRINT STYLES
-======================================== */
-/* ========================================
-   PRINT STYLES
-======================================== */
-@media print {
-
-  /* Hide sidebar and headers from MainLayout */
-  .hierarchical-sidebar,
-  .clean-dark-header,
-  .trigger-button,
-  .header-right,
-  .ant-layout-sider,
-  .sidebar-header,
-  .sidebar-footer {
-    display: none !important;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
 
-  /* Hide header card content but keep title if needed, or hide generic header stuff */
-  .dashboard-header-card .header-icon-wrapper,
-  .dashboard-header-card .header-subtitle,
-  .print-button,
-  .filter-button,
-  .refresh-button,
-  .ant-picker,
-  .ant-btn {
-    display: none !important;
-  }
-
-  /* Reset layout margins/padding to use full page */
-  .ant-layout {
-    margin-left: 0 !important;
-    padding: 0 !important;
-  }
-
-  .dashboard-container {
-    padding: 0 !important;
-    background: white !important;
-  }
-
-  .content-wrapper {
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Adjust cards for print */
-  .metric-card,
-  .chart-card,
-  .welcome-card,
-  .gauge-card {
-    box-shadow: none !important;
-    border: 1px solid #ddd !important;
-    break-inside: avoid;
-    margin-bottom: 20px !important;
-  }
-
-  /* Ensure text is black for printing */
-  .metric-label,
-  .metric-value,
-  .metric-detail-row,
-  .chart-title,
-  .welcome-name,
-  .welcome-message {
-    color: #000 !important;
-  }
-
-  /* Hide scrollbars */
-  body {
-    overflow: visible !important;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-/* ========================================
-   ACCESSIBILITY
-======================================== */
-.metric-card:focus-visible,
-.filter-button:focus-visible,
-.refresh-button:focus-visible {
-  outline: 2px solid var(--primary-color);
-  outline-offset: 2px;
+.freno-kpi-card {
+  animation: fadeInUp 0.6s ease-out forwards;
 }
 
-/* ========================================
-   DARK MODE SPECIFIC ADJUSTMENTS
-======================================== */
-.dashboard-container.dark .ant-card {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+.freno-main-card {
+  animation: fadeInUp 0.8s ease-out forwards;
 }
 
-.dashboard-container.dark .metric-card:hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+.freno-side-card {
+  animation: fadeInUp 1s ease-out forwards;
 }
 
-/* ========================================
-   LIGHT MODE SPECIFIC ADJUSTMENTS
-======================================== */
-.dashboard-container.light .ant-card {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
+@media (max-width: 1024px) {
+  .dashboard-freno-container {
+    padding: 24px;
+  }
 
-.dashboard-container.light .metric-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.dashboard-container.light .filter-info-banner {
-  background: rgba(59, 130, 246, 0.05);
-}
-
-.dashboard-container.light .welcome-stats {
-  background: rgba(59, 130, 246, 0.05);
+  .freno-side-card {
+    margin-top: 0;
+  }
 }

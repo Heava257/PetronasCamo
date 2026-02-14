@@ -7,10 +7,12 @@ import { PrinterOutlined, FilePdfOutlined, ShoppingCartOutlined, TruckOutlined }
 import MainPage from "../../component/layout/MainPage";
 import dayjs from "dayjs";
 import { configStore } from "../../store/configStore";
+import { useSettings } from "../../settings/SettingsContext";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
 function ReportPurchaseHistory() {
+  const { isDarkMode } = useSettings();
   const { config } = configStore();
   const { t } = useTranslation();
   const reportRef = useRef(null);
@@ -259,7 +261,7 @@ function ReportPurchaseHistory() {
 
   return (
     <MainPage loading={loading}>
-      <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="report-purchase-history-container px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Header */}
         <Card
           className="mb-6 shadow-lg border-0 bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-800 dark:to-indigo-800"
@@ -309,7 +311,7 @@ function ReportPurchaseHistory() {
             />
             <Select
               allowClear
-              placeholder={t('report.select_customer') === 'Select Customer' ? 'Select Supplier' : t('report.select_customer').replace('អតិថិជន', 'អ្នកផ្គត់ផ្គង់')} // Fallback or new key needed, using logic for now or add key
+              placeholder={t('report.select_supplier')}
               value={filter.supplier_id}
               options={config?.supplier || []}
               onChange={(value) => setFilter(prev => ({ ...prev, supplier_id: value }))}
@@ -383,8 +385,18 @@ function ReportPurchaseHistory() {
                   legend: { position: "none" },
                   colors: ["#8b5cf6"],
                   chartArea: { width: "85%", height: "70%" },
-                  hAxis: { title: t('report.purchase_date') },
-                  vAxis: { title: `${t('report.total_amount')} ($)`, format: "currency" }
+                  backgroundColor: "transparent",
+                  hAxis: {
+                    title: t('report.purchase_date'),
+                    textStyle: { color: isDarkMode ? "#e2e8f0" : (document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333") },
+                    titleTextStyle: { color: isDarkMode ? "#e2e8f0" : (document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333") }
+                  },
+                  vAxis: {
+                    title: `${t('report.total_amount')} ($)`,
+                    format: "currency",
+                    textStyle: { color: isDarkMode ? "#e2e8f0" : (document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333") },
+                    titleTextStyle: { color: isDarkMode ? "#e2e8f0" : (document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333") }
+                  }
                 }}
               />
             </Card>
@@ -469,11 +481,65 @@ function ReportPurchaseHistory() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .ant-table-thead > tr > th {
           background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%) !important;
           color: #ffffff !important;
           font-weight: 600 !important;
+        }
+        
+        /* Dark Mode Overrides */
+        .dark .ant-table-tbody > tr > td {
+            border-bottom: 1px solid #374151 !important;
+            color: #e2e8f0 !important;
+        }
+        .dark .ant-table-tbody > tr:hover > td {
+            background: #374151 !important;
+        }
+        
+        /* Ant Design Inputs/Selects/Pickers in Dark Mode */
+        .dark .ant-picker,
+        .dark .ant-select-selector,
+        .dark .ant-input {
+            background-color: #1f2937 !important; /* Gray 800 */
+            border-color: #374151 !important;
+            color: white !important;
+        }
+        
+        .dark .ant-select-arrow,
+        .dark .ant-picker-suffix {
+            color: #9ca3af !important;
+        }
+        
+        /* Pagination */
+        .dark .ant-pagination-item a {
+            color: #e2e8f0 !important;
+        }
+        .dark .ant-pagination-item-active {
+            background: #374151 !important;
+            border-color: #4b5563 !important;
+        }
+        .dark .ant-pagination-prev .ant-pagination-item-link,
+        .dark .ant-pagination-next .ant-pagination-item-link {
+            background: #1f2937 !important;
+            color: #e2e8f0 !important;
+            border-color: #374151 !important;
+        }
+        
+        /* Disabled Inputs */
+        .dark .ant-input[disabled],
+        .dark .ant-picker-input > input[disabled] {
+            color: #6b7280 !important;
+        }
+        
+        /* Table Summary Row */
+        .dark .ant-table-summary {
+            background-color: #1f2937 !important;
+        }
+        .dark .ant-table-summary > tr > td {
+             background-color: #1f2937 !important;
+             border-bottom: 1px solid #374151 !important;
+             color: #e2e8f0 !important;
         }
       `}</style>
     </MainPage>

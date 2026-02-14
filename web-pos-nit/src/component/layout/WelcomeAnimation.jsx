@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import logo from "../../assets/PETRONAS_CAMBODIA_LOGO-2.png";
 
-const WelcomeAnimation = () => {
+const WelcomeAnimation= () => {
   const [percent, setPercent] = useState(0);
 
   useEffect(() => {

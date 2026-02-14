@@ -14,16 +14,14 @@ exports.scanSlip = async (req, res) => {
         const imagePath = req.file.path; // Multer path (Cloudinary URL or local)
         const type = req.body.type || 'customer'; // 'customer' or 'supplier'
 
-        console.log(`Scanning image for ${type}:`, imagePath);
 
-        // Perform OCR
+
         const { data: { text } } = await Tesseract.recognize(
             imagePath,
-            'eng',
-            // { logger: m => console.log(m) } // Optional: log progress
+            'eng'
         );
 
-        console.log("OCR Text Raw:", text);
+
 
         // Extract information
         const result = parseSlipData(text);

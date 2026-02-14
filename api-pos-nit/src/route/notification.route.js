@@ -20,14 +20,14 @@ module.exports = (app) => {
   app.post('/api/notification/mark-all-read', validate_token(), markAllAsRead);
   app.post('/api/notification/reply', validate_token(), replyToNotification);
   app.delete('/api/notification/:notification_id', validate_token(), deleteNotification);
-  app.post('/api/notification/manual-cleanup', validate_token(), manualCleanup);
-  app.post('/api/admin/notify-inactive', validate_token(), notifyInactiveAdmins);
+  app.post('/api/notification/manual-cleanup', validate_token("setting.update"), manualCleanup);
+  app.post('/api/admin/notify-inactive', validate_token("user.update"), notifyInactiveAdmins);
 
 
-  app.get("/api/order/with-locations", validate_token(), getOrdersWithLocations);
-  
+  app.get("/api/order/with-locations", validate_token("order.view"), getOrdersWithLocations);
 
-  app.get("/api/order/:id/details", validate_token(), getOrderDetailsForMap);
 
-  app.post("/api/order/update-location", validate_token(), updateDeliveryLocation);
+  app.get("/api/order/:id/details", validate_token("order.view"), getOrderDetailsForMap);
+
+  app.post("/api/order/update-location", validate_token("delivery.update"), updateDeliveryLocation);
 };

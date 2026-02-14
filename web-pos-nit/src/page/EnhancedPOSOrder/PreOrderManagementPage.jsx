@@ -216,7 +216,7 @@ function PreOrderManagementPage() {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: t("failed_load_pre_orders") || "Failed to load pre-orders",
+        text: t("pre_order.failed_load") || "Failed to load pre-orders",
       });
       setState(prev => ({ ...prev, loading: false }));
     }
@@ -268,7 +268,7 @@ function PreOrderManagementPage() {
       Swal.fire({
         icon: 'error',
         title: 'Permission Denied',
-        text: t("admin_permission_required") || "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចបញ្ជាក់បាន",
+        text: t("pre_order.admin_permission_required") || "មានតែអ្នកគ្រប់គ្រងប៉ុណ្ណោះដែលអាចបញ្ជាក់បាន",
       });
       return;
     }
@@ -279,7 +279,7 @@ function PreOrderManagementPage() {
         Swal.fire({
           icon: 'success',
           title: 'Success',
-          text: t("status_updated") || "បច្ចុប្បន្នភាព Status បានជោគជ័យ",
+          text: t("pre_order.status_updated") || "បច្ចុប្បន្នភាព Status បានជោគជ័យ",
           showConfirmButton: false,
           timer: 1500
         });
@@ -303,14 +303,14 @@ function PreOrderManagementPage() {
 
   const handleDelete = (record) => {
     Swal.fire({
-      title: 'តើអ្នកប្រាកដថាចង់លុប Pre-Order នេះមែនទេ?',
-      text: 'សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ។',
+      title: t("pre_order.delete_confirm_title") || 'តើអ្នកប្រាកដថាចង់លុប Pre-Order នេះមែនទេ?',
+      text: t("pre_order.delete_confirm_text") || 'សកម្មភាពនេះមិនអាចត្រឡប់ក្រោយបានទេ។',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
-      confirmButtonText: 'លុប',
-      cancelButtonText: 'បោះបង់'
+      confirmButtonText: t("delete") || 'លុប',
+      cancelButtonText: t("cancel") || 'បោះបង់'
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
@@ -319,7 +319,7 @@ function PreOrderManagementPage() {
             Swal.fire({
               icon: 'success',
               title: 'Deleted!',
-              text: 'បានលុបជោគជ័យ',
+              text: t("pre_order.deleted_success") || 'បានលុបជោគជ័យ',
               showConfirmButton: false,
               timer: 1500
             });
@@ -328,7 +328,7 @@ function PreOrderManagementPage() {
             Swal.fire({
               icon: 'error',
               title: 'Error',
-              text: res.message || 'លុបមិនបានជោគជ័យ',
+              text: res.message || (t("pre_order.delete_failed") || 'លុបមិនបានជោគជ័យ'),
             });
           }
         } catch (error) {
@@ -365,28 +365,21 @@ function PreOrderManagementPage() {
   };
 
   const getStatusText = (status) => {
-    const texts = {
-      pending: 'រង់ចាំ',
-      confirmed: 'បានបញ្ជាក់',
-      in_progress: 'កំពុងរៀបចំ',
-      ready: 'រៀបចំរួច',
-      delivered: 'បានដឹកជញ្ជូន',
-      cancelled: 'បោះបង់'
-    };
-    return texts[status] || status;
+    if (!status) return "-";
+    return t(`pre_order.status.${status}`) || status;
   };
 
   // ✅ UPDATED COLUMNS - Matching the image structure exactly
   const columns = [
     {
-      title: 'ល.រ',
+      title: t("table_no") || 'ល.រ',
       dataIndex: 'index',
       width: 50,
 
       align: 'center',
     },
     {
-      title: 'អតិថិជនឈ្មោះ',
+      title: t("pre_order.customer_name") || 'អតិថិជនឈ្មោះ',
       dataIndex: 'customer_name',
       width: 150,
 
@@ -394,46 +387,46 @@ function PreOrderManagementPage() {
       render: (text) => <div className="font-semibold khmer-text-product">{text}</div>
     },
     {
-      title: 'លេខទូរស័ព្ទ',
+      title: t("pre_order.customer_tel") || 'លេខទូរស័ព្ទ',
       dataIndex: 'customer_tel',
       width: 130,
       align: 'center',
       render: (text) => <span className="text-xs">{text}</span>
     },
     {
-      title: 'ថ្ងៃទីបញ្ជាទិញ',
+      title: t("pre_order.order_date") || 'ថ្ងៃទីបញ្ជាទិញ',
       dataIndex: 'order_date',
       width: 120,
       align: 'center',
       render: (date) => formatDateClient(date, "DD/MM/YYYY")
     },
     {
-      title: 'ថ្ងៃទីទទួលទំនិញ',
+      title: t("pre_order.delivery_date") || 'ថ្ងៃទីទទួលទំនិញ',
       dataIndex: 'delivery_date',
       width: 150,
       align: 'center',
       render: (date, record) => (
         <div className="flex flex-col">
           <span className="text-xs text-gray-500 whitespace-nowrap">
-            {t("expected") || "រំពឹងទុក"}: {date ? formatDateClient(date, "DD/MM/YYYY") : "-"}
+            {t("pre_order.expected") || "រំពឹងទុក"}: {date ? formatDateClient(date, "DD/MM/YYYY") : "-"}
           </span>
           {record.actual_delivery_date_formatted && (
             <Tag color="green" className="m-0 mt-1 text-[10px] py-0 px-1">
-              {t("actual") || "ជាក់ស្តែង"}: {formatDateClient(record.actual_delivery_date_formatted, "DD/MM/YYYY")}
+              {t("pre_order.actual") || "ជាក់ស្តែង"}: {formatDateClient(record.actual_delivery_date_formatted, "DD/MM/YYYY")}
             </Tag>
           )}
         </div>
       )
     },
     {
-      title: 'ឈ្មោះក្រុមហ៊ុនផ្តល់ផ្គង់',
+      title: t("pre_order.supplier_name") || 'ឈ្មោះក្រុមហ៊ុនផ្តល់ផ្គង់',
       dataIndex: 'supplier_name',
       width: 180,
       align: 'center',
       render: (text) => <span className="khmer-text-product">{text || "-"}</span>
     },
     {
-      title: <span className="khmer-text-product">ប្រភេទប្រេង</span>,
+      title: <span className="khmer-text-product">{t("pre_order.fuel_type") || "ប្រភេទប្រេង"}</span>,
       children: [
         {
           title: 'Extra',
@@ -466,7 +459,7 @@ function PreOrderManagementPage() {
       ]
     },
     {
-      title: <span className="khmer-text-product">តម្លៃតោន</span>,
+      title: <span className="khmer-text-product">{t("pre_order.price_per_ton") || "តម្លៃតោន"}</span>,
       children: [
         {
           title: 'Extra',
@@ -499,7 +492,7 @@ function PreOrderManagementPage() {
       ]
     },
     {
-      title: <span className="khmer-text-product">ថ្ងៃទីបានទទួលទំនិញជាក់ស្តែង</span>,
+      title: <span className="khmer-text-product">{t("pre_order.actual_delivery_date") || "ថ្ងៃទីបានទទួលទំនិញជាក់ស្តែង"}</span>,
       children: [
         {
           title: 'Extra',
@@ -533,7 +526,7 @@ function PreOrderManagementPage() {
       ]
     },
     {
-      title: <span className="khmer-text-product">ផ្ទៀងផ្ទាត់បរិមាណនៅសល់</span>,
+      title: <span className="khmer-text-product">{t("pre_order.remaining_check") || "ផ្ទៀងផ្ទាត់បរិមាណនៅសល់"}</span>,
       children: [
         {
           title: 'Extra',
@@ -566,7 +559,7 @@ function PreOrderManagementPage() {
       ]
     },
     {
-      title: <span className="khmer-text-product">សកម្មភាព</span>,
+      title: <span className="khmer-text-product">{t("pre_order.actions") || "សកម្មភាព"}</span>,
       fixed: 'right',
       width: 140,
       align: 'center',
@@ -602,7 +595,7 @@ function PreOrderManagementPage() {
       )
     },
     {
-      title: <span className="khmer-text-product">Status</span>,
+      title: <span className="khmer-text-product">{t("pre_order.status_label") || "Status"}</span>,
       dataIndex: 'status',
       width: 100,
       align: 'center',
@@ -614,7 +607,7 @@ function PreOrderManagementPage() {
       )
     },
     {
-      title: <span className="khmer-text-product">ព្រីន</span>,
+      title: <span className="khmer-text-product">{t("pre_order.print") || "ព្រីន"}</span>,
       width: 70,
       align: 'center',
       render: (_, record) => (
@@ -625,7 +618,7 @@ function PreOrderManagementPage() {
           onClick={() => Swal.fire({
             icon: 'info',
             title: 'Information',
-            text: 'មុខងារព្រីននឹងមកដល់ឆាប់ៗ',
+            text: t("pre_order.print_coming_soon") || 'មុខងារព្រីននឹងមកដល់ឆាប់ៗ',
           })}
         />
       )
@@ -649,11 +642,11 @@ function PreOrderManagementPage() {
 
       <div className="grid grid-cols-2 gap-2 text-sm mb-3">
         <div>
-          <span className="text-gray-500 khmer-text-product">ថ្ងៃកម្មង់:</span>
+          <span className="text-gray-500 khmer-text-product">{t("pre_order.order_date") || "ថ្ងៃកម្មង់"}:</span>
           <div>{formatDateClient(record.order_date, "DD/MM/YYYY")}</div>
         </div>
         <div>
-          <span className="text-gray-500 khmer-text-product">តម្លៃសរុប:</span>
+          <span className="text-gray-500 khmer-text-product">{t("pre_order.total_amount") || "តម្លៃសរុប"}:</span>
           <div className="font-bold text-green-600">{formatPrice(record.total_amount)}</div>
         </div>
       </div>
@@ -664,7 +657,7 @@ function PreOrderManagementPage() {
           icon={<EyeOutlined />}
           onClick={() => handleViewDetail(record)}
         >
-          មើល
+          {t("pre_order.view") || "មើល"}
         </Button>
         {record.status === 'pending' && (
           <Button
@@ -672,7 +665,7 @@ function PreOrderManagementPage() {
             type="primary"
             onClick={() => handleUpdateStatus(record.id, 'confirmed')}
           >
-            បញ្ជាក់
+            {t("pre_order.confirm") || "បញ្ជាក់"}
           </Button>
         )}
       </div>
@@ -689,7 +682,7 @@ function PreOrderManagementPage() {
               <div className="flex items-center gap-3">
                 <ThunderboltOutlined className="text-3xl text-blue-500" />
                 <div>
-                  <h2 className="text-2xl font-bold m-0 khmer-text-product">គ្រប់គ្រងប្រេងកម្មង់ទុក</h2>
+                  <h2 className="text-2xl font-bold m-0 khmer-text-product">{t("pre_order.management_title") || "គ្រប់គ្រងប្រេងកម្មង់ទុក"}</h2>
 
                 </div>
               </div>
@@ -704,7 +697,7 @@ function PreOrderManagementPage() {
                 }}
                 className="khmer-text-product"
               >
-                បង្កើតថ្មី
+                {t("pre_order.create_new") || "បង្កើតថ្មី"}
               </Button>
             </Col>
           </Row>
@@ -715,7 +708,7 @@ function PreOrderManagementPage() {
           <Col xs={12} sm={12} md={6} lg={6}>
             <Card>
               <Statistic
-                title={<span className="khmer-text-product">សរុប</span>}
+                title={<span className="khmer-text-product">{t("pre_order.total") || "សរុប"}</span>}
                 value={state.stats.total}
                 valueStyle={{ color: '#1890ff', display: 'flex', justifyContent: 'center' }}
                 style={{ textAlign: 'left' }}
@@ -725,7 +718,7 @@ function PreOrderManagementPage() {
           <Col xs={12} sm={12} md={6} lg={6}>
             <Card>
               <Statistic
-                title={<span className="khmer-text-product">រង់ចាំ</span>}
+                title={<span className="khmer-text-product">{t("pre_order.status.pending") || "រង់ចាំ"}</span>}
                 value={state.stats.pending}
                 valueStyle={{ color: '#faad14', display: 'flex', justifyContent: 'center' }}
                 style={{ textAlign: 'left' }}
@@ -735,7 +728,7 @@ function PreOrderManagementPage() {
           <Col xs={12} sm={12} md={6} lg={6}>
             <Card>
               <Statistic
-                title={<span className="khmer-text-product">បានបញ្ជាក់</span>}
+                title={<span className="khmer-text-product">{t("pre_order.status.confirmed") || "បានបញ្ជាក់"}</span>}
                 value={state.stats.confirmed}
                 valueStyle={{ color: '#1890ff', display: 'flex', justifyContent: 'center' }}
                 style={{ textAlign: 'left' }}
@@ -745,7 +738,7 @@ function PreOrderManagementPage() {
           <Col xs={12} sm={12} md={6} lg={6}>
             <Card>
               <Statistic
-                title={<span className="khmer-text-product">រួចរាល់</span>}
+                title={<span className="khmer-text-product">{t("pre_order.status.ready") || "រួចរាល់"}</span>}
                 value={state.stats.ready}
                 valueStyle={{ color: '#52c41a', display: 'flex', justifyContent: 'center' }}
                 style={{ textAlign: 'left' }}
@@ -760,23 +753,23 @@ function PreOrderManagementPage() {
             <Form layout="inline">
               <Form.Item>
                 <Select
-                  placeholder="Status"
+                  placeholder={t("pre_order.status_label") || "Status"}
                   style={{ width: 150 }}
                   allowClear
                   value={filter.status}
                   onChange={(value) => setFilter(prev => ({ ...prev, status: value }))}
                   className="khmer-text-product"
                 >
-                  <Select.Option value="pending">រង់ចាំ</Select.Option>
-                  <Select.Option value="confirmed">បានបញ្ជាក់</Select.Option>
-                  <Select.Option value="ready">រួចរាល់</Select.Option>
-                  <Select.Option value="delivered">បានដឹកជញ្ជូន</Select.Option>
+                  <Select.Option value="pending">{t("pre_order.status.pending") || "រង់ចាំ"}</Select.Option>
+                  <Select.Option value="confirmed">{t("pre_order.status.confirmed") || "បានបញ្ជាក់"}</Select.Option>
+                  <Select.Option value="ready">{t("pre_order.status.ready") || "រួចរាល់"}</Select.Option>
+                  <Select.Option value="delivered">{t("pre_order.status.delivered") || "បានដឹកជញ្ជូន"}</Select.Option>
                 </Select>
               </Form.Item>
 
               <Form.Item>
                 <Select
-                  placeholder="អតិថិជន"
+                  placeholder={t("pre_order.customer_placeholder") || "អតិថិជន"}
                   style={{ width: 200 }}
                   allowClear
                   showSearch
@@ -802,7 +795,7 @@ function PreOrderManagementPage() {
 
               <Form.Item>
                 <DatePicker
-                  placeholder="ពីថ្ងៃ"
+                  placeholder={t("pre_order.from_date") || "ពីថ្ងៃ"}
                   format="DD/MM/YYYY"
                   onChange={(date) => setFilter(prev => ({
                     ...prev,
@@ -814,7 +807,7 @@ function PreOrderManagementPage() {
 
               <Form.Item>
                 <DatePicker
-                  placeholder="ដល់ថ្ងៃ"
+                  placeholder={t("pre_order.to_date") || "ដល់ថ្ងៃ"}
                   format="DD/MM/YYYY"
                   onChange={(date) => setFilter(prev => ({
                     ...prev,
@@ -826,7 +819,7 @@ function PreOrderManagementPage() {
 
               <Form.Item>
                 <Button onClick={handleClearFilters} className="khmer-text-product">
-                  សម្អាត
+                  {t("pre_order.clear_filter") || "សម្អាត"}
                 </Button>
               </Form.Item>
             </Form>
@@ -839,7 +832,7 @@ function PreOrderManagementPage() {
               onClick={() => {/* Mobile filter modal */ }}
               className="khmer-text-product"
             >
-              តម្រង
+              {t("pre_order.show_filter") || "តម្រង"}
             </Button>
           </div>
         </Card>
@@ -854,7 +847,7 @@ function PreOrderManagementPage() {
               loading={state.loading}
               pagination={{
                 pageSize: 20,
-                showTotal: (total) => `សរុប ${total} កំណត់ត្រា`
+                showTotal: (total) => <span className="khmer-text-product">{t("pre_order.total_records", { total }) || `សរុប ${total} កំណត់ត្រា`}</span>
               }}
               scroll={{ x: 'max-content', y: 600 }}
               bordered

@@ -298,7 +298,7 @@ function ReportOutstandingDebt() {
 
   return (
     <MainPage loading={loading}>
-      <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="report-outstanding-debt-container px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Header */}
         <Card
           className="mb-6 shadow-lg border-0 bg-gradient-to-r from-red-600 to-orange-600 dark:from-red-800 dark:to-orange-800"
@@ -411,9 +411,13 @@ function ReportOutstandingDebt() {
                 height="400px"
                 data={state.chartData}
                 options={{
-                  legend: { position: "bottom" },
+                  legend: {
+                    position: "bottom",
+                    textStyle: { color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#333333" }
+                  },
                   colors: ["#52c41a", "#1890ff", "#faad14", "#fa541c", "#f5222d"],
-                  chartArea: { width: "90%", height: "80%" }
+                  chartArea: { width: "90%", height: "80%" },
+                  backgroundColor: "transparent"
                 }}
               />
             </Card>
@@ -461,7 +465,7 @@ function ReportOutstandingDebt() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         .ant-table-thead > tr > th {
           background: linear-gradient(135deg, #dc2626 0%, #f97316 100%) !important;
           color: #ffffff !important;

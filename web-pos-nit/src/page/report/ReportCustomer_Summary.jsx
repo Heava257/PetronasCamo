@@ -151,7 +151,7 @@ function ReportCustomer_Summary() {
   );
 
   return (
-    <div className="report-customer-summary px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="report-customer-summary report-customer-summary-container px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
       <Card
         className="mb-6 shadow-lg border-0 bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-800 dark:to-pink-800"
@@ -309,19 +309,19 @@ function ReportCustomer_Summary() {
                   curveType: "function",
                   legend: {
                     position: "bottom",
-                    textStyle: { fontSize: 13, color: "#4b5563" }
+                    textStyle: { fontSize: 13, color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#4b5563" }
                   },
                   hAxis: {
                     title: t('report.order_date'),
-                    titleTextStyle: { fontSize: 14, bold: true, color: "#374151" },
-                    textStyle: { fontSize: 12, color: "#6b7280" },
-                    gridlines: { color: "#f3f4f6" }
+                    titleTextStyle: { fontSize: 14, bold: true, color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#374151" },
+                    textStyle: { fontSize: 12, color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#6b7280" },
+                    gridlines: { color: document.documentElement.classList.contains('template-chinesenewyear') ? "#8a2d1d" : "#f3f4f6" }
                   },
                   vAxis: {
                     title: t('report.total_customers'),
-                    titleTextStyle: { fontSize: 14, bold: true, color: "#374151" },
-                    textStyle: { fontSize: 12, color: "#6b7280" },
-                    gridlines: { color: "#f3f4f6" }
+                    titleTextStyle: { fontSize: 14, bold: true, color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#374151" },
+                    textStyle: { fontSize: 12, color: document.documentElement.classList.contains('template-chinesenewyear') ? "#FFD700" : "#6b7280" },
+                    gridlines: { color: document.documentElement.classList.contains('template-chinesenewyear') ? "#8a2d1d" : "#f3f4f6" }
                   },
                   colors: ["#a855f7"],
                   chartArea: { width: "85%", height: "70%" },
@@ -411,7 +411,7 @@ function ReportCustomer_Summary() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         @media print {
           body * {
             visibility: hidden;

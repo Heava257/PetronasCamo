@@ -119,3 +119,342 @@
   /* Push to the right */
   text-align: left;
 }
+
+/* =========================================
+   DARK MODE OVERRIDES (Fake Invoice Page)
+   ========================================= */
+
+/* Statistics Cards */
+.dark .fake-invoice-stat-card,
+.dark-mode-modal .fake-invoice-stat-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .fake-invoice-stat-card .ant-statistic-title,
+.dark-mode-modal .fake-invoice-stat-card .ant-statistic-title {
+  color: #94a3b8 !important;
+}
+
+.dark .fake-invoice-stat-card .ant-statistic-content,
+.dark-mode-modal .fake-invoice-stat-card .ant-statistic-content {
+  color: #f8fafc !important;
+}
+
+/* Modals */
+.dark .ant-modal-content,
+.dark-mode-modal .ant-modal-content {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .ant-modal-header,
+.dark-mode-modal .ant-modal-header {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .ant-modal-title,
+.dark-mode-modal .ant-modal-title {
+  color: #f8fafc !important;
+}
+
+.dark .ant-modal-close,
+.dark-mode-modal .ant-modal-close {
+  color: #94a3b8 !important;
+}
+
+.dark .ant-modal-close:hover,
+.dark-mode-modal .ant-modal-close:hover {
+  background: #334155;
+  color: white;
+}
+
+/* FORCE LABELS LIGHT IN DARK MODE */
+.dark .ant-form-item-label>label,
+.dark .ant-form-item-label>label>span,
+.dark .invoice-form-label,
+.dark-mode-modal .ant-form-item-label>label,
+.dark-mode-modal .ant-form-item-label>label>span,
+.dark-mode-modal .invoice-form-label {
+  color: #e2e8f0 !important;
+}
+
+/* Specific fix for labels that might be using other classes */
+.dark .ant-form-item-label label,
+.dark-mode-modal .ant-form-item-label label {
+  color: #e2e8f0 !important;
+}
+
+/* Inputs, Selects, DatePickers */
+.dark .invoice-input,
+.dark .invoice-select .ant-select-selector,
+.dark .ant-input,
+.dark .ant-input-number,
+.dark .ant-input-number-input,
+.dark .ant-picker,
+.dark .ant-select:not(.ant-select-customize-input) .ant-select-selector,
+.dark-mode-modal .invoice-input,
+.dark-mode-modal .invoice-select .ant-select-selector,
+.dark-mode-modal .ant-input,
+.dark-mode-modal .ant-input-number,
+.dark-mode-modal .ant-input-number-input,
+.dark-mode-modal .ant-picker,
+.dark-mode-modal .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: white !important;
+}
+
+.dark .ant-select-arrow,
+.dark .ant-picker-suffix,
+.dark-mode-modal .ant-select-arrow,
+.dark-mode-modal .ant-picker-suffix {
+  color: #94a3b8 !important;
+}
+
+/* Fix Input placeholder */
+.dark input::placeholder,
+.dark textarea::placeholder,
+.dark-mode-modal input::placeholder,
+.dark-mode-modal textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Table - Ensure it matches the dark theme */
+.dark .ant-table,
+.dark-mode-modal .ant-table {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .ant-table-thead>tr>th,
+.dark-mode-modal .ant-table-thead>tr>th {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .ant-table-tbody>tr>td,
+.dark-mode-modal .ant-table-tbody>tr>td {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.dark .ant-table-tbody>tr:hover>td,
+.dark-mode-modal .ant-table-tbody>tr:hover>td {
+  background: #1e293b !important;
+}
+
+/* Action Buttons in Table */
+.dark .ant-btn-primary,
+.dark-mode-modal .ant-btn-primary {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.dark .ant-btn-primary:hover,
+.dark-mode-modal .ant-btn-primary:hover {
+  background: #2563eb !important;
+}
+
+/* Delete button is usually danger */
+.dark .ant-btn-danger,
+.dark .ant-btn-primary[danger],
+.dark-mode-modal .ant-btn-danger,
+.dark-mode-modal .ant-btn-primary[danger] {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
+}
+
+/* Add Product Button (Gray/Ghost) */
+.dark .ant-btn-default,
+.dark-mode-modal .ant-btn-default {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .ant-btn-default:hover,
+.dark-mode-modal .ant-btn-default:hover {
+  background: #475569 !important;
+}
+
+/* Footer Buttons */
+.dark .invoice-button-text,
+.dark-mode-modal .invoice-button-text {
+  color: inherit;
+}
+
+/* Fix for Select placeholder/value in dark mode if needed */
+.dark .ant-select-selection-item,
+.dark-mode-modal .ant-select-selection-item {
+  color: white !important;
+}
+
+.dark .ant-select-selection-placeholder,
+.dark-mode-modal .ant-select-selection-placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Statistics Cards */
+.dark .fake-invoice-stat-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+.dark .fake-invoice-stat-card .ant-statistic-title {
+  color: #94a3b8 !important;
+}
+
+.dark .fake-invoice-stat-card .ant-statistic-content {
+  color: #f8fafc !important;
+}
+
+/* Modals */
+.dark .ant-modal-content {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+.dark .ant-modal-header {
+  background: #1e293b !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .ant-modal-title {
+  color: #f8fafc !important;
+}
+
+.dark .ant-modal-close {
+  color: #94a3b8 !important;
+}
+
+.dark .ant-modal-close:hover {
+  background: #334155;
+  color: white;
+}
+
+/* Form Labels */
+.dark .invoice-form-label,
+.dark .ant-form-item-label>label {
+  color: #cbd5e1 !important;
+}
+
+/* Inputs, Selects, DatePickers */
+.dark .invoice-input,
+.dark .invoice-select .ant-select-selector,
+.dark .ant-input,
+.dark .ant-input-number,
+.dark .ant-input-number-input,
+.dark .ant-picker,
+.dark .ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: white !important;
+}
+
+.dark .ant-select-arrow,
+.dark .ant-picker-suffix {
+  color: #94a3b8 !important;
+}
+
+/* Table - Ensure it matches the dark theme */
+.dark .ant-table {
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .ant-table-thead>tr>th {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-bottom: 1px solid #334155 !important;
+}
+
+.dark .ant-table-tbody>tr>td {
+  background: #0f172a !important;
+  color: #cbd5e1 !important;
+  border-bottom: 1px solid #1e293b !important;
+}
+
+.dark .ant-table-tbody>tr:hover>td {
+  background: #1e293b !important;
+}
+
+/* Action Buttons in Table */
+.dark .ant-btn-primary {
+  background: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+}
+
+.dark .ant-btn-primary:hover {
+  background: #2563eb !important;
+}
+
+/* Delete button is usually danger */
+.dark .ant-btn-danger,
+.dark .ant-btn-primary[danger] {
+  background: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
+}
+
+/* Add Product Button (Gray/Ghost) */
+.dark .ant-btn-default {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #e2e8f0 !important;
+}
+
+.dark .ant-btn-default:hover {
+  background: #475569 !important;
+}
+
+/* Footer Buttons */
+.dark .invoice-button-text {
+  color: inherit;
+}
+
+/* FORCE LABELS LIGHT IN DARK MODE */
+.dark .ant-form-item-label>label,
+.dark .ant-form-item-label>label>span,
+.dark .invoice-form-label {
+  color: #e2e8f0 !important;
+}
+
+/* Specific fix for labels that might be using other classes */
+.dark .ant-form-item-label label {
+  color: #e2e8f0 !important;
+}
+
+/* Fix for Select placeholder/value in dark mode if needed */
+.dark .ant-select-selection-item {
+  color: white !important;
+}
+
+.dark .ant-select-selection-placeholder {
+  color: #94a3b8 !important;
+}
+
+/* Fix Input placeholder */
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Fix Chrome Autofill Background Color */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active,
+.dark-mode-modal input:-webkit-autofill,
+.dark-mode-modal input:-webkit-autofill:hover,
+.dark-mode-modal input:-webkit-autofill:focus,
+.dark-mode-modal input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px #0f172a inset !important;
+  -webkit-text-fill-color: white !important;
+  caret-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
+}

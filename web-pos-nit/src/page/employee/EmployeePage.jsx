@@ -1,96 +1,65 @@
+
 import React, { useEffect, useState, useRef } from "react";
-import {
-    Button, Form, Input, Select, Space, Table, Tag,
-    Descriptions, TimePicker, Checkbox, Alert, Row, Col, Card, Divider,
-    Statistic, Progress, DatePicker, Tabs, Badge, Typography,
-    Spin, Avatar,
-    Empty,
-    Modal
-} from "antd";
+import { Form, Modal, Tabs, Button, Select, Space, Alert, Input, Row, Col, Typography } from "antd";
 import Swal from 'sweetalert2';
-import { Link } from "react-router-dom";
-import { Config } from "../../util/config";
-import { formatDateClient, isPermission, request } from "../../util/helper";
-import * as XLSX from 'xlsx/xlsx.mjs';
-import { MdDelete, MdEdit, MdNewLabel } from "react-icons/md";
-import { AiOutlineEye, AiOutlineClockCircle, AiOutlineUserAdd } from "react-icons/ai";
-import { BiStats } from "react-icons/bi";
-import { FiUserCheck, FiUserX } from "react-icons/fi";
-import MainPage from "../../component/layout/MainPage";
-import { FiSearch } from "react-icons/fi";
-import { IoBook } from "react-icons/io5";
-import { useTranslation } from '../../locales/TranslationContext';
-import moment from 'moment';
 import {
-    LockOutlined,
+    CalendarOutlined,
+    TeamOutlined,
+    DollarOutlined,
+    FileTextOutlined,
     UserAddOutlined,
     UserOutlined,
-    DollarOutlined,
-    CheckCircleOutlined,
-    FileExcelOutlined,
+    LockOutlined,
     PrinterOutlined,
     FilePdfOutlined,
-    FileTextOutlined,
-    DownloadOutlined,
-    CalculatorOutlined,
-    TeamOutlined,
-    CalendarOutlined,
-    InfoCircleOutlined,
-    LeftOutlined,
-    RightOutlined,
-    PlusOutlined,
-    EnvironmentOutlined,
-    CloseSquareOutlined
-} from "@ant-design/icons";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+    FileExcelOutlined
+} from '@ant-design/icons';
+import { request, isPermission } from "../../util/helper";
+import * as XLSX from 'xlsx/xlsx.mjs';
+import MainPage from "../../component/layout/MainPage";
+import { useTranslation } from '../../locales/TranslationContext';
+import moment from 'moment';
+
+import EmployeeList from "./components/EmployeeList";
+import EmployeeModal from "./components/EmployeeModal";
+import AttendanceDashboard from "./components/AttendanceDashboard";
 
 const { Title, Text } = Typography;
 
 function EmployeePage() {
     const { t } = useTranslation();
     const [formRef] = Form.useForm();
-    const [loginFormRef] = Form.useForm();
-    const printRef = useRef();
-
-    const [list, setList] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [lateStats, setLateStats] = useState([]);
-    const [salaryReportData, setSalaryReportData] = useState([]);
-    const [salaryReportSummary, setSalaryReportSummary] = useState(null);
-    const [salaryReportLoading, setSalaryReportLoading] = useState(false);
-    const [salaryDateRange, setSalaryDateRange] = useState([
-        moment().startOf('month'),
-        moment().endOf('month')
-    ]);
-    const [accountModal, setAccountModal] = useState({
-        visible: false,
-        employee: null
-    });
     const [accountForm] = Form.useForm();
     const [resetForm] = Form.useForm();
-    const [roles, setRoles] = useState([]);
-    const [resetModal, setResetModal] = useState({
-        visible: false,
-        employee: null
-    });
 
+    // State
+    const [activeTab, setActiveTab] = useState('attendance');
+    const [loading, setLoading] = useState(false);
+    const [statsLoading, setStatsLoading] = useState(false);
+    const [list, setList] = useState([]);
+    const [attendanceList, setAttendanceList] = useState([]);
+    const [dashboardStats, setDashboardStats] = useState(null);
+    const [roles, setRoles] = useState([]);
+
+    // Modal & Form State
     const [state, setState] = useState({
         visibleModal: false,
         visibleViewModal: false,
-        visibleLoginModal: false,
-        visibleStatsModal: false,
         visibleSalaryReportModal: false,
         id: null,
-        txtSearch: "",
         selectedEmployee: null,
         accountInfo: null,
+        searchText: ""
     });
 
-    const [dashboardStats, setDashboardStats] = useState(null);
-    const [attendanceList, setAttendanceList] = useState([]);
-    const [activeTab, setActiveTab] = useState('attendance');
-    const [statsLoading, setStatsLoading] = useState(false);
+    const [accountModal, setAccountModal] = useState({ visible: false, employee: null });
+    const [resetModal, setResetModal] = useState({ visible: false, employee: null });
+
+    // Salary Report State
+    const [salaryReportData, setSalaryReportData] = useState([]);
+    const [salaryReportSummary, setSalaryReportSummary] = useState(null);
+    const [salaryReportLoading, setSalaryReportLoading] = useState(false);
+    const [salaryDateRange, setSalaryDateRange] = useState([moment().startOf('month'), moment().endOf('month')]);
 
     useEffect(() => {
         getRoles();
@@ -102,504 +71,46 @@ function EmployeePage() {
         }
     }, [activeTab]);
 
+    // API Calls
     const getRoles = async () => {
         const res = await request("role", "get");
-        if (res && !res.error) {
-            setRoles(res.list || []);
-        }
+        if (res && !res.error) setRoles(res.list || []);
     };
 
     const getDashboardStats = async () => {
         setStatsLoading(true);
         const res = await request("attendance/dashboard-stats", "get");
         setStatsLoading(false);
-        if (res && !res.error) {
-            setDashboardStats(res.summary);
-        }
+        if (res && !res.error) setDashboardStats(res.summary);
     };
 
     const getAttendanceList = async () => {
         setLoading(true);
         const res = await request("attendance/list", "get");
         setLoading(false);
-        if (res && !res.error) {
-            setAttendanceList(res.attendance);
-        }
+        if (res && !res.error) setAttendanceList(res.attendance);
     };
 
     const getList = async () => {
         setLoading(true);
-        const param = { txtSearch: state.txtSearch };
+        const param = { txtSearch: state.searchText };
         const res = await request("employee", "get", param);
         setLoading(false);
-        if (res) {
-            setList(res.list);
-        }
+        if (res) setList(res.list);
     };
 
-    const checkHasAccount = async (employeeId) => {
+    const getAccountInfo = async (employeeId) => {
         const res = await request(`employee/${employeeId}/has-account`, "get");
-        if (res && !res.error) {
-            setState(prev => ({ ...prev, accountInfo: res }));
-            return res;
-        }
+        if (res && !res.error) return res;
         return null;
     };
 
-    const getLateStatistics = async (days = 30) => {
-        setLoading(true);
-        const res = await request(`employee/statistics/late?days=${days}`, "get");
-        setLoading(false);
-        if (res && !res.error) {
-            setLateStats(res.statistics);
-            setState(prev => ({ ...prev, visibleStatsModal: true }));
-        } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: "Failed to load statistics",
-            });
-        }
-    };
+    // Handlers
+    const handleSearch = () => getList();
 
-    const closeSalaryReportModal = () => {
-        setState(prev => ({ ...prev, visibleSalaryReportModal: false }));
-    };
-
-    const handleCreateAccount = (employee) => {
-        setAccountModal({
-            visible: true,
-            employee: employee
-        });
-
-        accountForm.setFieldsValue({
-            employee_id: employee.id,
-            username: employee.email || `${employee.name.toLowerCase().replace(/\s+/g, '.')}@company.com`
-        });
-    };
-
-    const onCreateAccount = async (values) => {
-        try {
-            const res = await request("employee/create-account", "post", {
-                employee_id: accountModal.employee.id,
-                username: values.username,
-                password: values.password,
-                role_id: values.role_id
-            });
-
-            if (res && !res.error) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: res.message,
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-                getList();
-                setAccountModal({ visible: false, employee: null });
-                accountForm.resetFields();
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: res.message,
-                });
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: "Failed to create account",
-            });
-        }
-    };
-
-    const onResetPassword = async (values) => {
-        try {
-            const res = await request("employee/reset-password", "post", {
-                employee_id: resetModal.employee.id,
-                new_password: values.password,
-                role_id: values.role_id
-            });
-
-            if (res && !res.error) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: t('reset_password_success'),
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-                setResetModal({ visible: false, employee: null });
-                resetForm.resetFields();
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: res.message || t('reset_password_failed'),
-                });
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: t('reset_password_failed'),
-            });
-        }
-    };
-
-    const onClickView = async (data) => {
-        const accountInfo = await checkHasAccount(data.id);
-        setState({
-            ...state,
-            visibleViewModal: true,
-            selectedEmployee: data,
-            accountInfo: accountInfo
-        });
-    };
-
-    const fetchSalaryReport = async () => {
-        setSalaryReportLoading(true);
-        try {
-            const fromDate = salaryDateRange[0].format('YYYY-MM-DD');
-            const toDate = salaryDateRange[1].format('YYYY-MM-DD');
-
-            const res = await request(`attendance/salary-report?from_date=${fromDate}&to_date=${toDate}`, 'get');
-
-            if (res && !res.error) {
-                setSalaryReportData(res.report || []);
-                setSalaryReportSummary(res.summary || {});
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to load salary report',
-                });
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to fetch salary report',
-            });
-        } finally {
-            setSalaryReportLoading(false);
-        }
-    };
-
-    // 安全的打印功能
-    const handlePrintReport = () => {
-        // 创建打印窗口
-        const printWindow = window.open('', '_blank', 'width=900,height=600');
-        if (!printWindow) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Please allow popups for printing',
-            });
-            return;
-        }
-
-        // 构建 HTML 内容
-        const fromDate = salaryDateRange[0].format('DD/MM/YYYY');
-        const toDate = salaryDateRange[1].format('DD/MM/YYYY');
-        const generatedDate = moment().format('DD/MM/YYYY HH:mm');
-
-        // 使用模板字符串创建 HTML
-        const htmlContent = `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>Salary Report</title>
-                <meta charset="UTF-8">
-                <style>
-                    body {
-                        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                        margin: 20px;
-                        color: #333;
-                    }
-                    .header {
-                        text-align: center;
-                        margin-bottom: 30px;
-                        border-bottom: 2px solid #1890ff;
-                        padding-bottom: 20px;
-                    }
-                    .company-name {
-                        font-size: 24px;
-                        font-weight: bold;
-                        color: #1890ff;
-                        margin-bottom: 10px;
-                    }
-                    .report-title {
-                        font-size: 20px;
-                        font-weight: 600;
-                        margin-bottom: 10px;
-                    }
-                    .report-info {
-                        color: #666;
-                        font-size: 14px;
-                        margin-bottom: 5px;
-                    }
-                    table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-top: 20px;
-                    }
-                    th, td {
-                        border: 1px solid #ddd;
-                        padding: 8px;
-                        text-align: left;
-                    }
-                    th {
-                        background-color: #f5f5f5;
-                        font-weight: 600;
-                    }
-                    tr:nth-child(even) {
-                        background-color: #f9f9f9;
-                    }
-                    .total-row {
-                        background-color: #e6f7ff;
-                        font-weight: bold;
-                    }
-                    .currency {
-                        text-align: right;
-                    }
-                    .footer {
-                        margin-top: 30px;
-                        padding-top: 20px;
-                        border-top: 1px solid #eee;
-                        font-size: 12px;
-                        color: #999;
-                        text-align: center;
-                    }
-                    @media print {
-                        body { margin: 0; padding: 20px; }
-                        @page { margin: 20mm; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <div class="company-name">Company Name</div>
-                    <div class="report-title">Salary Payment Report</div>
-                    <div class="report-info">Period: ${fromDate} - ${toDate}</div>
-                    <div class="report-info">Generated: ${generatedDate}</div>
-                </div>
-                
-                ${createTableHTML()}
-                
-                <div class="footer">
-                    <p>This is a system generated report. For inquiries, contact HR Department.</p>
-                    <p>Page 1 of 1</p>
-                </div>
-                
-                <script>
-                    window.onload = function() {
-                        window.print();
-                        setTimeout(function() {
-                            window.close();
-                        }, 1000);
-                    };
-                </script>
-            </body>
-            </html>
-        `;
-
-        printWindow.document.open();
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-    };
-
-    // 辅助函数：创建表格 HTML
-    const createTableHTML = () => {
-        if (salaryReportData.length === 0) {
-            return '<p style="text-align: center; color: #999;">No data available</p>';
-        }
-
-        let tableHTML = `
-            <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Employee</th>
-                        <th>Position</th>
-                        <th>Base Salary</th>
-                        <th>Work Days</th>
-                        <th>On Time</th>
-                        <th>Late</th>
-                        <th>Absent</th>
-                        <th>Deductions</th>
-                        <th>Net Salary</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        salaryReportData.forEach((emp, index) => {
-            const lateDays = (emp.days_late_grace || 0) + (emp.days_late_penalty || 0);
-
-            tableHTML += `
-                <tr>
-                    <td>${index + 1}</td>
-                    <td>${emp.employee_name}</td>
-                    <td>${emp.position || '-'}</td>
-                    <td class="currency">$${parseFloat(emp.monthly_salary || 0).toFixed(2)}</td>
-                    <td>${emp.days_worked || 0}</td>
-                    <td>${emp.days_on_time || 0}</td>
-                    <td>${lateDays}</td>
-                    <td>${emp.days_absent || 0}</td>
-                    <td class="currency">-$${parseFloat(emp.total_deductions || 0).toFixed(2)}</td>
-                    <td class="currency"><strong>$${parseFloat(emp.net_salary || 0).toFixed(2)}</strong></td>
-                </tr>
-            `;
-        });
-
-        if (salaryReportSummary) {
-            const totalLateDays = (salaryReportSummary.total_days_late_grace || 0) +
-                (salaryReportSummary.total_days_late_penalty || 0);
-
-            tableHTML += `
-                <tr class="total-row">
-                    <td colspan="3"><strong>TOTAL</strong></td>
-                    <td class="currency"><strong>$${parseFloat(salaryReportSummary.total_base_salary || 0).toFixed(2)}</strong></td>
-                    <td><strong>${salaryReportSummary.total_days_worked || 0}</strong></td>
-                    <td><strong>${salaryReportSummary.total_days_on_time || 0}</strong></td>
-                    <td><strong>${totalLateDays}</strong></td>
-                    <td><strong>${salaryReportSummary.total_days_absent || 0}</strong></td>
-                    <td class="currency"><strong>-$${parseFloat(salaryReportSummary.total_deductions || 0).toFixed(2)}</strong></td>
-                    <td class="currency"><strong>$${parseFloat(salaryReportSummary.total_net_salary || 0).toFixed(2)}</strong></td>
-                </tr>
-            `;
-        }
-
-        tableHTML += `
-                </tbody>
-            </table>
-        `;
-
-        return tableHTML;
-    };
-
-    // PDF 导出功能
-    const exportToPDF = async () => {
-        try {
-            const element = printRef.current;
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF({
-                orientation: 'landscape',
-                unit: 'mm',
-                format: 'a4'
-            });
-
-            const imgWidth = 297;
-            const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`Salary_Report_${moment().format('YYYY-MM-DD')}.pdf`);
-
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: 'PDF exported successfully!',
-                showConfirmButton: false,
-                timer: 1500
-            });
-        } catch (error) {
-            console.error('PDF export error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to export PDF',
-            });
-        }
-    };
-
-    // Excel 导出功能
-    const exportSalaryExcel = () => {
-        if (salaryReportData.length === 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Warning',
-                text: 'No data to export',
-            });
-            return;
-        }
-
-        // 主工作表数据
-        const exportData = salaryReportData.map((emp, index) => ({
-            'No': index + 1,
-            'Employee ID': emp.user_id,
-            'Employee Name': emp.employee_name,
-            'Position': emp.position || '-',
-            'Base Salary': parseFloat(emp.monthly_salary || 0).toFixed(2),
-            'Work Days': emp.days_worked,
-            'On Time': emp.days_on_time,
-            'Late (Grace)': emp.days_late_grace,
-            'Late (Penalty)': emp.days_late_penalty,
-            'Absent': emp.days_absent,
-            'Late Deduction': parseFloat(emp.late_deduction_amount || 0).toFixed(2),
-            'Absent Deduction': parseFloat(emp.absent_deduction_amount || 0).toFixed(2),
-            'Total Deductions': parseFloat(emp.total_deductions || 0).toFixed(2),
-            'Net Salary': parseFloat(emp.net_salary || 0).toFixed(2)
-        }));
-
-        // 汇总工作表数据
-        const summaryData = [{
-            'Report Period': `${salaryDateRange[0].format('DD/MM/YYYY')} - ${salaryDateRange[1].format('DD/MM/YYYY')}`,
-            'Total Employees': salaryReportSummary?.total_employees || 0,
-            'Total Base Salary': parseFloat(salaryReportSummary?.total_base_salary || 0).toFixed(2),
-            'Total Deductions': parseFloat(salaryReportSummary?.total_deductions || 0).toFixed(2),
-            'Total Net Salary': parseFloat(salaryReportSummary?.total_net_salary || 0).toFixed(2),
-            'Generated Date': moment().format('DD/MM/YYYY HH:mm')
-        }];
-
-        const ws1 = XLSX.utils.json_to_sheet(exportData);
-        const ws2 = XLSX.utils.json_to_sheet(summaryData);
-
-        // 设置列宽
-        const wscols = [
-            { wch: 5 },
-            { wch: 10 },
-            { wch: 25 },
-            { wch: 20 },
-            { wch: 12 },
-            { wch: 10 },
-            { wch: 12 },
-            { wch: 15 },
-            { wch: 12 },
-            { wch: 12 },
-            { wch: 15 },
-            { wch: 15 },
-            { wch: 15 },
-            { wch: 12 },
-        ];
-        ws1['!cols'] = wscols;
-
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws1, 'Salary Report');
-        XLSX.utils.book_append_sheet(wb, ws2, 'Summary');
-
-        XLSX.writeFile(wb, `Salary_Report_${moment().format('YYYY-MM-DD')}.xlsx`);
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: 'Exported successfully!',
-            showConfirmButton: false,
-            timer: 1500
-        });
-    };
-
-    const openSalaryReportModal = () => {
-        setState(prev => ({ ...prev, visibleSalaryReportModal: true }));
-        fetchSalaryReport();
+    const onClickAddBtn = () => {
+        setState({ ...state, visibleModal: true, id: null });
+        formRef.resetFields();
     };
 
     const onClickEdit = (data) => {
@@ -615,24 +126,11 @@ function EmployeePage() {
         }
 
         formRef.setFieldsValue({
-            id: data.id,
-            name: data.name,
-            gender: data.gender,
-            position: data.position,
-            salary: data.salary,
-            tel: data.tel,
-            email: data.email,
-            address: data.address,
-            code: data.code,
-            website: data.website,
-            note: data.note,
-            is_active: data.status,
-            work_type: data.work_type || 'full-time',
+            ...data,
             work_start_time: data.work_start_time ? moment(data.work_start_time, 'HH:mm:ss') : moment('07:00', 'HH:mm'),
             work_end_time: data.work_end_time ? moment(data.work_end_time, 'HH:mm:ss') : moment('17:00', 'HH:mm'),
-            grace_period_minutes: data.grace_period_minutes || 30,
             working_days: workingDays,
-            schedule_notes: data.schedule_notes
+            is_active: data.status
         });
     };
 
@@ -643,1350 +141,310 @@ function EmployeePage() {
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: t('yes'),
-            cancelButtonText: t('no_cancel')
+            confirmButtonText: t('yes')
         }).then(async (result) => {
             if (result.isConfirmed) {
                 const res = await request("employee", "delete", { id: data.id });
                 if (res && !res.error) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Deleted!',
-                        text: res.message,
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    const newList = list.filter((item) => item.id !== data.id);
-                    setList(newList);
+                    Swal.fire('Deleted!', res.message, 'success');
+                    setList(list.filter(item => item.id !== data.id));
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: res?.message || "Failed to delete",
-                    });
+                    Swal.fire('Error', res?.message || "Failed to delete", 'error');
                 }
             }
         });
     };
 
-    const onClickAddBtn = () => {
-        setState({ ...state, visibleModal: true, id: null });
-        formRef.resetFields();
-        formRef.setFieldsValue({
-            work_type: 'full-time',
-            work_start_time: moment('07:00', 'HH:mm'),
-            work_end_time: moment('17:00', 'HH:mm'),
-            grace_period_minutes: 30,
-            working_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-            is_active: 1
-        });
-    };
-
-    const onCloseModal = () => {
-        formRef.resetFields();
-        setState({ ...state, visibleModal: false, id: null });
-    };
-
-    const onCloseViewModal = () => {
-        setState({ ...state, visibleViewModal: false, selectedEmployee: null, accountInfo: null });
-    };
-
-    const onOpenLoginModal = () => {
-        setState(prev => ({ ...prev, visibleLoginModal: true }));
-        loginFormRef.resetFields();
-    };
-
-    const onCloseLoginModal = () => {
-        setState(prev => ({ ...prev, visibleLoginModal: false }));
-        loginFormRef.resetFields();
-    };
-
-    const onCloseStatsModal = () => {
-        setState(prev => ({ ...prev, visibleStatsModal: false }));
-    };
-
     const onFinish = async (values) => {
         const data = {
+            ...values,
             id: state.id,
-            name: values.name,
-            gender: values.gender,
-            position: values.position,
-            salary: values.salary,
-            tel: values.tel,
-            email: values.email,
-            address: values.address,
-            code: values.code,
-            website: values.website,
-            note: values.note,
-            is_active: values.is_active,
-            work_type: values.work_type,
-            work_start_time: values.work_start_time ? values.work_start_time.format('HH:mm:ss') : '07:00:00',
-            work_end_time: values.work_end_time ? values.work_end_time.format('HH:mm:ss') : '17:00:00',
-            grace_period_minutes: values.grace_period_minutes || 30,
-            working_days: values.working_days || [],
-            schedule_notes: values.schedule_notes
+            work_start_time: values.work_start_time?.format('HH:mm:ss') || '07:00:00',
+            work_end_time: values.work_end_time?.format('HH:mm:ss') || '17:00:00',
+            working_days: values.working_days || []
         };
 
         const method = state.id ? "put" : "post";
         const res = await request("employee", method, data);
 
         if (res && !res.error) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: res.message,
-                showConfirmButton: false,
-                timer: 1500
-            });
+            Swal.fire('Success', res.message, 'success');
             getList();
-            onCloseModal();
+            setState({ ...state, visibleModal: false });
         } else {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: res.message || "An error occurred!",
-            });
+            Swal.fire('Error', res.message || "An error occurred!", 'error');
         }
     };
 
-    const ExportToExcel = () => {
-        if (list.length === 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Warning',
-                text: t('no_data_export'),
+    // Account Handlers
+    const handleCreateAccount = (employee) => {
+        setAccountModal({ visible: true, employee });
+        accountForm.setFieldsValue({
+            employee_id: employee.id,
+            username: employee.email || `${employee.name.toLowerCase().replace(/\s+/g, '.')}@company.com`
+        });
+    };
+
+    const onCreateAccount = async (values) => {
+        try {
+            const res = await request("employee/create-account", "post", {
+                employee_id: accountModal.employee.id,
+                username: values.username,
+                password: values.password,
+                role_id: values.role_id
             });
+            if (res && !res.error) {
+                Swal.fire('Success', res.message, 'success');
+                getList();
+                setAccountModal({ visible: false, employee: null });
+                accountForm.resetFields();
+            } else {
+                Swal.fire('Error', res.message, 'error');
+            }
+        } catch (error) {
+            Swal.fire('Error', "Failed to create account", 'error');
+        }
+    };
+
+    const onResetPassword = (employee) => {
+        setResetModal({ visible: true, employee });
+        resetForm.setFieldsValue({ role_id: employee.account_role_id });
+    };
+
+    const onSubmitResetPassword = async (values) => {
+        // Implementation similar to onCreateAccount but for reset
+        try {
+            const res = await request("employee/reset-password", "post", {
+                employee_id: resetModal.employee.id,
+                new_password: values.password,
+                role_id: values.role_id
+            });
+            if (res && !res.error) {
+                Swal.fire('Success', t('reset_password_success'), 'success');
+                setResetModal({ visible: false, employee: null });
+                resetForm.resetFields();
+            } else {
+                Swal.fire('Error', res.message || t('reset_password_failed'), 'error');
+            }
+        } catch (error) {
+            Swal.fire('Error', t('reset_password_failed'), 'error');
+        }
+    };
+
+    // View Details Logic
+    const onClickView = async (data) => {
+        const accountInfo = await getAccountInfo(data.id);
+        setState({
+            ...state,
+            visibleViewModal: true,
+            selectedEmployee: data,
+            accountInfo: accountInfo
+        });
+    };
+
+    // Excel Export
+    const onExportExcel = () => {
+        if (list.length === 0) {
+            Swal.fire('Warning', t('no_data_export'), 'warning');
             return;
         }
-
-        const data = list.map((item) => ({
+        const data = list.map(item => ({
             Code: item.code,
             Name: item.name,
             Gender: item.gender,
             Position: item.position,
-            'Work Type': item.work_type,
-            'Work Hours': `${item.work_start_display} - ${item.work_end_display}`,
-            'Daily Hours': item.daily_hours,
             Salary: item.salary,
             Tel: item.tel,
-            Email: item.email,
-            Status: item.status === 1 ? 'Active' : 'Inactive',
-            Created: formatDateClient(item.create_at)
+            Status: item.status === 1 ? 'Active' : 'Inactive'
         }));
-
         const ws = XLSX.utils.json_to_sheet(data);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Employees");
-        XLSX.writeFile(wb, "Employee_Schedule.xlsx");
-        Swal.fire({
-            icon: 'success',
-            title: 'Success',
-            text: t('export_success'),
-            showConfirmButton: false,
-            timer: 1500
-        });
+        XLSX.writeFile(wb, "Employees.xlsx");
     };
-
-    const WorkScheduleBadge = ({ employee }) => {
-        const workColor = employee.work_type === 'full-time' ? 'blue' : 'orange';
-        return (
-            <div className="flex flex-col gap-1">
-                <Tag color={workColor} className="text-xs">
-                    {employee.work_type?.toUpperCase() || 'FULL-TIME'}
-                </Tag>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                    <AiOutlineClockCircle className="inline mr-1" />
-                    {employee.work_start_display} - {employee.work_end_display}
-                </div>
-                {employee.daily_hours && (
-                    <div className="text-xs text-gray-600 dark:text-gray-300">
-                        {employee.daily_hours}h/day
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const MobileEmployeeCard = ({ employee }) => (
-        <Card
-            className="mb-3 shadow-sm"
-            size="small"
-            title={
-                <div className="flex justify-between items-center">
-                    <span className="font-bold">{employee.name}</span>
-                    <Tag color={employee.status === 1 ? "green" : "red"}>
-                        {employee.status === 1 ? t('active') : t('inactive')}
-                    </Tag>
-                </div>
-            }
-            extra={
-                <Space>
-                    {isPermission("employee.view") && (
-                        <Button
-                            size="small"
-                            type="default"
-                            icon={<AiOutlineEye />}
-                            onClick={() => onClickView(employee)}
-                        />
-                    )}
-                    {isPermission("employee.update") && (
-                        <Button
-                            size="small"
-                            type="primary"
-                            icon={<MdEdit />}
-                            onClick={() => onClickEdit(employee)}
-                        />
-                    )}
-                    {isPermission("employee.remove") && (
-                        <Button
-                            size="small"
-                            danger
-                            icon={<MdDelete />}
-                            onClick={() => onClickDelete(employee)}
-                        />
-                    )}
-                </Space>
-            }
-        >
-            <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                    <span className="text-gray-500">Code:</span>
-                    <span className="font-medium">{employee.code || '-'}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-500">Position:</span>
-                    <span className="font-medium">{employee.position}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-500">Work Type:</span>
-                    <Tag color={employee.work_type === 'full-time' ? 'blue' : 'orange'}>
-                        {employee.work_type?.toUpperCase()}
-                    </Tag>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-500">Schedule:</span>
-                    <span>{employee.work_start_display} - {employee.work_end_display}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-500">Salary:</span>
-                    <span className="font-semibold text-green-600">${employee.salary}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-gray-500">Tel:</span>
-                    <span>{employee.tel}</span>
-                </div>
-            </div>
-        </Card>
-    );
-
-    const SummaryCard = ({ title, icon: Icon, data, type }) => {
-        const getStyles = () => {
-            switch (type) {
-                case 'present': return { iconBg: '#e0f2fe', iconColor: '#0ea5e9' };
-                case 'not-present': return { iconBg: '#fee2e2', iconColor: '#ef4444' };
-                case 'away': return { iconBg: '#fef3c7', iconColor: '#f59e0b' };
-                default: return { iconBg: '#f3f4f6', iconColor: '#6b7280' };
-            }
-        };
-        const styles = getStyles();
-
-        return (
-            <Card className="summary-card" bordered={false} style={{ height: '100%', borderRadius: 12, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ background: styles.iconBg, padding: 8, borderRadius: 8, display: 'flex' }}>
-                            <Icon style={{ color: styles.iconColor, fontSize: 18 }} />
-                        </div>
-                        <Text strong style={{ fontSize: 15, color: '#374151' }}>{t(title)}</Text>
-                    </div>
-                    <Button type="text" size="small" icon={<InfoCircleOutlined style={{ color: '#9ca3af' }} />} />
-                </div>
-                <Row gutter={16}>
-                    {Object.entries(data).map(([key, value]) => {
-                        if (key === 'comparison' || key === 'total') return null;
-                        const comparison = data.comparison?.[key] || 0;
-                        const isPositive = comparison >= 0;
-                        return (
-                            <Col span={key === 'on_time' || key === 'absent' ? 8 : 8} key={key}>
-                                <div style={{ marginBottom: 4 }}>
-                                    <Text type="secondary" style={{ fontSize: 13, textTransform: 'capitalize' }}>{t(key.replace(/_/g, ' '))}</Text>
-                                </div>
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <Title level={3} style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>{value}</Title>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                                        <Text style={{ fontSize: 12, color: isPositive ? '#10b981' : '#ef4444', fontWeight: 500 }}>
-                                            {isPositive ? '+' : ''}{comparison} vs yesterday
-                                        </Text>
-                                    </div>
-                                </div>
-                            </Col>
-                        );
-                    })}
-                </Row>
-            </Card>
-        );
-    };
-
-    const renderAttendanceDashboard = () => {
-        if (!dashboardStats && statsLoading) return null; // MainPage will show loading
-        if (!dashboardStats) return <Empty />;
-
-        const columns = [
-            {
-                title: t('Employee Name'),
-                key: 'employee',
-                render: (_, record) => (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <Avatar
-                            src={record.profile_image ? Config.getFullImagePath(record.profile_image) : null}
-                            icon={!record.profile_image && <UserOutlined />}
-                            style={{ backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb' }}
-                        />
-                        <div>
-                            <div style={{ fontWeight: 600, color: '#111827' }}>{record.user_name}</div>
-                            <div style={{ fontSize: 12, color: '#6b7280' }}>{record.id}</div>
-                        </div>
-                    </div>
-                )
-            },
-            {
-                title: t('Clock-in & Out'),
-                key: 'clock',
-                render: (_, record) => (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Text strong style={{ color: record.status === 'on-time' ? '#10b981' : '#f59e0b' }}>{record.check_in_display || '--:--'}</Text>
-                        <div style={{ width: 40, height: 1, backgroundColor: '#e5e7eb', position: 'relative' }}>
-                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', fontSize: 10, color: '#9ca3af' }}>
-                                {record.working_hours ? `${record.working_hours}h` : ''}
-                            </div>
-                        </div>
-                        <Text strong style={{ color: '#6b7280' }}>{record.check_out_display || record.scheduled_end_display || '--:--'}</Text>
-                    </div>
-                )
-            },
-            {
-                title: t('Overtime'),
-                key: 'overtime',
-                render: (_, record) => {
-                    const ot = record.early_departure_minutes < 0 ? Math.abs(record.early_departure_minutes) : 0;
-                    return ot > 0 ? (
-                        <Text strong>{Math.floor(ot / 60)}h {ot % 60}m</Text>
-                    ) : '-';
-                }
-            },
-            {
-                title: t('Picture'),
-                key: 'picture',
-                render: (_, record) => record.profile_image ? (
-                    <Link to="#" style={{ fontSize: 13, color: '#3b82f6', display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <FileTextOutlined style={{ fontSize: 14 }} />
-                        {record.profile_image.split('/').pop().substring(0, 15)}...
-                    </Link>
-                ) : '-'
-            },
-            {
-                title: t('Location'),
-                key: 'location',
-                render: (_, record) => (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#3b82f6', fontSize: 13 }}>
-                        <EnvironmentOutlined style={{ fontSize: 14 }} />
-                        <span>{record.location || 'HQ Office'}</span>
-                    </div>
-                )
-            },
-            {
-                title: t('Notes'),
-                key: 'notes',
-                render: (_, record) => (
-                    <div style={{ fontSize: 13, color: '#4b5563', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {record.notes || t('No discussion notes')}
-                    </div>
-                )
-            }
-        ];
-
-        return (
-            <div className="attendance-dashboard">
-                <style>{`
-                    .attendance-dashboard .ant-table-thead > tr > th {
-                        background: transparent !important;
-                        border-bottom: 1px solid #f3f4f6 !important;
-                        color: #6b7280 !important;
-                        font-weight: 500 !important;
-                        font-size: 13px !important;
-                    }
-                    .attendance-dashboard .ant-table-tbody > tr > td {
-                        border-bottom: 1px solid #f3f4f6 !important;
-                        padding: 16px 12px !important;
-                    }
-                    .attendance-dashboard .ant-tabs-nav::before {
-                        border-bottom: none !important;
-                    }
-                `}</style>
-
-                {/* Dashboard Summary Cards */}
-                <Row gutter={[24, 24]} style={{ marginBottom: 32 }}>
-                    <Col xs={24} lg={8}>
-                        <SummaryCard
-                            title="Present Summary"
-                            icon={FileTextOutlined}
-                            data={dashboardStats.present}
-                            type="present"
-                        />
-                    </Col>
-                    <Col xs={24} lg={8}>
-                        <SummaryCard
-                            title="Not Present Summary"
-                            icon={FileTextOutlined}
-                            data={dashboardStats.not_present}
-                            type="not-present"
-                        />
-                    </Col>
-                    <Col xs={24} lg={8}>
-                        <SummaryCard
-                            title="Away Summary"
-                            icon={CalendarOutlined}
-                            data={dashboardStats.away}
-                            type="away"
-                        />
-                    </Col>
-                </Row>
-
-                {/* Filters Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-                    <div style={{ display: 'flex', gap: 12 }}>
-                        <Input
-                            placeholder={t('Search employee')}
-                            prefix={<FiSearch style={{ color: '#9ca3af' }} />}
-                            style={{ width: 250, borderRadius: 8 }}
-                            allowClear
-                        />
-                        <DatePicker.RangePicker
-                            placeholder={[t('Start Date'), t('End Date')]}
-                            style={{ borderRadius: 8 }}
-                        />
-                        <Button icon={<BiStats />}>{t('Advance Filter')}</Button>
-                    </div>
-                </div>
-
-                {/* Data Table */}
-                <Card bordered={false} bodyStyle={{ padding: 0 }} style={{ borderRadius: 12, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-                    <Table
-                        dataSource={attendanceList}
-                        columns={columns}
-                        pagination={false}
-                        rowKey="id"
-                    />
-                </Card>
-            </div>
-        );
-    };
-
-    const renderEmployeeList = () => (
-        <>
-            {/* Header */}
-            <div className="pageHeader flex-col sm:flex-row gap-3">
-                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto flex-1">
-                    <Input.Search
-                        onChange={(e) => setState((prev) => ({ ...prev, txtSearch: e.target.value }))}
-                        allowClear
-                        onSearch={getList}
-                        placeholder={t('search_by_name')}
-                        className="w-full sm:w-64"
-                    />
-                    <div className="flex gap-2">
-                        <Button type="primary" onClick={getList} icon={<FiSearch />}>
-                            <span className="hidden sm:inline">{t('filter')}</span>
-                        </Button>
-                        <Button type="primary" onClick={ExportToExcel} icon={<IoBook />}>
-                            <span className="hidden sm:inline">{t('export_excel')}</span>
-                        </Button>
-                        {isPermission("employee.view") && (
-                            <Button
-                                type="default"
-                                onClick={() => getLateStatistics(30)}
-                                icon={<BiStats />}
-                                className="bg-orange-500 text-white hover:bg-orange-600"
-                            >
-                                <span className="hidden sm:inline">Late Stats</span>
-                            </Button>
-                        )}
-                        {isPermission("employee.view") && (
-                            <Button
-                                type="primary"
-                                onClick={openSalaryReportModal}
-                                icon={<DollarOutlined />}
-                                style={{ background: '#059669', borderColor: '#059669' }}
-                            >
-                                <span className="hidden sm:inline">Salary Report</span>
-                            </Button>
-                        )}
-                    </div>
-                </div>
-                {isPermission("employee.create") && (
-                    <Button type="primary" onClick={onClickAddBtn} icon={<MdNewLabel />}>
-                        {t('new')}
-                    </Button>
-                )}
-            </div>
-
-            {/* Desktop Table */}
-            <div className="hidden md:block">
-                <Table
-                    rowClassName={() => "pos-row"}
-                    dataSource={list}
-                    columns={[
-                        { key: "no", title: t('no'), render: (_, __, index) => index + 1, width: 50 },
-                        { key: "code", title: t('code'), dataIndex: "code", width: 100 },
-                        {
-                            key: "name",
-                            title: t('employee_name'),
-                            dataIndex: "name",
-                            sorter: (a, b) => a.name.localeCompare(b.name),
-                            width: 150
-                        },
-                        {
-                            key: "position",
-                            title: t('position'),
-                            dataIndex: "position",
-                            width: 120
-                        },
-                        {
-                            key: "work_schedule",
-                            title: "Work Schedule",
-                            render: (_, record) => <WorkScheduleBadge employee={record} />,
-                            width: 180
-                        },
-                        {
-                            key: "salary",
-                            title: t('salary'),
-                            dataIndex: "salary",
-                            render: (value) => `$${value}`,
-                            width: 100
-                        },
-                        {
-                            key: "tel",
-                            title: t('telephone'),
-                            dataIndex: "tel",
-                            width: 120
-                        },
-                        {
-                            key: "status",
-                            title: t('status'),
-                            dataIndex: "status",
-                            render: (value) => (
-                                <Tag color={value === 1 ? "green" : "red"}>
-                                    {value === 1 ? t('active') : t('inactive')}
-                                </Tag>
-                            ),
-                            width: 100
-                        },
-                        {
-                            key: "action",
-                            title: t('action'),
-                            align: "center",
-                            render: (_, record) => (
-                                <Space>
-                                    {isPermission("employee.view") && (
-                                        <Button
-                                            type="default"
-                                            icon={<AiOutlineEye />}
-                                            onClick={() => onClickView(record)}
-                                        />
-                                    )}
-                                    {isPermission("employee.update") && (
-                                        <Button
-                                            type="primary"
-                                            icon={<MdEdit />}
-                                            onClick={() => onClickEdit(record)}
-                                        />
-                                    )}
-                                    {isPermission("employee.remove") && (
-                                        <Button
-                                            type="primary"
-                                            danger
-                                            icon={<MdDelete />}
-                                            onClick={() => onClickDelete(record)}
-                                        />
-                                    )}
-                                </Space>
-                            ),
-                            width: 150
-                        },
-                        {
-                            key: "account",
-                            title: t('login_account'),
-                            align: "center",
-                            width: 150,
-                            render: (_, record) => (
-                                record.has_account ? (
-                                    <Space direction="vertical" size={0}>
-                                        <Tag color="green" icon={<CheckCircleOutlined />} style={{ margin: 0 }}>
-                                            {t('has_account')}
-                                        </Tag>
-                                        {isPermission("employee.update") && (
-                                            <Button
-                                                type="link"
-                                                size="small"
-                                                icon={<LockOutlined />}
-                                                onClick={() => {
-                                                    setResetModal({ visible: true, employee: record });
-                                                    resetForm.setFieldsValue({
-                                                        role_id: record.account_role_id
-                                                    });
-                                                }}
-                                                style={{ fontSize: '12px' }}
-                                            >
-                                                {t('reset_password')}
-                                            </Button>
-                                        )}
-                                    </Space>
-                                ) : (
-                                    isPermission("employee.update") && (
-                                        <Button
-                                            type="link"
-                                            icon={<UserAddOutlined />}
-                                            onClick={() => handleCreateAccount(record)}
-                                        >
-                                            {t('create_account')}
-                                        </Button>
-                                    )
-                                )
-                            ),
-                        }
-                    ]}
-                    pagination={{ pageSize: 10 }}
-                    scroll={{ x: 1200 }}
-                />
-            </div>
-
-            {/* Mobile Card View */}
-            <div className="block md:hidden">
-                {list.map(employee => (
-                    <MobileEmployeeCard key={employee.id} employee={employee} />
-                ))}
-            </div>
-        </>
-    );
-
-    const EmployeeModal = () => (
-        <Modal
-            open={state.visibleModal}
-            title={state.id ? t('edit_employee') : t('new_employee')}
-            footer={null}
-            onCancel={onCloseModal}
-            width={800}
-        >
-            <Form
-                layout="vertical"
-                onFinish={onFinish}
-                form={formRef}
-            >
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <Form.Item name="name" label={t('name')} rules={[{ required: true }]}>
-                            <Input placeholder={t('name')} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="gender" label={t('gender')} rules={[{ required: true }]}>
-                            <Select
-                                placeholder={t('gender')}
-                                options={[{ label: 'Male', value: 'Male' }, { label: 'Female', value: 'Female' }]}
-                            />
-                        </Form.Item>
-                    </Col>
-                </Row>
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <Form.Item name="position" label={t('position')} rules={[{ required: true }]}>
-                            <Input placeholder={t('position')} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="salary" label={t('salary')} rules={[{ required: true }]}>
-                            <Input type="number" prefix="$" placeholder={t('salary')} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <Form.Item name="tel" label={t('telephone')} rules={[{ required: true }]}>
-                            <Input placeholder={t('telephone')} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="email" label={t('email')} rules={[{ type: 'email' }]}>
-                            <Input placeholder={t('email')} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <Form.Item name="code" label={t('code')}>
-                            <Input placeholder={t('code')} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="is_active" label={t('status')} initialValue={1}>
-                            <Select options={[{ label: t('active'), value: 1 }, { label: t('inactive'), value: 0 }]} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-
-                <Divider orientation="left" style={{ margin: '12px 0' }}>{t('work_schedule')}</Divider>
-
-                <Row gutter={16}>
-                    <Col span={8}>
-                        <Form.Item name="work_type" label={t('work_type')} initialValue="full-time">
-                            <Select options={[{ label: 'Full Time', value: 'full-time' }, { label: 'Part Time', value: 'part-time' }]} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={8}>
-                        <Form.Item name="work_start_time" label={t('start_time')}>
-                            <TimePicker format="HH:mm" style={{ width: '100%' }} />
-                        </Form.Item>
-                    </Col>
-                    <Col span={8}>
-                        <Form.Item name="work_end_time" label={t('end_time')}>
-                            <TimePicker format="HH:mm" style={{ width: '100%' }} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-
-                <Row gutter={16}>
-                    <Col span={24}>
-                        <Form.Item name="working_days" label={t('working_days')}>
-                            <Checkbox.Group options={['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']} />
-                        </Form.Item>
-                    </Col>
-                </Row>
-
-                <Row gutter={16}>
-                    <Col span={12}>
-                        <Form.Item name="grace_period_minutes" label={t('grace_period_minutes')} initialValue={30}>
-                            <Input type="number" suffix="minutes" />
-                        </Form.Item>
-                    </Col>
-                    <Col span={12}>
-                        <Form.Item name="website" label={t('website')}>
-                            <Input placeholder="Website/Portfolio" />
-                        </Form.Item>
-                    </Col>
-                </Row>
-
-                <Form.Item name="address" label={t('address')}>
-                    <Input.TextArea rows={2} placeholder={t('address')} />
-                </Form.Item>
-
-                <Form.Item name="note" label={t('note')}>
-                    <Input.TextArea rows={2} placeholder={t('note')} />
-                </Form.Item>
-
-                <div style={{ textAlign: 'right', marginTop: 16 }}>
-                    <Space>
-                        <Button onClick={onCloseModal}>{t('cancel')}</Button>
-                        <Button type="primary" htmlType="submit">{t('save')}</Button>
-                    </Space>
-                </div>
-            </Form>
-        </Modal>
-    );
-
-    const EmployeeDetailModal = () => {
-        if (!state.selectedEmployee) return null;
-        const emp = state.selectedEmployee;
-
-        return (
-            <Modal
-                title={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <UserOutlined style={{ color: '#3b82f6' }} />
-                        <span>{t('employee_details')}</span>
-                    </div>
-                }
-                open={state.visibleViewModal}
-                onCancel={onCloseViewModal}
-                footer={[
-                    <Button key="close" onClick={onCloseViewModal}>{t('close')}</Button>
-                ]}
-                width={800}
-            >
-                <Descriptions bordered column={2} size="small">
-                    <Descriptions.Item label={t('name')} labelStyle={{ fontWeight: 600 }}>{emp.name}</Descriptions.Item>
-                    <Descriptions.Item label={t('gender')}>{emp.gender}</Descriptions.Item>
-                    <Descriptions.Item label={t('code')}>{emp.code || '-'}</Descriptions.Item>
-                    <Descriptions.Item label={t('position')}>{emp.position}</Descriptions.Item>
-                    <Descriptions.Item label={t('salary')} labelStyle={{ color: '#059669' }}>
-                        <Text strong style={{ color: '#059669' }}>${emp.salary}</Text>
-                    </Descriptions.Item>
-                    <Descriptions.Item label={t('telephone')}>{emp.tel}</Descriptions.Item>
-                    <Descriptions.Item label={t('email')}>{emp.email || '-'}</Descriptions.Item>
-                    <Descriptions.Item label={t('status')}>
-                        <Tag color={emp.status === 1 ? "green" : "red"}>
-                            {emp.status === 1 ? t('active') : t('inactive')}
-                        </Tag>
-                    </Descriptions.Item>
-                    <Descriptions.Item label={t('work_type')} span={2}>
-                        <Tag color={emp.work_type === 'full-time' ? 'blue' : 'orange'}>
-                            {emp.work_type?.toUpperCase()}
-                        </Tag>
-                    </Descriptions.Item>
-                    <Descriptions.Item label={t('work_hours')}>
-                        {emp.work_start_display} - {emp.work_end_display}
-                    </Descriptions.Item>
-                    <Descriptions.Item label={t('grace_period')}>
-                        {emp.grace_period_minutes} {t('minutes')}
-                    </Descriptions.Item>
-                    <Descriptions.Item label={t('working_days')} span={2}>
-                        {Array.isArray(emp.working_days) ? emp.working_days.join(', ') : '-'}
-                    </Descriptions.Item>
-                    <Descriptions.Item label={t('address')} span={2}>{emp.address || '-'}</Descriptions.Item>
-                    <Descriptions.Item label={t('website')} span={2}>{emp.website || '-'}</Descriptions.Item>
-                    <Descriptions.Item label={t('note')} span={2}>{emp.note || '-'}</Descriptions.Item>
-                </Descriptions>
-
-                {state.accountInfo && (
-                    <div style={{ marginTop: 24 }}>
-                        <Divider orientation="left" style={{ margin: '0 0 16px' }}>
-                            <LockOutlined style={{ marginRight: 8 }} />
-                            Login Account
-                        </Divider>
-                        <Alert
-                            message={
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Username: <b>{state.accountInfo.username}</b></span>
-                                    <span>Role: <Tag color="purple">{state.accountInfo.role_name}</Tag></span>
-                                </div>
-                            }
-                            type="info"
-                            showIcon
-                        />
-                    </div>
-                )}
-            </Modal>
-        );
-    };
-
-    // 打印预览组件
-    const PrintPreviewComponent = () => (
-        <div ref={printRef} style={{ display: 'none', padding: '20px', backgroundColor: 'white' }}>
-            <div style={{ textAlign: 'center', marginBottom: 30 }}>
-                <h2 style={{ color: '#1890ff', marginBottom: 10 }}>Salary Report</h2>
-                <p>Period: {salaryDateRange[0].format('DD/MM/YYYY')} - {salaryDateRange[1].format('DD/MM/YYYY')}</p>
-                <p>Generated: {moment().format('DD/MM/YYYY HH:mm')}</p>
-            </div>
-
-            {salaryReportData.length > 0 && (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                    <thead>
-                        <tr>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>#</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Employee</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Position</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Base Salary</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Work Days</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>On Time</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Late</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Absent</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Deductions</th>
-                            <th style={{ border: '1px solid #ddd', padding: '8px' }}>Net Salary</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {salaryReportData.map((emp, index) => {
-                            const lateDays = (emp.days_late_grace || 0) + (emp.days_late_penalty || 0);
-                            return (
-                                <tr key={emp.user_id} style={{ border: '1px solid #ddd' }}>
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>{index + 1}</td>
-                                    <td style={{ padding: '8px' }}>{emp.employee_name}</td>
-                                    <td style={{ padding: '8px' }}>{emp.position || '-'}</td>
-                                    <td style={{ padding: '8px', textAlign: 'right' }}>${parseFloat(emp.monthly_salary || 0).toFixed(2)}</td>
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>{emp.days_worked || 0}</td>
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>{emp.days_on_time || 0}</td>
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>{lateDays}</td>
-                                    <td style={{ padding: '8px', textAlign: 'center' }}>{emp.days_absent || 0}</td>
-                                    <td style={{ padding: '8px', textAlign: 'right', color: '#cf1322' }}>
-                                        -${parseFloat(emp.total_deductions || 0).toFixed(2)}
-                                    </td>
-                                    <td style={{ padding: '8px', textAlign: 'right', fontWeight: 'bold', color: '#3f8600' }}>
-                                        ${parseFloat(emp.net_salary || 0).toFixed(2)}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
-            )}
-        </div>
-    );
 
     return (
-        <MainPage loading={loading || statsLoading} style={{ background: '#f9fafb' }}>
-            <PrintPreviewComponent />
+        <MainPage loading={loading || statsLoading}>
+            <div className="employee-page-container">
+                <div className="flex justify-between items-center mb-6">
+                    <Title level={3} style={{ margin: 0 }}>
+                        {activeTab === 'attendance' ? t('Attendance Dashboard') :
+                            activeTab === 'employee' ? t('Employee Management') : t('Salary Reports')}
+                    </Title>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, padding: '0 4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <Title level={4} style={{ margin: 0, fontSize: 24, fontWeight: 700, color: '#111827' }}>{t('Attendance Dashboard')}</Title>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px', background: 'white', borderRadius: 8, border: '1px solid #f3f4f6', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
-                        <Button type="text" size="small" icon={<LeftOutlined />} style={{ color: '#9ca3af' }} />
-                        <Text strong style={{ fontSize: 13, color: '#374151' }}>{moment().format('dddd, DD MMMM')}</Text>
-                        <Button type="text" size="small" icon={<RightOutlined />} style={{ color: '#9ca3af' }} />
-                    </div>
+                    {activeTab === 'employee' && isPermission("employee.create") && (
+                        <Button type="primary" icon={<UserAddOutlined />} onClick={onClickAddBtn}>
+                            {t('new_employee')}
+                        </Button>
+                    )}
                 </div>
-                <div style={{ display: 'flex', gap: 12 }}>
-                    <Button icon={<FileTextOutlined style={{ color: '#6b7280' }} />} style={{ borderRadius: 8 }}>{t('Attendance Report')}</Button>
-                    <Button
-                        type="primary"
-                        icon={<PlusOutlined />}
-                        onClick={onClickAddBtn}
-                        style={{ background: '#059669', borderColor: '#059669', borderRadius: 8, height: 38, padding: '0 18px' }}
-                    >
-                        {t('Add New')}
-                    </Button>
-                </div>
-            </div>
 
-            <Tabs
-                activeKey={activeTab}
-                onChange={setActiveTab}
-                style={{ marginBottom: 24 }}
-                className="custom-attendance-tabs"
-                items={[
-                    { key: 'attendance', label: <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><CalendarOutlined /> {t('Attendance')}</div> },
-                    { key: 'employee', label: <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><TeamOutlined /> {t('Employee List')}</div> },
-                    { key: 'salary', label: <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><DollarOutlined /> {t('Salary Reports')}</div> }
-                ]}
-            />
+                <Tabs
+                    activeKey={activeTab}
+                    onChange={setActiveTab}
+                    items={[
+                        { key: 'attendance', label: <span className="flex items-center gap-2"><CalendarOutlined /> {t('Attendance')}</span> },
+                        { key: 'employee', label: <span className="flex items-center gap-2"><TeamOutlined /> {t('Employee List')}</span> },
+                        { key: 'salary', label: <span className="flex items-center gap-2"><DollarOutlined /> {t('Salary Reports')}</span> }
+                    ]}
+                    className="mb-6"
+                />
 
-            <div style={{ padding: '0 2px' }}>
-                {activeTab === 'attendance' && renderAttendanceDashboard()}
-                {activeTab === 'employee' && renderEmployeeList()}
+                {activeTab === 'attendance' && (
+                    <AttendanceDashboard
+                        dashboardStats={dashboardStats}
+                        attendanceList={attendanceList}
+                        loading={loading}
+                        t={t}
+                        onSearch={() => { }} // Implement attendance search
+                    />
+                )}
+
+                {activeTab === 'employee' && (
+                    <EmployeeList
+                        list={list}
+                        loading={loading}
+                        t={t}
+                        searchText={state.searchText}
+                        setSearchText={(text) => setState({ ...state, searchText: text })}
+                        onSearch={handleSearch}
+                        onEdit={onClickEdit}
+                        onDelete={onClickDelete}
+                        onView={onClickView}
+                        onCreateAccount={handleCreateAccount}
+                        onResetPassword={onResetPassword}
+                        onExportExcel={onExportExcel}
+                        isPermission={isPermission}
+                    />
+                )}
+
                 {activeTab === 'salary' && (
-                    <div style={{ background: 'white', padding: 40, borderRadius: 12, textAlign: 'center', border: '1px solid #f3f4f6' }}>
-                        <div style={{ background: '#f0fdf4', width: 64, height: 64, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                            <DollarOutlined style={{ fontSize: 32, color: '#059669' }} />
+                    <div className="bg-white p-12 rounded-xl text-center border border-gray-100 shadow-sm salary-report-card">
+                        <div className="bg-green-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 salary-icon-bg">
+                            <DollarOutlined className="text-3xl text-green-600 salary-icon" />
                         </div>
-                        <Title level={3} style={{ marginBottom: 8 }}>{t('Salary & Payroll')}</Title>
-                        <Text type="secondary" style={{ display: 'block', marginBottom: 24, fontSize: 16 }}>{t('Manage employee salaries, view detailed reports, and process payroll calculations.')}</Text>
-                        <Button type="primary" size="large" onClick={openSalaryReportModal} icon={<FileTextOutlined />} style={{ background: '#059669', borderColor: '#059669', height: 45, padding: '0 32px', borderRadius: 8 }}>
+                        <Title level={3} className="mb-2">{t('Salary & Payroll')}</Title>
+                        <Text type="secondary" className="block mb-8 text-lg">
+                            {t('Manage employee salaries, view detailed reports, and process payroll calculations.')}
+                        </Text>
+                        <Button
+                            type="primary"
+                            size="large"
+                            icon={<FileTextOutlined />}
+                            className="bg-green-600 border-green-600 h-12 px-8 rounded-lg hover:bg-green-700"
+                            onClick={() => setState({ ...state, visibleSalaryReportModal: true })}
+                        >
                             {t('Open Full Salary Report')}
                         </Button>
                     </div>
                 )}
-            </div>
 
-            {/* Account Creation Modal */}
-            <Modal
-                open={accountModal.visible}
-                title={
-                    <div className="flex items-center gap-2">
-                        <UserAddOutlined className="text-blue-500" />
-                        <span>{t('create_login_account')}</span>
-                    </div>
-                }
-                onCancel={() => {
-                    setAccountModal({ visible: false, employee: null });
-                    accountForm.resetFields();
-                }}
-                footer={null}
-                width={500}
-            >
-                <Form
-                    form={accountForm}
-                    layout="vertical"
-                    onFinish={onCreateAccount}
+                {/* Modals */}
+                <EmployeeModal
+                    visible={state.visibleModal}
+                    onCancel={() => setState({ ...state, visibleModal: false })}
+                    onFinish={onFinish}
+                    form={formRef}
+                    t={t}
+                    id={state.id}
+                />
+
+                {/* Account Creation Modal */}
+                <Modal
+                    title={t('create_login_account')}
+                    open={accountModal.visible}
+                    onCancel={() => setAccountModal({ visible: false, employee: null })}
+                    footer={null}
                 >
-                    <Alert
-                        message={t('create_account')}
-                        description={`${t('creating_account_for')}: ${accountModal.employee?.name || ''}`}
-                        type="info"
-                        showIcon
-                        style={{ marginBottom: 16 }}
-                    />
+                    <Form form={accountForm} layout="vertical" onFinish={onCreateAccount}>
+                        <Alert message={`Creating account for ${accountModal.employee?.name}`} type="info" showIcon className="mb-4" />
+                        <Form.Item name="username" label={t('username')} rules={[{ required: true }]}>
+                            <Input prefix={<UserOutlined />} />
+                        </Form.Item>
+                        <Form.Item name="password" label={t('password')} rules={[{ required: true, min: 6 }]}>
+                            <Input.Password prefix={<LockOutlined />} />
+                        </Form.Item>
+                        <Form.Item name="role_id" label={t('role')} rules={[{ required: true }]}>
+                            <Select>
+                                {roles.map(r => <Select.Option key={r.id} value={r.id}>{r.name}</Select.Option>)}
+                            </Select>
+                        </Form.Item>
+                        <div className="text-right">
+                            <Button onClick={() => setAccountModal({ visible: false, employee: null })} style={{ marginRight: 8 }}>{t('cancel')}</Button>
+                            <Button type="primary" htmlType="submit">{t('create_account')}</Button>
+                        </div>
+                    </Form>
+                </Modal>
 
-                    <Form.Item name="employee_id" hidden>
-                        <Input />
-                    </Form.Item>
-
-                    <Form.Item
-                        label={t('username')}
-                        name="username"
-                        rules={[
-                            { required: true, message: t('please_input_username') },
-                            { min: 3, message: t('username_min_3') }
-                        ]}
-                    >
-                        <Input
-                            prefix={<UserOutlined />}
-                            placeholder={t('enter_username')}
-                            autoComplete="off"
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        label={t('password')}
-                        name="password"
-                        rules={[
-                            { required: true, message: t('please_input_password') },
-                            { min: 6, message: t('password_min_6') }
-                        ]}
-                    >
-                        <Input.Password
-                            prefix={<LockOutlined />}
-                            placeholder={t('enter_password')}
-                            autoComplete="new-password"
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        label={t('confirm_password')}
-                        name="confirm_password"
-                        dependencies={['password']}
-                        rules={[
-                            { required: true, message: t('please_confirm_password') },
-                            ({ getFieldValue }) => ({
-                                validator(_, value) {
-                                    if (!value || getFieldValue('password') === value) {
-                                        return Promise.resolve();
-                                    }
-                                    return Promise.reject(new Error(t('passwords_not_match')));
-                                },
-                            }),
-                        ]}
-                    >
-                        <Input.Password
-                            prefix={<LockOutlined />}
-                            placeholder={t('confirm_password_placeholder')}
-                            autoComplete="new-password"
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        label={t('role')}
-                        name="role_id"
-                        rules={[{ required: true, message: t('please_select_role') }]}
-                    >
-                        <Select placeholder={t('select_role')}>
-                            {roles.map(role => (
-                                <Select.Option key={role.id} value={role.id}>
-                                    {role.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-
-                    <div className="flex justify-end gap-2 mt-6">
-                        <Button
-                            onClick={() => {
-                                setAccountModal({ visible: false, employee: null });
-                                accountForm.resetFields();
-                            }}
-                        >
-                            {t('cancel')}
-                        </Button>
-                        <Button type="primary" htmlType="submit" icon={<UserAddOutlined />}>
-                            {t('create_account')}
-                        </Button>
-                    </div>
-                </Form>
-            </Modal>
-
-            {/* Reset Password Modal */}
-            <Modal
-                open={resetModal.visible}
-                title={
-                    <div className="flex items-center gap-2">
-                        <LockOutlined className="text-orange-500" />
-                        <span>{t('reset_password')}</span>
-                    </div>
-                }
-                onCancel={() => {
-                    setResetModal({ visible: false, employee: null });
-                    resetForm.resetFields();
-                }}
-                footer={null}
-                width={400}
-            >
-                <Form
-                    form={resetForm}
-                    layout="vertical"
-                    onFinish={onResetPassword}
+                {/* Reset Password Modal */}
+                <Modal
+                    title={t('reset_password')}
+                    open={resetModal.visible}
+                    onCancel={() => setResetModal({ visible: false, employee: null })}
+                    footer={null}
                 >
-                    <Alert
-                        message={t('reset_password')}
-                        description={`${t('reset_password_for')}: ${resetModal.employee?.name || ''}`}
-                        type="warning"
-                        showIcon
-                        style={{ marginBottom: 16 }}
-                    />
+                    <Form form={resetForm} layout="vertical" onFinish={onSubmitResetPassword}>
+                        <Alert message={`Resetting password for ${resetModal.employee?.name}`} type="warning" showIcon className="mb-4" />
+                        <Form.Item name="password" label={t('new_password')} rules={[{ required: true, min: 6 }]}>
+                            <Input.Password prefix={<LockOutlined />} />
+                        </Form.Item>
+                        <Form.Item name="role_id" label={t('role')} rules={[{ required: true }]}>
+                            <Select>
+                                {roles.map(r => <Select.Option key={r.id} value={r.id}>{r.name}</Select.Option>)}
+                            </Select>
+                        </Form.Item>
+                        <div className="text-right">
+                            <Button onClick={() => setResetModal({ visible: false, employee: null })} style={{ marginRight: 8 }}>{t('cancel')}</Button>
+                            <Button type="primary" danger htmlType="submit">{t('reset_password')}</Button>
+                        </div>
+                    </Form>
+                </Modal>
 
-                    <Form.Item
-                        label={t('new_password')}
-                        name="password"
-                        rules={[
-                            { min: 6, message: t('password_min_6') }
-                        ]}
-                    >
-                        <Input.Password
-                            prefix={<LockOutlined />}
-                            placeholder={t('enter_password')}
-                        />
-                    </Form.Item>
+                {/* View Employee Detail Modal */}
+                <Modal
+                    title={<span className="flex items-center gap-2"><UserOutlined className="text-blue-500" /> {t('employee_details')}</span>}
+                    open={state.visibleViewModal}
+                    footer={<Button onClick={() => setState({ ...state, visibleViewModal: false })}>{t('close')}</Button>}
+                    onCancel={() => setState({ ...state, visibleViewModal: false })}
+                    width={700}
+                >
+                    {state.selectedEmployee && (
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-4 border-b pb-4">
+                                <div className="bg-blue-50 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-blue-600 border border-blue-100">
+                                    {state.selectedEmployee.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold m-0">{state.selectedEmployee.name}</h3>
+                                    <p className="text-gray-500 m-0">{state.selectedEmployee.position}</p>
+                                </div>
+                            </div>
+                            <Row gutter={[16, 16]}>
+                                <Col span={12}><Text type="secondary">{t('code')}:</Text> <Text strong>{state.selectedEmployee.code}</Text></Col>
+                                <Col span={12}><Text type="secondary">{t('gender')}:</Text> <Text strong>{state.selectedEmployee.gender}</Text></Col>
+                                <Col span={12}><Text type="secondary">{t('salary')}:</Text> <Text strong type="success">${state.selectedEmployee.salary}</Text></Col>
+                                <Col span={12}><Text type="secondary">{t('telephone')}:</Text> <Text strong>{state.selectedEmployee.tel}</Text></Col>
+                                <Col span={24}><Text type="secondary">{t('email')}:</Text> <Text strong>{state.selectedEmployee.email}</Text></Col>
+                                <Col span={24}><Text type="secondary">{t('address')}:</Text> <Text>{state.selectedEmployee.address}</Text></Col>
+                            </Row>
 
-                    <Form.Item
-                        label={t('confirm_new_password')}
-                        name="confirm_password"
-                        dependencies={['password']}
-                        rules={[
-                            ({ getFieldValue }) => ({
-                                validator(_, value) {
-                                    if (getFieldValue('password') && !value) {
-                                        return Promise.reject(new Error(t('please_confirm_password')));
+                            {state.accountInfo && (
+                                <Alert
+                                    message={
+                                        <div className="flex justify-between w-full">
+                                            <span>Username: <b>{state.accountInfo.username}</b></span>
+                                            <span>Role: <b>{state.accountInfo.role_name}</b></span>
+                                        </div>
                                     }
-                                    if (!value || getFieldValue('password') === value) {
-                                        return Promise.resolve();
-                                    }
-                                    return Promise.reject(new Error(t('passwords_not_match')));
-                                },
-                            }),
-                        ]}
-                    >
-                        <Input.Password
-                            prefix={<LockOutlined />}
-                            placeholder={t('confirm_password_placeholder')}
-                        />
-                    </Form.Item>
-
-                    <Form.Item
-                        label={t('role')}
-                        name="role_id"
-                        rules={[{ required: true, message: t('please_select_role') }]}
-                    >
-                        <Select placeholder={t('select_role')}>
-                            {roles.map(role => (
-                                <Select.Option key={role.id} value={role.id}>
-                                    {role.name}
-                                </Select.Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
-
-                    <div className="flex justify-end gap-2 mt-6">
-                        <Button onClick={() => {
-                            setResetModal({ visible: false, employee: null });
-                            resetForm.resetFields();
-                        }}>
-                            {t('cancel')}
-                        </Button>
-                        <Button type="primary" danger htmlType="submit">
-                            {t('reset_password')}
-                        </Button>
-                    </div>
-                </Form>
-            </Modal>
-
-            {/* Salary Report Modal */}
-            <Modal
-                open={state.visibleSalaryReportModal}
-                title={
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <DollarOutlined style={{ color: '#059669', fontSize: 20 }} />
-                        <span>Salary Payment Report</span>
-                    </div>
-                }
-                width={1200}
-                onCancel={closeSalaryReportModal}
-                footer={[
-                    <Button
-                        key="print"
-                        icon={<PrinterOutlined />}
-                        onClick={handlePrintReport}
-                    >
-                        Print
-                    </Button>,
-                    <Button
-                        key="pdf"
-                        icon={<FilePdfOutlined />}
-                        onClick={exportToPDF}
-                        style={{ background: '#ff4d4f', borderColor: '#ff4d4f', color: 'white' }}
-                    >
-                        Export PDF
-                    </Button>,
-                    <Button
-                        key="excel"
-                        type="primary"
-                        icon={<FileExcelOutlined />}
-                        onClick={exportSalaryExcel}
-                        style={{ background: '#059669', borderColor: '#059669' }}
-                    >
-                        Export Excel
-                    </Button>,
-                    <Button key="close" onClick={closeSalaryReportModal}>
-                        Close
-                    </Button>
-                ]}
-            >
-                <div>
-                    <div style={{ marginBottom: 16, display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{ fontWeight: 500 }}>Period:</span>
-                        <DatePicker.RangePicker
-                            value={salaryDateRange}
-                            onChange={(dates) => {
-                                if (dates) {
-                                    setSalaryDateRange(dates);
-                                    setTimeout(fetchSalaryReport, 100);
-                                }
-                            }}
-                            format="YYYY-MM-DD"
-                        />
-                        <Button
-                            type="primary"
-                            onClick={fetchSalaryReport}
-                            loading={salaryReportLoading}
-                        >
-                            Refresh
-                        </Button>
-                    </div>
-
-                    {salaryReportSummary && (
-                        <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
-                            <Col xs={12} sm={6}>
-                                <Card size="small" style={{ textAlign: 'center' }}>
-                                    <Statistic
-                                        title="Total Employees"
-                                        value={salaryReportSummary.total_employees}
-                                        valueStyle={{ color: '#1890ff' }}
-                                    />
-                                </Card>
-                            </Col>
-                            <Col xs={12} sm={6}>
-                                <Card size="small" style={{ textAlign: 'center' }}>
-                                    <Statistic
-                                        title="Base Salary"
-                                        value={parseFloat(salaryReportSummary.total_base_salary)}
-                                        prefix="$"
-                                        precision={2}
-                                        valueStyle={{ color: '#3f8600' }}
-                                    />
-                                </Card>
-                            </Col>
-                            <Col xs={12} sm={6}>
-                                <Card size="small" style={{ textAlign: 'center' }}>
-                                    <Statistic
-                                        title="Deductions"
-                                        value={parseFloat(salaryReportSummary.total_deductions)}
-                                        prefix="-$"
-                                        precision={2}
-                                        valueStyle={{ color: '#cf1322' }}
-                                    />
-                                </Card>
-                            </Col>
-                            <Col xs={12} sm={6}>
-                                <Card size="small" style={{ textAlign: 'center' }}>
-                                    <Statistic
-                                        title="Net Salary"
-                                        value={parseFloat(salaryReportSummary.total_net_salary)}
-                                        prefix="$"
-                                        precision={2}
-                                        valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
-                                    />
-                                </Card>
-                            </Col>
-                        </Row>
+                                    type="info"
+                                    showIcon
+                                    icon={<LockOutlined />}
+                                />
+                            )}
+                        </div>
                     )}
-
-                    <Table
-                        dataSource={salaryReportData}
-                        loading={salaryReportLoading}
-                        rowKey="user_id"
-                        size="small"
-                        bordered
-                        scroll={{ x: 1000 }}
-                        pagination={{ pageSize: 10 }}
-                        columns={[
-                            {
-                                title: '#',
-                                key: 'index',
-                                width: 50,
-                                render: (_, __, index) => index + 1
-                            },
-                            {
-                                title: 'Employee',
-                                key: 'employee',
-                                width: 150,
-                                render: (_, record) => (
-                                    <div>
-                                        <div style={{ fontWeight: 500 }}>{record.employee_name}</div>
-                                        <div style={{ fontSize: 12, color: '#666' }}>{record.position}</div>
-                                    </div>
-                                )
-                            },
-                            {
-                                title: 'Base',
-                                dataIndex: 'monthly_salary',
-                                key: 'salary',
-                                width: 100,
-                                align: 'right',
-                                render: (value) => `$${parseFloat(value || 0).toFixed(2)}`
-                            },
-                            {
-                                title: 'Attendance',
-                                key: 'attendance',
-                                width: 180,
-                                render: (_, record) => (
-                                    <Space direction="vertical" size={2}>
-                                        <div style={{ fontSize: 11 }}>
-                                            ✅ {record.days_on_time || 0} | ⏰ {record.days_late_grace || 0}
-                                        </div>
-                                        <div style={{ fontSize: 11 }}>
-                                            ⚠️ {record.days_late_penalty || 0} | ❌ {record.days_absent || 0}
-                                        </div>
-                                    </Space>
-                                )
-                            },
-                            {
-                                title: 'Deductions',
-                                key: 'deductions',
-                                width: 130,
-                                render: (_, record) => (
-                                    <div>
-                                        <div style={{ fontSize: 11, color: '#cf1322' }}>
-                                            Late: -${parseFloat(record.late_deduction_amount || 0).toFixed(2)}
-                                        </div>
-                                        <div style={{ fontSize: 11, color: '#cf1322' }}>
-                                            Absent: -${parseFloat(record.absent_deduction_amount || 0).toFixed(2)}
-                                        </div>
-                                        <div style={{ fontWeight: 600, color: '#cf1322' }}>
-                                            -${parseFloat(record.total_deductions || 0).toFixed(2)}
-                                        </div>
-                                    </div>
-                                )
-                            },
-                            {
-                                title: 'Net Salary',
-                                key: 'net_salary',
-                                width: 130,
-                                align: 'right',
-                                render: (_, record) => (
-                                    <div>
-                                        <div style={{ fontSize: 16, fontWeight: 700, color: '#3f8600' }}>
-                                            ${parseFloat(record.net_salary || 0).toFixed(2)}
-                                        </div>
-                                        <Tag color={parseFloat(record.deduction_percentage || 0) > 10 ? 'red' : 'green'}>
-                                            -{record.deduction_percentage || 0}%
-                                        </Tag>
-                                    </div>
-                                )
-                            }
-                        ]}
-                    />
-                </div>
-            </Modal>
-
-            <EmployeeModal />
-            <EmployeeDetailModal />
+                </Modal>
+            </div>
         </MainPage>
     );
 }

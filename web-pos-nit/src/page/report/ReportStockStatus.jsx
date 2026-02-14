@@ -242,7 +242,7 @@ function ReportStockStatus() {
 
   return (
     <MainPage loading={loading}>
-      <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="report-stock-status-container px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         {/* Header Section */}
         <Card
           className="mb-6 shadow-lg border-0 bg-gradient-to-r from-cyan-600 to-blue-600 dark:from-cyan-800 dark:to-blue-800"
@@ -359,7 +359,7 @@ function ReportStockStatus() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         @media print {
           body * {
             visibility: hidden;

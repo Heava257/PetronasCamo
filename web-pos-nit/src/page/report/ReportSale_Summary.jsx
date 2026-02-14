@@ -8,6 +8,7 @@ import dayjs from "dayjs";
 import { configStore } from "../../store/configStore";
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { useSettings } from "../../settings/SettingsContext";
 
 export const options = {
   curveType: "function",
@@ -17,6 +18,7 @@ export const options = {
 function ReportSale_Summary() {
   const { config } = configStore();
   const { t } = useTranslation();
+  const { isDarkMode, settings } = useSettings();
   const [loading, setLoading] = useState(false);
   const reportRef = useRef(null);
   const [filter, setFilter] = useState({
@@ -185,7 +187,7 @@ function ReportSale_Summary() {
   );
 
   return (
-    <div className="px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="report-sale-summary-container px-2 sm:px-4 lg:px-6 py-4 min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header Section */}
       <Card
         className="mb-6 shadow-lg border-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-800 dark:via-indigo-800 dark:to-purple-800"
@@ -345,19 +347,40 @@ function ReportSale_Summary() {
                   curveType: "function",
                   legend: {
                     position: "bottom",
-                    textStyle: { fontSize: 13, color: "#4b5563" }
+                    textStyle: {
+                      fontSize: 13,
+                      color: settings.templateId === 'chinesenewyear' ? "#FFD700" : (isDarkMode ? "#e5e7eb" : "#4b5563")
+                    }
                   },
                   hAxis: {
                     title: t('report.order_date'),
-                    titleTextStyle: { fontSize: 14, bold: true, color: "#374151" },
-                    textStyle: { fontSize: 12, color: "#6b7280" },
-                    gridlines: { color: "#f3f4f6" }
+                    titleTextStyle: {
+                      fontSize: 14,
+                      bold: true,
+                      color: settings.templateId === 'chinesenewyear' ? "#FFD700" : (isDarkMode ? "#f3f4f6" : "#374151")
+                    },
+                    textStyle: {
+                      fontSize: 12,
+                      color: settings.templateId === 'chinesenewyear' ? "#FFD700" : (isDarkMode ? "#d1d5db" : "#6b7280")
+                    },
+                    gridlines: {
+                      color: settings.templateId === 'chinesenewyear' ? "#8a2d1d" : (isDarkMode ? "#374151" : "#f3f4f6")
+                    }
                   },
                   vAxis: {
                     title: t('report.sales_amount'),
-                    titleTextStyle: { fontSize: 14, bold: true, color: "#374151" },
-                    textStyle: { fontSize: 12, color: "#6b7280" },
-                    gridlines: { color: "#f3f4f6" },
+                    titleTextStyle: {
+                      fontSize: 14,
+                      bold: true,
+                      color: settings.templateId === 'chinesenewyear' ? "#FFD700" : (isDarkMode ? "#f3f4f6" : "#374151")
+                    },
+                    textStyle: {
+                      fontSize: 12,
+                      color: settings.templateId === 'chinesenewyear' ? "#FFD700" : (isDarkMode ? "#d1d5db" : "#6b7280")
+                    },
+                    gridlines: {
+                      color: settings.templateId === 'chinesenewyear' ? "#8a2d1d" : (isDarkMode ? "#374151" : "#f3f4f6")
+                    },
                     format: "currency"
                   },
                   colors: ["#667eea"],
@@ -507,7 +530,7 @@ function ReportSale_Summary() {
         </div>
       </div>
 
-      <style jsx global>{`
+      <style>{`
         @media print {
           body * {
             visibility: hidden;
@@ -531,6 +554,10 @@ function ReportSale_Summary() {
         
         .ant-table-tbody > tr:hover > td {
           background: #f3f4f6 !important;
+        }
+
+        html.dark .ant-table-tbody > tr:hover > td {
+           background: rgba(255, 255, 255, 0.05) !important;
         }
       `}</style>
     </div>

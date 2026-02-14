@@ -88,7 +88,7 @@ exports.report_Customer = async (req, res) => {
     let { from_date, to_date } = req.query;
 
     // Ensure that to_date includes the entire day
-    // console.log(from_date,to_date)
+
     to_date = new Date(to_date);
     to_date.setHours(23, 59, 59, 999);
 
@@ -121,7 +121,7 @@ exports.report_Purchase_Summary = async (req, res) => {
     let { from_date, to_date, supplier_id } = req.query;
 
     // Ensure that to_date includes the entire day
-    // console.log(from_date,to_date,supplier_id)
+
     to_date = new Date(to_date);
     to_date.setHours(23, 59, 59, 999);
     const sql = `

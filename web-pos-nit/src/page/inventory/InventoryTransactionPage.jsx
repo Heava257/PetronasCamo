@@ -34,6 +34,8 @@ import {
 import { useTranslation } from "../../locales/TranslationContext";
 import { useAuth } from "../../hooks/useAuth.js";
 import { getProfile, getPermission } from "../../store/profile.store";
+import { useSettings } from "../../settings";
+
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -42,6 +44,8 @@ const { RangePicker } = DatePicker;
 function InventoryTransactionPage() {
     const { t } = useTranslation();
     const { isAuthenticated } = useAuth();
+    const { isDarkMode } = useSettings();
+
 
     // Check if user is Admin
     const profile = getProfile();
@@ -338,309 +342,404 @@ function InventoryTransactionPage() {
     ];
 
     return (
-        <MainPage loading={state.loading}>
-            <div className="inventory-transaction-container px-2 sm:px-4 lg:px-6">
-                {/* Header with Statistics */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
-                        <Title level={4} className="m-0 flex items-center gap-2">
-                            <HistoryOutlined className="text-blue-500" />
-                            {t("inventory_transactions")}
-                        </Title>
-                    </div>
+        <>
+            <MainPage loading={state.loading}>
+                <div className="inventory-transaction-container px-2 sm:px-4 lg:px-6">
+                    {/* Header with Statistics */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
+                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+                            <Title level={4} className="m-0 flex items-center gap-2">
+                                <HistoryOutlined className="text-blue-500" />
+                                {t("inventory_transactions")}
+                            </Title>
+                        </div>
 
-                    {/* Statistics Cards */}
-                    <Row gutter={[16, 16]} className="mb-4">
-                        <Col xs={24} sm={8}>
-                            <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 border-green-200">
-                                <div className="flex justify-between items-start">
-                                    <Statistic
-                                        title={
-                                            <span className="flex items-center gap-2">
-                                                <RiseOutlined className="text-green-600" />
-                                                {t("total_liters")} IN
-                                            </span>
-                                        }
-                                        value={state.statistics.totalQtyIn}
-                                        precision={0}
-                                        suffix="L"
-                                        valueStyle={{ color: '#16a34a', fontWeight: 'bold' }}
-                                    />
-                                    <div className="text-right">
-                                        <div className="text-xs text-gray-500 mb-1">{t("total_purchases")}</div>
-                                        <div className="text-lg font-bold text-green-700">${Number(state.statistics.totalIn).toLocaleString()}</div>
+                        {/* Statistics Cards */}
+                        <Row gutter={[16, 16]} className="mb-4">
+                            <Col xs={24} sm={8}>
+                                <Card className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 border-green-200">
+                                    <div className="flex justify-between items-start">
+                                        <Statistic
+                                            title={
+                                                <span className="flex items-center gap-2">
+                                                    <RiseOutlined className="text-green-600" />
+                                                    {t("total_liters")} IN
+                                                </span>
+                                            }
+                                            value={state.statistics.totalQtyIn}
+                                            precision={0}
+                                            suffix="L"
+                                            valueStyle={{ color: '#16a34a', fontWeight: 'bold' }}
+                                        />
+                                        <div className="text-right">
+                                            <div className="text-xs text-gray-500 mb-1">{t("total_purchases")}</div>
+                                            <div className="text-lg font-bold text-green-700">${Number(state.statistics.totalIn).toLocaleString()}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 border-blue-200">
-                                <div className="flex justify-between items-start">
-                                    <Statistic
-                                        title={
-                                            <span className="flex items-center gap-2">
-                                                <FallOutlined className="text-blue-600" />
-                                                {t("total_liters")} OUT
-                                            </span>
-                                        }
-                                        value={state.statistics.totalQtyOut}
-                                        precision={0}
-                                        suffix="L"
-                                        valueStyle={{ color: '#2563eb', fontWeight: 'bold' }}
-                                    />
-                                    <div className="text-right">
-                                        <div className="text-xs text-gray-500 mb-1">{t("total_sales")}</div>
-                                        <div className="text-lg font-bold text-blue-700">${Number(state.statistics.totalOut).toLocaleString()}</div>
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800 border-blue-200">
+                                    <div className="flex justify-between items-start">
+                                        <Statistic
+                                            title={
+                                                <span className="flex items-center gap-2">
+                                                    <FallOutlined className="text-blue-600" />
+                                                    {t("total_liters")} OUT
+                                                </span>
+                                            }
+                                            value={state.statistics.totalQtyOut}
+                                            precision={0}
+                                            suffix="L"
+                                            valueStyle={{ color: '#2563eb', fontWeight: 'bold' }}
+                                        />
+                                        <div className="text-right">
+                                            <div className="text-xs text-gray-500 mb-1">{t("total_sales")}</div>
+                                            <div className="text-lg font-bold text-blue-700">${Number(state.statistics.totalOut).toLocaleString()}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={8}>
-                            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 border-purple-200 shadow-md">
-                                <div className="flex justify-between items-start">
-                                    <Statistic
-                                        title={
-                                            <span className="flex items-center gap-2">
-                                                <DollarOutlined className="text-purple-600" />
-                                                {t("remaining_stock")}
-                                            </span>
-                                        }
-                                        value={state.statistics.currentStock}
-                                        precision={0}
-                                        suffix="L"
-                                        valueStyle={{
-                                            color: '#8b5cf6',
-                                            fontWeight: 'extrabold'
-                                        }}
-                                    />
-                                    <div className="text-right">
-                                        <div className="text-xs text-purple-600 mb-1 font-semibold">{t("net_value")}</div>
-                                        <div className="text-xl font-bold text-purple-700">${Number(state.statistics.totalValue).toLocaleString()}</div>
+                                </Card>
+                            </Col>
+                            <Col xs={24} sm={8}>
+                                <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 border-purple-200 shadow-md">
+                                    <div className="flex justify-between items-start">
+                                        <Statistic
+                                            title={
+                                                <span className="flex items-center gap-2">
+                                                    <DollarOutlined className="text-purple-600" />
+                                                    {t("remaining_stock")}
+                                                </span>
+                                            }
+                                            value={state.statistics.currentStock}
+                                            precision={0}
+                                            suffix="L"
+                                            valueStyle={{
+                                                color: '#8b5cf6',
+                                                fontWeight: 'extrabold'
+                                            }}
+                                        />
+                                        <div className="text-right">
+                                            <div className="text-xs text-purple-600 mb-1 font-semibold">{t("net_value")}</div>
+                                            <div className="text-xl font-bold text-purple-700">${Number(state.statistics.totalValue).toLocaleString()}</div>
+                                        </div>
                                     </div>
-                                </div>
-                            </Card>
-                        </Col>
-                    </Row>
-
-                    {/* ✅ NEW: Category Stock Breakdown (Gasoline, Diesel, etc.) */}
-                    <div className="mb-6">
-                        <Title level={5} className="mb-3 flex items-center gap-2">
-                            <span className="text-gray-600">📊 {t("stock_breakdown")}</span>
-                        </Title>
-                        <Row gutter={[16, 16]}>
-                            {state.categoryStats.length === 0 ? (
-                                <Col span={24}>
-                                    <Card className="text-center text-gray-400 py-4">
-                                        {t("no_data_stock")}
-                                    </Card>
-                                </Col>
-                            ) : (
-                                state.categoryStats.map((cat, idx) => {
-                                    // Skip cards with 0 total value (no actual price/stock value)
-                                    if (Number(cat.total_value || 0) === 0) return null;
-
-                                    return (
-                                        <Col xs={12} sm={8} md={6} lg={4} key={cat.product_id || idx}>
-                                            <Card
-                                                size="small"
-                                                className="hover:shadow-md transition-shadow cursor-default border-blue-100 bg-blue-50/30"
-                                            >
-                                                <div className="flex flex-col gap-1">
-                                                    <Text strong className="text-blue-700 block truncate" title={cat.product_name}>
-                                                        {cat.product_name}
-                                                    </Text>
-                                                    <div className="flex justify-between items-baseline">
-                                                        <Text className="text-[10px] text-gray-500">{t("total_in_label")}:</Text>
-                                                        <Text className="text-xs text-blue-600">
-                                                            {Number(cat.total_qty_in || 0).toLocaleString()} L
-                                                        </Text>
-                                                    </div>
-                                                    <div className="flex justify-between items-baseline">
-                                                        <Text className="text-[10px] text-gray-500">{t("total_out_label")}:</Text>
-                                                        <Text className="text-xs text-orange-600">
-                                                            {Number(cat.total_qty_out || 0).toLocaleString()} L
-                                                        </Text>
-                                                    </div>
-                                                    <div className="flex justify-between items-baseline">
-                                                        <Text className="text-[10px] text-gray-500">{t("total_out_value")}:</Text>
-                                                        <Text className="text-xs text-orange-600 font-semibold">
-                                                            {formatPrice(cat.total_out_value)}
-                                                        </Text>
-                                                    </div>
-                                                    <div className="flex justify-between items-baseline border-t border-gray-100 pt-1 mt-1">
-                                                        <Text className="text-xs text-gray-500">{t("remaining_stock")}:</Text>
-                                                        <Text strong className={`text-sm ${Number(cat.total_qty || 0) <= 0 ? 'text-red-500' : 'text-blue-700'}`}>
-                                                            {Number(cat.total_qty || 0).toLocaleString()} L
-                                                        </Text>
-                                                    </div>
-                                                    <div className="flex justify-between items-baseline">
-                                                        <Text className="text-xs text-gray-500">{t("total_stock_value")}:</Text>
-                                                        <Text strong className="text-sm text-green-600">
-                                                            {formatPrice(cat.total_value)}
-                                                        </Text>
-                                                    </div>
-                                                </div>
-                                            </Card>
-                                        </Col>
-                                    );
-                                })
-                            )}
+                                </Card>
+                            </Col>
                         </Row>
-                        <Divider className="my-4" />
+
+                        {/* ✅ NEW: Category Stock Breakdown (Gasoline, Diesel, etc.) */}
+                        <div className="mb-6">
+                            <Title level={5} className="mb-3 flex items-center gap-2">
+                                <span className="text-gray-600">📊 {t("stock_breakdown")}</span>
+                            </Title>
+                            <Row gutter={[16, 16]}>
+                                {state.categoryStats.length === 0 ? (
+                                    <Col span={24}>
+                                        <Card className="text-center text-gray-400 py-4">
+                                            {t("no_data_stock")}
+                                        </Card>
+                                    </Col>
+                                ) : (
+                                    state.categoryStats.map((cat, idx) => {
+                                        // Skip cards with 0 total value (no actual price/stock value)
+                                        if (Number(cat.total_value || 0) === 0) return null;
+
+                                        return (
+                                            <Col xs={24} sm={12} md={8} lg={6} xl={6} key={cat.product_id || idx}>
+                                                <Card
+                                                    size="small"
+                                                    className="hover:shadow-md transition-shadow cursor-default border-blue-100 bg-blue-50/30 dark:bg-blue-900/20 dark:border-blue-800"
+                                                >
+
+                                                    <div className="flex flex-col gap-1">
+                                                        <Text strong className="text-blue-700 dark:text-blue-300 block truncate" title={cat.product_name}>
+
+                                                            {cat.product_name}
+                                                        </Text>
+                                                        <div className="flex justify-between items-baseline">
+                                                            <Text className="text-[10px] text-gray-500">{t("total_in_label")}:</Text>
+                                                            <Text className="text-xs text-blue-600">
+                                                                {Number(cat.total_qty_in || 0).toLocaleString()} L
+                                                            </Text>
+                                                        </div>
+                                                        <div className="flex justify-between items-baseline">
+                                                            <Text className="text-[10px] text-gray-500">{t("total_out_label")}:</Text>
+                                                            <Text className="text-xs text-orange-600">
+                                                                {Number(cat.total_qty_out || 0).toLocaleString()} L
+                                                            </Text>
+                                                        </div>
+                                                        <div className="flex justify-between items-baseline">
+                                                            <Text className="text-[10px] text-gray-500">{t("total_out_value")}:</Text>
+                                                            <Text className="text-xs text-orange-600 font-semibold">
+                                                                {formatPrice(cat.total_out_value)}
+                                                            </Text>
+                                                        </div>
+                                                        <div className="flex justify-between items-baseline border-t border-gray-100 pt-1 mt-1">
+                                                            <Text className="text-xs text-gray-500">{t("remaining_stock")}:</Text>
+                                                            <Text strong className={`text-sm ${Number(cat.total_qty || 0) <= 0 ? 'text-red-500' : 'text-blue-700'}`}>
+                                                                {Number(cat.total_qty || 0).toLocaleString()} L
+                                                            </Text>
+                                                        </div>
+                                                        <div className="flex justify-between items-baseline">
+                                                            <Text className="text-xs text-gray-500">{t("total_stock_value")}:</Text>
+                                                            <Text strong className="text-sm text-green-600">
+                                                                {formatPrice(cat.total_value)}
+                                                            </Text>
+                                                        </div>
+                                                    </div>
+                                                </Card>
+                                            </Col>
+                                        );
+                                    })
+                                )}
+                            </Row>
+                            <Divider className="my-4" />
+                        </div>
+
+                        {/* Filters */}
+                        <Row gutter={[16, 16]}>
+                            <Col xs={24} sm={8} md={6}>
+                                <Input
+                                    placeholder={t("search_product_or_ref")}
+                                    prefix={<SearchOutlined />}
+                                    allowClear
+                                    size="large"
+                                    onChange={(e) => setState(p => ({ ...p, txtSearch: e.target.value, page: 1 }))}
+                                />
+                            </Col>
+                            <Col xs={24} sm={8} md={6}>
+                                <Select
+                                    placeholder={t("filter_by_type")}
+                                    allowClear
+                                    size="large"
+                                    style={{ width: '100%' }}
+                                    onChange={(value) => setState(p => ({ ...p, status: value, page: 1 }))}
+                                >
+                                    <Option value="PURCHASE_IN">{t("purchase_in")}</Option>
+                                    <Option value="SALE_OUT">{t("sale_out")}</Option>
+                                    <Option value="TRANSFER_OUT">{t("transfer_out")}</Option>
+                                    <Option value="TRANSFER_IN">{t("transfer_in")}</Option>
+                                    <Option value="ADJUSTMENT">{t("adjustment")}</Option>
+                                    <Option value="RETURN">{t("return")}</Option>
+                                </Select>
+                            </Col>
+                            <Col xs={24} sm={8} md={8}>
+                                <RangePicker
+                                    size="large"
+                                    style={{ width: '100%' }}
+                                    onChange={(dates) => setState(p => ({ ...p, dateRange: dates, page: 1 }))}
+                                    format="DD/MM/YYYY"
+                                    placeholder={[t("from_date"), t("to_date")]}
+                                />
+                            </Col>
+                        </Row>
                     </div>
 
-                    {/* Filters */}
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} sm={8} md={6}>
-                            <Input
-                                placeholder={t("search_product_or_ref")}
-                                prefix={<SearchOutlined />}
-                                allowClear
-                                size="large"
-                                onChange={(e) => setState(p => ({ ...p, txtSearch: e.target.value, page: 1 }))}
-                            />
-                        </Col>
-                        <Col xs={24} sm={8} md={6}>
-                            <Select
-                                placeholder={t("filter_by_type")}
-                                allowClear
-                                size="large"
-                                style={{ width: '100%' }}
-                                onChange={(value) => setState(p => ({ ...p, status: value, page: 1 }))}
-                            >
-                                <Option value="PURCHASE_IN">{t("purchase_in")}</Option>
-                                <Option value="SALE_OUT">{t("sale_out")}</Option>
-                                <Option value="TRANSFER_OUT">{t("transfer_out")}</Option>
-                                <Option value="TRANSFER_IN">{t("transfer_in")}</Option>
-                                <Option value="ADJUSTMENT">{t("adjustment")}</Option>
-                                <Option value="RETURN">{t("return")}</Option>
-                            </Select>
-                        </Col>
-                        <Col xs={24} sm={8} md={8}>
-                            <RangePicker
-                                size="large"
-                                style={{ width: '100%' }}
-                                onChange={(dates) => setState(p => ({ ...p, dateRange: dates, page: 1 }))}
-                                format="DD/MM/YYYY"
-                                placeholder={[t("from_date"), t("to_date")]}
-                            />
-                        </Col>
-                    </Row>
-                </div>
-
-                {/* Table */}
-                <div className="inventory-transaction-table-card rounded-lg shadow-sm overflow-hidden">
-                    <Table
-                        dataSource={state.list}
-                        columns={columns}
-                        rowKey="id"
-                        pagination={{
-                            current: state.page,
-                            pageSize: state.pageSize,
-                            total: state.total,
-                            onChange: (page, pageSize) => setState(p => ({ ...p, page, pageSize })),
-                            showSizeChanger: true,
-                            showTotal: (total) => `${t("Total")} ${total} ${t("items")}`,
-                            pageSizeOptions: ['10', '20', '50', '100']
-                        }}
-                        scroll={{ x: true }}
-                        summary={(pageData) => {
-                            const pageTotal = pageData.reduce((sum, record) => {
-                                return sum + Number(record.converted_amount || 0);
-                            }, 0);
-
-                            const pageTotalIn = pageData.reduce((sum, record) => {
-                                if (record.transaction_type === 'PURCHASE_IN') {
+                    {/* Table */}
+                    <div className="inventory-transaction-table-card rounded-lg shadow-sm overflow-hidden">
+                        <Table
+                            dataSource={state.list}
+                            columns={columns}
+                            rowKey="id"
+                            pagination={{
+                                current: state.page,
+                                pageSize: state.pageSize,
+                                total: state.total,
+                                onChange: (page, pageSize) => setState(p => ({ ...p, page, pageSize })),
+                                showSizeChanger: true,
+                                showTotal: (total) => `${t("Total")} ${total} ${t("items")}`,
+                                pageSizeOptions: ['10', '20', '50', '100']
+                            }}
+                            scroll={{ x: true }}
+                            summary={(pageData) => {
+                                const pageTotal = pageData.reduce((sum, record) => {
                                     return sum + Number(record.converted_amount || 0);
-                                }
-                                return sum;
-                            }, 0);
+                                }, 0);
 
-                            const pageTotalOut = pageData.reduce((sum, record) => {
-                                if (record.transaction_type === 'SALE_OUT') {
-                                    return sum + Math.abs(Number(record.converted_amount || 0));
-                                }
-                                return sum;
-                            }, 0);
+                                const pageTotalIn = pageData.reduce((sum, record) => {
+                                    if (record.transaction_type === 'PURCHASE_IN') {
+                                        return sum + Number(record.converted_amount || 0);
+                                    }
+                                    return sum;
+                                }, 0);
 
-                            const pageQtyIn = pageData.reduce((sum, record) => {
-                                const isPositive = record.transaction_type === 'PURCHASE_IN' ||
-                                    record.transaction_type === 'RETURN' ||
-                                    (record.transaction_type === 'ADJUSTMENT' && record.quantity > 0);
-                                return isPositive ? sum + Number(record.quantity || 0) : sum;
-                            }, 0);
+                                const pageTotalOut = pageData.reduce((sum, record) => {
+                                    if (record.transaction_type === 'SALE_OUT') {
+                                        return sum + Math.abs(Number(record.converted_amount || 0));
+                                    }
+                                    return sum;
+                                }, 0);
 
-                            const pageQtyOut = pageData.reduce((sum, record) => {
-                                const isNegative = record.transaction_type === 'SALE_OUT' ||
-                                    (record.transaction_type === 'ADJUSTMENT' && record.quantity < 0);
-                                return isNegative ? sum + Math.abs(Number(record.quantity || 0)) : sum;
-                            }, 0);
+                                const pageQtyIn = pageData.reduce((sum, record) => {
+                                    const isPositive = record.transaction_type === 'PURCHASE_IN' ||
+                                        record.transaction_type === 'RETURN' ||
+                                        (record.transaction_type === 'ADJUSTMENT' && record.quantity > 0);
+                                    return isPositive ? sum + Number(record.quantity || 0) : sum;
+                                }, 0);
 
-                            return (
-                                <Table.Summary fixed>
-                                    <Table.Summary.Row className="inventory-summary-row font-bold">
-                                        <Table.Summary.Cell index={0} colSpan={6}>
-                                            <Text strong className="text-base">
-                                                {t("page_total")}
-                                            </Text>
-                                        </Table.Summary.Cell>
-                                        <Table.Summary.Cell index={6} align="right">
-                                            <Text strong className="text-base text-purple-600">
-                                                {formatPrice(Math.abs(pageTotal))}
-                                            </Text>
-                                        </Table.Summary.Cell>
-                                        <Table.Summary.Cell index={7} colSpan={2}>
-                                            <Space split="|" size="small">
-                                                <Tooltip title="Total In (Value | Qty)">
-                                                    <Text className="text-green-600 text-sm font-semibold">
-                                                        In: {formatPrice(pageTotalIn, false)} | {Number(pageQtyIn).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
-                                                    </Text>
-                                                </Tooltip>
-                                                <Tooltip title="Total Out (Value | Qty)">
-                                                    <Text className="text-blue-600 text-sm font-semibold">
-                                                        Out: {formatPrice(pageTotalOut, false)} | {Number(pageQtyOut).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
-                                                    </Text>
-                                                </Tooltip>
-                                            </Space>
-                                        </Table.Summary.Cell>
-                                    </Table.Summary.Row>
-                                </Table.Summary>
-                            );
-                        }}
-                    />
-                </div>
-            </div>
+                                const pageQtyOut = pageData.reduce((sum, record) => {
+                                    const isNegative = record.transaction_type === 'SALE_OUT' ||
+                                        (record.transaction_type === 'ADJUSTMENT' && record.quantity < 0);
+                                    return isNegative ? sum + Math.abs(Number(record.quantity || 0)) : sum;
+                                }, 0);
 
-            {/* Selling Price Edit Modal */}
-            <Modal
-                title="កែប្រែតម្លៃលក់ចេញ"
-                open={isSellingPriceModalVisible}
-                onOk={handleUpdateSellingPrice}
-                onCancel={() => {
-                    setIsSellingPriceModalVisible(false);
-                    setEditingSellingPriceRecord(null);
-                }}
-            >
-                <Form form={sellingPriceForm} layout="vertical">
-                    <Form.Item
-                        name="selling_price"
-                        label="តម្លៃលក់ចេញក្នុង 1 Liter ($)"
-                        rules={[{ required: true, message: 'សូមបនិចតម្លៃលក់ចេញ' }]}
-                    >
-                        <Input
-                            type="number"
-                            step="0.01"
-                            min={0}
-                            placeholder="បញ្ចូលតម្លៃលក់ចេញក្នុង 1 Liter"
+                                return (
+                                    <Table.Summary fixed>
+                                        <Table.Summary.Row className="inventory-summary-row font-bold">
+                                            <Table.Summary.Cell index={0} colSpan={6}>
+                                                <Text strong className="text-base">
+                                                    {t("page_total")}
+                                                </Text>
+                                            </Table.Summary.Cell>
+                                            <Table.Summary.Cell index={6} align="right">
+                                                <Text strong className="text-base text-purple-600">
+                                                    {formatPrice(Math.abs(pageTotal))}
+                                                </Text>
+                                            </Table.Summary.Cell>
+                                            <Table.Summary.Cell index={7} colSpan={2}>
+                                                <Space split="|" size="small">
+                                                    <Tooltip title="Total In (Value | Qty)">
+                                                        <Text className="text-green-600 text-sm font-semibold">
+                                                            In: {formatPrice(pageTotalIn, false)} | {Number(pageQtyIn).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
+                                                        </Text>
+                                                    </Tooltip>
+                                                    <Tooltip title="Total Out (Value | Qty)">
+                                                        <Text className="text-blue-600 text-sm font-semibold">
+                                                            Out: {formatPrice(pageTotalOut, false)} | {Number(pageQtyOut).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L
+                                                        </Text>
+                                                    </Tooltip>
+                                                </Space>
+                                            </Table.Summary.Cell>
+                                        </Table.Summary.Row>
+                                    </Table.Summary>
+                                );
+                            }}
                         />
-                    </Form.Item>
-                    <div className="text-xs text-gray-500 mt-2">
-                        កំណែត: នេះតម្លៃលក់ចេញថ្មី × បរិមាណ
                     </div>
-                </Form>
-            </Modal>
-        </MainPage>
+                </div>
+
+                {/* Selling Price Edit Modal */}
+                <Modal
+                    title="កែប្រែតម្លៃលក់ចេញ"
+                    open={isSellingPriceModalVisible}
+                    onOk={handleUpdateSellingPrice}
+                    onCancel={() => {
+                        setIsSellingPriceModalVisible(false);
+                        setEditingSellingPriceRecord(null);
+                    }}
+                >
+                    <Form form={sellingPriceForm} layout="vertical">
+                        <Form.Item
+                            name="selling_price"
+                            label="តម្លៃលក់ចេញក្នុង 1 Liter ($)"
+                            rules={[{ required: true, message: 'សូមបនិចតម្លៃលក់ចេញ' }]}
+                        >
+                            <Input
+                                type="number"
+                                step="0.01"
+                                min={0}
+                                placeholder="បញ្ចូលតម្លៃលក់ចេញក្នុង 1 Liter"
+                            />
+                        </Form.Item>
+                        <div className="text-xs text-gray-500 mt-2">
+                            កំណែត: នេះតម្លៃលក់ចេញថ្មី × បរិមាណ
+                        </div>
+                    </Form>
+                </Modal>
+            </MainPage>
+            <style>{`
+                /* Dark Mode Overrides for Inventory Transaction Page */
+                .dark .ant-table {
+                    background: transparent !important;
+                    color: #e2e8f0 !important;
+                }
+                .dark .ant-table-thead > tr > th {
+                    background: #1e293b !important;
+                    color: #f8fafc !important;
+                    border-bottom: 1px solid #334155 !important;
+                }
+                .dark .ant-table-tbody > tr > td {
+                    background: #0f172a !important;
+                    color: #cbd5e1 !important;
+                    border-bottom: 1px solid #1e293b !important;
+                }
+                .dark .ant-table-tbody > tr:hover > td {
+                    background: #1e293b !important;
+                }
+                
+                .dark .ant-card {
+                    background: #1e293b !important;
+                    border-color: #334155 !important;
+                    color: #f8fafc !important;
+                }
+
+                .dark .ant-modal-content,
+                .dark .ant-modal-header {
+                    background-color: #1e293b !important;
+                    color: #f8fafc !important;
+                    border-bottom-color: #334155 !important;
+                }
+                .dark .ant-modal-title {
+                    color: #f8fafc !important;
+                }
+                
+                /* Form Labels */
+                .dark .ant-form-item-label > label {
+                    color: #e2e8f0 !important;
+                }
+                
+                /* Inputs, Selects, DatePickers */
+                .dark .ant-input,
+                .dark .ant-input-number,
+                .dark .ant-input-number-input,
+                .dark .ant-select:not(.ant-select-customize-input) .ant-select-selector,
+                .dark .ant-picker,
+                .dark .ant-picker-range {
+                    background-color: #0f172a !important;
+                    border-color: #334155 !important;
+                    color: #ffffff !important;
+                }
+                
+                .dark .ant-select-arrow,
+                .dark .ant-picker-suffix {
+                    color: #94a3b8 !important;
+                }
+                
+                /* Table Summary/Footer in Dark Mode */
+                .dark .ant-table-summary {
+                    background-color: #1e293b !important;
+                }
+                
+                /* Pagination */
+                .dark .ant-pagination-item a {
+                    color: #e2e8f0 !important;
+                }
+                .dark .ant-pagination-item-active {
+                    background: #334155 !important;
+                    border-color: #475569 !important;
+                }
+                .dark .ant-pagination-prev .ant-pagination-item-link,
+                .dark .ant-pagination-next .ant-pagination-item-link {
+                    background: #1e293b !important;
+                    color: #e2e8f0 !important;
+                    border-color: #334155 !important;
+                }
+
+                /* Adjust placeholder colors */
+                .dark .ant-input::placeholder,
+                .dark .ant-select-selection-placeholder,
+                .dark .ant-picker-input > input::placeholder {
+                    color: #64748b !important;
+                }
+
+                /* Statistics Title Visibility */
+                .dark .ant-statistic-title {
+                    color: #94a3b8 !important;
+                }
+            `}</style>
+        </>
     );
 }
+
 
 export default InventoryTransactionPage;

@@ -8,8 +8,8 @@ const {
 
 exports.getList = async (req, res) => {
   try {
-    // console.log("body", req.body);
-    // console.log("query", req.query);
+
+
     // res.json({
     //   body: req.body,
     //   query: req.query,

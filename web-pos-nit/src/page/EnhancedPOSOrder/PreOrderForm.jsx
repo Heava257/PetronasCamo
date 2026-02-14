@@ -7,10 +7,12 @@ import dayjs from "dayjs";
 import "./PreOrderManagement.css";
 import { debounce } from "lodash";
 import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from "@ant-design/icons";
+import { useTranslation } from "../../locales/TranslationContext";
 
 const { Text } = Typography;
 
 const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState([]);
@@ -189,7 +191,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
         form.setFields([
           {
             name: 'pre_order_no',
-            errors: ['លេខវិក្កយបត្រនេះមានរួចហើយ (Duplicate)'],
+            errors: [t("pre_order.duplicate_po_error") || 'លេខវិក្កយបត្រនេះមានរួចហើយ (Duplicate)'],
           },
         ]);
       } else {
@@ -219,7 +221,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
       Swal.fire({
         icon: 'error',
         title: 'Error',
-        text: "សូមជ្រើសរើសមុខទំនិញយ៉ាងហោចណាស់មួយ",
+        text: t("pre_order.please_select_at_least_one") || "សូមជ្រើសរើសមុខទំនិញយ៉ាងហោចណាស់មួយ",
       });
       setLoading(false);
       return;
@@ -255,7 +257,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
         Swal.fire({
           icon: 'success',
           title: 'Success',
-          text: res.message || (isEdit ? "បានកែប្រែជោគជ័យ" : "Pre-Order created successfully"),
+          text: res.message || (isEdit ? (t("pre_order.updated_success") || "បានកែប្រែជោគជ័យ") : (t("pre_order.created_success") || "Pre-Order created successfully")),
           showConfirmButton: false,
           timer: 1500
         });
@@ -283,7 +285,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
     <Modal
       title={
         <span style={{ fontSize: 20, fontWeight: 'bold', color: '#FFD700' }} className="khmer-text-product">
-          {editRecord ? 'កែសម្រួល Pre-Order' : 'ការកម្ម៉ង់ថ្មី'}
+          {editRecord ? (t("pre_order.edit_order") || 'កែសម្រួល Pre-Order') : (t("pre_order.new_order") || 'ការកម្ម៉ង់ថ្មី')}
         </span>
       }
       open={visible}
@@ -304,7 +306,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           <Col span={8}>
             <Form.Item
               name="pre_order_no"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>លេខប័ណ្ណ</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>{t("pre_order.po_no") || "លេខប័ណ្ណ"}</span>}
               rules={[{ required: true, message: 'Please enter PO No' }]}
               hasFeedback
               validateStatus={
@@ -326,11 +328,11 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           <Col span={8}>
             <Form.Item
               name="customer_id"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>អតិថិជន</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>{t("pre_order.customer") || "អតិថិជន"}</span>}
               rules={[{ required: true, message: 'Please select customer' }]}
             >
               <Select
-                placeholder="ជ្រើសរើសអតិថិជន"
+                placeholder={t("pre_order.select_customer") || "ជ្រើសរើសអតិថិជន"}
                 showSearch
                 size="large"
                 options={customers}
@@ -342,7 +344,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           <Col span={8}>
             <Form.Item
               name="order_date"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>ថ្ងៃបញ្ជាទិញ</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>{t("pre_order.order_date") || "ថ្ងៃបញ្ជាទិញ"}</span>}
             >
               <DatePicker style={{ width: '100%' }} size="large" format="DD/MM/YYYY" />
             </Form.Item>
@@ -354,18 +356,18 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           <Col span={6}>
             <Form.Item
               name="delivery_date"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>ថ្ងៃទីទទួលទំនិញ</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>{t("pre_order.delivery_date") || "ថ្ងៃទីទទួលទំនិញ"}</span>}
             >
-              <DatePicker style={{ width: '100%' }} size="large" format="DD/MM/YYYY" placeholder="ជ្រើសរើសថ្ងៃទទួលទំនិញ" />
+              <DatePicker style={{ width: '100%' }} size="large" format="DD/MM/YYYY" placeholder={t("pre_order.delivery_date") || "ជ្រើសរើសថ្ងៃទទួលទំនិញ"} />
             </Form.Item>
           </Col>
           <Col span={6}>
             <Form.Item
               name="supplier_name"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>ក្រុមហ៊ុនផ្គត់ផ្គង់</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>{t("pre_order.supplier") || "ក្រុមហ៊ុនផ្គត់ផ្គង់"}</span>}
             >
               <Select
-                placeholder="ជ្រើសរើសក្រុមហ៊ុនផ្គត់ផ្គង់"
+                placeholder={t("pre_order.select_supplier") || "ជ្រើសរើសក្រុមហ៊ុនផ្គត់ផ្គង់"}
                 size="large"
                 showSearch
                 options={suppliers}
@@ -376,17 +378,17 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           <Col span={6}>
             <Form.Item
               name="location_name"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>ទីតាំងដឹក</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>{t("pre_order.delivery_location") || "ទីតាំងដឹក"}</span>}
             >
-              <Input placeholder="បញ្ចូលទីតាំង..." size="large" />
+              <Input placeholder={t("pre_order.enter_location") || "បញ្ចូលទីតាំង..."} size="large" />
             </Form.Item>
           </Col>
           <Col span={6}>
             <Form.Item
               name="delivery_address"
-              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>អាស័យដ្ឋាន</span>}
+              label={<span className="khmer-text-product" style={{ fontWeight: 'bold' }}>{t("pre_order.delivery_address") || "អាស័យដ្ឋាន"}</span>}
             >
-              <Input size="large" placeholder="អាសយដ្ឋានដឹកជញ្ជូន..." />
+              <Input size="large" placeholder={t("pre_order.enter_address") || "អាសយដ្ឋានដឹកជញ្ជូន..."} />
             </Form.Item>
           </Col>
         </Row>
@@ -396,7 +398,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
         {/* Product List Section */}
         <div style={{ marginBottom: 20 }}>
           <h3 className="khmer-text-product" style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 10 }}>
-            បញ្ជីមុខទំនិញ
+            {t("pre_order.product_list") || "បញ្ជីមុខទំនិញ"}
           </h3>
 
           <Form.List name="products">
@@ -405,19 +407,19 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
                 {/* Table Header */}
                 <Row gutter={10} style={{ marginBottom: 10, fontWeight: 'bold', borderBottom: '2px solid #e8e8e8', paddingBottom: 8 }}>
                   <Col span={8} className="khmer-text-product">
-                    <span>មុខទំនិញ</span>
+                    <span>{t("pre_order.product") || "មុខទំនិញ"}</span>
                   </Col>
                   <Col span={4} className="khmer-text-product" style={{ textAlign: 'center' }}>
-                    <span>បរិមាណ (L)</span>
+                    <span>{t("pre_order.qty_l") || "បរិមាណ (L)"}</span>
                   </Col>
                   <Col span={4} className="khmer-text-product" style={{ textAlign: 'center' }}>
-                    <span>តម្លៃ/តោន</span>
+                    <span>{t("pre_order.price_per_ton") || "តម្លៃ/តោន"}</span>
                   </Col>
                   <Col span={6} className="khmer-text-product" style={{ textAlign: 'center' }}>
-                    គោលដៅ
+                    {t("pre_order.destination") || "គោលដៅ"}
                   </Col>
                   <Col span={2} style={{ textAlign: 'center' }} className="khmer-text-product">
-                    លុប
+                    {t("remove") || "លុប"}
                   </Col>
                 </Row>
 
@@ -432,7 +434,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
                         style={{ marginBottom: 0 }}
                       >
                         <Select
-                          placeholder="ជ្រើសរើសផលិតផល"
+                          placeholder={t("pre_order.select_product") || "ជ្រើសរើសផលិតផល"}
                           size="large"
                           showSearch
                           options={products.map(p => ({ label: p.name, value: p.id }))}
@@ -480,7 +482,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
                         name={[name, 'destination']}
                         style={{ marginBottom: 0 }}
                       >
-                        <Input placeholder="គោលដៅ..." size="large" />
+                        <Input placeholder={t("pre_order.enter_destination") || "គោលដៅ..."} size="large" />
                       </Form.Item>
                     </Col>
                     <Col span={2} style={{ textAlign: 'center' }}>
@@ -503,7 +505,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
                   style={{ marginTop: 15 }}
                   className="khmer-text-product"
                 >
-                  បន្ថែមមុខទំនិញ
+                  {t("pre_order.add_product") || "បន្ថែមមុខទំនិញ"}
                 </Button>
               </>
             )}
@@ -521,7 +523,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
           alignItems: 'center'
         }}>
           <div style={{ fontSize: 18 }} className="khmer-text-product">
-            តម្លៃសរុប: <span className="pre-order-total-amount" style={{ fontWeight: 'bold' }}>{formatPrice(totalAmount)}</span>
+            {t("pre_order.total_amount") || "តម្លៃសរុប"}: <span className="pre-order-total-amount" style={{ fontWeight: 'bold' }}>{formatPrice(totalAmount)}</span>
           </div>
           <Space size="middle">
             <Button
@@ -530,7 +532,7 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
               style={{ borderRadius: 20, padding: '0 30px' }}
               className="khmer-text-product"
             >
-              បោះបង់
+              {t("cancel") || "បោះបង់"}
             </Button>
             <Button
               type="primary"
@@ -540,15 +542,14 @@ const PreOrderForm = ({ visible, editRecord, onCancel, onSuccess }) => {
               style={{ borderRadius: 20, padding: '0 30px' }}
               className="khmer-text-product"
             >
-              {editRecord ? 'រក្សាទុកការកែប្រែ' : 'រក្សាទុក'}
+              {editRecord ? (t("pre_order.save_changes") || 'រក្សាទុកការកែប្រែ') : (t("pre_order.save") || 'រក្សាទុក')}
             </Button>
           </Space>
         </div>
 
         <div className="pre-order-note" style={{ marginTop: 15, padding: '10px', borderRadius: 6 }}>
           <Text type="secondary" className="khmer-text-product" style={{ fontSize: 12 }}>
-            <strong>ចំណាំ:</strong> នេះជា Stage 1 (ការកម្មង់ដំបូង)។
-            ការដឹកជញ្ជូនជាក់ស្តែង (Stage 2) នឹងត្រូវបានកត់ត្រានៅពេលចេញវិក្កយបត្រ។
+            {(t("pre_order.stage1_note") || "ចំណាំ: នេះជា Stage 1 (ការកម្មង់ដំបូង)។ ការដឹកជញ្ជូនជាក់ស្តែង (Stage 2) នឹងត្រូវបានកត់ត្រានៅពេលចេញវិក្កយបត្រ។")}
           </Text>
         </div>
 

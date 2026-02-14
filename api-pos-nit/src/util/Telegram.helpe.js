@@ -77,7 +77,7 @@ exports.sendSmartNotification = async ({
       }
 
       if (eventMatches && branchMatches) {
-        console.log(`✅ [Telegram Dispatch] Routing ${event_type} to ${conf.config_name}`);
+
       }
 
       return branchMatches;

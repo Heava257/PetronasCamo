@@ -11,12 +11,12 @@ const {
 } = require("../controller/Telegram.controller");
 
 module.exports = (app) => {
-  app.get("/api/telegram/configs", validate_token(), getTelegramConfigs);
-  app.post("/api/telegram/configs", validate_token(), createTelegramConfig);
-  app.put("/api/telegram/configs/:id", validate_token(), updateTelegramConfig);
-  app.delete("/api/telegram/configs/:id", validate_token(), deleteTelegramConfig);
-  app.post("/api/telegram/configs/:id/test", validate_token(), testTelegramConfig);
-  app.get("/api/telegram/branches", validate_token(), getBranches);
-  app.get("/api/telegram/event-types", validate_token(), getEventTypesList);
+  app.get("/api/telegram/configs", validate_token("setting.update"), getTelegramConfigs);
+  app.post("/api/telegram/configs", validate_token("setting.update"), createTelegramConfig);
+  app.put("/api/telegram/configs/:id", validate_token("setting.update"), updateTelegramConfig);
+  app.delete("/api/telegram/configs/:id", validate_token("setting.update"), deleteTelegramConfig);
+  app.post("/api/telegram/configs/:id/test", validate_token("setting.update"), testTelegramConfig);
+  app.get("/api/telegram/branches", validate_token("setting.update"), getBranches);
+  app.get("/api/telegram/event-types", validate_token("setting.update"), getEventTypesList);
 
 };

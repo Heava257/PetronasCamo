@@ -12,15 +12,15 @@ const {
   getCustomerOrderStats,
 } = require("../controller/customer.controller");
 module.exports = (app) => {
-  app.get("/api/customer/my-group", validate_token(), getListByCurrentUserGroup);
+  app.get("/api/customer/my-group", validate_token("customer.view"), getListByCurrentUserGroup);
   app.get(
     "/api/customer/:id/detail",
-    validate_token(),
+    validate_token("customer.view"),
     getDetailById
   );
   app.get(
     "/api/customer/statistics",
-    validate_token(),
+    validate_token("customer.view"),
     getCustomerStatistics
   );
   app.post("/api/customer", validate_token("customer.create"), create);
@@ -29,7 +29,7 @@ module.exports = (app) => {
   app.delete("/api/customer/:id", validate_token("customer.remove"), remove);
   app.get(
     "/api/order/customer-stats",
-    validate_token(),
+    validate_token("customer.view"),
     getCustomerOrderStats
   );
 };

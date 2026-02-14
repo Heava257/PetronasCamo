@@ -728,3 +728,101 @@ html.template-acledagold .cat-card-gasoline {
 html.template-acledagold .cat-card-diesel {
     border-left: 4px solid #10b981 !important;
 }
+
+/* ==================================================
+   FINAL DARK MODE SUPPORT (Custom Overrides)
+   ================================================== */
+.pre-orders-full-view.dark-mode {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+.pre-orders-full-view.dark-mode .table-container {
+    background: #0f172a;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+    color: #f1f5f9;
+}
+
+.pre-orders-full-view.dark-mode .refresh-btn {
+    background: #334155;
+    border-color: #475569;
+    color: #e2e8f0;
+}
+
+.pre-orders-full-view.dark-mode .stock-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+.pre-orders-full-view.dark-mode .stock-card:hover {
+    background: #334155;
+}
+
+.pre-orders-full-view.dark-mode .stock-card-title {
+    color: #94a3b8;
+}
+
+.pre-orders-full-view.dark-mode .stock-card-value {
+    color: #f8fafc;
+}
+
+/* Ant Table Dark Overrides */
+.pre-orders-full-view.dark-mode .ant-table {
+    background: transparent;
+    color: #e2e8f0;
+}
+
+.pre-orders-full-view.dark-mode .ant-table-thead>tr>th {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    border-bottom: 1px solid #334155 !important;
+}
+
+.pre-orders-full-view.dark-mode .ant-table-tbody>tr>td {
+    border-bottom: 1px solid #334155;
+    color: #e2e8f0;
+}
+
+.pre-orders-full-view.dark-mode .ant-table-wrapper .ant-table-tbody>tr.ant-table-row:hover>td {
+    background: #334155 !important;
+}
+
+.pre-orders-full-view.dark-mode .ant-pagination-item-active {
+    background-color: #4f46e5;
+    border-color: #4f46e5;
+}
+
+.pre-orders-full-view.dark-mode .ant-pagination-item a {
+    color: #e2e8f0;
+}
+
+.pre-orders-full-view.dark-mode .ant-table-tbody .status-tag-pending {
+    background: #451a03 !important;
+    color: #fbbf24 !important;
+    border-color: #78350f !important;
+}
+
+/* Modal Global Dark Mode Wrapper overrides */
+.dark-mode-modal .ant-modal-content {
+    background: #1e293b;
+    color: #f1f5f9;
+}
+
+.dark-mode-modal .ant-modal-header {
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+}
+
+.dark-mode-modal .ant-modal-title {
+    color: #f1f5f9;
+}
+
+.dark-mode-modal .ant-modal-close {
+    color: #94a3b8;
+}
+
+.dark-mode-modal .ant-modal-close:hover {
+    color: #e2e8f0;
+    background: #334155;
+}

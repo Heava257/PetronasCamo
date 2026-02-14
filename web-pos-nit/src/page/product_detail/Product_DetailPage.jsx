@@ -1197,7 +1197,7 @@ function ProductDetailPage() {
         </Space>
       </Modal>
 
-      <style jsx>{`
+      <style>{`
         .checked-row {
           background-color: #fef3c7 !important;
         }

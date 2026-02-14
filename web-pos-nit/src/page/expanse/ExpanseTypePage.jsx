@@ -254,7 +254,7 @@ function ExpanseTypePage() {
 
   return (
     <MainPage loading={loading}>
-      <div className="px-2 sm:px-4 lg:px-6">
+      <div className="expanse-type-page-container px-2 sm:px-4 lg:px-6">
         {/* Header Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 mb-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -493,7 +493,7 @@ function ExpanseTypePage() {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .pos-row {
           transition: background-color 0.2s;
         }

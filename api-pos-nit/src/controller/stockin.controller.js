@@ -67,7 +67,7 @@ exports.create = async (req, res) => {
     //   });
     //   return false;
     // }
-    // console.log(req.files);
+
     // res.json({
     //   body: req.body,
     //   files: req.files,
@@ -160,7 +160,7 @@ exports.update = async (req, res) => {
 
     //multiple image  ( case remove)
     if (req.body.image_optional && req.body.image_optional.length > 0) {
-      // console.log(req.body.image_optional);
+
       if (typeof req.body.image_optional == "string") {
         req.body.image_optional = [req.body.image_optional];
       }
