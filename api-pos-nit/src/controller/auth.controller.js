@@ -1364,7 +1364,15 @@ exports.validate_token = (permission_name) => {
 
           // ✅ Check permissions
           if (permission_name) {
-            let hasPermission = permissions.some(p => p.name === permission_name);
+            let hasPermission = false;
+
+            // Handle multiple OR permissions (e.g., "role.getlist||user.create")
+            if (permission_name.includes('||')) {
+              const requiredPerms = permission_name.split('||').map(p => p.trim());
+              hasPermission = requiredPerms.some(reqPerm => permissions.some(p => p.name === reqPerm));
+            } else {
+              hasPermission = permissions.some(p => p.name === permission_name);
+            }
 
             // EMERGENCY FIX: Explicitly allow invoices.getlist for Roles 1 & 29 if missing
             if (!hasPermission && (permission_name === 'invoices.getlist' || permission_name === 'fakeinvoice.getlist')) {
@@ -1375,11 +1383,19 @@ exports.validate_token = (permission_name) => {
               }
             }
 
+            // DEBUG LOGGING
+            if (!hasPermission) {
+              const fs = require('fs');
+              const logData = `[${new Date().toISOString()}] User: ${userData.username} (ID: ${userId}, Role: ${userData.role_id}) Request: ${permission_name}\nPermissions Found: ${permissions.map(p => p.name).join(', ')}\n\n`;
+              try { fs.appendFileSync('c:/Users/pongc/Desktop/PO_System/family_finances/api-pos-nit/debug_perm_check.log', logData); } catch (e) { }
+            }
+
             if (!hasPermission) {
               return res.status(403).json({
                 message: "Forbidden - Insufficient permissions",
                 message_kh: "អ្នកមិនមានសិទ្ធិធ្វើសកម្មភាពនេះទេ",
-                required_permission: permission_name
+                required_permission: permission_name,
+                debug_role: userData.role_id
               });
             }
           }
