@@ -346,7 +346,7 @@ exports.updateTelegramConfig = async (req, res) => {
       description: description || null,
       event_types: eventTypesJson, // ✅ Update event types
       is_active: is_active !== undefined ? is_active : 1,
-      updated_by: currentUser[0]?.name
+      updated_by: req.auth?.name || 'System'
     });
 
     // ✅ Log activity
