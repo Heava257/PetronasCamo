@@ -264,24 +264,30 @@ function LoginPage() {
   }, []);
 
   // Handle Face Login Start/Stop and Stream
-  // ✅ AGGRESSIVE: Remove global template class using MutationObserver
+  // ✅ AGGRESSIVE: Remove global template class AND dark mode for login page
   useLayoutEffect(() => {
-    const removeTemplateClass = () => {
-      const list = document.documentElement.classList;
+    const list = document.documentElement.classList;
+    const initialClasses = Array.from(list);
+    const wasDark = list.contains('dark');
+
+    const removeThemeClasses = () => {
       const templateClasses = Array.from(list).filter(c => c.startsWith('template-'));
       if (templateClasses.length > 0) {
         list.remove(...templateClasses);
       }
+      if (list.contains('dark')) {
+        list.remove('dark');
+      }
     };
 
     // Initial removal
-    removeTemplateClass();
+    removeThemeClasses();
 
-    // Observe changes
+    // Observe changes to prevent other providers from re-adding them
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         if (mutation.attributeName === 'class') {
-          removeTemplateClass();
+          removeThemeClasses();
         }
       });
     });
@@ -291,6 +297,9 @@ function LoginPage() {
     return () => {
       observer.disconnect();
       // Restore on unmount
+      if (wasDark) {
+        document.documentElement.classList.add('dark');
+      }
       if (settings?.templateId) {
         document.documentElement.classList.add(`template-${settings.templateId}`);
       }
@@ -451,21 +460,26 @@ function LoginPage() {
         algorithm: theme.defaultAlgorithm,
         token: {
           colorPrimary: '#776BCC',
-          fontFamily: "'Inter', sans-serif"
+          fontFamily: "'Inter', sans-serif",
+          colorBgContainer: '#ffffff',
+          colorText: '#333333',
+          colorBorder: '#d9d9d9'
         },
         components: {
           Input: {
             colorBgContainer: '#ffffff',
             colorText: '#333333',
             colorBorder: '#d9d9d9',
-            colorTextPlaceholder: '#bfbfbf'
+            colorTextPlaceholder: '#bfbfbf',
+            controlHeight: 58
           },
           Button: {
             colorPrimary: '#5D54A4',
-            colorPrimaryHover: '#4e4589'
+            colorPrimaryHover: '#4e4589',
+            controlHeight: 60
           },
           Form: {
-            labelColor: '#5D54A4'
+            labelColor: '#3730A3'
           }
         }
       }}
