@@ -20,6 +20,6 @@ module.exports = (app) => {
   app.get("/api/telegram/branches", validate_token("setting.update"), getBranches);
   app.get("/api/telegram/event-types", validate_token("setting.update"), getEventTypesList);
 
-  // ✅ Public Webhook for Telegram
-  app.post("/api/telegram/webhook/:bot_token", handleWebhook);
+  // ✅ Public Webhook for Telegram (Using wildcard to support colons in tokens)
+  app.post("/api/telegram/webhook/:bot_token*", handleWebhook);
 };

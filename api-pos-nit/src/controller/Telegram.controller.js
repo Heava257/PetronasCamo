@@ -785,7 +785,12 @@ exports.handleWebhook = async (req, res) => {
   const logFile = path.join(__dirname, '../../debug_telegram.log');
   try {
     const { message, callback_query } = req.body;
-    const bot_token = req.params.bot_token;
+    let bot_token = req.params.bot_token;
+
+    // Capture the rest of the token if wildcard was used (Express 4 behavior)
+    if (req.params[0]) {
+      bot_token += req.params[0];
+    }
 
     // Log incoming update
     fs.appendFileSync(logFile, `[${new Date().toISOString()}] Incoming update for bot ${bot_token.substring(0, 5)}...: ${JSON.stringify(req.body)}\n`);
