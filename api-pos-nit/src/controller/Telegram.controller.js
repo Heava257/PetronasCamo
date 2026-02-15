@@ -797,6 +797,12 @@ exports.handleWebhook = async (req, res) => {
 
       if (text === '/start' || text === 'menu' || text === 'មឺនុយ') {
         await sendMainMenu(bot_token, chatId);
+      } else {
+        // Check for date pattern (e.g., 2024-02-15 or 15-02-2024 or range)
+        const dateRange = parseTelegramDate(text);
+        if (dateRange) {
+          await handleSummaryRange(bot_token, chatId, dateRange.start, dateRange.end, dateRange.label);
+        }
       }
     }
 
@@ -822,6 +828,8 @@ exports.handleWebhook = async (req, res) => {
         await handleSummaryToday(bot_token, chatId);
       } else if (action === 'expense_report_today') {
         await handleExpenseReport(bot_token, chatId);
+      } else if (action === 'custom_date_help') {
+        await sendCustomDateHelp(bot_token, chatId);
       }
 
       // Answer callback query to stop loading state
@@ -880,19 +888,111 @@ async function editToMainMenu(token, chatId, messageId) {
 
 async function sendReportMenu(token, chatId, messageId) {
   const text = `
-📊 <b>មឺនុយរបាយការណ៍ចំណូល (Sales Report)</b>
+📊 <b>មឺនុយរបាយការណ៍ (Reports Menu)</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-សូមជ្រើសរើសប្រភេទរបាយការណ៍ដែលចង់មើល៖
+សូមជ្រើសរើសចន្លោះកាលបរិច្ឆេទ ឬប្រភេទរបាយការណ៍៖
 `;
   const keyboard = {
     inline_keyboard: [
       [{ text: "💰 លក់ (ថ្ងៃនេះ)", callback_data: "sale_report_today" }, { text: "💰 លក់ (ម្សិលមិញ)", callback_data: "sale_report_yesterday" }],
-      [{ text: "� លក់ (សប្តាហ៍នេះ)", callback_data: "sale_report_week" }],
+      [{ text: "📅 លក់ (សប្តាហ៍នេះ)", callback_data: "sale_report_week" }, { text: "🔍 ជ្រើសរើសថ្ងៃតាមចិត្ត", callback_data: "custom_date_help" }],
       [{ text: "💳 ការបង់ប្រាក់ (ថ្ងៃនេះ)", callback_data: "payment_report_today" }],
       [{ text: "⬅️ ត្រឡប់ទៅមឺនុយដើម", callback_data: "main_menu" }]
     ]
   };
   await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: keyboard });
+}
+
+async function sendCustomDateHelp(token, chatId) {
+  const text = `
+🔍 <b>របៀបពិនិត្យរបាយការណ៍តាមកាលបរិច្ឆេទ</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+លោកអ្នកអាចវាយបញ្ចូលកាលបរិច្ឆេទផ្ទាល់ក្នុង Telegram៖
+
+📅 <b>មើលថ្ងៃជាក់លាក់៖</b>
+វាយ: <code>2024-02-15</code> ឬ <code>15-02-2024</code>
+
+⏳ <b>មើលជាចន្លោះថ្ងៃ (Range)៖</b>
+វាយ: <code>2024-02-01 to 2024-02-15</code>
+
+<i>Bot នឹងបង្ហាញសេចក្តីសរុប (Summary) សម្រាប់កាលបរិច្ឆេទដែលលោកអ្នកបានវាយ។</i>
+`;
+  const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
+  await sendTelegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard });
+}
+
+function parseTelegramDate(text) {
+  const dayjs = require('dayjs');
+  const customParseFormat = require('dayjs/plugin/customParseFormat');
+  dayjs.extend(customParseFormat);
+
+  // Clean text
+  const cleanText = text.replace(/\s+/g, ' ').trim();
+
+  // Pattern for range: "YYYY-MM-DD to YYYY-MM-DD" or similar
+  const rangeMatch = cleanText.match(/(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4})\s*(to|ដល់|-)\s*(\d{4}-\d{2}-\d{2}|\d{2}-\d{2}-\d{4})/i);
+  if (rangeMatch) {
+    const startStr = rangeMatch[1];
+    const endStr = rangeMatch[3];
+    const formats = ['YYYY-MM-DD', 'DD-MM-YYYY', 'YYYY/MM/DD', 'DD/MM/YYYY'];
+    const start = dayjs(startStr, formats);
+    const end = dayjs(endStr, formats);
+    if (start.isValid() && end.isValid()) {
+      return {
+        start: start.format('YYYY-MM-DD'),
+        end: end.format('YYYY-MM-DD'),
+        label: `${start.format('DD/MM/YYYY')} - ${end.format('DD/MM/YYYY')}`
+      };
+    }
+  }
+
+  // Pattern for single date: "YYYY-MM-DD"
+  const formats = ['YYYY-MM-DD', 'DD-MM-YYYY', 'YYYY/MM/DD', 'DD/MM/YYYY'];
+  const singleDate = dayjs(cleanText, formats, true);
+  if (singleDate.isValid()) {
+    return {
+      start: singleDate.format('YYYY-MM-DD'),
+      end: singleDate.format('YYYY-MM-DD'),
+      label: singleDate.format('DD/MM/YYYY')
+    };
+  }
+
+  return null;
+}
+
+async function handleSummaryRange(token, chatId, startDate, endDate, label) {
+  try {
+    const [[sales]] = await db.query(
+      "SELECT COALESCE(SUM(total_amount), 0) as total FROM customer_debt cd JOIN `order` o ON cd.order_id = o.id WHERE DATE(o.order_date) BETWEEN ? AND ?",
+      [startDate, endDate]
+    );
+    const [[expenses]] = await db.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM expense WHERE DATE(expense_date) BETWEEN ? AND ?",
+      [startDate, endDate]
+    );
+    const [[payments]] = await db.query(
+      "SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE DATE(payment_date) BETWEEN ? AND ?",
+      [startDate, endDate]
+    );
+
+    const totalSale = parseFloat(sales.total);
+    const totalExp = parseFloat(expenses.total);
+    const totalPay = parseFloat(payments.total);
+    const netProfit = totalSale - totalExp;
+
+    let msg = `📊 <b>សេចក្តីសរុប (${label})</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `💰 <b>លក់សរុប:</b> <code>$${totalSale.toLocaleString()}</code>\n`;
+    msg += `📉 <b>ចំណាយសរុប:</b> <code>$${totalExp.toLocaleString()}</code>\n`;
+    msg += `💳 <b>ប្រមូលប្រាក់បាន:</b> <code>$${totalPay.toLocaleString()}</code>\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
+    msg += `${netProfit >= 0 ? '📈' : '📉'} <b>ចំណេញដុល:</b> <code>$${netProfit.toLocaleString()}</code>\n`;
+    msg += `━━━━━━━━━━━━━━━━━━━━\n⏰ <i>ប្រព័ន្ធទាញទិន្នន័យនាពេល: ${new Date().toLocaleString()}</i>`;
+
+    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
+  } catch (e) {
+    console.error('handleSummaryRange error:', e);
+  }
 }
 
 async function handleStockReport(token, chatId, messageId) {
