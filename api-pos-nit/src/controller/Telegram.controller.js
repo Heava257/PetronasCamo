@@ -839,13 +839,24 @@ exports.handleWebhook = async (req, res) => {
       } else if (action === 'expense_report_today') {
         await handleExpenseReport(bot_token, chatId, 'today');
       } else if (action === 'custom_date_help') {
-        await sendCalendar(bot_token, chatId);
-      } else if (action.startsWith('calendar_prev_') || action.startsWith('calendar_next_')) {
-        const [, , year, month] = action.split('_');
-        await sendCalendar(bot_token, chatId, parseInt(year), parseInt(month), messageId);
-      } else if (action.startsWith('date_select_')) {
-        const date = action.replace('date_select_', '');
-        await handleSummaryRange(bot_token, chatId, date, date, date);
+        await sendRangePicker(bot_token, chatId, 'start');
+      } else if (action.startsWith('rp_prev_') || action.startsWith('rp_next_')) {
+        const [, , type, year, month, startDate] = action.split('_');
+        await sendRangePicker(bot_token, chatId, type, parseInt(year), parseInt(month), messageId, startDate);
+      } else if (action.startsWith('rp_view_')) {
+        const [, , view, type, year, startDate] = action.split('_');
+        if (view === 'months') {
+          await sendMonthPicker(bot_token, chatId, type, parseInt(year), messageId, startDate);
+        } else if (view === 'years') {
+          await sendYearPicker(bot_token, chatId, type, parseInt(year), messageId, startDate);
+        }
+      } else if (action.startsWith('rp_select_')) {
+        const [, , type, date, startDateFromCallback] = action.split('_');
+        if (type === 'start') {
+          await sendRangePicker(bot_token, chatId, 'end', null, null, messageId, date);
+        } else {
+          await handleSummaryRange(bot_token, chatId, startDateFromCallback, date, `${startDateFromCallback} ដល់ ${date}`);
+        }
       }
 
       // Answer callback query to stop loading state
@@ -876,8 +887,8 @@ async function sendMainMenu(token, chatId) {
   const keyboard = {
     inline_keyboard: [
       [{ text: "📊 របាយការណ៍ និងសេចក្តីសរុប", callback_data: "report_menu" }],
-      [{ text: "� ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
-      [{ text: "� ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }],
+      [{ text: " ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
+      [{ text: " ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }],
       [{ text: "🔄 ធ្វើបច្ចុប្បន្នភាពមឺនុយ", callback_data: "main_menu" }]
     ]
   };
@@ -893,8 +904,8 @@ async function editToMainMenu(token, chatId, messageId) {
   const keyboard = {
     inline_keyboard: [
       [{ text: "📊 របាយការណ៍ និងសេចក្តីសរុប", callback_data: "report_menu" }],
-      [{ text: "� ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
-      [{ text: "� ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }]
+      [{ text: " ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
+      [{ text: " ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }]
     ]
   };
   await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: keyboard });
@@ -908,10 +919,10 @@ async function sendReportMenu(token, chatId, messageId) {
 `;
   const keyboard = {
     inline_keyboard: [
-      [{ text: "� សរុប (ថ្ងៃនេះ)", callback_data: "summary_report_today" }, { text: "� សរុប (ម្សិលមិញ)", callback_data: "summary_report_yesterday" }],
-      [{ text: "� សរុប (សប្តាហ៍នេះ)", callback_data: "summary_report_week" }, { text: "� សរុប (ខែនេះ)", callback_data: "summary_report_month" }],
+      [{ text: " សរុប (ថ្ងៃនេះ)", callback_data: "summary_report_today" }, { text: " សរុប (ម្សិលមិញ)", callback_data: "summary_report_yesterday" }],
+      [{ text: " សរុប (សប្តាហ៍នេះ)", callback_data: "summary_report_week" }, { text: " សរុប (ខែនេះ)", callback_data: "summary_report_month" }],
       [{ text: "💰 លក់ (ថ្ងៃនេះ)", callback_data: "sale_report_today" }, { text: "💰 លក់ (ម្សិលមិញ)", callback_data: "sale_report_yesterday" }],
-      [{ text: "� ចំណាយ (ថ្ងៃនេះ)", callback_data: "expense_report_today" }, { text: "📉 ចំណាយ (ម្សិលមិញ)", callback_data: "expense_report_yesterday" }],
+      [{ text: " ចំណាយ (ថ្ងៃនេះ)", callback_data: "expense_report_today" }, { text: "📉 ចំណាយ (ម្សិលមិញ)", callback_data: "expense_report_yesterday" }],
       [{ text: "🔍 ស្វែងរកតាមថ្ងៃ (Filter)", callback_data: "custom_date_help" }],
       [{ text: "⬅️ ត្រឡប់ទៅមឺនុយដើម", callback_data: "main_menu" }]
     ]
@@ -930,7 +941,7 @@ async function sendCalendar(token, chatId, year, month, messageId = null) {
   const daysInMonth = date.daysInMonth();
   const firstDay = date.day(); // 0 (Sun) to 6 (Sat)
 
-  const text = `� <b>សូមជ្រើសរើសថ្ងៃដែលចង់ Filter</b>\n━━━━━━━━━━━━━━━━━━━━\nលោកអ្នកកំពុងមើលខែ៖ <b>${monthName}</b>`;
+  const text = ` <b>សូមជ្រើសរើសថ្ងៃដែលចង់ Filter</b>\n━━━━━━━━━━━━━━━━━━━━\nលោកអ្នកកំពុងមើលខែ៖ <b>${monthName}</b>`;
 
   const rows = [];
   // Header: Days of Week
@@ -983,6 +994,103 @@ async function sendCalendar(token, chatId, year, month, messageId = null) {
   } else {
     await sendTelegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard });
   }
+}
+
+async function sendRangePicker(token, chatId, type, year, month, messageId = null, startDate = null) {
+  const dayjs = require('dayjs');
+  const now = dayjs();
+  const currentYear = year || now.year();
+  const currentMonth = month !== undefined ? month : now.month();
+
+  const date = dayjs().year(currentYear).month(currentMonth).date(1);
+  const monthName = date.format('MMMM');
+  const daysInMonth = date.daysInMonth();
+  const firstDay = date.day();
+
+  let text = `📅 <b>${type === 'start' ? 'ជំហានទី ១: ជ្រើសរើស "ថ្ងៃចាប់ផ្តើម"' : 'ជំហានទី ២: ជ្រើសរើស "ថ្ងៃបញ្ចប់"'}</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+  if (startDate) text += `⏺ កាលបរិច្ឆេទចាប់ផ្តើម៖ <code>${startDate}</code>\n`;
+  text += `📍 កំពុងជ្រើសរើស៖ <b>${monthName} ${currentYear}</b>`;
+
+  const rows = [];
+  // Quick Switch Header
+  rows.push([
+    { text: `🗓 ${monthName}`, callback_data: `rp_view_months_${type}_${currentYear}${startDate ? '_' + startDate : ''}` },
+    { text: `🔢 ${currentYear}`, callback_data: `rp_view_years_${type}_${currentYear}${startDate ? '_' + startDate : ''}` }
+  ]);
+
+  rows.push([
+    { text: "អា", callback_data: "ignore" }, { text: "ច", callback_data: "ignore" },
+    { text: "អ", callback_data: "ignore" }, { text: "ព", callback_data: "ignore" },
+    { text: "ព្រ", callback_data: "ignore" }, { text: "សុ", callback_data: "ignore" },
+    { text: "ស", callback_data: "ignore" }
+  ]);
+
+  let currentRow = [];
+  for (let i = 0; i < firstDay; i++) currentRow.push({ text: " ", callback_data: "ignore" });
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const fullDate = date.date(day).format('YYYY-MM-DD');
+    const isToday = fullDate === now.format('YYYY-MM-DD');
+    const label = isToday ? `•${day}•` : `${day}`;
+
+    currentRow.push({ text: label, callback_data: `rp_select_${type}_${fullDate}${type === 'end' ? '_' + startDate : ''}` });
+    if (currentRow.length === 7) {
+      rows.push(currentRow);
+      currentRow = [];
+    }
+  }
+  if (currentRow.length > 0) {
+    while (currentRow.length < 7) currentRow.push({ text: " ", callback_data: "ignore" });
+    rows.push(currentRow);
+  }
+
+  const prevDate = date.subtract(1, 'month');
+  const nextDate = date.add(1, 'month');
+  rows.push([
+    { text: "⬅️", callback_data: `rp_prev_${type}_${prevDate.year()}_${prevDate.month()}${startDate ? '_' + startDate : ''}` },
+    { text: "🔍 ស្វែងរក", callback_data: "report_menu" },
+    { text: "➡️", callback_data: `rp_next_${type}_${nextDate.year()}_${nextDate.month()}${startDate ? '_' + startDate : ''}` }
+  ]);
+
+  const keyboard = { inline_keyboard: rows };
+  const method = messageId ? "editMessageText" : "sendMessage";
+  const params = { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard };
+  if (messageId) params.message_id = messageId;
+  await sendTelegram(token, method, params);
+}
+
+async function sendMonthPicker(token, chatId, type, year, messageId, startDate = null) {
+  const dayjs = require('dayjs');
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const rows = [];
+  let currentRow = [];
+  months.forEach((m, i) => {
+    currentRow.push({ text: m, callback_data: `rp_prev_${type}_${year}_${i}${startDate ? '_' + startDate : ''}` });
+    if (currentRow.length === 3) {
+      rows.push(currentRow);
+      currentRow = [];
+    }
+  });
+  const keyboard = { inline_keyboard: rows };
+  await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text: `📅 <b>សូមជ្រើសរើសខែ (${year})</b>`, parse_mode: 'HTML', reply_markup: keyboard });
+}
+
+async function sendYearPicker(token, chatId, type, centerYear, messageId, startDate = null) {
+  const rows = [];
+  let currentRow = [];
+  for (let y = centerYear - 4; y <= centerYear + 4; y++) {
+    currentRow.push({ text: `${y}`, callback_data: `rp_prev_${type}_${y}_0${startDate ? '_' + startDate : ''}` });
+    if (currentRow.length === 3) {
+      rows.push(currentRow);
+      currentRow = [];
+    }
+  }
+  rows.push([
+    { text: "⬅️ ឆ្នាំមុន", callback_data: `rp_view_years_${type}_${centerYear - 9}${startDate ? '_' + startDate : ''}` },
+    { text: "ឆ្នាំក្រោយ ➡️", callback_data: `rp_view_years_${type}_${centerYear + 9}${startDate ? '_' + startDate : ''}` }
+  ]);
+  const keyboard = { inline_keyboard: rows };
+  await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text: `📅 <b>សូមជ្រើសរើសឆ្នាំ</b>`, parse_mode: 'HTML', reply_markup: keyboard });
 }
 
 function parseTelegramDate(text) {
