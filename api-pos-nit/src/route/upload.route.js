@@ -33,8 +33,9 @@ module.exports = (app) => {
         error: false,
         message: 'Image uploaded successfully',
         data: {
-          imageUrl: req.file.path,        // Full Cloudinary URL
-          publicId: req.file.filename,    // Public ID for deletion
+          imageUrl: req.file.path,        // This is already using path (Cloudinary URL)
+          filename: req.file.filename,    // Map to filename for generic compatibility
+          publicId: req.file.filename,
           originalName: req.file.originalname,
           size: req.file.size,
           format: req.file.format

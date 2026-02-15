@@ -7,19 +7,14 @@ exports.getTelegramConfigs = async (req, res) => {
   try {
     const currentUserId = req.current_id;
 
-    const [currentUser] = await db.query(
-      `SELECT r.code AS role_code 
-       FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    const userRole = req.auth?.role_code;
+    const userRoleId = Number(req.auth?.role_id);
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
+    if (userRole !== 'SUPER_ADMIN' && userRoleId !== 29 && userRole !== 'ADMIN' && userRoleId !== 1) {
       return res.status(403).json({
         error: true,
-        message: "Access denied. Super Admin only.",
-        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Super Admin តែប៉ុណ្ណោះ"
+        message: "Access denied. Admin or Super Admin only.",
+        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Admin ឬ Super Admin តែប៉ុណ្ណោះ"
       });
     }
 
@@ -113,19 +108,14 @@ exports.createTelegramConfig = async (req, res) => {
       : null;
 
     // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT u.name, r.code AS role_code 
-       FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    const userRole = req.auth?.role_code;
+    const userRoleId = Number(req.auth?.role_id);
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
+    if (userRole !== 'SUPER_ADMIN' && userRoleId !== 29 && userRole !== 'ADMIN' && userRoleId !== 1) {
       return res.status(403).json({
         error: true,
-        message: "Only Super Admin can create Telegram configurations",
-        message_kh: "មានតែ Super Admin ទេដែលអាចបង្កើតការកំណត់ Telegram"
+        message: "Only Admin or Super Admin can create Telegram configurations",
+        message_kh: "មានតែ Admin ឬ Super Admin ទេដែលអាចបង្កើតការកំណត់ Telegram"
       });
     }
 
@@ -201,7 +191,7 @@ exports.createTelegramConfig = async (req, res) => {
       description: description || null,
       event_types: eventTypesJson,  // ✅ Save event types as JSON string
       is_active,
-      created_by: currentUser[0]?.name
+      created_by: req.auth?.name || 'System'
     });
 
     const configId = result.insertId;
@@ -285,19 +275,14 @@ exports.updateTelegramConfig = async (req, res) => {
       : null;
 
     // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT u.name, r.code AS role_code 
-       FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    const userRole = req.auth?.role_code;
+    const userRoleId = Number(req.auth?.role_id);
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
+    if (userRole !== 'SUPER_ADMIN' && userRoleId !== 29 && userRole !== 'ADMIN' && userRoleId !== 1) {
       return res.status(403).json({
         error: true,
-        message: "Access denied. Super Admin only.",
-        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Super Admin តែប៉ុណ្ណោះ"
+        message: "Access denied. Admin or Super Admin only.",
+        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Admin ឬ Super Admin តែប៉ុណ្ណោះ"
       });
     }
 
@@ -420,19 +405,14 @@ exports.deleteTelegramConfig = async (req, res) => {
     const { id } = req.params;
 
     // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT u.name, r.code AS role_code 
-       FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    const userRole = req.auth?.role_code;
+    const userRoleId = Number(req.auth?.role_id);
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
+    if (userRole !== 'SUPER_ADMIN' && userRoleId !== 29 && userRole !== 'ADMIN' && userRoleId !== 1) {
       return res.status(403).json({
         error: true,
-        message: "Access denied. Super Admin only.",
-        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Super Admin តែប៉ុណ្ណោះ"
+        message: "Access denied. Admin or Super Admin only.",
+        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Admin ឬ Super Admin តែប៉ុណ្ណោះ"
       });
     }
 
@@ -508,19 +488,14 @@ exports.testTelegramConfig = async (req, res) => {
     const { id } = req.params;
 
     // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT u.name, r.code AS role_code 
-       FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = :user_id`,
-      { user_id: currentUserId }
-    );
+    const userRole = req.auth?.role_code;
+    const userRoleId = Number(req.auth?.role_id);
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
+    if (userRole !== 'SUPER_ADMIN' && userRoleId !== 29 && userRole !== 'ADMIN' && userRoleId !== 1) {
       return res.status(403).json({
         error: true,
-        message: "Access denied. Super Admin only.",
-        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Super Admin តែប៉ុណ្ណោះ"
+        message: "Access denied. Admin or Super Admin only.",
+        message_kh: "បដិសេធការចូលប្រើ។ សម្រាប់ Admin ឬ Super Admin តែប៉ុណ្ណោះ"
       });
     }
 
@@ -552,7 +527,7 @@ exports.testTelegramConfig = async (req, res) => {
 • Name: ${config_name}
 • Type: ${config_type}
 ${branch_name ? `• Branch: ${branch_name}` : ''}
-• Tested by: ${currentUser[0]?.name || 'Unknown'}
+• Tested by: ${req.auth?.name || 'Unknown'}
 
 ⏰ <b>Time:</b> ${new Date().toLocaleString('en-US', {
       timeZone: 'Asia/Phnom_Penh',
@@ -682,18 +657,13 @@ exports.toggleTelegramConfig = async (req, res) => {
     const { id } = req.params;
 
     // ✅ Verify Super Admin
-    const [currentUser] = await db.query(
-      `SELECT u.name, r.code AS role_code 
-       FROM user u 
-       INNER JOIN role r ON u.role_id = r.id 
-       WHERE u.id = : user_id`,
-      { user_id: currentUserId }
-    );
+    const userRole = req.auth?.role_code;
+    const userRoleId = Number(req.auth?.role_id);
 
-    if (currentUser[0]?.role_code !== 'SUPER_ADMIN') {
+    if (userRole !== 'SUPER_ADMIN' && userRoleId !== 29 && userRole !== 'ADMIN' && userRoleId !== 1) {
       return res.status(403).json({
         error: true,
-        message: "Access denied",
+        message: "Access denied. Admin or Super Admin only.",
         message_kh: "បដិសេធការចូលប្រើ"
       });
     }
@@ -724,7 +694,7 @@ exports.toggleTelegramConfig = async (req, res) => {
       `, {
       id,
       is_active: newStatus,
-      updated_by: currentUser[0]?.name
+      updated_by: req.auth?.name || 'System'
     });
 
 
