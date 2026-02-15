@@ -816,7 +816,6 @@ exports.handleWebhook = async (req, res) => {
       const chatId = callback_query.message.chat.id;
       const messageId = callback_query.message.message_id;
       const action = callback_query.data;
-
       if (action === 'main_menu') {
         await editToMainMenu(bot_token, chatId, messageId);
       } else if (action === 'report_menu') {
@@ -829,10 +828,16 @@ exports.handleWebhook = async (req, res) => {
       } else if (action.startsWith('payment_report_')) {
         const period = action.replace('payment_report_', '');
         await handlePaymentReport(bot_token, chatId, messageId, period);
+      } else if (action.startsWith('summary_report_')) {
+        const period = action.replace('summary_report_', '');
+        await handleSummaryReport(bot_token, chatId, period);
+      } else if (action.startsWith('expense_report_')) {
+        const period = action.replace('expense_report_', '');
+        await handleExpenseReport(bot_token, chatId, period);
       } else if (action === 'summary_today') {
-        await handleSummaryToday(bot_token, chatId);
+        await handleSummaryReport(bot_token, chatId, 'today');
       } else if (action === 'expense_report_today') {
-        await handleExpenseReport(bot_token, chatId);
+        await handleExpenseReport(bot_token, chatId, 'today');
       } else if (action === 'custom_date_help') {
         await sendCustomDateHelp(bot_token, chatId);
       }
@@ -864,11 +869,10 @@ async function sendMainMenu(token, chatId) {
 `;
   const keyboard = {
     inline_keyboard: [
-      [{ text: "📊 របាយការណ៍អាជីវកម្ម", callback_data: "report_menu" }],
-      [{ text: "📦 ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }],
-      [{ text: "� ចំណាយថ្ងៃនេះ", callback_data: "expense_report_today" }],
-      [{ text: "📅 សេចក្តីសរុបថ្ងៃនេះ", callback_data: "summary_today" }],
-      [{ text: "�🔄 ធ្វើបច្ចុប្បន្នភាពមឺនុយ", callback_data: "main_menu" }]
+      [{ text: "📊 របាយការណ៍ និងសេចក្តីសរុប", callback_data: "report_menu" }],
+      [{ text: "� ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
+      [{ text: "� ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }],
+      [{ text: "🔄 ធ្វើបច្ចុប្បន្នភាពមឺនុយ", callback_data: "main_menu" }]
     ]
   };
   await sendTelegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard });
@@ -882,10 +886,9 @@ async function editToMainMenu(token, chatId, messageId) {
 `;
   const keyboard = {
     inline_keyboard: [
-      [{ text: "📊 របាយការណ៍អាជីវកម្ម", callback_data: "report_menu" }],
-      [{ text: "📦 ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }],
-      [{ text: "📉 ចំណាយថ្ងៃនេះ", callback_data: "expense_report_today" }],
-      [{ text: "📅 សេចក្តីសរុបថ្ងៃនេះ", callback_data: "summary_today" }]
+      [{ text: "📊 របាយការណ៍ និងសេចក្តីសរុប", callback_data: "report_menu" }],
+      [{ text: "� ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
+      [{ text: "� ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }]
     ]
   };
   await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: keyboard });
@@ -893,15 +896,17 @@ async function editToMainMenu(token, chatId, messageId) {
 
 async function sendReportMenu(token, chatId, messageId) {
   const text = `
-📊 <b>មឺនុយរបាយការណ៍ (Reports Menu)</b>
+📊 <b>មឺនុយរបាយការណ៍ និងសេចក្តីសរុប</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-សូមជ្រើសរើសចន្លោះកាលបរិច្ឆេទ ឬប្រភេទរបាយការណ៍៖
+សូមជ្រើសរើសប្រភេទរបាយការណ៍ដែលលោកអ្នកចង់មើល៖
 `;
   const keyboard = {
     inline_keyboard: [
+      [{ text: "� សរុប (ថ្ងៃនេះ)", callback_data: "summary_report_today" }, { text: "� សរុប (ម្សិលមិញ)", callback_data: "summary_report_yesterday" }],
+      [{ text: "� សរុប (សប្តាហ៍នេះ)", callback_data: "summary_report_week" }, { text: "� សរុប (ខែនេះ)", callback_data: "summary_report_month" }],
       [{ text: "💰 លក់ (ថ្ងៃនេះ)", callback_data: "sale_report_today" }, { text: "💰 លក់ (ម្សិលមិញ)", callback_data: "sale_report_yesterday" }],
-      [{ text: "📅 លក់ (សប្តាហ៍នេះ)", callback_data: "sale_report_week" }, { text: "🔍 ជ្រើសរើសថ្ងៃតាមចិត្ត", callback_data: "custom_date_help" }],
-      [{ text: "💳 ការបង់ប្រាក់ (ថ្ងៃនេះ)", callback_data: "payment_report_today" }],
+      [{ text: "� ចំណាយ (ថ្ងៃនេះ)", callback_data: "expense_report_today" }, { text: "📉 ចំណាយ (ម្សិលមិញ)", callback_data: "expense_report_yesterday" }],
+      [{ text: "🔍 ស្វែងរកតាមថ្ងៃ (Filter)", callback_data: "custom_date_help" }],
       [{ text: "⬅️ ត្រឡប់ទៅមឺនុយដើម", callback_data: "main_menu" }]
     ]
   };
@@ -1036,6 +1041,9 @@ async function handleSaleReport(token, chatId, messageId, period) {
     } else if (period === 'week') {
       dateFilter = "YEARWEEK(o.order_date, 1) = YEARWEEK(CURDATE(), 1)";
       title = "សប្តាហ៍នេះ";
+    } else if (period === 'month') {
+      dateFilter = "MONTH(o.order_date) = MONTH(CURDATE()) AND YEAR(o.order_date) = YEAR(CURDATE())";
+      title = "ខែនេះ";
     }
 
     const [sales] = await db.query(`
@@ -1053,12 +1061,12 @@ async function handleSaleReport(token, chatId, messageId, period) {
     let msg = `💰 <b>របាយការណ៍លក់ (${title})</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
     let grandTotal = 0;
     if (sales.length === 0) {
-      msg += `<i>❌ មិនទាន់មានការលក់ក្នុង${title}នៅឡើយទេ</i>\n`;
+      msg += `<i>❌ មិនទាន់មានទិន្នន័យ (${title})</i>\n`;
     } else {
       sales.forEach(s => {
         msg += `📍 <b>${s.branch_name || 'Head Office'}</b>\n`;
-        msg += `   • ចំនួនប្រតិបត្តិការ: ${s.count}\n`;
-        msg += `   • ទឹកប្រាក់លក់បាន: <code>$${parseFloat(s.total).toLocaleString()}</code>\n\n`;
+        msg += `   • ប្រតិបត្តិការ: ${s.count}\n`;
+        msg += `   • ទឹកប្រាក់: <code>$${parseFloat(s.total).toLocaleString()}</code>\n\n`;
         grandTotal += parseFloat(s.total);
       });
     }
@@ -1066,7 +1074,10 @@ async function handleSaleReport(token, chatId, messageId, period) {
 
     const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
     await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error('handleSaleReport error:', e);
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: `❌ កំហុសលក់ (${period}): ${e.message}` });
+  }
 }
 
 async function handlePaymentReport(token, chatId, messageId, period) {
@@ -1101,22 +1112,32 @@ async function handlePaymentReport(token, chatId, messageId, period) {
   } catch (e) { console.error(e); }
 }
 
-async function handleExpenseReport(token, chatId) {
+async function handleExpenseReport(token, chatId, period = 'today') {
   try {
+    let dateFilter = "DATE(e.expense_date) = CURDATE()";
+    let title = "ថ្ងៃនេះ";
+    if (period === 'yesterday') {
+      dateFilter = "DATE(e.expense_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+      title = "ម្សិលមិញ";
+    } else if (period === 'week') {
+      dateFilter = "YEARWEEK(e.expense_date, 1) = YEARWEEK(CURDATE(), 1)";
+      title = "សប្តាហ៍នេះ";
+    }
+
     const [expenses] = await db.query(`
       SELECT 
         et.name as type,
         SUM(e.amount) as total
       FROM expense e
       JOIN expense_type et ON e.expense_type_id = et.id
-      WHERE DATE(e.expense_date) = CURDATE()
+      WHERE ${dateFilter}
       GROUP BY et.name
     `);
 
-    let msg = `📉 <b>របាយការណ៍ចំណាយថ្ងៃនេះ (Expenses Today)</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let msg = `📉 <b>របាយការណ៍ចំណាយ (${title})</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
     let grandTotal = 0;
     if (expenses.length === 0) {
-      msg += `<i>✅ មិនមានការចំណាយក្នុងថ្ងៃនេះទេ</i>\n`;
+      msg += `<i>✅ មិនមានការចំណាយ (${title})</i>\n`;
     } else {
       expenses.forEach(e => {
         msg += `• ${e.type}: <code>$${parseFloat(e.total).toLocaleString()}</code>\n`;
@@ -1125,26 +1146,48 @@ async function handleExpenseReport(token, chatId) {
     }
     msg += `━━━━━━━━━━━━━━━━━━━━\n💸 <b>សរុបការចំណាយ: <u>$${grandTotal.toLocaleString()}</u></b>`;
 
-    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "main_menu" }]] };
+    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
     await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
   } catch (e) {
     console.error('Expense Report Error:', e);
-    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: `❌ មានបញ្ហាក្នុងការទាញរបាយការណ៍ចំណាយ៖ ${e.message}` });
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: `❌ កំហុសចំណាយ (${period}): ${e.message}` });
   }
 }
 
-async function handleSummaryToday(token, chatId) {
+async function handleSummaryReport(token, chatId, period = 'today') {
   try {
-    const [[sales]] = await db.query("SELECT COALESCE(SUM(cd.total_amount), 0) as total FROM customer_debt cd JOIN `order` o ON cd.order_id = o.id WHERE DATE(o.order_date) = CURDATE()");
-    const [[expenses]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM expense WHERE DATE(expense_date) = CURDATE()");
-    const [[payments]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE DATE(payment_date) = CURDATE()");
+    let dateFilter = "DATE(o.order_date) = CURDATE()";
+    let expFilter = "DATE(expense_date) = CURDATE()";
+    let payFilter = "DATE(payment_date) = CURDATE()";
+    let title = "ថ្ងៃនេះ";
+
+    if (period === 'yesterday') {
+      dateFilter = "DATE(o.order_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+      expFilter = "DATE(expense_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+      payFilter = "DATE(payment_date) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+      title = "ម្សិលមិញ";
+    } else if (period === 'week') {
+      dateFilter = "YEARWEEK(o.order_date, 1) = YEARWEEK(CURDATE(), 1)";
+      expFilter = "YEARWEEK(expense_date, 1) = YEARWEEK(CURDATE(), 1)";
+      payFilter = "YEARWEEK(payment_date, 1) = YEARWEEK(CURDATE(), 1)";
+      title = "សប្តាហ៍នេះ";
+    } else if (period === 'month') {
+      dateFilter = "MONTH(o.order_date) = MONTH(CURDATE()) AND YEAR(o.order_date) = YEAR(CURDATE())";
+      expFilter = "MONTH(expense_date) = MONTH(CURDATE()) AND YEAR(expense_date) = YEAR(CURDATE())";
+      payFilter = "MONTH(payment_date) = MONTH(CURDATE()) AND YEAR(payment_date) = YEAR(CURDATE())";
+      title = "ខែនេះ";
+    }
+
+    const [[sales]] = await db.query(`SELECT COALESCE(SUM(cd.total_amount), 0) as total FROM customer_debt cd JOIN \`order\` o ON cd.order_id = o.id WHERE ${dateFilter}`);
+    const [[expenses]] = await db.query(`SELECT COALESCE(SUM(amount), 0) as total FROM expense WHERE ${expFilter}`);
+    const [[payments]] = await db.query(`SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE ${payFilter}`);
 
     const totalSale = parseFloat(sales?.total || 0);
     const totalExp = parseFloat(expenses?.total || 0);
     const totalPay = parseFloat(payments?.total || 0);
     const netProfit = totalSale - totalExp;
 
-    let msg = `📊 <b>សេចក្តីសរុបថ្ងៃនេះ (Today's Summary)</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let msg = `📊 <b>សេចក្តីសរុបអាជីវកម្ម (${title})</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `💰 <b>លក់សរុប:</b> <code>$${totalSale.toLocaleString()}</code>\n`;
     msg += `📉 <b>ចំណាយសរុប:</b> <code>$${totalExp.toLocaleString()}</code>\n`;
     msg += `💳 <b>ប្រមូលប្រាក់បាន:</b> <code>$${totalPay.toLocaleString()}</code>\n`;
@@ -1152,11 +1195,11 @@ async function handleSummaryToday(token, chatId) {
     msg += `${netProfit >= 0 ? '📈' : '📉'} <b>ចំណេញដុល (Sales - Exp):</b> <code>$${netProfit.toLocaleString()}</code>\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n⏰ <i>Update at: ${new Date().toLocaleString()}</i>`;
 
-    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "main_menu" }]] };
+    const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
     await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
   } catch (e) {
-    console.error('Summary Today Error:', e);
-    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: `❌ មានបញ្ហាក្នុងការទាញរបាយការណ៍សរុប៖ ${e.message}` });
+    console.error('Summary Report Error:', e);
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: `❌ កំហុសសរុប (${period}): ${e.message}` });
   }
 }
 
