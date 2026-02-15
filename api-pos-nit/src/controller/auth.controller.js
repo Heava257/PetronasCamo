@@ -1374,8 +1374,12 @@ exports.validate_token = (permission_name) => {
               hasPermission = permissions.some(p => p.name === permission_name);
             }
 
-            // EMERGENCY FIX: Explicitly allow invoices.getlist for Roles 1 & 29 if missing
-            if (!hasPermission && (permission_name === 'invoices.getlist' || permission_name === 'fakeinvoice.getlist')) {
+            // EMERGENCY FIX: Explicitly allow specific permissions for Roles 1 & 29 if missing
+            if (!hasPermission && (
+              permission_name === 'invoices.getlist' ||
+              permission_name === 'fakeinvoice.getlist' ||
+              permission_name === 'setting.update'
+            )) {
               const userRoleNum = Number(userData.role_id);
               if (userRoleNum === 29 || userRoleNum === 1) {
                 console.warn(`[AUTH BYPASS] Allowing ${permission_name} for Role ${userRoleNum}`);
