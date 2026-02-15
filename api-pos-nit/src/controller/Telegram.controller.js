@@ -770,8 +770,14 @@ exports.handleWebhook = async (req, res) => {
       const chatId = message.chat.id;
       const text = message.text.toLowerCase();
 
-      if (text === '/start' || text === 'menu' || text === 'មឺនុយ') {
+      if (text === '/start' || text === 'menu' || text === 'មឺនុយ' || text === '🏠 មឺនុយចម្បង') {
         await sendMainMenu(bot_token, chatId);
+      } else if (text === '📊 របាយការណ៍សរុប') {
+        await handleSummaryReport(bot_token, chatId, 'today');
+      } else if (text === '💰 លក់ថ្ងៃនេះ') {
+        await handleSaleReport(bot_token, chatId, null, 'today');
+      } else if (text === '📅 ស្វែងរកតាមថ្ងៃ') {
+        await sendRangePicker(bot_token, chatId, 'start');
       } else {
         // Check for date pattern (e.g., 2024-02-15 or 15-02-2024 or range)
         const dateRange = parseTelegramDate(text);
@@ -854,15 +860,37 @@ async function sendMainMenu(token, chatId) {
 
 🚀 <b>សូមជ្រើសរើសមុខងារខាងក្រោម៖</b>
 `;
-  const keyboard = {
+
+  // 1. First, send/update the persistent bottom menu (keyboard)
+  // This will stay at the bottom of the user's phone screen
+  await sendTelegram(token, "sendMessage", {
+    chat_id: chatId,
+    text: "🔄 បើកដំណើរការមឺនុយបញ្ជាចម្បង...",
+    reply_markup: {
+      keyboard: [
+        [{ text: "📊 របាយការណ៍សរុប" }, { text: "💰 លក់ថ្ងៃនេះ" }],
+        [{ text: "📅 ស្វែងរកតាមថ្ងៃ" }, { text: "🏠 មឺនុយចម្បង" }]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: false
+    }
+  });
+
+  // 2. Then send the main message with inline buttons for quick actions
+  const inlineKeyboard = {
     inline_keyboard: [
       [{ text: "📊 របាយការណ៍ និងសេចក្តីសរុប", callback_data: "report_menu" }],
-      [{ text: " ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
-      [{ text: " ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }],
-      [{ text: "🔄 ធ្វើបច្ចុប្បន្នភាពមឺនុយ", callback_data: "main_menu" }]
+      [{ text: "📅 ជ្រើសរើសថ្ងៃ (Filter Date)", callback_data: "custom_date_help" }],
+      [{ text: "📦 ពិនិត្យស្តុកបច្ចុប្បន្ន", callback_data: "stock_report" }]
     ]
   };
-  await sendTelegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard });
+
+  await sendTelegram(token, "sendMessage", {
+    chat_id: chatId,
+    text,
+    parse_mode: 'HTML',
+    reply_markup: inlineKeyboard
+  });
 }
 
 async function editToMainMenu(token, chatId, messageId) {
