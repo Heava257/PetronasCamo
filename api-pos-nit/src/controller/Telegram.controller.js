@@ -839,7 +839,13 @@ exports.handleWebhook = async (req, res) => {
       } else if (action === 'expense_report_today') {
         await handleExpenseReport(bot_token, chatId, 'today');
       } else if (action === 'custom_date_help') {
-        await sendCustomDateHelp(bot_token, chatId);
+        await sendCalendar(bot_token, chatId);
+      } else if (action.startsWith('calendar_prev_') || action.startsWith('calendar_next_')) {
+        const [, , year, month] = action.split('_');
+        await sendCalendar(bot_token, chatId, parseInt(year), parseInt(month), messageId);
+      } else if (action.startsWith('date_select_')) {
+        const date = action.replace('date_select_', '');
+        await handleSummaryRange(bot_token, chatId, date, date, date);
       }
 
       // Answer callback query to stop loading state
@@ -913,22 +919,70 @@ async function sendReportMenu(token, chatId, messageId) {
   await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: keyboard });
 }
 
-async function sendCustomDateHelp(token, chatId) {
-  const text = `
-🔍 <b>របៀបពិនិត្យរបាយការណ៍តាមកាលបរិច្ឆេទ</b>
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-លោកអ្នកអាចវាយបញ្ចូលកាលបរិច្ឆេទផ្ទាល់ក្នុង Telegram៖
+async function sendCalendar(token, chatId, year, month, messageId = null) {
+  const dayjs = require('dayjs');
+  const now = dayjs();
+  const currentYear = year || now.year();
+  const currentMonth = month !== undefined ? month : now.month(); // 0-indexed
 
-📅 <b>មើលថ្ងៃជាក់លាក់៖</b>
-វាយ: <code>2024-02-15</code> ឬ <code>15-02-2024</code>
+  const date = dayjs().year(currentYear).month(currentMonth).date(1);
+  const monthName = date.format('MMMM YYYY');
+  const daysInMonth = date.daysInMonth();
+  const firstDay = date.day(); // 0 (Sun) to 6 (Sat)
 
-⏳ <b>មើលជាចន្លោះថ្ងៃ (Range)៖</b>
-វាយ: <code>2024-02-01 to 2024-02-15</code>
+  const text = `� <b>សូមជ្រើសរើសថ្ងៃដែលចង់ Filter</b>\n━━━━━━━━━━━━━━━━━━━━\nលោកអ្នកកំពុងមើលខែ៖ <b>${monthName}</b>`;
 
-<i>Bot នឹងបង្ហាញសេចក្តីសរុប (Summary) សម្រាប់កាលបរិច្ឆេទដែលលោកអ្នកបានវាយ។</i>
-`;
-  const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]] };
-  await sendTelegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard });
+  const rows = [];
+  // Header: Days of Week
+  rows.push([
+    { text: "អា", callback_data: "ignore" },
+    { text: "ច", callback_data: "ignore" },
+    { text: "អ", callback_data: "ignore" },
+    { text: "ព", callback_data: "ignore" },
+    { text: "ព្រ", callback_data: "ignore" },
+    { text: "សុ", callback_data: "ignore" },
+    { text: "ស", callback_data: "ignore" }
+  ]);
+
+  let currentRow = [];
+  // Empty slots before first day
+  for (let i = 0; i < firstDay; i++) {
+    currentRow.push({ text: " ", callback_data: "ignore" });
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const fullDate = date.date(day).format('YYYY-MM-DD');
+    currentRow.push({ text: `${day}`, callback_data: `date_select_${fullDate}` });
+    if (currentRow.length === 7) {
+      rows.push(currentRow);
+      currentRow = [];
+    }
+  }
+
+  // Fill remaining slots in last row
+  if (currentRow.length > 0) {
+    while (currentRow.length < 7) {
+      currentRow.push({ text: " ", callback_data: "ignore" });
+    }
+    rows.push(currentRow);
+  }
+
+  // Navigation
+  const prevDate = date.subtract(1, 'month');
+  const nextDate = date.add(1, 'month');
+  rows.push([
+    { text: "⬅️ ខែមុន", callback_data: `calendar_prev_${prevDate.year()}_${prevDate.month()}` },
+    { text: "ខែក្រោយ ➡️", callback_data: `calendar_next_${nextDate.year()}_${nextDate.month()}` }
+  ]);
+  rows.push([{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "report_menu" }]);
+
+  const keyboard = { inline_keyboard: rows };
+
+  if (messageId) {
+    await sendTelegram(token, "editMessageText", { chat_id: chatId, message_id: messageId, text, parse_mode: 'HTML', reply_markup: keyboard });
+  } else {
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: keyboard });
+  }
 }
 
 function parseTelegramDate(text) {
