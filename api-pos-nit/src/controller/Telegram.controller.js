@@ -1122,7 +1122,10 @@ async function handleExpenseReport(token, chatId) {
 
     const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "main_menu" }]] };
     await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error('Expense Report Error:', e);
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: `❌ មានបញ្ហាក្នុងការទាញរបាយការណ៍ចំណាយ៖ ${e.message}` });
+  }
 }
 
 async function handleSummaryToday(token, chatId) {
@@ -1131,9 +1134,9 @@ async function handleSummaryToday(token, chatId) {
     const [[expenses]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM expense WHERE DATE(expense_date) = CURDATE()");
     const [[payments]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE DATE(payment_date) = CURDATE()");
 
-    const totalSale = parseFloat(sales.total);
-    const totalExp = parseFloat(expenses.total);
-    const totalPay = parseFloat(payments.total);
+    const totalSale = parseFloat(sales?.total || 0);
+    const totalExp = parseFloat(expenses?.total || 0);
+    const totalPay = parseFloat(payments?.total || 0);
     const netProfit = totalSale - totalExp;
 
     let msg = `📊 <b>សេចក្តីសរុបថ្ងៃនេះ (Today's Summary)</b>\n━━━━━━━━━━━━━━━━━━━━\n`;
@@ -1146,7 +1149,10 @@ async function handleSummaryToday(token, chatId) {
 
     const keyboard = { inline_keyboard: [[{ text: "⬅️ ត្រឡប់ក្រោយ", callback_data: "main_menu" }]] };
     await sendTelegram(token, "sendMessage", { chat_id: chatId, text: msg, parse_mode: 'HTML', reply_markup: keyboard });
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error('Summary Today Error:', e);
+    await sendTelegram(token, "sendMessage", { chat_id: chatId, text: `❌ មានបញ្ហាក្នុងការទាញរបាយការណ៍សរុប៖ ${e.message}` });
+  }
 }
 
 async function sendTelegram(token, method, data) {
