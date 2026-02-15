@@ -968,7 +968,7 @@ function parseTelegramDate(text) {
 async function handleSummaryRange(token, chatId, startDate, endDate, label) {
   try {
     const [[sales]] = await db.query(
-      "SELECT COALESCE(SUM(total_amount), 0) as total FROM customer_debt cd JOIN `order` o ON cd.order_id = o.id WHERE DATE(o.order_date) BETWEEN ? AND ?",
+      "SELECT COALESCE(SUM(cd.total_amount), 0) as total FROM customer_debt cd JOIN `order` o ON cd.order_id = o.id WHERE DATE(o.order_date) BETWEEN ? AND ?",
       [startDate, endDate]
     );
     const [[expenses]] = await db.query(
@@ -1135,7 +1135,7 @@ async function handleExpenseReport(token, chatId) {
 
 async function handleSummaryToday(token, chatId) {
   try {
-    const [[sales]] = await db.query("SELECT COALESCE(SUM(total_amount), 0) as total FROM customer_debt cd JOIN `order` o ON cd.order_id = o.id WHERE DATE(o.order_date) = CURDATE()");
+    const [[sales]] = await db.query("SELECT COALESCE(SUM(cd.total_amount), 0) as total FROM customer_debt cd JOIN `order` o ON cd.order_id = o.id WHERE DATE(o.order_date) = CURDATE()");
     const [[expenses]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM expense WHERE DATE(expense_date) = CURDATE()");
     const [[payments]] = await db.query("SELECT COALESCE(SUM(amount), 0) as total FROM payments WHERE DATE(payment_date) = CURDATE()");
 
